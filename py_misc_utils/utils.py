@@ -487,7 +487,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
   else:
     xcode = code
 
-  exec(xcode, globals=xenv)
+  exec(xcode, xenv)
 
   return tuple(xenv[s] for s in as_sequence(syms))
 
