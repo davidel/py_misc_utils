@@ -555,7 +555,7 @@ def squeeze(shape, keep_dims=0, sdir=MAJOR):
 
 
 def flat2shape(data, shape):
-  assert len(data) == np.prod(shape), f'Shape {shape} is unsiutable for a {len(data)} long array'
+  assert len(data) == np.prod(shape), f'Shape {shape} is unsuitable for a {len(data)} long array'
 
   # For an Mx...xK input shape, return a M elements (nested) list.
   for n in reversed(shape[1: ]):
