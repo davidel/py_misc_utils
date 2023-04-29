@@ -480,11 +480,14 @@ def dict_rget(sdict, path, defval=None, sep='/'):
   return result
 
 
-def compile(code, syms, targs=None, env=None):
-  xenv = globals().copy() if env is None else env
-  xcode = code if targs is None else string.Template(code).substitute(targs)
+def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
+  xenv = dict() if env is None else env
+  if vals is not None or lookup_fn is not None:
+    xcode = template_replace(code, vals=vals, lookup_fn=lookup_fn, delim=delim)
+  else:
+    xcode = code
 
-  exec(xcode, xenv)
+  exec(xcode, globals=xenv)
 
   return tuple(xenv[s] for s in as_sequence(syms))
 
@@ -712,13 +715,13 @@ class _FnDict(object):
     return fn
 
 
-def template_replace(st, vals=None, lookup_fn=None, delim='$'):
+def template_replace(st, vals=None, lookup_fn=None, delim=None):
 
   class _Template(string.Template):
 
     # Allow for brace ID with the format ${ID:DEFAULT_VALUE}.
     braceidpattern = r'((?a:[_a-z][_a-z0-9]*)(:[^}]*)?)'
-    delimiter = delim
+    delimiter = delim or '$'
 
   if lookup_fn is None:
     lookup_fn = _FnDict.dict_lookup_fn(vals)
