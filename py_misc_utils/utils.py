@@ -97,18 +97,6 @@ def setup_logging(log_level='INFO', log_file=None):
   logging.basicConfig(level=log_level, handlers=handlers, force=True)
 
 
-def in_notebook():
-  try:
-    ipy = str(get_ipython())
-    for sig in ('google.colab', 'ZMQInteractiveShell'):
-      if sig in ipy:
-        return True
-    
-    return False
-  except NameError:
-    return False
-
-
 def maybe_add_path(plist, path):
   if path not in plist:
     plist.append(path)
