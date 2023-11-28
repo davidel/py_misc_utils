@@ -94,7 +94,7 @@ def setup_logging(log_level='INFO', log_file=None):
     h.setFormatter(formatter)
     handlers.append(h)
 
-  logging.basicConfig(level=log_level, handlers=handlers)
+  logging.basicConfig(level=log_level, handlers=handlers, force=True)
 
 
 def maybe_add_path(plist, path):
