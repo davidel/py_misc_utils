@@ -57,7 +57,7 @@ class _GlogFormatter(logging.Formatter):
 
   def __init__(self):
     logging.Formatter.__init__(self)
-    self._in_colab = os.getenv('COLAB_GPU', None) is not None
+    self._in_notebook = in_notebook()
 
   def format(self, record):
     try:
@@ -65,7 +65,7 @@ class _GlogFormatter(logging.Formatter):
     except KeyError:
       level = '?'
 
-    if self._in_colab:
+    if self._in_notebook:
       process = ''
     else:
       process = f'{record.process} ' if record.process else '???? '
@@ -101,6 +101,18 @@ def setup_logging(log_level='INFO', log_file=None):
     handlers.append(h)
 
   logging.basicConfig(level=log_level, handlers=handlers, force=True)
+
+
+def in_notebook():
+  try:
+    ipy = str(get_ipython())
+    for sig in ('google.colab', 'ZMQInteractiveShell'):
+      if sig in ipy:
+        return True
+    
+    return False
+  except NameError:
+    return False
 
 
 def maybe_add_path(plist, path):
