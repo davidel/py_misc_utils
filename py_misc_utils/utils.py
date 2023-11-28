@@ -57,6 +57,7 @@ class _GlogFormatter(logging.Formatter):
 
   def __init__(self):
     logging.Formatter.__init__(self)
+    self._in_colab = os.getenv('COLAB_GPU', None) is not None
 
   def format(self, record):
     try:
@@ -64,12 +65,17 @@ class _GlogFormatter(logging.Formatter):
     except KeyError:
       level = '?'
 
+    if self._in_colab:
+      process = ''
+    else:
+      process = f'{record.process} ' if record.process else '???? '
+    
     date = time.localtime(record.created)
     date_usec = (record.created - int(record.created)) * 1e6
-    record_hdr = '%c%02d%02d %02d:%02d:%02d.%06d %s %s:%d] ' % (
+    record_hdr = '%c%02d%02d %02d:%02d:%02d.%06d %s%s:%d] ' % (
       level, date.tm_mon, date.tm_mday, date.tm_hour, date.tm_min,
       date.tm_sec, date_usec,
-      record.process if record.process is not None else '?????',
+      process,
       record.filename, record.lineno)
 
     lines = []
