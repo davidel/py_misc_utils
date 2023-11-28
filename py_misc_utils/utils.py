@@ -57,7 +57,6 @@ class _GlogFormatter(logging.Formatter):
 
   def __init__(self):
     logging.Formatter.__init__(self)
-    self._in_notebook = in_notebook()
 
   def format(self, record):
     try:
@@ -65,18 +64,13 @@ class _GlogFormatter(logging.Formatter):
     except KeyError:
       level = '?'
 
-    if self._in_notebook:
-      process = ''
-    else:
-      process = f'{record.process} ' if record.process else '???? '
-    
     date = time.localtime(record.created)
     date_usec = (record.created - int(record.created)) * 1e6
-    record_hdr = '%c%02d%02d %02d:%02d:%02d.%06d %s%s:%d] ' % (
+    record_hdr = '%c%02d%02d %02d:%02d:%02d.%06d %s %s:%d] ' % (
       level, date.tm_mon, date.tm_mday, date.tm_hour, date.tm_min,
       date.tm_sec, date_usec,
-      process,
-      record.filename, record.lineno)
+      record.process if record.process else '????',
+      record.filename if not record.filename.startswith('<ipython') else 'interactive', record.lineno)
 
     lines = []
     for ln in _format_message(record).split('\n'):
