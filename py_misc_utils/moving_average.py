@@ -1,4 +1,4 @@
-class MAvg(object):
+class MovingAverage(object):
 
   def __init__(self, factor):
     assert factor > 0.0 and factor < 1.0, f'{factor:.4e}'
