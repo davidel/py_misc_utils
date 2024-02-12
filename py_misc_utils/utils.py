@@ -503,11 +503,17 @@ def range_split(n, split, minsize, reverse=False):
   return tuple(reversed(rsplits)) if reverse else tuple(rsplits)
 
 
-def env(name, defval, vtype=None):
-  ev = os.getenv(name, None)
-  vtype = type(defval) if vtype is None else vtype
+def getenv(name, dtype=None, defval=None):
+  # os.getenv expects the default value to be a string, so cannot be passed in there.
+  env = os.getenv(name, None)
+  if env is None:
+    env = defval
+  if env is not None:
+    return dtype(env) if dtype is not None else env
 
-  return defval if ev is None else vtype(ev)
+
+def env(name, defval, vtype=None):
+  return getenv(name, dtype=vtype, defval=defval)
 
 
 MAJOR = 1
