@@ -161,6 +161,24 @@ def dmerge(*args):
   return mdict
 
 
+def dget(sdict, name, defval, dtype=None):
+  v = sdict.get(name, NONE)
+  if v is NONE:
+    return defval
+  if v is not None and dtype is not None:
+    v = dtype(v)
+
+  return v
+
+
+def get_property(obj, name, defval=None):
+  p = getattr(obj, name, NONE)
+  if p is NONE:
+    return defval
+
+  return p() if callable(p) else p
+
+
 def genhash(v):
   if isinstance(v, dict):
     vdata = []
@@ -705,4 +723,17 @@ def infer_np_dtype(dtypes):
         dtype = t
 
   return dtype if dtype is not None else np.float32
+
+
+def compute_shape(data):
+  sp = get_property(data, 'shape')
+  if sp is not None:
+    return tuple(sp)
+  shape = []
+  if hasattr(data, '__len__'):
+    shape.append(len(data))
+    if shape[0] > 0 and hasattr(data, '__getitem__'):
+      shape.extend(compute_shape(data[0]))
+
+  return tuple(shape)
 
