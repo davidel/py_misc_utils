@@ -737,3 +737,10 @@ def compute_shape(data):
 
   return tuple(shape)
 
+
+def maybe_stack_np_slices(slices, axis=0):
+  if slices and isinstance(slices[0], np.ndarray):
+    return np.stack(slices, axis=axis)
+
+  return slices
+
