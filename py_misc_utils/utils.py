@@ -419,12 +419,14 @@ def lindex(l, e, start=0, end=None):
 
 
 def as_sequence(v, t=tuple):
-  if isinstance(v, t):
-    return v
   if isinstance(t, (list, tuple)):
+    for st in t:
+      if isinstance(v, st):
+        return v
+
     return t[0]([v])
 
-  return t([v])
+  return v if isinstance(v, t) else t([v])
 
 
 class _ArgList(list):
@@ -457,6 +459,15 @@ def dict_rget(sdict, path, defval=None, sep='/'):
   return result
 
 
+def make_index_dict(vals):
+  return {v: i for i, v in enumerate(vals)}
+
+
+def append_index_dict(xlist, xdict, value):
+  xlist.append(value)
+  xdict[value] = len(xlist) - 1
+
+
 def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
   xenv = dict() if env is None else env
   if vals is not None or lookup_fn is not None:
@@ -486,6 +497,10 @@ def randseed(seed=None):
   np.random.seed(seed)
 
   return seed
+
+
+def shuffle(*args):
+  return random.sample(args, k=len(args))
 
 
 def sign_extend(value, nbits):
@@ -753,6 +768,22 @@ def maybe_stack_np_slices(slices, axis=0):
     return np.stack(slices, axis=axis)
 
   return slices
+
+
+def to_numpy(data):
+  if isinstance(data, np.ndarray):
+    return data
+  npfn = getattr(data, 'to_numpy')
+  if npfn is not None:
+    return npfn()
+  if isinstance(data, torch.Tensor):
+    return data.detach().cpu().numpy()
+
+  return np.array(data)
+
+
+def is_numeric(dtype):
+  return np.issubdtype(dtype, np.number)
 
 
 def bisect_right(x, key, hi, lo=0):
