@@ -183,6 +183,28 @@ def get_property(obj, name, defval=None):
   return p() if callable(p) else p
 
 
+def dict_subset(d, *keys):
+  subd = dict()
+  for k in keys:
+    v = d.get(k, NONE)
+    if v is not NONE:
+      subd[k] = v
+
+  return subd
+
+
+def dict_extract(d, prefix=None, rx=None):
+  if rx is None:
+    rx = f'{prefix}(.*)'
+  xd = dict()
+  for k, v in d.items():
+    m = re.match(rx, k)
+    if m:
+      xd[m.group(1)] = v
+
+  return xd
+
+
 def genhash(v):
   if isinstance(v, dict):
     vdata = []
@@ -444,6 +466,11 @@ def dict_add(ddict, name, value):
       ddict[name] = _ArgList(ivalue, value)
   else:
     ddict[name] = value
+
+
+def dict_update_append(d, **kwargs):
+  for k, v in kwargs.items():
+    dict_add(d, k, v)
 
 
 def dict_rget(sdict, path, defval=None, sep='/'):
