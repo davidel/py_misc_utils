@@ -2,6 +2,7 @@ import array
 import binascii
 import collections
 import copy
+import datetime
 import importlib.util
 import inspect
 import logging
@@ -17,6 +18,9 @@ import types
 import yaml
 
 import numpy as np
+
+from . import alog
+from . import assert_checks as tas
 
 
 class _None(object):
@@ -749,4 +753,43 @@ def maybe_stack_np_slices(slices, axis=0):
     return np.stack(slices, axis=axis)
 
   return slices
+
+
+def bisect_right(x, key, hi, lo=0):
+  tas.check_ge(lo, 0)
+  while lo < hi:
+    mid = (lo + hi) // 2
+    if x < key(mid):
+      hi = mid
+    else:
+      lo = mid + 1
+
+  return lo
+
+
+def bisect_left(x, key, hi, lo=0):
+  tas.check_ge(lo, 0)
+  while lo < hi:
+    mid = (lo + hi) // 2
+    if key(mid) < x:
+      lo = mid + 1
+    else:
+      hi = mid
+
+  return lo
+
+
+def run_async(fn):
+ thread = threading.Thread(target=fn, daemon=True)
+ thread.start()
+
+ return thread
+
+
+def sleep_until(date, msg=None):
+  now = datetime.datetime.now(tz=date.tzinfo)
+  if date > now:
+    if msg:
+      alog.info(msg)
+    time.sleep(date.timestamp() - now.timestamp())
 
