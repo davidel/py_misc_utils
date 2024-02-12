@@ -311,6 +311,20 @@ class CtxManager(object):
     return self._outfn(*exc)
 
 
+class StringTable(object):
+
+  def __init__(self):
+    self._tbl = dict()
+
+  def add(self, s):
+    x = self._tbl.get(s, None)
+    if x is None:
+      x = s
+      self._tbl[x] = x
+
+    return x
+
+
 class Obj(object):
 
   def __init__(self, **kwargs):
@@ -342,6 +356,18 @@ class Obj(object):
       ad[k] = v
 
     return ad
+
+
+def make_object(**kwargs):
+  return Obj(**kwargs)
+
+
+def make_object_recursive(**kwargs):
+  for k, v in kwargs.items():
+    if isinstance(v, dict):
+      kwargs[k] = make_object_recursive(**v)
+
+  return make_object(**kwargs)
 
 
 def sreplace(rex, data, mapfn, nmapfn=None, join=True):
@@ -660,4 +686,23 @@ def template_replace(st, vals=None, lookup_fn=None, delim=None):
 
 def strip_split(svalue, delim, maxsplit=-1):
   return [x.strip() for x in svalue.split(delim, maxsplit=maxsplit)]
+
+
+def infer_np_dtype(dtypes):
+  dtype = None
+  for t in dtypes:
+    if dtype is None or t == np.float64:
+      dtype = t
+    elif t == np.float32:
+      if dtype.itemsize > t.itemsize:
+        dtype = np.float64
+      else:
+        dtype = t
+    elif dtype != np.float64:
+      if dtype == np.float32 and t.itemsize > dtype.itemsize:
+        dtype = np.float64
+      elif t.itemsize > dtype.itemsize:
+        dtype = t
+
+  return dtype if dtype is not None else np.float32
 
