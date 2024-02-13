@@ -15,6 +15,7 @@ import struct
 import sys
 import threading
 import time
+import traceback
 import types
 import yaml
 
@@ -1038,4 +1039,16 @@ def to_bool(v):
   tas.check_is_not_none(bv, msg=f'Unable to convert to bool: {v}')
 
   return bv
+
+
+def xwrap_fn(fn, *args, **kwargs):
+
+  def fwrap():
+    try:
+      return fn(*args, **kwargs)
+    except Exception as e:
+      tb = traceback.format_exc()
+      alog.error(f'Exception while running wrapped function: {e}\n{tb}')
+
+  return fwrap
 
