@@ -853,6 +853,40 @@ def round_up(v, step):
   return ((v + step - 1) // step) * step
 
 
+def scale_data(data, base_data, scale):
+  return ((data - base_data) / base_data) * scale
+
+
+def moving_average(data, window, include_current=True):
+  weights = np.ones(window, dtype=data.dtype) / window
+  pdata = np.pad(data, (window, window), mode='edge')
+  cdata = np.convolve(pdata, weights, mode='valid')
+  base = 1 if include_current else 0
+
+  return cdata[base: base + len(data)]
+
+
+def rolling_window(a, window):
+  shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+  strides = a.strides + (a.strides[-1],)
+
+  return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
+
+def shift(data, pos=1):
+  result = np.empty_like(data)
+  if pos > 0:
+    result[: pos] = data[0]
+    result[pos:] = data[: -pos]
+  elif pos < 0:
+    result[pos:] = data[-1]
+    result[: pos] = data[-pos:]
+  else:
+    result[:] = data
+
+  return result
+
+
 def checked_remove(l, o):
   try:
     l.remove(o)
