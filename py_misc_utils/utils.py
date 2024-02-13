@@ -989,9 +989,11 @@ _BOOLS = {
   'True': True,
   'true': True,
   '1': True,
+  1: True,
   'False': False,
   'false': False,
   '0': False,
+  0: False,
 }
 
 def to_bool(v):
