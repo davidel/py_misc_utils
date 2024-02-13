@@ -306,9 +306,7 @@ def load_config(cfg_file=None, **kwargs):
 
 
 def fatal(msg, exc=RuntimeError):
-  logging.error(msg)
-
-  raise exc(msg)
+  alog.xraise(exc, msg)
 
 
 def assert_instance(msg, t, ta):
