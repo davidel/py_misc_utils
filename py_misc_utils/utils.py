@@ -839,6 +839,10 @@ def numel(t):
   return np.prod(sp) if sp is not None else len(t)
 
 
+def round_up(v, step):
+  return ((v + step - 1) // step) * step
+
+
 def bisect_right(x, key, hi, lo=0):
   tas.check_ge(lo, 0)
   while lo < hi:
@@ -960,4 +964,23 @@ def parse_dict(data, ktype=str, vtype=None):
     ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
 
   return ma_dict
+
+
+_BOOLS = {
+  'True': True,
+  'true': True,
+  '1': True,
+  'False': False,
+  'false': False,
+  '0': False,
+}
+
+def to_bool(v):
+  if isinstance(v, bool):
+    return v
+
+  bv = _BOOLS.get(v, None)
+  tas.check_is_not_none(bv, msg=f'Unable to convert to bool: {v}')
+
+  return bv
 
