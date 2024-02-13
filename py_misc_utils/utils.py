@@ -811,6 +811,12 @@ def is_numeric(dtype):
   return np.issubdtype(dtype, np.number)
 
 
+def numel(t):
+  sp = get_property(t, 'shape')
+
+  return np.prod(sp) if sp is not None else len(t)
+
+
 def bisect_right(x, key, hi, lo=0):
   tas.check_ge(lo, 0)
   while lo < hi:
