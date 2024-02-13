@@ -839,8 +839,27 @@ def numel(t):
   return np.prod(sp) if sp is not None else len(t)
 
 
+def is_sorted(data, descending=False):
+  if not isinstance(data, np.ndarray):
+    data = np.array(data)
+
+  if descending:
+    return np.all(data[:-1] >= data[1:])
+
+  return np.all(data[:-1] <= data[1:])
+
+
 def round_up(v, step):
   return ((v + step - 1) // step) * step
+
+
+def checked_remove(l, o):
+  try:
+    l.remove(o)
+  except ValueError:
+    return False
+
+  return True
 
 
 def bisect_right(x, key, hi, lo=0):
