@@ -5,6 +5,7 @@ import copy
 import datetime
 import importlib.util
 import inspect
+import json
 import logging
 import os
 import random
@@ -305,6 +306,23 @@ def load_config(cfg_file=None, **kwargs):
   return cfg
 
 
+def parse_config(cfg, **kwargs):
+  cfgd = dict()
+  if os.path.exists(cfg):
+    with open(cfg, mode='r') as fp:
+      cfgd = yaml.safe_load(fp)
+  elif cfg.startswith('{'):
+    cfgd = json.loads(cfg)
+  else:
+    cfgd = parse_dict(cfg)
+
+  for k, v in kwargs:
+    if v is not None:
+      cfgd[k] = v
+
+  return cfgd
+
+
 def fatal(msg, exc=RuntimeError):
   alog.xraise(exc, msg)
 
@@ -503,6 +521,10 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
   exec(xcode, xenv)
 
   return tuple(xenv[s] for s in as_sequence(syms))
+
+
+def unpack_n(l, n, defval=None):
+  return tuple(l[:n] if len(l) >= n else l + [defval] * (n - len(l)))
 
 
 def randseed(seed=None):
@@ -854,4 +876,88 @@ def sleep_until(date, msg=None):
     if msg:
       alog.info(msg)
     time.sleep(date.timestamp() - now.timestamp())
+
+
+_STD_SPLIT_SEQ = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
+
+def split(sdata, sc, sseq=_STD_SPLIT_SEQ, esc='\\'):
+  oc, cc, count = None, None, 0
+  seq, parts = [], []
+  for c in sdata:
+    if seq and seq[-1] == esc:
+      seq[-1] = c
+    elif count == 0:
+      if c == sc:
+        parts.append(''.join(seq))
+        seq = []
+      else:
+        cc = sseq.get(c, None)
+        if cc is not None:
+          oc = c if c != cc else None
+          count += 1
+        seq.append(c)
+    else:
+      if c == cc:
+        count -= 1
+      elif c == oc:
+        count += 1
+      seq.append(c)
+
+  if seq:
+    parts.append(''.join(seq))
+
+  return tuple(parts)
+
+
+def infer_value(v, vtype=None):
+  if vtype is not None:
+    return vtype(v)
+  if re.match(r'[+-]?[1-9]\d*$', v):
+    return int(v)
+  if re.match(r'0x[0-9a-fA-F]+$', v):
+    return int(v, 16)
+  if re.match(r'0o\d+$', v):
+    return int(v, 8)
+
+  #    [-+]? # optional sign
+  #    (?:
+  #      (?: \d* \. \d+ ) # .1 .12 .123 etc 9.1 etc 98.1 etc
+  #      |
+  #      (?: \d+ \.? ) # 1. 12. 123. etc 1 12 123 etc
+  #    )
+  #    (?: [Ee] [+-]? \d+ ) ? # optional exponent part
+  float_rx = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?$'
+  if re.match(float_rx, v):
+    return float(v)
+
+  m = re.match(r'"(.*)"$', v) or re.match(r"'(.*)'$", v)
+  if m:
+    return m.group(1)
+  if v == 'True':
+    return True
+  if v == 'False':
+    return False
+
+  m = re.match(r'\[(.*)\]$', v) or re.match(r'\((.*)\)$', v)
+  if m:
+    values = []
+    for part in split(m.group(1), ','):
+      values.append(infer_value(part.strip()))
+
+    return tuple(values) if v.startswith('(') else values
+
+  return v if v != 'None' else None
+
+
+def split_unquote(data, sep, maxsplit=-1):
+  return [uparse.unquote(x) for x in data.split(sep, maxsplit=maxsplit)]
+
+
+def parse_dict(data, ktype=str, vtype=None):
+  ma_dict = dict()
+  for part in split(data, ','):
+    name, value = [x.strip() for x in split_unquote(part, '=', maxsplit=1)]
+    ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
+
+  return ma_dict
 
