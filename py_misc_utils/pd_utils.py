@@ -9,9 +9,9 @@ from . import utils as pyu
 
 
 def get_df_columns(df, discards=None):
-  dset = set(discards) if discards else None
+  dset = set(discards or [])
 
-  return [c for c in df.columns if not dset or c not in dset]
+  return [c for c in df.columns if c not in dset]
 
 
 def get_typed_columns(df, type_fn, discards=None):
@@ -87,4 +87,55 @@ def load_dataframe(path, **kwargs):
                     args=args)
   else:
     alog.xraise(RuntimeError, f'Unknown extension: {ext}')
+
+
+def column_or_index(df, name, numpy=True):
+  data = df.get(name, None)
+  if data is None and df.index.name == name:
+    data = df.index
+  if data is not None:
+    return data.to_numpy() if numpy else data
+
+
+def concat_dataframes(files, **kwargs):
+  dfs = []
+  for path in files:
+    df = load_dataframe(path, **kwargs)
+    dfs.append(df)
+
+  return pd.concat(dfs, **kwargs) if dfs else None
+
+
+def get_dataframe_groups(df, cols, cols_transforms=None):
+  # Pandas groupby() is extremely slow when there are many groups as it builds
+  # a DataFrame for each group. This simply collects the rows associated with each
+  # tuple values representing the grouped columns.
+  # Row numbers must be strictly ascending within each group, do NOT change that!
+  groups = collections.defaultdict(lambda: array.array('L'))
+  if cols_transforms:
+    tcols = [(df[c], cols_transforms.get(c, lambda x: x)) for c in cols]
+    for i in range(0, len(df)):
+      k = tuple([f(d[i]) for d, f in tcols])
+      groups[k].append(i)
+  else:
+    cdata = [df[c] for c in cols]
+    for i in range(0, len(df)):
+      k = tuple([d[i] for d in cdata])
+      groups[k].append(i)
+
+  return groups
+
+
+def limit_per_group(df, cols, limit):
+  mask = np.full(len(df), False)
+
+  groups = get_dataframe_groups(df, cols)
+  for k, g in groups.items():
+    if limit > 0:
+      rows = g[: limit]
+    else:
+      rows = g[limit: ]
+    mask[rows] = True
+
+  return df[mask]
 
