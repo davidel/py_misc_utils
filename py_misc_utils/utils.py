@@ -125,6 +125,47 @@ def classof(obj):
   return obj if inspect.isclass(obj) else getattr(obj, '__class__', None)
 
 
+def infer_str(v):
+  return infer_value(v) if isinstance(v, str) else v
+
+
+def get_fn_kwargs(args, fn, prefix=None, roffset=None):
+  aspec = inspect.getfullargspec(fn)
+
+  sdefaults = aspec.defaults or ()
+  sargs = aspec.args or ()
+  ndelta = len(sargs) - len(sdefaults)
+  fnargs = dict()
+  for i, an in enumerate(sargs):
+    if i != 0 or an != 'self':
+      nn = f'{prefix}.{an}' if prefix else an
+      di = i - ndelta
+      if di >= 0:
+        d = sdefaults[di]
+        if isinstance(d, (int, float, str)):
+          dtype = type(d)
+        else:
+          dtype = infer_str
+        fnargs[an] = dget(args, nn, d, dtype=dtype)
+      elif roffset is not None and i >= roffset:
+        tas.check(nn in args, msg=f'The "{an}" argument must be present as "{nn}"')
+        fnargs[an] = args[nn]
+
+  if aspec.kwonlyargs:
+    for an in aspec.kwonlyargs:
+      nn = f'{prefix}.{an}' if prefix else an
+      d = aspec.kwonlydefaults.get(an, NONE)
+      if isinstance(d, (int, float, str)):
+        dtype = type(d)
+      else:
+        dtype = infer_str
+      argval = dget(args, nn, d, dtype=dtype)
+      if argval is not NONE:
+        fnargs[an] = argval
+
+  return fnargs
+
+
 def _stri(l, d):
   s = d.get(id(l), NONE)
   if s is None:
@@ -176,10 +217,8 @@ def dget(sdict, name, defval, dtype=None):
   v = sdict.get(name, NONE)
   if v is NONE:
     return defval
-  if v is not None and dtype is not None:
-    v = dtype(v)
 
-  return v
+  return dtype(v) if v is not None and dtype is not None else v
 
 
 def get_property(obj, name, defval=None):
@@ -934,10 +973,10 @@ def bisect_left(x, key, hi, lo=0):
 
 
 def run_async(fn):
- thread = threading.Thread(target=fn, daemon=True)
- thread.start()
+  thread = threading.Thread(target=fn, daemon=True)
+  thread.start()
 
- return thread
+  return thread
 
 
 def sleep_until(date, msg=None):
