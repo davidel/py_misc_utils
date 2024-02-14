@@ -99,6 +99,12 @@ def column_or_index(df, name, numpy=True):
     return data.to_numpy() if numpy else data
 
 
+def get_columns_index(df):
+  cols = df.columns.tolist()
+
+  return pyu.make_index_dict(cols), cols
+
+
 def concat_dataframes(files, **kwargs):
   dfs = []
   for path in files:

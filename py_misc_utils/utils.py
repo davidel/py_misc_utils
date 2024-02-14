@@ -1064,3 +1064,9 @@ def xwrap_fn(fn, *args, **kwargs):
 
   return fwrap
 
+
+def enumerate_files(path, matcher, fullpath=False):
+  for fname in sorted(os.listdir(path)):
+    if matcher(fname):
+      yield fname if not fullpath else os.path.join(path, fname)
+
