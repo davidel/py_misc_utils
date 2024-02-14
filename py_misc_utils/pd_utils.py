@@ -1,3 +1,4 @@
+import array
 import collections
 import os
 
