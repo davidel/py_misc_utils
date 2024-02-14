@@ -141,3 +141,14 @@ def limit_per_group(df, cols, limit):
 
   return df[mask]
 
+
+def dataframe_column_rewrite(df, name, fn):
+  data = df.get(name, None)
+  if data is not None:
+    df[name] = fn(data.to_numpy())
+  elif df.index.name == name:
+    nvalues = fn(df.index.to_numpy())
+    df.index = type(df.index)(data=nvalues, name=df.index.name)
+  else:
+    alog.xraise(RuntimeError, f'No column or index named "{name}"')
+

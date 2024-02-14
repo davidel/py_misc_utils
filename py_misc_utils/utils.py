@@ -462,6 +462,13 @@ def lindex(l, e, start=0, end=None):
     return -1
 
 
+def idx_expand(data, idx, filler=None):
+  if idx >= len(data):
+    data = data + [filler] * (idx + 1 - len(data))
+
+  return data
+
+
 def as_sequence(v, t=tuple):
   if isinstance(t, (list, tuple)):
     for st in t:
