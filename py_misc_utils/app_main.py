@@ -12,7 +12,7 @@ def _cleanup():
 
 def _main(parser, mainfn, args=None, setupfn=None):
   if setupfn is not None:
-    setupfn(args)
+    setupfn(parser, args)
   alog.add_logging_options(parser)
 
   parsed_args = parser.parse_args(args=args)
