@@ -830,25 +830,6 @@ def strip_split(svalue, delim, maxsplit=-1):
   return [x.strip() for x in svalue.split(delim, maxsplit=maxsplit)]
 
 
-def infer_np_dtype(dtypes):
-  dtype = None
-  for t in dtypes:
-    if dtype is None or t == np.float64:
-      dtype = t
-    elif t == np.float32:
-      if dtype.itemsize > t.itemsize:
-        dtype = np.float64
-      else:
-        dtype = t
-    elif dtype != np.float64:
-      if dtype == np.float32 and t.itemsize > dtype.itemsize:
-        dtype = np.float64
-      elif t.itemsize > dtype.itemsize:
-        dtype = t
-
-  return dtype if dtype is not None else np.float32
-
-
 def compute_shape(data):
   sp = get_property(data, 'shape')
   if sp is not None:
@@ -860,29 +841,6 @@ def compute_shape(data):
       shape.extend(compute_shape(data[0]))
 
   return tuple(shape)
-
-
-def maybe_stack_np_slices(slices, axis=0):
-  if slices and isinstance(slices[0], np.ndarray):
-    return np.stack(slices, axis=axis)
-
-  return slices
-
-
-def to_numpy(data):
-  if isinstance(data, np.ndarray):
-    return data
-  npfn = getattr(data, 'to_numpy')
-  if npfn is not None:
-    return npfn()
-  if isinstance(data, torch.Tensor):
-    return data.detach().cpu().numpy()
-
-  return np.array(data)
-
-
-def is_numeric(dtype):
-  return np.issubdtype(dtype, np.number)
 
 
 def numel(t):
@@ -907,36 +865,6 @@ def round_up(v, step):
 
 def scale_data(data, base_data, scale):
   return ((data - base_data) / base_data) * scale
-
-
-def moving_average(data, window, include_current=True):
-  weights = np.ones(window, dtype=data.dtype) / window
-  pdata = np.pad(data, (window, window), mode='edge')
-  cdata = np.convolve(pdata, weights, mode='valid')
-  base = 1 if include_current else 0
-
-  return cdata[base: base + len(data)]
-
-
-def rolling_window(a, window):
-  shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-  strides = a.strides + (a.strides[-1],)
-
-  return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-
-
-def shift(data, pos=1):
-  result = np.empty_like(data)
-  if pos > 0:
-    result[: pos] = data[0]
-    result[pos:] = data[: -pos]
-  elif pos < 0:
-    result[pos:] = data[-1]
-    result[: pos] = data[-pos:]
-  else:
-    result[:] = data
-
-  return result
 
 
 def checked_remove(l, o):
