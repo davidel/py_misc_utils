@@ -10,7 +10,9 @@ def _cleanup():
   gc.collect()
 
 
-def _main(parser, mainfn, args=None):
+def _main(parser, mainfn, args=None, setupfn=None):
+  if setupfn is not None:
+    setupfn(args)
   alog.add_logging_options(parser)
 
   parsed_args = parser.parse_args(args=args)
@@ -19,9 +21,9 @@ def _main(parser, mainfn, args=None):
   mainfn(parsed_args)
 
 
-def main(parser, mainfn, args=None):
+def main(parser, mainfn, args=None, setupfn=None):
   try:
-    _main(parser, mainfn, args=args)
+    _main(parser, mainfn, args=args, setupfn=setupfn)
   except Exception as e:
     alog.exception(e, exmsg=f'Exception while running main function')
     raise
