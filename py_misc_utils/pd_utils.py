@@ -1,6 +1,7 @@
 import array
 import collections
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,17 @@ def get_typed_columns(df, type_fn, discards=None):
   for c in get_df_columns(df, discards=discards):
     if type_fn(df[c].dtype):
       cols.append(c)
+
+  return cols
+
+
+def re_select_columns(df, re_cols):
+  cols = []
+  for c in df.columns:
+    for rc in re_cols:
+      if re.match(rc, c):
+        cols.append(c)
+        break
 
   return cols
 
@@ -157,4 +169,24 @@ def dataframe_column_rewrite(df, name, fn):
     df.index = type(df.index)(data=nvalues, name=df.index.name)
   else:
     alog.xraise(RuntimeError, f'No column or index named "{name}"')
+
+
+def correlate(df, col, top_n=None):
+  ccorr = df.corrwith(df[col])
+  scorr = ccorr.sort_values(key=lambda x: abs(x), ascending=False)
+  top_n = len(scorr) if top_n is None else min(top_n, len(scorr))
+
+  return tuple([(scorr.index[i], scorr[i]) for i in range(0, top_n)])
+
+
+def type_convert_dataframe(df, types):
+  # Pandas DataFrame astype() doe not have an 'inplace' argument.
+  for c, t in types.items():
+    df[c] = df[c].astype(t)
+
+  return df
+
+
+def dataframe_rows_select(df, indices):
+  return df.loc[df.index[indices]]
 
