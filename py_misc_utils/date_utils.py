@@ -6,6 +6,8 @@ import dateutil.parser
 import numpy as np
 import pandas as pd
 
+from . import assert_checks as tas
+
 
 def make_datetime_from_epoch(s, tz=None):
   ds = pd.to_datetime(s, unit='s', origin='unix', utc=True)
