@@ -1070,3 +1070,11 @@ def enumerate_files(path, matcher, fullpath=False):
     if matcher(fname):
       yield fname if not fullpath else os.path.join(path, fname)
 
+
+def add_bool_argument(parser, name, defval, help=None):
+  parser.add_argument(f'--{name}', dest=name, action='store_true',
+                      help=f'Enable {help}' if help else None)
+  parser.add_argument(f'--no-{name}', dest=name, action='store_false',
+                      help=f'Disable {help}' if help else None)
+  parser.set_defaults(**{name: defval})
+

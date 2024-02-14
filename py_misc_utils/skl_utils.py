@@ -122,3 +122,39 @@ class TransformPipeline(object):
 
     return tx
 
+
+def fit(m, x, y, **kwargs):
+  shape = y.shape
+  # Some SciKit Learn models (ie. KNeighborsClassifier/KNeighborsRegressor) although
+  # supporting multi-output targets, insist on special casing the 1-output case
+  # requiring the 1D (N,) vector instead of a (N, 1) tensor.
+  if len(shape) == 2 and shape[-1] == 1:
+    y = np.squeeze(pyu.to_numpy(y), axis=-1)
+
+  return m.fit(x, y, **kwargs)
+
+
+def predict(m, x, **kwargs):
+  y = m.predict(x, **kwargs)
+
+  # Some SciKit Learn models (ie. KNeighborsClassifier/KNeighborsRegressor) although
+  # supporting multi-output targets, insist on special casing the 1-output case
+  # emitting 1D (N,) vectors instead of a (N, 1) tensors.
+  return y if y.ndim > 1 else y.reshape(-1, 1)
+
+
+def predict_proba(m, x, classes=None):
+
+  def extract_probs(p, cls):
+    preds = [p[:, c].reshape(-1, 1) for c in cls]
+    return np.concatenate(preds, axis=-1)
+
+  probs = m.predict_proba(x)
+  if classes is None:
+    return probs
+
+  if isinstance(probs, (list, tuple)):
+    return [extract_probs(p, classes) for p in probs]
+
+  return extract_probs(probs, classes)
+
