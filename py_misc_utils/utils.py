@@ -8,6 +8,7 @@ import inspect
 import json
 import logging
 import os
+import pickle
 import random
 import re
 import string
@@ -30,6 +31,10 @@ class _None(object):
 
 
 NONE = _None()
+
+
+def pickle_proto():
+  return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
 
 
 def maybe_add_path(plist, path):
