@@ -18,7 +18,11 @@ class FileOverwrite(object):
   def __exit__(self, *exc):
     self._fd.close()
 
-    os.replace(self._fd.name, self._path)
+    try:
+      os.replace(self._fd.name, self._path)
+    except:
+      os.remove(self._fd.name)
+      raise
 
     return False
 
