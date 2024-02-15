@@ -1056,7 +1056,7 @@ def state_update(path, **kwargs):
 
   if kwargs:
     state.update(kwargs)
-    with fov.FileOverwrite(path, mode='wb') as f:
+    with fow.FileOverwrite(path, mode='wb') as f:
       pickle.dump(state, f, protocol=pickle_proto())
 
   return state
