@@ -1041,9 +1041,9 @@ def enumerate_files(path, matcher, fullpath=False):
 
 def add_bool_argument(parser, name, defval, help=None):
   parser.add_argument(f'--{name}', dest=name, action='store_true',
-                      help=f'Enable {help}' if help else None)
+                      help=f'Enable {help or name}' if help else None)
   parser.add_argument(f'--no-{name}', dest=name, action='store_false',
-                      help=f'Disable {help}' if help else None)
+                      help=f'Disable {help or name}' if help else None)
   parser.set_defaults(**{name: defval})
 
 
