@@ -24,6 +24,7 @@ import numpy as np
 
 from . import alog
 from . import assert_checks as tas
+from . import file_overwrite as fow
 
 
 class _None(object):
@@ -1044,4 +1045,19 @@ def add_bool_argument(parser, name, defval, help=None):
   parser.add_argument(f'--no-{name}', dest=name, action='store_false',
                       help=f'Disable {help}' if help else None)
   parser.set_defaults(**{name: defval})
+
+
+def state_update(path, **kwargs):
+  if os.path.isfile(path):
+    with open(path, mode='rb') as f:
+      state = pickle.load(f)
+  else:
+    state = dict()
+
+  if kwargs:
+    state.update(kwargs)
+    with fov.FileOverwrite(path, mode='wb') as f:
+      pickle.dump(state, f, protocol=pickle_proto())
+
+  return state
 
