@@ -111,6 +111,19 @@ def column_or_index(df, name, numpy=True):
     return data.to_numpy() if numpy else data
 
 
+def columns_transform(df, cols, tfn):
+  for c in cols:
+    cv = df.get(c, None)
+    if cv is not None:
+      df[c] = tfn(c, cv, index=False)
+    elif df.index.name == c:
+      df.index = pd.Index(data=tfn(c, df.index, index=True), name=df.index.name)
+    else:
+      alog.xraise(RuntimeError, f'Unable to find column or index named "{c}"')
+
+  return df
+
+
 def get_columns_index(df):
   cols = df.columns.tolist()
 
