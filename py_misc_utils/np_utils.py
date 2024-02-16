@@ -124,3 +124,10 @@ def shift(data, pos=1):
 
   return result
 
+
+def complement_indices(indices, size):
+  all_indices = np.full(size, 1, dtype=np.int8)
+  all_indices[indices] = 0
+
+  return np.flatnonzero(all_indices)
+
