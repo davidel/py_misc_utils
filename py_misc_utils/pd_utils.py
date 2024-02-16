@@ -12,7 +12,7 @@ from . import utils as pyu
 
 
 def get_df_columns(df, discards=None):
-  dset = set(discards or [])
+  dset = discards or {}
 
   return [c for c in df.columns if c not in dset]
 
