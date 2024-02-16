@@ -203,3 +203,12 @@ def type_convert_dataframe(df, types):
 def dataframe_rows_select(df, indices):
   return df.loc[df.index[indices]]
 
+
+def sorted_index(df, col):
+  if df.index.name == col:
+    return df.sort_values(col)
+
+  sdf = df.sort_values(col, ignore_index=True)
+
+  return sdf.set_index(col)
+
