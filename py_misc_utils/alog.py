@@ -29,9 +29,6 @@ _HAS_STACKLEVEL = sys.version_info >= (3, 8)
 
 class Formatter(logging.Formatter):
 
-  def __init__(self):
-    super(Formatter, self).__init__()
-
   def format(self, r):
     hdr = self.make_header(r)
     msg = (r.msg % r.args) if r.args else r.msg

@@ -7,7 +7,7 @@ import numpy as np
 class TransformArray(collections.abc.Sequence):
 
   def __init__(self, data, transforms):
-    super(TransformArray, self).__init__()
+    super().__init__()
     self._data = data
     self._transforms = tuple(transforms)
     self._shape = ut.compute_shape(data)

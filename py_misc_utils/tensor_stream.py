@@ -220,7 +220,7 @@ class Reader(object):
 class StreamArray(collections.abc.Sequence):
 
   def __init__(self, reader, streamno):
-    super(StreamArray, self).__init__()
+    super().__init__()
     self._reader = reader
     self._streamno = streamno
     self._shape = reader.shape[streamno]
@@ -265,7 +265,7 @@ class StreamArray(collections.abc.Sequence):
 class Dataset(data_utils.Dataset):
 
   def __init__(self, path, transforms=None):
-    super(Dataset, self).__init__()
+    super().__init__()
     self._reader = Reader(path, transforms=transforms)
 
   @property

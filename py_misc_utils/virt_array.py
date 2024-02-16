@@ -16,7 +16,7 @@ def _compute_shape(data, indices):
 class VirtArray(collections.abc.Sequence):
 
   def __init__(self, data, indices):
-    super(VirtArray, self).__init__()
+    super().__init__()
     self._data = data
     self._indices = indices if isinstance(indices, np.ndarray) else np.array(indices)
     self._shape = _compute_shape(data, indices)
