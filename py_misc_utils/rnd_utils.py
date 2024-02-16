@@ -5,37 +5,46 @@ import numpy as np
 import torch
 
 
-_LOCK = threading.Lock()
-_TORCH_RNDS = dict()
-_NP_RNDGEN = None
 _SEED = 153934223
+_TLS = threading.local()
+
+
+def _get_tls():
+  if not getattr(_TLS, 'init', False):
+    _TLS.torch_rnds = dict()
+    _TLS.np_rdngen = None
+    _TLS.init = True
+
+  return _TLS
 
 
 def manual_seed(seed):
-  global _NP_RNDGEN, _SEED
+  global _SEED
 
-  with _LOCK:
-    _SEED = seed
-    for rndg in _TORCH_RNDS.values():
-      rndg.manual_seed(seed)
-    torch.manual_seed(seed)
+  _SEED = seed
+  tls = _get_tls()
 
-    _NP_RNDGEN = np.random.default_rng(seed=seed)
-    np.random.seed(seed)
+  for rndg in tls.torch_rnds.values():
+    rndg.manual_seed(seed)
+  torch.manual_seed(seed)
 
-    random.seed(seed)
+  tls.np_rdngen = np.random.default_rng(seed=seed)
+  np.random.seed(seed)
+
+  random.seed(seed)
 
 
 def torch_gen(device='cpu'):
-  tdevice = torch.device(device)
-  with _LOCK:
-    rndg = _TORCH_RNDS.get(tdevice, None)
-    if rndg is None:
-      rndg = torch.Generator()
-      rndg.manual_seed(_SEED)
-      _TORCH_RNDS[tdevice] = rndg
+  tls = _get_tls()
 
-    return rndg
+  tdevice = torch.device(device)
+  rndg = tls.torch_rnds.get(tdevice, None)
+  if rndg is None:
+    rndg = torch.Generator()
+    rndg.manual_seed(_SEED)
+    tls.torch_rnds[tdevice] = rndg
+
+  return rndg
 
 
 def torch_randn(*args, **kwargs):
@@ -46,11 +55,10 @@ def torch_randn(*args, **kwargs):
 
 
 def numpy_gen():
-  global _NP_RNDGEN
+  tls = _get_tls()
 
-  with _LOCK:
-    if _NP_RNDGEN is None:
-      _NP_RNDGEN = np.random.default_rng(seed=_SEED)
+  if tls.np_rdngen is None:
+    tls.np_rdngen = np.random.default_rng(seed=_SEED)
 
-    return _NP_RNDGEN
+  return tls.np_rdngen
 
