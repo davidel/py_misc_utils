@@ -2,7 +2,7 @@ import os
 import tempfile
 
 
-class FileOverwrite(object):
+class FileOverwrite:
 
   def __init__(self, path, mode='w'):
     self._path = path

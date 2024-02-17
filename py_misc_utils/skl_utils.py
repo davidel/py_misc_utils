@@ -13,7 +13,7 @@ from . import assert_checks as tas
 from . import utils as pyu
 
 
-class Quantizer(object):
+class Quantizer:
 
   def __init__(self, nbins=3, std_k=2.0, eps=1e-6):
     self._nbins = nbins
@@ -70,7 +70,7 @@ def parse_transform(trs_spec):
   return trs_fn(**spec_cfg)
 
 
-class TransformPipeline(object):
+class TransformPipeline:
 
   def __init__(self, transformers):
     self._transformers = []
@@ -168,7 +168,7 @@ def _get_weights(dist, weights):
     # if user attempts to classify a point that was zero distance from one
     # or more training points, those training points are weighted as 1.0
     # and the other points as 0.0
-    if dist.dtype is np.dtype(object):
+    if dist.dtype is np.dtype:
       for point_dist_i, point_dist in enumerate(dist):
         # check if point_dist is iterable
         # (ex: RadiusNeighborClassifier.predict may set an element of
@@ -190,7 +190,7 @@ def _get_weights(dist, weights):
     alog.xraise(ValueError, f'Unrecognized "weights" value: {weights}')
 
 
-class WeighedKNNClassifier(object):
+class WeighedKNNClassifier:
 
   def __init__(self, **kwargs):
     self._sample_weight = None

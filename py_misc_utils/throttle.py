@@ -2,8 +2,8 @@ import threading
 import time
 
 
-class Throttle(object):
-  
+class Throttle:
+
   def __init__(self, xsec_limit):
     self._secsx = 1.0 / xsec_limit if xsec_limit > 0 else None
     self._last = None

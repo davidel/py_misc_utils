@@ -1,4 +1,5 @@
-class MovingAverage(object):
+
+class MovingAverage:
 
   def __init__(self, factor):
     assert factor > 0.0 and factor < 1.0, f'{factor:.4e}'
@@ -11,3 +12,4 @@ class MovingAverage(object):
   @property
   def value(self):
     return self._value
+

@@ -27,7 +27,7 @@ from . import assert_checks as tas
 from . import file_overwrite as fow
 
 
-class _None(object):
+class _None:
   pass
 
 
@@ -309,7 +309,7 @@ def equal_signature(a, b, subcls=True):
 
 _TLS = threading.local()
 
-class Context(object):
+class Context:
 
   def __init__(self, name, obj):
     self._name = name
@@ -404,7 +404,7 @@ def new_with(obj, **kwargs):
   return nobj
 
 
-class CtxManager(object):
+class CtxManager:
 
   def __init__(self, infn, outfn):
     self._infn = infn
@@ -417,7 +417,7 @@ class CtxManager(object):
     return self._outfn(*exc)
 
 
-class StringTable(object):
+class StringTable:
 
   def __init__(self):
     self._tbl = dict()
@@ -431,7 +431,7 @@ class StringTable(object):
     return x
 
 
-class Obj(object):
+class Obj:
 
   def __init__(self, **kwargs):
     for k, v in kwargs.items():
@@ -768,7 +768,7 @@ def enum_set(l, s, present):
       yield x
 
 
-class RevGen(object):
+class RevGen:
 
   def __init__(self):
     self._revdb = dict()
@@ -788,7 +788,7 @@ class RevGen(object):
     return f'{name}_{ver}' if ver != 0 or not shortzero else name
 
 
-class _FnDict(object):
+class _FnDict:
 
   def __init__(self, fn):
     self._fn = fn

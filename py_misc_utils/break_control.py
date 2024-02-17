@@ -13,7 +13,7 @@ def _handler(sig, ctx):
       h.trigger()
 
 
-class BreakControl(object):
+class BreakControl:
 
   def __init__(self):
     self._hit = False

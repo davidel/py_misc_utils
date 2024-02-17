@@ -20,7 +20,7 @@ def _fast_extend(dest, src):
     dest.extend(src)
 
 
-class NamedArray(object):
+class NamedArray:
 
   def __init__(self, names, fmt):
     tas.check_eq(len(names), len(fmt), msg=f'Mismatching names and format sizes: {names} vs "{fmt}"')

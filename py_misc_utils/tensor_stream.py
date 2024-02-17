@@ -81,7 +81,7 @@ def get_shapes(tensors):
   return tuple(shapes)
 
 
-class Writer(object):
+class Writer:
 
   def __init__(self, path, chunk_size=100 * 1024 * 1024):
     if os.path.exists(path):
@@ -132,7 +132,7 @@ class Writer(object):
 
 
 
-class Reader(object):
+class Reader:
 
   def __init__(self, path, transforms=None):
     if not os.path.isdir(path):

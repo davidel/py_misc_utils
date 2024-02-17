@@ -12,7 +12,7 @@ Event = collections.namedtuple(
     'time, sequence, ref, action, argument, kwargs')
 
 
-class Scheduler(object):
+class Scheduler:
 
   def __init__(self, timefn=time.time, max_workers=None, name='Scheduler'):
     self._timefn = timefn

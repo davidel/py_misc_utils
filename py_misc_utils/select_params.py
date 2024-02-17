@@ -8,7 +8,7 @@ import numpy as np
 from . import alog
 
 
-class _Point(object):
+class _Point:
 
   def __init__(self, pid, idx):
     self.pid = pid
