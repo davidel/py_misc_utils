@@ -8,6 +8,7 @@ import pandas as pd
 
 from . import alog
 from . import assert_checks as tas
+from . import np_utils as pyn
 from . import utils as pyu
 
 
@@ -53,7 +54,7 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
     numeric_cols = {c: np.dtype(t) for c, t in dtype.items()}
   else:
     df_test = pd.read_csv(path, nrows=rows_sample, **args)
-    numeric_cols = {c: dtype for c in get_typed_columns(df_test, pyu.is_numeric)}
+    numeric_cols = {c: dtype for c in get_typed_columns(df_test, pyn.is_numeric)}
 
   return pd.read_csv(path, dtype=numeric_cols, **args)
 
