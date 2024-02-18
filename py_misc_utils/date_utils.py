@@ -45,15 +45,18 @@ def parse_date(dstr, tz=None):
 def np_datetime_to_epoch(dt, dtype=np.float64):
   tas.check_fn(np.issubdtype, dt.dtype, np.datetime64)
   u, c = np.datetime_data(dt.dtype)
-  dt = dt.astype(dtype)
   if u == 's':
-    return dt
-  elif u == 'ns':
-    return dt / 1e9
-  elif u == 'us':
-    return dt / 1e6
-  elif u == 'ms':
-    return dt / 1e3
+    return dt.astype(dtype)
 
-  alog.xraise(RuntimeError, f'Unknown NumPy datetime64 unit: {u}')
+  dt = dt.astype(np.float64)
+  elif u == 'ns':
+    dt = dt / 1e9
+  elif u == 'us':
+    dt = dt / 1e6
+  elif u == 'ms':
+    dt = dt / 1e3
+  else:
+    alog.xraise(RuntimeError, f'Unknown NumPy datetime64 unit: {u}')
+
+  return dt if dtype == np.float64 else dt.astype(dtype)
 
