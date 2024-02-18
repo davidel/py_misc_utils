@@ -49,7 +49,7 @@ def np_datetime_to_epoch(dt, dtype=np.float64):
     return dt.astype(dtype)
 
   dt = dt.astype(np.float64)
-  elif u == 'ns':
+  if u == 'ns':
     dt = dt / 1e9
   elif u == 'us':
     dt = dt / 1e6
