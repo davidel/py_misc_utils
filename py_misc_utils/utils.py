@@ -520,6 +520,12 @@ def as_sequence(v, t=tuple):
   return v if isinstance(v, t) else t([v])
 
 
+def format(seq, fmt):
+  sfmt = f'{{:{fmt}}}'
+
+  return type(seq)(sfmt.format(x) for x in seq)
+
+
 class _ArgList(list):
 
   def __init__(self, *args):
