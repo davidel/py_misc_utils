@@ -12,6 +12,14 @@ def _register(name, mod, checkfn, fromfn):
   mod.__npml_from = fromfn
 
 
+def _register_attr(mod, name, attr):
+  xa = getattr(mod, name, None)
+  if xa is not None:
+    raise RuntimeError(f'Attribute "{name}" already exists: {xa}')
+
+  setattr(mod, name, attr)
+
+
 def _parse_priorities():
   prefs = os.getenv('NPML_ORDER', 'torch,np,jax,tf').split(',')
 
@@ -32,6 +40,9 @@ try:
     return isinstance(t, np.ndarray)
 
   _register('np', np, _npml_np_check, _npml_np_from)
+
+  _register_attr(np, 'item', lambda t: t.item())
+  _register_attr(np, 'tolist', lambda t: t.tolist())
 except ImportError:
   np = None
 
@@ -55,6 +66,9 @@ try:
     return isinstance(t, torch.Tensor)
 
   _register('torch', torch, _npml_torch_check, _npml_torch_from)
+
+  _register_attr(torch, 'item', lambda t: t.item())
+  _register_attr(torch, 'tolist', lambda t: t.tolist())
 except ImportError:
   torch = None
 
@@ -77,6 +91,9 @@ try:
     return isinstance(t, jax.Tensor)
 
   _register('jax', jaxnp, _npml_jax_check, _npml_jax_from)
+
+  _register_attr(jaxnp, 'item', lambda t: t.item())
+  _register_attr(jaxnp, 'tolist', lambda t: t.tolist())
 except ImportError:
   jaxnp = None
 
@@ -103,6 +120,9 @@ try:
 
   tfnp.experimental_enable_numpy_behavior()
   _register('tf', tfnp, _npml_tf_check, _npml_tf_from)
+
+  _register_attr(tfnp, 'item', lambda t: t.item())
+  _register_attr(tfnp, 'tolist', lambda t: t.tolist())
 except ImportError:
   tfnp = None
 
@@ -147,14 +167,4 @@ def resolve(*args):
       rargs[i] = tmod.__npml_from(mods[i], t, tref)
 
   return tmod, tuple(rargs)
-
-
-def item(mod, t):
-  # Works for NumPy and PyTorch ... TBD for others...
-  return t.item()
-
-
-def tolist(mod, t):
-  # Works for NumPy and PyTorch ... TBD for others...
-  return t.tolist()
 
