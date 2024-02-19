@@ -101,17 +101,14 @@ if _DEFAULT_MODULE not in _MODULES:
 
 
 def _get_module(t):
-  # Let native Python types pass through, as it is expected that the module
-  # function being used by the resolve() caller, handles those directly.
-  if not isinstance(t, (int, float, str, bytes)):
-    if np is not None and isinstance(t, np.ndarray):
-      return np
-    if torch is not None and isinstance(t, torch.Tensor):
-      return torch
-    if jax is not None and isinstance(t, jax.Tensor):
-      return jaxnp
-    if tf is not None and tf.is_tensor(t):
-      return tfnp
+  if np is not None and isinstance(t, np.ndarray):
+    return np
+  if torch is not None and isinstance(t, torch.Tensor):
+    return torch
+  if jax is not None and isinstance(t, jax.Tensor):
+    return jaxnp
+  if tf is not None and tf.is_tensor(t):
+    return tfnp
 
 
 def resolve(*args):
