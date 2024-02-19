@@ -143,7 +143,7 @@ def resolve(*args):
 
   rargs = list(args)
   for i, t in enumerate(args):
-    if tref is not mods[i]:
+    if tmod is not mods[i]:
       rargs[i] = tmod.__npml_from(mods[i], t, tref)
 
   return tmod, tuple(rargs)
