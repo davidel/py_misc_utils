@@ -30,17 +30,17 @@ def _parse_priorities():
 try:
   import numpy as np
 
-  def _npml_np_from(mod, t, tref):
+  def _np_from(mod, t, tref):
     if mod is not None:
       if mod is torch or mod is tfnp:
         return t.numpy()
 
     return np.asarray(t)
 
-  def _npml_np_check(t):
+  def _np_check(t):
     return isinstance(t, np.ndarray)
 
-  _register('np', np, _npml_np_check, _npml_np_from)
+  _register('np', np, _np_check, _np_from)
 
   _register_attr(np, 'item', lambda t: t.item())
   _register_attr(np, 'tolist', lambda t: t.tolist())
@@ -53,7 +53,7 @@ try:
   import torch
   from torch.utils import dlpack as torch_dlpack
 
-  def _npml_torch_from(mod, t, tref):
+  def _torch_from(mod, t, tref):
     if mod is not None:
       if mod is np:
         return torch.from_numpy(t).to(tref.device)
@@ -64,10 +64,10 @@ try:
 
     return torch.tensor(t).to(tref.device)
 
-  def _npml_torch_check(t):
+  def _torch_check(t):
     return isinstance(t, torch.Tensor)
 
-  _register('torch', torch, _npml_torch_check, _npml_torch_from)
+  _register('torch', torch, _torch_check, _torch_from)
 
   _register_attr(torch, 'item', lambda t: t.item())
   _register_attr(torch, 'tolist', lambda t: t.tolist())
@@ -81,19 +81,22 @@ try:
   from jax import dlpack as jax_dlpack
   import jax.numpy as jaxnp
 
-  def _npml_jax_from(mod, t, tref):
+  def _jaxdev(t):
+    return next(iter(t.devices()))
+
+  def _jax_from(mod, t, tref):
     if mod is not None:
       if mod is torch:
-        return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), tref.device)
+        return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), _jaxdev(tref))
       if mod is tfnp:
-        return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), tref.device)
+        return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), _jaxdev(tref))
 
-    return jax.device_put(jaxnp.asarray(t), tref.device)
+    return jax.device_put(jaxnp.asarray(t), _jaxdev(tref))
 
-  def _npml_jax_check(t):
+  def _jax_check(t):
     return isinstance(t, jax.Array)
 
-  _register('jax', jaxnp, _npml_jax_check, _npml_jax_from)
+  _register('jax', jaxnp, _jax_check, _jax_from)
 
   _register_attr(jaxnp, 'item', lambda t: t.item())
   _register_attr(jaxnp, 'tolist', lambda t: t.tolist())
@@ -107,7 +110,7 @@ try:
   import tensorflow.experimental.dlpack as tf_dlpack
   import tensorflow.experimental.numpy as tfnp
 
-  def _npml_tf_from(mod, t, tref):
+  def _tf_from(mod, t, tref):
     if mod is not None:
       if mod is torch:
         with tf.device(tref.device):
@@ -119,11 +122,11 @@ try:
     with tf.device(tref.device):
       return tf.convert_to_tensor(t)
 
-  def _npml_tf_check(t):
+  def _tf_check(t):
     return tf.is_tensor(t)
 
   tfnp.experimental_enable_numpy_behavior()
-  _register('tf', tfnp, _npml_tf_check, _npml_tf_from)
+  _register('tf', tfnp, _tf_check, _tf_from)
 
   _register_attr(tfnp, 'item', lambda t: t.item())
   _register_attr(tfnp, 'tolist', lambda t: t.tolist())

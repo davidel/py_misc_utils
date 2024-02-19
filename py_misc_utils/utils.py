@@ -526,6 +526,10 @@ def format(seq, fmt):
   return type(seq)(sfmt.format(x) for x in seq)
 
 
+def seqfirst(s):
+  return next(iter(s))
+
+
 class _ArgList(list):
 
   def __init__(self, *args):
