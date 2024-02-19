@@ -7,12 +7,12 @@ _MODULES = dict()
 
 def _register(name, mod, fromfn):
   _MODULES[name] = mod
-  mod.__mlfc_name = name
-  mod.__mlfc_from = fromfn
+  mod.__npml_name = name
+  mod.__npml_from = fromfn
 
 
 def _parse_priorities():
-  prefs = os.getenv('MLFC_ORDER', 'torch,np,jax,tf').split(',')
+  prefs = os.getenv('NPML_ORDER', 'torch,np,jax,tf').split(',')
 
   return {mod: len(prefs) - i for i, mod in enumerate(prefs)}
 
@@ -20,7 +20,7 @@ def _parse_priorities():
 try:
   import numpy as np
 
-  def _mlfc_np_from(mod, t, tref):
+  def _npml_np_from(mod, t, tref):
     if mod is torch or mod is tf:
       return t.numpy()
     if mod is jax:
@@ -28,7 +28,7 @@ try:
 
     return t
 
-  _register('np', np, _mlfc_np_from)
+  _register('np', np, _npml_np_from)
 except ImportError:
   np = None
 
@@ -36,7 +36,7 @@ try:
   import torch
   from torch.utils import dlpack as torch_dlpack
 
-  def _mlfc_torch_from(mod, t, tref):
+  def _npml_torch_from(mod, t, tref):
     if mod is np:
       return torch.from_numpy(t).to(tref.device)
     if mod is jax:
@@ -46,7 +46,7 @@ try:
 
     return t
 
-  _register('torch', torch, _mlfc_torch_from)
+  _register('torch', torch, _npml_torch_from)
 except ImportError:
   torch = None
 
@@ -55,7 +55,7 @@ try:
   from jax import dlpack as jax_dlpack
   import jax.numpy as jaxnp
 
-  def _mlfc_jax_from(mod, t, tref):
+  def _npml_jax_from(mod, t, tref):
     if mod is np:
       return jax.device_put(jax.asarray(t), tref.device)
     if mod is torch:
@@ -65,7 +65,7 @@ try:
 
     return t
 
-  _register('jax', jaxnp, _mlfc_jax_from)
+  _register('jax', jaxnp, _npml_jax_from)
 except ImportError:
   jaxnp = None
 
@@ -74,7 +74,7 @@ try:
   import tf.experimental.dlpack as tf_dlpack
   import tensorflow.experimental.numpy as tfnp
 
-  def _mlfc_tf_from(mod, t, tref):
+  def _npml_tf_from(mod, t, tref):
     if mod is np:
       with tref.device:
         return tf.convert_to_tensor(t)
@@ -88,16 +88,16 @@ try:
     return t
 
   tf.experimental_enable_numpy_behavior()
-  _register('tf', tfnp, _mlfc_tf_from)
+  _register('tf', tfnp, _npml_tf_from)
 except ImportError:
   tfnp = None
 
 
 _MODULES_PRIORITY = _parse_priorities()
-_DEFAULT_MODULE = os.getenv('MLFC_DEFAULT', 'np')
+_DEFAULT_MODULE = os.getenv('NPML_DEFAULT', 'np')
 
 if _DEFAULT_MODULE not in _MODULES:
-  raise RuntimeError(f'Unable to find default ML module: {_DEFAULT_MODULE}')
+  raise RuntimeError(f'Unable to find default Numpy ML module: {_DEFAULT_MODULE}')
 
 
 def _get_module(t):
@@ -126,7 +126,7 @@ def resolve(*args):
 
   tprio, tmod, tref = -1, None, None
   for mod, indices in mods.items():
-    prio = _MODULES_PRIORITY[mod.__mlfc_name]
+    prio = _MODULES_PRIORITY[mod.__npml_name]
     if prio > tprio:
       tmod = mod
       tprio = prio
@@ -136,7 +136,7 @@ def resolve(*args):
   for mod, indices in mods.items():
     if mod is not tmod:
       for i in indices:
-        rargs[i] = tmod.__mlfc_from(mod, args[i], tref)
+        rargs[i] = tmod.__npml_from(mod, args[i], tref)
 
   return tmod, tuple(rargs)
 
