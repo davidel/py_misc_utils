@@ -46,9 +46,9 @@ try:
   def _npml_torch_from(mod, t, tref):
     if mod is np:
       return torch.from_numpy(t).to(tref.device)
-    if mod is jax:
+    if mod is jaxnp:
       return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(t)).to(tref.device)
-    if mod is tf:
+    if mod is tfnp:
       return torch_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)).to(tref.device)
 
     return t
@@ -72,7 +72,7 @@ try:
       return jax.device_put(jax.asarray(t), tref.device)
     if mod is torch:
       return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), tref.device)
-    if mod is tf:
+    if mod is tfnp:
       return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), tref.device)
 
     return t
@@ -98,7 +98,7 @@ try:
     if mod is torch:
       with tref.device:
         return tf_dlpack.from_dlpack(torch_dlpack.to_dlpack(t))
-    if mod is jax:
+    if mod is jaxnp:
       with tref.device:
         return tf_dlpack.from_dlpack(jax_dlpack.to_dlpack(t))
 
