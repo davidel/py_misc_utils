@@ -31,8 +31,9 @@ try:
   import numpy as np
 
   def _npml_np_from(mod, t, tref):
-    if mod is torch or mod is tfnp:
-      return t.numpy()
+    if mod is not None:
+      if mod is torch or mod is tfnp:
+        return t.numpy()
 
     return np.asarray(t)
 
@@ -53,12 +54,13 @@ try:
   from torch.utils import dlpack as torch_dlpack
 
   def _npml_torch_from(mod, t, tref):
-    if mod is np:
-      return torch.from_numpy(t).to(tref.device)
-    if mod is jaxnp:
-      return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(t)).to(tref.device)
-    if mod is tfnp:
-      return torch_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)).to(tref.device)
+    if mod is not None:
+      if mod is np:
+        return torch.from_numpy(t).to(tref.device)
+      if mod is jaxnp:
+        return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(t)).to(tref.device)
+      if mod is tfnp:
+        return torch_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)).to(tref.device)
 
     return torch.tensor(t).to(tref.device)
 
@@ -80,10 +82,11 @@ try:
   import jax.numpy as jaxnp
 
   def _npml_jax_from(mod, t, tref):
-    if mod is torch:
-      return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), tref.device)
-    if mod is tfnp:
-      return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), tref.device)
+    if mod is not None:
+      if mod is torch:
+        return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), tref.device)
+      if mod is tfnp:
+        return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), tref.device)
 
     return jax.device_put(jaxnp.asarray(t), tref.device)
 
@@ -105,12 +108,13 @@ try:
   import tensorflow.experimental.numpy as tfnp
 
   def _npml_tf_from(mod, t, tref):
-    if mod is torch:
-      with tref.device:
-        return tf_dlpack.from_dlpack(torch_dlpack.to_dlpack(t))
-    if mod is jaxnp:
-      with tref.device:
-        return tf_dlpack.from_dlpack(jax_dlpack.to_dlpack(t))
+    if mod is not None:
+      if mod is torch:
+        with tref.device:
+          return tf_dlpack.from_dlpack(torch_dlpack.to_dlpack(t))
+      if mod is jaxnp:
+        with tref.device:
+          return tf_dlpack.from_dlpack(jax_dlpack.to_dlpack(t))
 
     with tref.device:
       return tf.convert_to_tensor(t)
