@@ -23,12 +23,10 @@ try:
   import numpy as np
 
   def _npml_np_from(mod, t, tref):
-    if mod is torch or mod is tf:
+    if mod is torch or mod is tfnp:
       return t.numpy()
-    if mod is jax:
-      return np.asarray(t)
 
-    return t
+    return np.asarray(t)
 
   def _npml_np_check(t):
     return isinstance(t, np.ndarray)
@@ -51,7 +49,7 @@ try:
     if mod is tfnp:
       return torch_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)).to(tref.device)
 
-    return t
+    return torch.tensor(t).to(tref.device)
 
   def _npml_torch_check(t):
     return isinstance(t, torch.Tensor)
@@ -68,14 +66,12 @@ try:
   import jax.numpy as jaxnp
 
   def _npml_jax_from(mod, t, tref):
-    if mod is np:
-      return jax.device_put(jax.asarray(t), tref.device)
     if mod is torch:
       return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), tref.device)
     if mod is tfnp:
       return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), tref.device)
 
-    return t
+    return jax.device_put(jaxnp.asarray(t), tref.device)
 
   def _npml_jax_check(t):
     return isinstance(t, jax.Tensor)
@@ -92,9 +88,6 @@ try:
   import tensorflow.experimental.numpy as tfnp
 
   def _npml_tf_from(mod, t, tref):
-    if mod is np:
-      with tref.device:
-        return tf.convert_to_tensor(t)
     if mod is torch:
       with tref.device:
         return tf_dlpack.from_dlpack(torch_dlpack.to_dlpack(t))
@@ -102,7 +95,8 @@ try:
       with tref.device:
         return tf_dlpack.from_dlpack(jax_dlpack.to_dlpack(t))
 
-    return t
+    with tref.device:
+      return tf.convert_to_tensor(t)
 
   def _npml_tf_check(t):
     return tf.is_tensor(t)
@@ -132,31 +126,25 @@ def _get_module(t):
 
 
 def resolve(*args):
-  mods = collections.defaultdict(list)
-
+  mods = []
+  tprio, tmod, tref = -1, None, None
   for i, t in enumerate(args):
     mod = _get_module(t)
+    mods.append(mod)
     if mod is not None:
-      mods[mod].append(i)
+      prio = _MODULES_PRIORITY[mod.__npml_name]
+      if prio > tprio:
+        tmod = mod
+        tprio = prio
+        tref = t
 
-  if not mods:
+  if tref is None:
     return _MODULES[_DEFAULT_MODULE], args
-  if len(mods) == 1:
-    return next(iter(mods.keys())), args
-
-  tprio, tmod, tref = -1, None, None
-  for mod, indices in mods.items():
-    prio = _MODULES_PRIORITY[mod.__npml_name]
-    if prio > tprio:
-      tmod = mod
-      tprio = prio
-      tref = args[indices[0]]
 
   rargs = list(args)
-  for mod, indices in mods.items():
-    if mod is not tmod:
-      for i in indices:
-        rargs[i] = tmod.__npml_from(mod, args[i], tref)
+  for i, t in enumerate(args):
+    if tref is not mods[i]:
+      rargs[i] = tmod.__npml_from(mods[i], t, tref)
 
   return tmod, tuple(rargs)
 
