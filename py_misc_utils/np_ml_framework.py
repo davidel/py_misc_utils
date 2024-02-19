@@ -148,3 +148,13 @@ def resolve(*args):
 
   return tmod, tuple(rargs)
 
+
+def item(mod, t):
+  # Works for NumPy and PyTorch ... TBD for others...
+  return t.item()
+
+
+def tolist(mod, t):
+  # Works for NumPy and PyTorch ... TBD for others...
+  return t.tolist()
+
