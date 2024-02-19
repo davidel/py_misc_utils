@@ -5,9 +5,10 @@ import os
 _MODULES = dict()
 
 
-def _register(name, mod, fromfn):
+def _register(name, mod, checkfn, fromfn):
   _MODULES[name] = mod
   mod.__npml_name = name
+  mod.__npml_check = checkfn
   mod.__npml_from = fromfn
 
 
@@ -17,6 +18,7 @@ def _parse_priorities():
   return {mod: len(prefs) - i for i, mod in enumerate(prefs)}
 
 
+# Numpy
 try:
   import numpy as np
 
@@ -28,10 +30,15 @@ try:
 
     return t
 
-  _register('np', np, _npml_np_from)
+  def _npml_np_check(t):
+    return isinstance(t, np.ndarray)
+
+  _register('np', np, _npml_np_check, _npml_np_from)
 except ImportError:
   np = None
 
+
+# PyTorch
 try:
   import torch
   from torch.utils import dlpack as torch_dlpack
@@ -46,10 +53,15 @@ try:
 
     return t
 
-  _register('torch', torch, _npml_torch_from)
+  def _npml_torch_check(t):
+    return isinstance(t, torch.Tensor)
+
+  _register('torch', torch, _npml_torch_check, _npml_torch_from)
 except ImportError:
   torch = None
 
+
+# JAX
 try:
   import jax
   from jax import dlpack as jax_dlpack
@@ -65,10 +77,15 @@ try:
 
     return t
 
-  _register('jax', jaxnp, _npml_jax_from)
+  def _npml_jax_check(t):
+    return isinstance(t, jax.Tensor)
+
+  _register('jax', jaxnp, _npml_jax_check, _npml_jax_from)
 except ImportError:
   jaxnp = None
 
+
+# Tensorflow
 try:
   import tensorflow as tf
   import tf.experimental.dlpack as tf_dlpack
@@ -87,28 +104,31 @@ try:
 
     return t
 
+  def _npml_tf_check(t):
+    return tf.is_tensor(t)
+
   tfnp.experimental_enable_numpy_behavior()
-  _register('tf', tfnp, _npml_tf_from)
+  _register('tf', tfnp, _npml_tf_check, _npml_tf_from)
 except ImportError:
   tfnp = None
 
 
-_MODULES_PRIORITY = _parse_priorities()
 _DEFAULT_MODULE = os.getenv('NPML_DEFAULT', 'np')
 
 if _DEFAULT_MODULE not in _MODULES:
   raise RuntimeError(f'Unable to find default Numpy ML module: {_DEFAULT_MODULE}')
 
 
+_MODULES_PRIORITY = _parse_priorities()
+_MODULES_SEQ = tuple(_MODULES[x] for x in sorted(list(_MODULES.keys()),
+                                                 key=lambda m: _MODULES_PRIORITY.get(m, -1),
+                                                 reverse=True))
+
+
 def _get_module(t):
-  if np is not None and isinstance(t, np.ndarray):
-    return np
-  if torch is not None and isinstance(t, torch.Tensor):
-    return torch
-  if jaxnp is not None and isinstance(t, jax.Tensor):
-    return jaxnp
-  if tfnp is not None and tf.is_tensor(t):
-    return tfnp
+  for mod in _MODULES_SEQ:
+    if mod.__npml_check(t):
+      return mod
 
 
 def resolve(*args):
