@@ -104,19 +104,19 @@ except ImportError:
 # Tensorflow
 try:
   import tensorflow as tf
-  import tf.experimental.dlpack as tf_dlpack
+  import tensorflow.experimental.dlpack as tf_dlpack
   import tensorflow.experimental.numpy as tfnp
 
   def _npml_tf_from(mod, t, tref):
     if mod is not None:
       if mod is torch:
-        with tref.device:
+        with tf.device(tref.device):
           return tf_dlpack.from_dlpack(torch_dlpack.to_dlpack(t))
       if mod is jaxnp:
-        with tref.device:
+        with tf.device(tref.device):
           return tf_dlpack.from_dlpack(jax_dlpack.to_dlpack(t))
 
-    with tref.device:
+    with tf.device(tref.device):
       return tf.convert_to_tensor(t)
 
   def _npml_tf_check(t):
