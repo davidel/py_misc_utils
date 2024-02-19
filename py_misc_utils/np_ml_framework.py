@@ -91,7 +91,7 @@ try:
     return jax.device_put(jaxnp.asarray(t), tref.device)
 
   def _npml_jax_check(t):
-    return isinstance(t, jax.Tensor)
+    return isinstance(t, jax.Array)
 
   _register('jax', jaxnp, _npml_jax_check, _npml_jax_from)
 
