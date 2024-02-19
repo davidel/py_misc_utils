@@ -105,9 +105,9 @@ def _get_module(t):
     return np
   if torch is not None and isinstance(t, torch.Tensor):
     return torch
-  if jax is not None and isinstance(t, jax.Tensor):
+  if jaxnp is not None and isinstance(t, jax.Tensor):
     return jaxnp
-  if tf is not None and tf.is_tensor(t):
+  if tfnp is not None and tf.is_tensor(t):
     return tfnp
 
 
