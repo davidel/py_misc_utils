@@ -87,7 +87,7 @@ try:
 
     return t
 
-  tf.experimental_enable_numpy_behavior()
+  tfnp.experimental_enable_numpy_behavior()
   _register('tf', tfnp, _npml_tf_from)
 except ImportError:
   tfnp = None
