@@ -5,19 +5,22 @@ import os
 _MODULES = dict()
 
 
-def _register(name, mod, checkfn, fromfn):
-  _MODULES[name] = mod
-  mod.__npml_name = name
-  mod.__npml_check = checkfn
-  mod.__npml_from = fromfn
-
-
 def _register_attr(mod, name, attr):
   xa = getattr(mod, name, None)
   if xa is not None:
     raise RuntimeError(f'Attribute "{name}" already exists: {xa}')
 
   setattr(mod, name, attr)
+
+
+def _register(name, mod, checkfn, fromfn, attrs):
+  _MODULES[name] = mod
+  mod.__npml_name = name
+  mod.__npml_check = checkfn
+  mod.__npml_from = fromfn
+
+  for attr_name, attr_value in attrs.items():
+    _register_attr(mod, attr_name, attr_value)
 
 
 def _parse_priorities():
@@ -40,10 +43,11 @@ try:
   def _np_check(t):
     return isinstance(t, np.ndarray)
 
-  _register('np', np, _np_check, _np_from)
-
-  _register_attr(np, 'item', lambda t: t.item())
-  _register_attr(np, 'tolist', lambda t: t.tolist())
+  _register('np', np, _np_check, _np_from,
+            {
+              'item': lambda t: t.item(),
+              'tolist': lambda t: t.tolist(),
+            })
 except ImportError:
   np = None
 
@@ -67,10 +71,11 @@ try:
   def _torch_check(t):
     return isinstance(t, torch.Tensor)
 
-  _register('torch', torch, _torch_check, _torch_from)
-
-  _register_attr(torch, 'item', lambda t: t.item())
-  _register_attr(torch, 'tolist', lambda t: t.tolist())
+  _register('torch', torch, _torch_check, _torch_from,
+            {
+              'item': lambda t: t.item(),
+              'tolist': lambda t: t.tolist(),
+            })
 except ImportError:
   torch = None
 
@@ -96,10 +101,11 @@ try:
   def _jax_check(t):
     return isinstance(t, jax.Array)
 
-  _register('jax', jaxnp, _jax_check, _jax_from)
-
-  _register_attr(jaxnp, 'item', lambda t: t.item())
-  _register_attr(jaxnp, 'tolist', lambda t: t.tolist())
+  _register('jax', jaxnp, _jax_check, _jax_from,
+            {
+              'item': lambda t: t.item(),
+              'tolist': lambda t: t.tolist(),
+            })
 except ImportError:
   jaxnp = None
 
@@ -126,10 +132,11 @@ try:
     return tf.is_tensor(t)
 
   tfnp.experimental_enable_numpy_behavior()
-  _register('tf', tfnp, _tf_check, _tf_from)
-
-  _register_attr(tfnp, 'item', lambda t: t.item())
-  _register_attr(tfnp, 'tolist', lambda t: t.tolist())
+  _register('tf', tfnp, _tf_check, _tf_from,
+            {
+              'item': lambda t: t.item(),
+              'tolist': lambda t: t.tolist(),
+            })
 except ImportError:
   tfnp = None
 
@@ -165,13 +172,13 @@ def resolve(*args):
         tprio = prio
         tref = t
 
-  if tref is None:
+  if tmod is None:
     return _MODULES[_DEFAULT_MODULE], args
 
   rargs = list(args)
-  for i, t in enumerate(args):
-    if tmod is not mods[i]:
-      rargs[i] = tmod.__npml_from(mods[i], t, tref)
+  for i, mod in enumerate(mods):
+    if tmod is not mod:
+      rargs[i] = tmod.__npml_from(mod, args[i], tref)
 
   return tmod, tuple(rargs)
 
