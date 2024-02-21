@@ -1,5 +1,6 @@
 import array
 import collections
+import datetime
 import os
 import re
 
@@ -212,4 +213,8 @@ def sorted_index(df, col):
   sdf = df.sort_values(col, ignore_index=True)
 
   return sdf.set_index(col)
+
+
+def datetime_to_epoch(data):
+  return (pd.to_datetime(data) - datetime.datetime(1970, 1, 1)).dt.total_seconds()
 
