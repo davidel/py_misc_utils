@@ -38,6 +38,14 @@ def pickle_proto():
   return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
 
 
+def split_module_name(name):
+  pos = name.rfind('.')
+  if pos < 0:
+    return '', name
+
+  return name[: pos], name[pos + 1: ]
+
+
 def maybe_add_path(plist, path):
   if path not in plist:
     plist.append(path)
