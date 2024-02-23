@@ -1057,6 +1057,14 @@ def enumerate_files(path, matcher, fullpath=False):
       yield fname if not fullpath else os.path.join(path, fname)
 
 
+def re_enumerate_files(path, rex, fullpath=False):
+  for fname in sorted(os.listdir(path)):
+    m = re.match(rex, fname)
+    if m:
+      mpath = fname if not fullpath else os.path.join(path, fname)
+      yield mpath, m
+
+
 def add_bool_argument(parser, name, defval, help=None):
   parser.add_argument(f'--{name}', dest=name, action='store_true',
                       help=f'Enable {help or name}' if help else None)
