@@ -42,7 +42,7 @@ class TransformArray(collections.abc.Sequence):
     return len(self._data)
 
   def to_numpy(self, dtype=None):
-    slices = [self[i] for i in range(0, len(self))]
+    slices = [self[i] for i in range(len(self))]
     if not slices:
       return np.empty((0,))
     if not isinstance(slices[0], np.ndarray):

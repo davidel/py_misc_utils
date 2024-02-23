@@ -149,12 +149,12 @@ def get_dataframe_groups(df, cols, cols_transforms=None):
   groups = collections.defaultdict(lambda: array.array('L'))
   if cols_transforms:
     tcols = [(df[c], cols_transforms.get(c, lambda x: x)) for c in cols]
-    for i in range(0, len(df)):
+    for i in range(len(df)):
       k = tuple([f(d[i]) for d, f in tcols])
       groups[k].append(i)
   else:
     cdata = [df[c] for c in cols]
-    for i in range(0, len(df)):
+    for i in range(len(df)):
       k = tuple([d[i] for d in cdata])
       groups[k].append(i)
 
@@ -191,7 +191,7 @@ def correlate(df, col, top_n=None):
   scorr = ccorr.sort_values(key=lambda x: abs(x), ascending=False)
   top_n = len(scorr) if top_n is None else min(top_n, len(scorr))
 
-  return tuple([(scorr.index[i], scorr[i]) for i in range(0, top_n)])
+  return tuple([(scorr.index[i], scorr[i]) for i in range(top_n)])
 
 
 def type_convert_dataframe(df, types):

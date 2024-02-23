@@ -81,7 +81,7 @@ class NamedArray:
       dtype = ut.infer_np_dtype([np.dtype(f) for f in self._fmt])
 
     na = np.empty(self.shape, dtype=dtype)
-    for i in range(0, na.shape[1]):
+    for i in range(na.shape[1]):
       na[:, i] = self._data[i]
 
     return na

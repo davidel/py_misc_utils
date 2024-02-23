@@ -628,7 +628,7 @@ def sign_extend(value, nbits):
 
 
 def range_split(n, split, minsize, reverse=False):
-  splits = list(range(0, n, split))
+  splits = list(range(n, split))
   if len(splits) > 1 and (n - splits[-1]) < minsize:
     splits.pop()
 
@@ -675,7 +675,7 @@ def flat2shape(data, shape):
 
   # For an Mx...xK input shape, return a M elements (nested) list.
   for n in reversed(shape[1: ]):
-    data = [data[i: i + n] for i in range(0, len(data), n)]
+    data = [data[i: i + n] for i in range(len(data), n)]
 
   return data
 

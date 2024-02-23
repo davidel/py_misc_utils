@@ -81,9 +81,9 @@ def _select_deltas(pt, space, sel_pct, dsize=1):
 
 def _random_generate(space, count, pid):
   rgen = []
-  for n in range(0, count):
+  for n in range(count):
     ridx = _sarray(len(space))
-    for i in range(0, len(ridx)):
+    for i in range(len(ridx)):
       ridx[i] = min(int(space[i] * random.random()), space[i] - 1)
     rgen.append(_Point(pid + n, ridx))
 
@@ -167,7 +167,7 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
     alog.debug0(f'{len(pts)} points, {len(processed)} processed (max {max_explore})')
 
     scores = _get_scores(pts, skeys, nparams, score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx)
-    sidx = sorted(list(range(0, len(scores))), key=lambda i: scores[i], reverse=True)
+    sidx = sorted(list(range(len(scores))), key=lambda i: scores[i], reverse=True)
 
     fsidx = _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct)
 

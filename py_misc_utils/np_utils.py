@@ -15,7 +15,7 @@ def diff_split(data, mask_fn, sort=True):
   mask = mask_fn(diff)
   msteps = np.flatnonzero(np.asarray(mask))
 
-  sindices = np.arange(0, len(data))
+  sindices = np.arange(len(data))
   splits = np.split(sindices, msteps + 1)
 
   # Caller should use data[result[i]] to fetch split data.

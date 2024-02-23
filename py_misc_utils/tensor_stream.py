@@ -99,7 +99,7 @@ class Writer:
       self._chunks = list(args)
       self._shapes = [x.shape for x in args]
       self._indices = [0] * len(args)
-      for i in range(0, len(args)):
+      for i in range(len(args)):
         if size != len(args[i]):
           alog.xraise(RuntimeError, f'The major dimension of a write operation must match: {size} vs {len(args[i])}')
         os.mkdir(os.path.join(self._path, str(i)))
@@ -164,10 +164,10 @@ class Reader:
 
   @property
   def dtype(self):
-    return tuple([self._tensors[n][0].dtype for n in range(0, self._num_streams)])
+    return tuple([self._tensors[n][0].dtype for n in range(self._num_streams)])
 
   def __len__(self):
-    lens = [self._shape[i][0] for i in range(0, self._num_streams)]
+    lens = [self._shape[i][0] for i in range(self._num_streams)]
     tas.check(all(lens[0] == l for l in lens), msg=f'Mismatching sizes: {lens}')
 
     return lens[0] if lens else 0
@@ -214,7 +214,7 @@ class Reader:
     return sliced_tensor
 
   def get_slices(self, start, size=None):
-    return [self.get_slice(x, start, size=size) for x in range(0, self._num_streams)]
+    return [self.get_slice(x, start, size=size) for x in range(self._num_streams)]
 
 
 class StreamArray(collections.abc.Sequence):
