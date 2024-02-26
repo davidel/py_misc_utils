@@ -131,3 +131,17 @@ def complement_indices(indices, size):
 
   return np.flatnonzero(all_indices)
 
+
+def polyfit_std(yv, xv=None, deg=1):
+  xv = xv or np.arange(len(yv)).astype(yv.dtype)
+
+  yfit = np.polynomial.Polynomial.fit(xv, yv, deg)
+  fys = yfit(xv)
+
+  ssum = 0
+  for i, v in enumerate(fys):
+    d = v - yv[i]
+    ssum += d * d
+
+  return np.sqrt(ssum / len(yv)), fys, yfit
+
