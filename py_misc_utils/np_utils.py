@@ -136,12 +136,12 @@ def polyfit_std(yv, xv=None, deg=1):
   xv = xv or np.arange(len(yv)).astype(yv.dtype)
 
   yfit = np.polynomial.Polynomial.fit(xv, yv, deg)
-  fys = yfit(xv)
+  fyv = yfit(xv)
 
   ssum = 0
-  for i, v in enumerate(fys):
+  for i, v in enumerate(fyv):
     d = v - yv[i]
     ssum += d * d
 
-  return np.sqrt(ssum / len(yv)), fys, yfit
+  return np.sqrt(ssum / len(yv)), fyv, yfit
 
