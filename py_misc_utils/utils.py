@@ -1039,6 +1039,10 @@ def to_bool(v):
   return bv
 
 
+def cast(v, vtype):
+  return vtype(v) if v is not None else v
+
+
 def xwrap_fn(fn, *args, **kwargs):
 
   def fwrap():
