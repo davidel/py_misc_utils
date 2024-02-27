@@ -145,3 +145,9 @@ def polyfit_std(yv, xv=None, deg=1):
 
   return np.sqrt(ssum / len(yv)), fyv, yfit
 
+
+def is_ordered(v, reverse=False):
+  npv = to_numpy(v)
+
+  return np.all(npv[:-1] >= npv[1:]) if reverse else np.all(npv[:-1] <= npv[1:])
+
