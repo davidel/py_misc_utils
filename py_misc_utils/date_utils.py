@@ -13,7 +13,10 @@ from . import assert_checks as tas
 def make_datetime_from_epoch(s, tz=None):
   ds = pd.to_datetime(s, unit='s', origin='unix', utc=True)
 
-  return ds if tz is None else ds.tz_convert(tz)
+  if tz is not None:
+    return ds.dt.tz_convert(tz) if isinstance(ds, pd.Series) else ds.tz_convert(tz)
+
+  return ds
 
 
 def us_eastern_timezone():
