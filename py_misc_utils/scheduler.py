@@ -3,6 +3,7 @@ import concurrent.futures
 import heapq
 import threading
 import time
+import uuid
 
 from . import alog
 
@@ -45,6 +46,9 @@ class Scheduler:
 
       if event is not None:
         self._pool.submit(self._run_event, event)
+
+  def gen_unique_ref(self):
+    return uuid.uuid4()
 
   def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
     with self._lock:
