@@ -135,8 +135,7 @@ def _is_worth_gain(pscore, score, min_gain_pct):
 
 
 def _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct):
-  pseen = set()
-  fsidx = []
+  pseen, fsidx = set(), []
   for i in sidx:
     pt = pts[i]
     if pt.pid not in pseen:
@@ -163,13 +162,15 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
   best_score, best_idx = None, None
 
   max_explore, blanks = int(np.prod(space) * explore_pct), 0
-  processed = set()
-  pid_scores = dict()
+  processed, pid_scores = set(), dict()
   while len(processed) < max_explore and blanks < max_blanks:
     alog.debug0(f'{len(pts)} points, {len(processed)} processed (max {max_explore})')
 
     scores = _get_scores(pts, skeys, nparams, score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx)
-    sidx = sorted(list(range(len(scores))), key=lambda i: scores[i], reverse=True)
+
+    # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
+    # the scores.
+    sidx = np.flip(np.argsort(scores))
 
     fsidx = _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct)
 
