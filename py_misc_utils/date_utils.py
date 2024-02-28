@@ -63,3 +63,13 @@ def np_datetime_to_epoch(dt, dtype=np.float64):
 
   return dt if dtype == np.float64 else dt.astype(dtype)
 
+
+def align(dt, step, ceil=False):
+  secs = step.total_seconds() if isinstance(step, datetime.timedelta) else step
+  fp, ip = np.modf(dt.timestamp() / secs)
+
+  if ceil and not np.isclose(fp, 0):
+    ip += 1
+
+  return from_timestamp(ip * secs, tz=dt.tzinfo)
+
