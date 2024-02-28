@@ -378,7 +378,7 @@ def parse_config(cfg, **kwargs):
 
 
 def fatal(msg, exc=RuntimeError):
-  alog.xraise(exc, msg)
+  alog.xraise(exc, msg, stacklevel=2)
 
 
 def assert_instance(msg, t, ta):

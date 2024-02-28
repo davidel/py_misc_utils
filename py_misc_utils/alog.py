@@ -113,7 +113,7 @@ def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
   if limit < 0 or cl.trigger(2, limit):
     if _HAS_STACKLEVEL:
-      kwargs['stacklevel'] = 3
+      kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
 
     return kwargs
 
