@@ -1,5 +1,4 @@
 import functools
-import math
 import multiprocessing as mp
 import random
 
@@ -31,10 +30,13 @@ def _norm_params(params):
 
 def _get_space(params):
   skeys = sorted(params.keys())
+
   return skeys, [len(params[k]) for k in skeys]
 
 
 def _get_deltas(idx, space, dsize=1):
+  # For every dimension (there is one dimension for each parameter), return
+  # a list of indices into such dimension/parameter values set (ordered).
   deltas = []
   for i, v in enumerate(idx):
     dp = [v]
@@ -46,6 +48,7 @@ def _get_deltas(idx, space, dsize=1):
       dp.append(v + dsize)
     elif v < space[i] - 1:
       dp.append(space[i] - 1)
+
     deltas.append(dp)
 
   return deltas
@@ -54,9 +57,7 @@ def _get_deltas(idx, space, dsize=1):
 def _select_deltas(pt, space, sel_pct, dsize=1):
   deltas = _get_deltas(pt.idx, space, dsize=dsize)
 
-  delta_pts = []
-  idx = [0] * len(deltas)
-  i = 0
+  i, delta_pts, idx = 0, [], [0] * len(deltas)
   while i < len(deltas):
     didx = _sarray(len(idx))
     for j, n in enumerate(idx):
@@ -74,7 +75,7 @@ def _select_deltas(pt, space, sel_pct, dsize=1):
         break
 
   random.shuffle(delta_pts)
-  num_deltas = int(math.ceil(np.prod([len(x) for x in deltas]) * sel_pct))
+  num_deltas = int(np.ceil(np.prod([len(x) for x in deltas]) * sel_pct))
 
   return delta_pts[: num_deltas]
 
@@ -85,6 +86,7 @@ def _random_generate(space, count, pid):
     ridx = _sarray(len(space))
     for i in range(len(ridx)):
       ridx[i] = min(int(space[i] * random.random()), space[i] - 1)
+
     rgen.append(_Point(pid + n, ridx))
 
   return rgen, pid + count
@@ -192,3 +194,4 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
       break
 
   return best_score, _make_param(best_idx, skeys, nparams)
+
