@@ -1,6 +1,7 @@
 import collections
 import functools
 import multiprocessing as mp
+import multiprocessing.pool as mp_pool
 import random
 import re
 import subprocess
@@ -111,7 +112,7 @@ def _get_scores(pts, skeys, params, score_fn, n_jobs=None, mp_ctx=None):
   else:
     context = mp.get_context(mp_ctx if mp_ctx is not None else mp.get_start_method())
     fn = functools.partial(_mp_score_fn, score_fn)
-    with mp.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
+    with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
       scores = list(pool.map(fn, xparams))
 
   return scores
