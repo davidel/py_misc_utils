@@ -17,7 +17,7 @@ def _main(parser, mainfn, args, setupfn):
     setupfn(parser, args)
   alog.add_logging_options(parser)
 
-  xargs = args or sys.argv
+  xargs = args or sys.argv[1: ]
 
   ddpos = ut.lindex(xargs, '--')
   if ddpos >= 0:
