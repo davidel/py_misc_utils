@@ -2,6 +2,8 @@ import collections
 import functools
 import multiprocessing as mp
 import random
+import re
+import subprocess
 
 import numpy as np
 
@@ -195,4 +197,23 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
       break
 
   return best_score, _make_param(best_idx, skeys, nparams)
+
+
+SCORE_TAG = 'SPSCORE'
+
+def format_score(s):
+  return f'[{SCORE_TAG}={s:f}]'
+
+
+def match_score(data):
+  matches = re.findall(f'\[{SCORE_TAG}' + r'=([+-]?\d*(\.\d*)?)\]', data)
+
+  # The full score value is capture index 0 of the regex above.
+  return [float(m[0]) for m in matches]
+
+
+def run_score_process(cmdline):
+  output = subprocess.check_output(cmdline, stderr=subprocess.STDOUT)
+
+  return match_score(output), output
 
