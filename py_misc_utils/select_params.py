@@ -115,7 +115,7 @@ def _get_scores(pts, skeys, params, score_fn, n_jobs=None, mp_ctx=None):
     with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
       scores = list(pool.map(fn, xparams))
 
-  return scores
+  return scores, xparams
 
 
 def _add_to_selection(pts, gsel, gset):
@@ -152,6 +152,13 @@ def _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct):
   return fsidx
 
 
+def _register_scores(xparams, scores, scores_db):
+  for params, score in zip(xparams, scores):
+    for k, v in params.items():
+      scores_db[k].append(v)
+    scores_db['SCORE'].append(score)
+
+
 def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
                   top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
                   max_blanks=10, n_jobs=None, mp_ctx=None):
@@ -161,14 +168,18 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
 
   pts, cpid = _random_generate(space, init_count, 0)
 
+  scores_db = collections.defaultdict(list)
   best_score, best_idx = None, None
-
   max_explore, blanks = int(np.prod(space) * explore_pct), 0
   processed, pid_scores = set(), dict()
   while len(processed) < max_explore and blanks < max_blanks:
     alog.debug0(f'{len(pts)} points, {len(processed)} processed (max {max_explore})')
 
-    scores = _get_scores(pts, skeys, nparams, score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx)
+    scores, xparams = _get_scores(pts, skeys, nparams, score_fn,
+                                  n_jobs=n_jobs,
+                                  mp_ctx=mp_ctx)
+
+    _register_scores(xparams, scores, scores_db)
 
     # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
     # the scores.
@@ -196,7 +207,7 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
     if not pts:
       break
 
-  return best_score, _make_param(best_idx, skeys, nparams)
+  return best_score, _make_param(best_idx, skeys, nparams), scores_db
 
 
 SCORE_TAG = 'SPSCORE'
