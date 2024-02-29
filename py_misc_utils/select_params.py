@@ -213,7 +213,14 @@ def match_score(data):
 
 
 def run_score_process(cmdline):
-  output = subprocess.check_output(cmdline, stderr=subprocess.STDOUT)
+  try:
+    output = subprocess.check_output(cmdline, stderr=subprocess.STDOUT)
+  except subprocess.CalledProcessError as ex:
+    alog.exception(ex, exmsg=f'Error while running scoring process: {ex.output.decode()}')
+    raise
+
+  if isinstance(output, bytes):
+    output = output.decode()
 
   return match_score(output), output
 
