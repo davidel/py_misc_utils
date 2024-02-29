@@ -19,7 +19,7 @@ def _main(parser, mainfn, args, setupfn):
 
   xargs = args or sys.argv
 
-  ddpos = ut.lindex(args, '--')
+  ddpos = ut.lindex(xargs, '--')
   if ddpos >= 0:
     rem_args = xargs[ddpos + 1: ]
     xargs = xargs[: ddpos]
