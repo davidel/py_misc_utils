@@ -1,3 +1,4 @@
+import collections
 import functools
 import multiprocessing as mp
 import random
@@ -7,11 +8,7 @@ import numpy as np
 from . import alog
 
 
-class _Point:
-
-  def __init__(self, pid, idx):
-    self.pid = pid
-    self.idx = idx
+_Point = collections.namedtuple('Point', 'pid, idx')
 
 
 def _sarray(n):
@@ -57,13 +54,14 @@ def _get_deltas(idx, space, dsize=1):
 def _select_deltas(pt, space, sel_pct, dsize=1):
   deltas = _get_deltas(pt.idx, space, dsize=dsize)
 
-  i, delta_pts, idx = 0, [], [0] * len(deltas)
+  i, delta_pts, idx = 0, [], np.zeros(len(deltas), dtype=np.int32)
   while i < len(deltas):
     didx = _sarray(len(idx))
     for j, n in enumerate(idx):
       didx[j] = deltas[j][n]
     delta_pts.append(_Point(pt.pid, didx))
 
+    # Enumerate all the index space.
     i = 0
     idx[i] += 1
     while idx[i] >= len(deltas[i]):
@@ -85,7 +83,7 @@ def _random_generate(space, count, pid):
   for n in range(count):
     ridx = _sarray(len(space))
     for i in range(len(ridx)):
-      ridx[i] = min(int(space[i] * random.random()), space[i] - 1)
+      ridx[i] = random.randrange(space[i])
 
     rgen.append(_Point(pid + n, ridx))
 
@@ -127,9 +125,11 @@ def _add_to_selection(pts, gsel, gset):
 
 
 def _is_worth_gain(pscore, score, min_gain_pct):
-  if pscore is None:
-    return True
-  delta = 100 * (score - pscore) / abs(pscore) if abs(pscore) > 1e-6 else 1.0
+  pabs = np.abs(pscore)
+  if np.isclose(pabs, 0):
+    return score > pscore
+
+  delta = (score - pscore) / pabs
 
   return delta >= min_gain_pct
 
@@ -141,7 +141,7 @@ def _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct):
     if pt.pid not in pseen:
       pseen.add(pt.pid)
       pscore = pid_scores.get(pt.pid, None)
-      if _is_worth_gain(pscore, scores[i], min_pid_gain_pct):
+      if pscore is None or _is_worth_gain(pscore, scores[i], min_pid_gain_pct):
         pid_scores[pt.pid] = scores[i]
         fsidx.append(i)
         if len(fsidx) >= top_n:
