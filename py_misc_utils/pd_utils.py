@@ -99,6 +99,11 @@ def load_dataframe(path, **kwargs):
                            'comment', 'encoding', 'dialect', 'error_bad_lines',
                            'warn_bad_lines', 'delim_whitespace', 'low_memory',
                            'memory_map', 'float_precision', 'storage_options')
+
+    # For CSV file, unless otherwise specified, drop the index column as it
+    # adds no value to the output.
+    args = pyu.dict_setmissing(args, index=None)
+
     return read_csv(path, rows_sample=rows_sample, dtype=dtype,
                     args=args)
   else:

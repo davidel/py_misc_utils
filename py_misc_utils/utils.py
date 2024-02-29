@@ -260,6 +260,12 @@ def dict_extract(d, prefix=None, rx=None):
   return xd
 
 
+def dict_setmissing(d, **kwargs):
+  kwargs.update(d)
+
+  return kwargs
+
+
 def genhash(v):
   if isinstance(v, dict):
     vdata = []
