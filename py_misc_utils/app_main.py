@@ -12,31 +12,34 @@ def _cleanup():
   gc.collect()
 
 
-def _main(parser, mainfn, args, setupfn):
+def _main(parser, mainfn, args, setupfn, rem_args):
   if setupfn is not None:
     setupfn(parser, args)
   alog.add_logging_options(parser)
 
-  xargs = args or sys.argv[1: ]
+  if rem_args:
+    xargs = args or sys.argv[1: ]
 
-  ddpos = ut.lindex(xargs, '--')
-  if ddpos >= 0:
-    rem_args = xargs[ddpos + 1: ]
-    xargs = xargs[: ddpos]
+    ddpos = ut.lindex(xargs, '--')
+    if ddpos >= 0:
+      rargs = xargs[ddpos + 1: ]
+      xargs = xargs[: ddpos]
+    else:
+      rargs = []
+
+    parsed_args = parser.parse_args(args=xargs)
+    setattr(parsed_args, rem_args, tuple(rargs))
   else:
-    rem_args = []
-
-  parsed_args = parser.parse_args(args=xargs)
-  parsed_args.rem_args = tuple(rem_args)
+    parsed_args = parser.parse_args(args=args)
 
   alog.setup_logging(parsed_args)
 
   mainfn(parsed_args)
 
 
-def main(parser, mainfn, args=None, setupfn=None):
+def main(parser, mainfn, args=None, setupfn=None, rem_args=None):
   try:
-    _main(parser, mainfn, args, setupfn)
+    _main(parser, mainfn, args, setupfn, rem_args)
   except Exception as e:
     alog.exception(e, exmsg=f'Exception while running main function')
     raise
