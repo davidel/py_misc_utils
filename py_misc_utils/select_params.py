@@ -154,6 +154,8 @@ def _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct):
 
 def _register_scores(xparams, scores, scores_db):
   for params, score in zip(xparams, scores):
+    alog.debug0(f'SCORE: {score} -- {params}')
+
     for k, v in params.items():
       scores_db[k].append(v)
     scores_db['SCORE'].append(score)
