@@ -39,17 +39,8 @@ def _get_deltas(idx, space, dsize=1):
   # a list of indices into such dimension/parameter values set (ordered).
   deltas = []
   for i, v in enumerate(idx):
-    dp = [v]
-    if v >= dsize:
-      dp.append(v - dsize)
-    elif v > 0:
-      dp.append(0)
-    if v + dsize < space[i]:
-      dp.append(v + dsize)
-    elif v < space[i] - 1:
-      dp.append(space[i] - 1)
-
-    deltas.append(dp)
+    vmin, vmax = max(0, v - dsize), min(space[i], v + dsize)
+    deltas.append(np.arange(vmin, vmax))
 
   return deltas
 
@@ -219,7 +210,7 @@ def format_score(s):
 
 
 def match_score(data):
-  matches = re.findall(f'\[{SCORE_TAG}' + r'=([+-]?\d*(\.\d*)?)\]', data)
+  matches = re.findall(f'\[{SCORE_TAG}' + r'=([^\]]+)\]', data)
 
   # The full score value is capture index 0 of the regex above.
   return [float(m[0]) for m in matches]
