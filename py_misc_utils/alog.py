@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 import time
 import traceback
@@ -38,7 +39,9 @@ class Formatter(logging.Formatter):
   def formatTime(self, r, datefmt=None):
     if datefmt:
       return time.strftime(datefmt, r.created)
+
     tstr = time.strftime('%Y%m%d %H:%M:%S', time.localtime(r.created))
+
     return f'{tstr}.{r.msecs * 1000:06.0f}'
 
   def make_header(self, r):
@@ -46,11 +49,11 @@ class Formatter(logging.Formatter):
     lid = _SHORT_LEV.get(r.levelno, r.levelname[:2])
 
     if _HAS_STACKLEVEL:
-      return f'{lid}{tstr};{r.name};{r.module}'
+      return f'{lid}{tstr};{os.getpid()};{r.module}'
 
     # No point of returning the module if 'stacklevel' is not supported, as the
     # module name will be 'alog' itself.
-    return f'{lid}{tstr};{r.name}'
+    return f'{lid}{tstr};{os.getpid()}'
 
 
 
