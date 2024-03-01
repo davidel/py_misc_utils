@@ -148,7 +148,7 @@ def select_params(params, score_fn, init_count=10, delta_spacek=2.0, dstd=0.1,
   best_score, best_idx = None, None
   max_explore, blanks = int(np.prod(space) * explore_pct), 0
   processed, pid_scores = set(), dict()
-  while len(processed) < max_explore and blanks < max_blanks:
+  while pts and len(processed) < max_explore and blanks < max_blanks:
     alog.debug0(f'{len(pts)} points, {len(processed)} processed (max {max_explore})')
 
     scores, xparams = _get_scores(pts, skeys, nparams, score_fn,
@@ -163,8 +163,8 @@ def select_params(params, score_fn, init_count=10, delta_spacek=2.0, dstd=0.1,
 
     fsidx = _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct)
 
-    score = scores[fsidx[0]] if fsidx else None
-    if score is not None and (best_score is None or score > best_score):
+    score = scores[fsidx[0]]
+    if best_score is None or score > best_score:
       best_score = score
       best_idx = pts[fsidx[0]].idx
       alog.debug0(f'BestScore = {best_score:.5e}\tParam = {_make_param(best_idx, skeys, nparams)}')
@@ -180,8 +180,6 @@ def select_params(params, score_fn, init_count=10, delta_spacek=2.0, dstd=0.1,
     rnd_pts, cpid = _random_generate(space, rnd_n, cpid)
     _add_to_selection(rnd_pts, gtop, processed)
     pts = gtop
-    if not pts:
-      break
 
   return best_score, _make_param(best_idx, skeys, nparams), scores_db
 
