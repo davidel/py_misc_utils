@@ -1,4 +1,5 @@
 import array
+import re
 
 from . import assert_checks as tas
 from . import utils as ut
@@ -24,7 +25,10 @@ class NamedArray:
   def __init__(self, names, fmt):
     tas.check_eq(len(names), len(fmt), msg=f'Mismatching names and format sizes: {names} vs "{fmt}"')
 
-    self._names = tuple(names)
+    # Support names as comma separated string.
+    fnames = re.split(r'\s*,', names) if isinstance(names, str) else names
+
+    self._names = tuple(fnames)
     self._fmt = fmt
     self._names_index = {n: i for i, n in enumerate(self._names)}
     self._str_tbl = ut.StringTable()
