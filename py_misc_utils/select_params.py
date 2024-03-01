@@ -41,7 +41,7 @@ def _generate_delta(idx, space, dstd):
   sstd = np.array(space) * dstd
 
   delta = np.array(idx) + rng.standard_normal(len(idx)) * sstd
-  delta = np.rint(delta, dtype=np.int32)
+  delta = np.rint(delta).astype(np.int32)
 
   return np.clip(delta, np.zeros_like(delta), np.array(space) - 1)
 
