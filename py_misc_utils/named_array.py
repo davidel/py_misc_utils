@@ -23,10 +23,9 @@ def _fast_extend(dest, src):
 class NamedArray:
 
   def __init__(self, names, fmt):
-    tas.check_eq(len(names), len(fmt), msg=f'Mismatching names and format sizes: {names} vs "{fmt}"')
-
     # Support names as comma separated string.
     fnames = re.split(r'\s*,', names) if isinstance(names, str) else names
+    tas.check_eq(len(fnames), len(fmt), msg=f'Mismatching names and format sizes: {fnames} vs "{fmt}"')
 
     self._names = tuple(fnames)
     self._fmt = fmt
