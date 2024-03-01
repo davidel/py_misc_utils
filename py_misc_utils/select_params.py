@@ -34,34 +34,34 @@ def _get_space(params):
   return skeys, [len(params[k]) for k in skeys]
 
 
-def _generate_delta(idx, space, dstd):
+def _mkdelta(idx, space, dstd):
   # Sample around the index.
   rng = np.random.default_rng()
 
-  sstd = np.array(space) * dstd
-
-  delta = np.array(idx) + rng.standard_normal(len(idx)) * sstd
+  aspace = np.array(space)
+  delta = np.array(idx) + rng.standard_normal(len(idx)) * aspace * dstd
   delta = np.rint(delta).astype(np.int32)
 
-  return np.clip(delta, np.zeros_like(delta), np.array(space) - 1)
+  return np.clip(delta, np.zeros_like(delta), aspace - 1)
 
 
 def _select_deltas(pt, space, delta_spacek, dstd):
   num_deltas = int(np.ceil(len(space) * delta_spacek))
 
-  return [_Point(pt.pid, _generate_delta(pt.idx, space, dstd)) for _ in range(num_deltas)]
+  return [_Point(pt.pid, _mkdelta(pt.idx, space, dstd)) for _ in range(num_deltas)]
 
 
 def _random_generate(space, count, pid):
-  rgen = []
+  rng = np.random.default_rng()
+  low = np.zeros(len(space), dtype=np.int32)
+  high = np.array(space)
+
+  rpoints = []
   for n in range(count):
-    ridx = _sarray(len(space))
-    for i in range(len(ridx)):
-      ridx[i] = random.randrange(space[i])
+    ridx = rng.integers(low, high)
+    rpoints.append(_Point(pid + n, ridx))
 
-    rgen.append(_Point(pid + n, ridx))
-
-  return rgen, pid + count
+  return rpoints, pid + count
 
 
 def _make_param(idx, skeys, params):
