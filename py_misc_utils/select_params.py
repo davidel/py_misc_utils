@@ -210,7 +210,7 @@ def format_score(s):
 
 
 def match_score(data):
-  matches = re.findall(f'\[{SCORE_TAG}' + r'=([^\]]+)\]', data)
+  matches = re.findall(f'\[{SCORE_TAG}' + r'=([^]]+)\]', data)
 
   # The full score value is capture index 0 of the regex above.
   return [float(m[0]) for m in matches]
