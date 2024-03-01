@@ -117,6 +117,9 @@ def _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct):
       if pscore is None or _is_worth_gain(pscore, scores[i], min_pid_gain_pct):
         pid_scores[pt.pid] = scores[i]
         fsidx.append(i)
+        # The sidx array contains indices mapping to a descending sort of the
+        # scores, so once we have top_n of them, we know we have selected the
+        # higher ones available.
         if len(fsidx) >= top_n:
           break
 
