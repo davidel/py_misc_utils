@@ -49,7 +49,7 @@ def _generate_delta(idx, space, dstd):
 def _select_deltas(pt, space, delta_spacek, dstd):
   num_deltas = int(np.ceil(len(space) * delta_spacek))
 
-  return [_generate_delta(pt.idx, space, dstd) for _ in range(num_deltas)]
+  return [_Point(pt.pid, _generate_delta(pt.idx, space, dstd)) for _ in range(num_deltas)]
 
 
 def _random_generate(space, count, pid):
