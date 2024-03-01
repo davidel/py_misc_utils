@@ -46,8 +46,8 @@ def _generate_delta(idx, space, dstd):
   return np.clip(delta, np.zeros_like(delta), np.array(space) - 1)
 
 
-def _select_deltas(pt, space, sel_pct, dstd):
-  num_deltas = int(np.ceil(len(space) * sel_pct))
+def _select_deltas(pt, space, delta_spacek, dstd):
+  num_deltas = int(np.ceil(len(space) * delta_spacek))
 
   return [_generate_delta(pt.idx, space, dstd) for _ in range(num_deltas)]
 
@@ -132,7 +132,7 @@ def _register_scores(xparams, scores, scores_db):
     scores_db['SCORE'].append(score)
 
 
-def select_params(params, score_fn, init_count=10, sel_pct=0.1, dstd=0.1,
+def select_params(params, score_fn, init_count=10, delta_spacek=2.0, dstd=0.1,
                   top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
                   max_blanks=10, n_jobs=None, mp_ctx=None):
   nparams = _norm_params(params)
@@ -171,7 +171,7 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dstd=0.1,
 
     gtop = []
     for i in fsidx:
-      ds = _select_deltas(pts[i], space, sel_pct, dstd=dstd)
+      ds = _select_deltas(pts[i], space, delta_spacek, dstd=dstd)
       _add_to_selection(ds, gtop, processed)
 
     rnd_pts, cpid = _random_generate(space, rnd_n, cpid)
