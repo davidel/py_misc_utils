@@ -1,4 +1,3 @@
-
 import array
 
 from . import assert_checks as tas
