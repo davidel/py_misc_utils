@@ -34,42 +34,22 @@ def _get_space(params):
   return skeys, [len(params[k]) for k in skeys]
 
 
-def _get_deltas(idx, space, dsize=1):
-  # For every dimension (there is one dimension for each parameter), return
-  # a list of indices into such dimension/parameter values set (ordered).
-  deltas = []
-  for i, v in enumerate(idx):
-    vmin, vmax = max(0, v - dsize), min(space[i], v + dsize)
-    deltas.append(np.arange(vmin, vmax))
+def _generate_delta(idx, space, dstd):
+  # Sample around the index.
+  rng = np.random.default_rng()
 
-  return deltas
+  sstd = np.array(space) * dstd
+
+  delta = np.array(idx) + rng.standard_normal(len(idx)) * sstd
+  delta = np.rint(delta)
+
+  return np.clip(delta, np.zeros_like(delta), np.array(space) - 1)
 
 
-def _select_deltas(pt, space, sel_pct, dsize=1):
-  deltas = _get_deltas(pt.idx, space, dsize=dsize)
+def _select_deltas(pt, space, sel_pct, dstd):
+  num_deltas = int(np.ceil(len(space) * sel_pct))
 
-  i, delta_pts, idx = 0, [], np.zeros(len(deltas), dtype=np.int32)
-  while i < len(deltas):
-    didx = _sarray(len(idx))
-    for j, n in enumerate(idx):
-      didx[j] = deltas[j][n]
-    delta_pts.append(_Point(pt.pid, didx))
-
-    # Enumerate all the index space.
-    i = 0
-    idx[i] += 1
-    while idx[i] >= len(deltas[i]):
-      idx[i] = 0
-      i += 1
-      if i < len(deltas):
-        idx[i] += 1
-      else:
-        break
-
-  random.shuffle(delta_pts)
-  num_deltas = int(np.ceil(np.prod([len(x) for x in deltas]) * sel_pct))
-
-  return delta_pts[: num_deltas]
+  return [_generate_delta(pt.idx, space, dstd) for _ in range(num_deltas)]
 
 
 def _random_generate(space, count, pid):
@@ -152,7 +132,7 @@ def _register_scores(xparams, scores, scores_db):
     scores_db['SCORE'].append(score)
 
 
-def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
+def select_params(params, score_fn, init_count=10, sel_pct=0.1, dstd=0.1,
                   top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
                   max_blanks=10, n_jobs=None, mp_ctx=None):
   nparams = _norm_params(params)
@@ -191,7 +171,7 @@ def select_params(params, score_fn, init_count=10, sel_pct=0.1, dsize=1,
 
     gtop = []
     for i in fsidx:
-      ds = _select_deltas(pts[i], space, sel_pct, dsize=dsize)
+      ds = _select_deltas(pts[i], space, sel_pct, dstd=dstd)
       _add_to_selection(ds, gtop, processed)
 
     rnd_pts, cpid = _random_generate(space, rnd_n, cpid)
