@@ -140,7 +140,7 @@ def _register_scores(xparams, scores, scores_db):
     scores_db['SCORE'].append(score)
 
 
-def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=0.1,
+def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=0.2,
                   top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
                   max_blanks=10, n_jobs=None, mp_ctx=None):
   nparams = _norm_params(params)
@@ -179,7 +179,7 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
 
     gtop = []
     for i in fsidx:
-      ds = _select_deltas(pts[i], space, delta_spacek, delta_std=delta_std)
+      ds = _select_deltas(pts[i], space, delta_spacek, delta_std)
       _add_to_selection(ds, gtop, processed)
 
     rnd_pts, cpid = _random_generate(space, rnd_n, cpid)
