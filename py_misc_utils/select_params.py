@@ -190,15 +190,15 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
   return best_score, _make_param(best_idx, skeys, nparams), scores_db
 
 
-SCORE_TAG = 'SPSCORE'
+_SCORE_TAG = 'SPSCORE'
 _SCORE_FMT = os.getenv('SPSCORE_FMT', 'f')
 
 def format_score(s):
-  return f'[{SCORE_TAG}={s:{_SCORE_FMT}}]'
+  return f'[{_SCORE_TAG}={s:{_SCORE_FMT}}]'
 
 
 def match_score(data):
-  matches = re.findall(f'\[{SCORE_TAG}=' + r'([^]]+)\]', data)
+  matches = re.findall(f'\[{_SCORE_TAG}=' + r'([^]]+)\]', data)
 
   return [float(m) for m in matches]
 
