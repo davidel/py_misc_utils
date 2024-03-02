@@ -191,7 +191,7 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
 
 
 SCORE_TAG = 'SPSCORE'
-_SCORE_FMT = os.getenv('SPSCORE_FMT', '.5e')
+_SCORE_FMT = os.getenv('SPSCORE_FMT', 'f')
 
 def format_score(s):
   return f'[{SCORE_TAG}={s:{_SCORE_FMT}}]'
