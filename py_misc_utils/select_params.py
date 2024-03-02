@@ -46,7 +46,12 @@ def _mkdelta(idx, space, delta_std):
 
 
 def _select_deltas(pt, space, delta_spacek, delta_std):
-  num_deltas = int(np.ceil(len(space) * delta_spacek))
+  if delta_spacek is None:
+    num_deltas = len(space)
+  elif delta_spacek > 0:
+    num_deltas = int(np.ceil(len(space) * delta_spacek))
+  else:
+    num_deltas = int(np.rint(-delta_spacek))
 
   return [_Point(pt.pid, _mkdelta(pt.idx, space, delta_std)) for _ in range(num_deltas)]
 
@@ -135,7 +140,7 @@ def _register_scores(xparams, scores, scores_db):
     scores_db['SCORE'].append(score)
 
 
-def select_params(params, score_fn, init_count=10, delta_spacek=2.0, delta_std=0.1,
+def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=0.1,
                   top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
                   max_blanks=10, n_jobs=None, mp_ctx=None):
   nparams = _norm_params(params)
