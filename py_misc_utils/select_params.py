@@ -2,6 +2,7 @@ import collections
 import functools
 import multiprocessing as mp
 import multiprocessing.pool as mp_pool
+import os
 import random
 import re
 import subprocess
@@ -190,13 +191,14 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
 
 
 SCORE_TAG = 'SPSCORE'
+_SCORE_FMT = os.getenv('SPSCORE_FMT', '.5e')
 
 def format_score(s):
-  return f'[{SCORE_TAG}={s:f}]'
+  return f'[{SCORE_TAG}={s:{_SCORE_FMT}}]'
 
 
 def match_score(data):
-  matches = re.findall(f'\[{SCORE_TAG}' + r'=([^]]+)\]', data)
+  matches = re.findall(f'\[{SCORE_TAG}=' + r'([^]]+)\]', data)
 
   return [float(m) for m in matches]
 
