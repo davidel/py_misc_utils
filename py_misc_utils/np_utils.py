@@ -134,16 +134,12 @@ def complement_indices(indices, size):
 
 def polyfit_std(yv, xv=None, deg=1):
   xv = xv or np.arange(len(yv), dtype=np.float32)
+  yv = yv if isinstance(yv, np.ndarray) else np.array(yv)
 
   yfit = np.polynomial.Polynomial.fit(xv, yv, deg)
   fyv = yfit(xv)
 
-  ssum = 0
-  for i, v in enumerate(fyv):
-    d = v - yv[i]
-    ssum += d * d
-
-  return np.sqrt(ssum / len(yv)), fyv, yfit
+  return np.std(yv - fyv), fyv, yfit
 
 
 def is_ordered(v, reverse=False):
