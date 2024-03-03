@@ -10,6 +10,7 @@ import subprocess
 import numpy as np
 
 from . import alog
+from . import utils as ut
 
 
 _Point = collections.namedtuple('Point', 'pid, idx')
@@ -82,7 +83,8 @@ def _mp_score_fn(score_fn, params):
   return score_fn(**params)
 
 
-def _get_scores(pts, skeys, params, score_fn, n_jobs=None, mp_ctx=None):
+def _score_slice(pts, skeys, params, score_fn, scores_db=None, n_jobs=None,
+                 mp_ctx=None):
   xparams = [_make_param(pt.idx, skeys, params) for pt in pts]
   if n_jobs is None:
     scores = [score_fn(**p) for p in xparams]
@@ -91,6 +93,24 @@ def _get_scores(pts, skeys, params, score_fn, n_jobs=None, mp_ctx=None):
     fn = functools.partial(_mp_score_fn, score_fn)
     with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
       scores = list(pool.map(fn, xparams))
+
+  return scores, xparams
+
+
+def _get_scores(pts, skeys, params, score_fn, scores_db=None, n_jobs=None,
+                mp_ctx=None):
+  scores_x_run = ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
+
+  xparams, scores = [], []
+  for i in range(0, len(pts), scores_x_run):
+    cscores, cparams = _score_slice(pts[i: i + scores_x_run], skeys, params, score_fn,
+                                    scores_db=scores_db,
+                                    n_jobs=n_jobs,
+                                    mp_ctx=mp_ctx)
+    scores.extend(cscores)
+    xparams.extend(cparams)
+    if scores_db is not None:
+      _register_scores(cparams, cscores, scores_db)
 
   return scores, xparams
 
@@ -158,10 +178,9 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
     alog.debug0(f'{len(pts)} points, {len(processed)} processed (max {max_explore})')
 
     scores, xparams = _get_scores(pts, skeys, nparams, score_fn,
+                                  scores_db=scores_db,
                                   n_jobs=n_jobs,
                                   mp_ctx=mp_ctx)
-
-    _register_scores(xparams, scores, scores_db)
 
     # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
     # the scores.
