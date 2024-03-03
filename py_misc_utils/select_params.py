@@ -115,12 +115,13 @@ def _get_scores(pts, skeys, params, score_fn, scores_db=None, n_jobs=None,
   return scores, xparams
 
 
-def _add_to_selection(pts, gsel, gset):
+def _add_to_selection(pts, gset, dest=None):
   for pt in pts:
     ptb = pt.idx.tobytes()
     if ptb not in gset:
       gset.add(ptb)
-      gsel.append(pt)
+      if dest is not None:
+        dest.append(pt)
 
 
 def _is_worth_gain(pscore, score, min_gain_pct):
@@ -170,12 +171,14 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
 
   pts, cpid = _random_generate(space, init_count, 0)
 
+  processed = set()
+  _add_to_selection(pts, processed)
+
   scores_db = collections.defaultdict(list)
   best_score, best_idx = None, None
-  max_explore, blanks = int(np.prod(space) * explore_pct), 0
-  processed, pid_scores = set(), dict()
+  max_explore, blanks, pid_scores = int(np.prod(space) * explore_pct), 0, dict()
   while pts and len(processed) < max_explore and blanks < max_blanks:
-    alog.debug0(f'{len(pts)} points, {len(processed)} processed (max {max_explore})')
+    alog.debug0(f'{len(pts)} points, {len(processed) - len(pts)} processed (max {max_explore})')
 
     scores, xparams = _get_scores(pts, skeys, nparams, score_fn,
                                   scores_db=scores_db,
@@ -197,14 +200,14 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
     else:
       blanks += 1
 
-    gtop = []
+    next_pts = []
     for i in fsidx:
       ds = _select_deltas(pts[i], space, delta_spacek, delta_std)
-      _add_to_selection(ds, gtop, processed)
+      _add_to_selection(ds, processed, dest=next_pts)
 
     rnd_pts, cpid = _random_generate(space, rnd_n, cpid)
-    _add_to_selection(rnd_pts, gtop, processed)
-    pts = gtop
+    _add_to_selection(rnd_pts, processed, dest=next_pts)
+    pts = next_pts
 
   return best_score, _make_param(best_idx, skeys, nparams), scores_db
 
