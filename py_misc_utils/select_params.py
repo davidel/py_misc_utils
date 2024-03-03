@@ -178,7 +178,8 @@ def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=
   best_score, best_idx = None, None
   max_explore, blanks, pid_scores = int(np.prod(space) * explore_pct), 0, dict()
   while pts and len(processed) < max_explore and blanks < max_blanks:
-    alog.debug0(f'{len(pts)} points, {len(processed) - len(pts)} processed (max {max_explore})')
+    alog.debug0(f'{len(pts)} points, {len(processed) - len(pts)} processed ' \
+                f'(max {max_explore}), {blanks} blanks')
 
     scores, xparams = _get_scores(pts, skeys, nparams, score_fn,
                                   scores_db=scores_db,
