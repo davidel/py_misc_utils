@@ -217,14 +217,17 @@ class Selector:
       else:
         self.blanks += 1
 
+      # Add the current parameter points to the set of the processed ones.
       for pt in self.pts:
         self.processed.add(pt.idx.tobytes())
 
+      # Sample around best points ...
       next_pts = []
       for i in fsidx:
         ds = _select_deltas(self.pts[i], self.space, self.delta_spacek, self.delta_std)
         _select_missing(ds, self.processed, next_pts)
 
+      # And randomly add ones in search of better scores.
       rnd_pts, self.cpid = _random_generate(self.space, self.rnd_n, self.cpid)
       _select_missing(rnd_pts, self.processed, next_pts)
       self.pts = next_pts
