@@ -222,7 +222,7 @@ class Selector:
 
       next_pts = []
       for i in fsidx:
-        ds = _select_deltas(pts[i], space, delta_spacek, delta_std)
+        ds = _select_deltas(self.pts[i], self.space, self.delta_spacek, self.delta_std)
         _select_missing(ds, self.processed, next_pts)
 
       rnd_pts, self.cpid = _random_generate(self.space, self.rnd_n, self.cpid)
