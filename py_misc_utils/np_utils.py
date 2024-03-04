@@ -95,6 +95,10 @@ def is_numeric(dtype):
   return np.issubdtype(dtype, np.number)
 
 
+def is_numpy(v):
+  return type(v).__module__ == np.__name__
+
+
 def moving_average(data, window, include_current=True):
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')
