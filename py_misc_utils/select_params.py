@@ -3,6 +3,7 @@ import functools
 import multiprocessing as mp
 import multiprocessing.pool as mp_pool
 import os
+import pickle
 import random
 import re
 import subprocess
@@ -15,10 +16,6 @@ from . import utils as ut
 
 
 _Point = collections.namedtuple('Point', 'pid, idx')
-
-
-def _sarray(n):
-  return np.empty((n,), dtype=np.int32)
 
 
 def _norm_params(params):
@@ -119,13 +116,10 @@ def _get_scores(pts, skeys, params, score_fn, scores_db=None, n_jobs=None,
   return scores, xparams
 
 
-def _add_to_selection(pts, gset, dest=None):
+def _select_missing(pts, processed, dest):
   for pt in pts:
-    ptb = pt.idx.tobytes()
-    if ptb not in gset:
-      gset.add(ptb)
-      if dest is not None:
-        dest.append(pt)
+    if pt.idx.tobytes() not in processed:
+      dest.append(pt)
 
 
 def _is_worth_gain(pscore, score, min_gain_pct):
@@ -166,55 +160,87 @@ def _register_scores(xparams, scores, scores_db):
     scores_db['SCORE'].append(score)
 
 
-def select_params(params, score_fn, init_count=10, delta_spacek=None, delta_std=0.2,
-                  top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
-                  max_blanks=10, n_jobs=None, mp_ctx=None):
-  nparams = _norm_params(params)
-  skeys, space = _get_space(nparams)
-  alog.debug0(f'{len(space)} parameters, {np.prod(space)} configurations')
+class Selector:
 
-  pts, cpid = _random_generate(space, init_count, 0)
+  def __init__(self, params, init_count=10, delta_spacek=None, delta_std=0.2,
+               top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
+               max_blanks=10, n_jobs=None, mp_ctx=None):
+    self.delta_spacek = delta_spacek
+    self.delta_std = delta_std
+    self.top_n = top_n
+    self.rnd_n = rnd_n
+    self.explore_pct = explore_pct
+    self.min_pid_gain_pct = min_pid_gain_pct
+    self.max_blanks = max_blanks
+    self.n_jobs = n_jobs
+    self.mp_ctx = mp_ctx
 
-  processed = set()
-  _add_to_selection(pts, processed)
+    self.processed = set()
+    self.scores_db = collections.defaultdict(list)
+    self.best_score, self.best_idx, self.best_param = None, None, None
+    self.pid_scores = dict()
+    self.blanks = 0
 
-  scores_db = collections.defaultdict(list)
-  best_score, best_idx = None, None
-  max_explore, blanks, pid_scores = int(np.prod(space) * explore_pct), 0, dict()
-  while pts and len(processed) < max_explore and blanks < max_blanks:
-    alog.debug0(f'{len(pts)} points, {len(processed) - len(pts)} processed ' \
-                f'(max {max_explore}), {blanks} blanks')
+    self.nparams = _norm_params(params)
+    self.skeys, self.space = _get_space(self.nparams)
+    self.pts, self.cpid = _random_generate(self.space, init_count, 0)
 
-    scores, xparams = _get_scores(pts, skeys, nparams, score_fn,
-                                  scores_db=scores_db,
-                                  n_jobs=n_jobs,
-                                  mp_ctx=mp_ctx)
+  def __call__(self, score_fn, status_path=None):
+    alog.debug0(f'{len(self.space)} parameters, {np.prod(self.space)} configurations')
 
-    # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
-    # the scores.
-    sidx = np.flip(np.argsort(scores))
+    max_explore = int(np.prod(self.space) * self.explore_pct)
 
-    fsidx = _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct)
+    while self.pts and len(self.processed) < max_explore and self.blanks < max_blanks:
+      alog.debug0(f'{len(pts)} points, {len(processed)} processed ' \
+                  f'(max {max_explore}), {blanks} blanks')
 
-    score = scores[fsidx[0]]
-    if best_score is None or score > best_score:
-      best_score = score
-      best_idx = pts[fsidx[0]].idx
-      alog.debug0(f'BestScore = {best_score:.5e}\tParam = {_make_param(best_idx, skeys, nparams)}')
-      blanks = 0
-    else:
-      blanks += 1
+      scores, xparams = _get_scores(self.pts, self.skeys, self.nparams, score_fn,
+                                    scores_db=self.scores_db,
+                                    n_jobs=self.n_jobs,
+                                    mp_ctx=self.mp_ctx)
 
-    next_pts = []
-    for i in fsidx:
-      ds = _select_deltas(pts[i], space, delta_spacek, delta_std)
-      _add_to_selection(ds, processed, dest=next_pts)
+      # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
+      # the scores.
+      sidx = np.flip(np.argsort(scores))
 
-    rnd_pts, cpid = _random_generate(space, rnd_n, cpid)
-    _add_to_selection(rnd_pts, processed, dest=next_pts)
-    pts = next_pts
+      fsidx = _select_top_n(self.pts, scores, sidx, self.pid_scores, self.top_n,
+                            self.min_pid_gain_pct)
 
-  return best_score, _make_param(best_idx, skeys, nparams), scores_db
+      score = scores[fsidx[0]]
+      if self.best_score is None or score > self.best_score:
+        self.best_score = score
+        self.best_idx = self.pts[fsidx[0]].idx
+        self.best_param = _make_param(self.best_idx, self.skeys, self.nparams)
+        self.blanks = 0
+
+        alog.debug0(f'BestScore = {self.best_score:.5e}\t' \
+                    f'Param = {_make_param(best_idx, self.skeys, self.nparams)}')
+      else:
+        self.blanks += 1
+
+      for pt in self.pts:
+        self.processed.add(pt.idx.tobytes())
+
+      next_pts = []
+      for i in fsidx:
+        ds = _select_deltas(pts[i], space, delta_spacek, delta_std)
+        _select_missing(ds, self.processed, next_pts)
+
+      rnd_pts, self.cpid = _random_generate(self.space, self.rnd_n, self.cpid)
+      _select_missing(rnd_pts, self.processed, next_pts)
+      self.pts = next_pts
+
+      if status_path is not None:
+        self.save_status(status_path)
+
+  def save_status(self, path):
+    with open(path, mode='wb') as sfd:
+      pickle.dump(self, sfd, protocol=ut.pickle_proto())
+
+  @staticmethod
+  def load_status(path):
+    with open(path, mode='rb') as sfd:
+      return pickle.load(sfd)
 
 
 _SCORE_TAG = 'SPSCORE'
