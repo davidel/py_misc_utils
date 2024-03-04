@@ -15,7 +15,7 @@ from . import np_utils as npu
 from . import utils as ut
 
 
-_Point = collections.namedtuple('Point', 'pid, idx')
+Point = collections.namedtuple('Point', 'pid, idx')
 
 
 def _norm_params(params):
@@ -53,7 +53,7 @@ def _select_deltas(pt, space, delta_spacek, delta_std):
   else:
     num_deltas = int(np.rint(-delta_spacek))
 
-  return [_Point(pt.pid, _mkdelta(pt.idx, space, delta_std)) for _ in range(num_deltas)]
+  return [Point(pt.pid, _mkdelta(pt.idx, space, delta_std)) for _ in range(num_deltas)]
 
 
 def _random_generate(space, count, pid):
@@ -64,7 +64,7 @@ def _random_generate(space, count, pid):
   rpoints = []
   for n in range(count):
     ridx = rng.integers(low, high)
-    rpoints.append(_Point(pid + n, ridx))
+    rpoints.append(Point(pid + n, ridx))
 
   return rpoints, pid + count
 
