@@ -162,19 +162,7 @@ def _register_scores(xparams, scores, scores_db):
 
 class Selector:
 
-  def __init__(self, params, init_count=10, delta_spacek=None, delta_std=0.2,
-               top_n=10, rnd_n=10, explore_pct=0.05, min_pid_gain_pct=0.01,
-               max_blanks=10, n_jobs=None, mp_ctx=None):
-    self.delta_spacek = delta_spacek
-    self.delta_std = delta_std
-    self.top_n = top_n
-    self.rnd_n = rnd_n
-    self.explore_pct = explore_pct
-    self.min_pid_gain_pct = min_pid_gain_pct
-    self.max_blanks = max_blanks
-    self.n_jobs = n_jobs
-    self.mp_ctx = mp_ctx
-
+  def __init__(self, params, init_count=10):
     self.processed = set()
     self.scores_db = collections.defaultdict(list)
     self.best_score, self.best_idx, self.best_param = None, None, None
@@ -185,26 +173,36 @@ class Selector:
     self.skeys, self.space = _get_space(self.nparams)
     self.pts, self.cpid = _random_generate(self.space, init_count, 0)
 
-  def __call__(self, score_fn, status_path=None):
+  def __call__(self, score_fn,
+               status_path=None,
+               delta_spacek=None,
+               delta_std=0.2,
+               top_n=10,
+               rnd_n=10,
+               explore_pct=0.05,
+               min_pid_gain_pct=0.01,
+               max_blanks=10,
+               n_jobs=None,
+               mp_ctx=None):
     alog.debug0(f'{len(self.space)} parameters, {np.prod(self.space)} configurations')
 
-    max_explore = int(np.prod(self.space) * self.explore_pct)
+    max_explore = int(np.prod(self.space) * explore_pct)
 
-    while self.pts and len(self.processed) < max_explore and self.blanks < self.max_blanks:
+    while self.pts and len(self.processed) < max_explore and self.blanks < max_blanks:
       alog.debug0(f'{len(self.pts)} points, {len(self.processed)} processed ' \
                   f'(max {max_explore}), {self.blanks} blanks')
 
       scores, xparams = _get_scores(self.pts, self.skeys, self.nparams, score_fn,
                                     scores_db=self.scores_db,
-                                    n_jobs=self.n_jobs,
-                                    mp_ctx=self.mp_ctx)
+                                    n_jobs=n_jobs,
+                                    mp_ctx=mp_ctx)
 
       # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
       # the scores.
       sidx = np.flip(np.argsort(scores))
 
-      fsidx = _select_top_n(self.pts, scores, sidx, self.pid_scores, self.top_n,
-                            self.min_pid_gain_pct)
+      fsidx = _select_top_n(self.pts, scores, sidx, self.pid_scores, top_n,
+                            min_pid_gain_pct)
 
       score = scores[fsidx[0]]
       if self.best_score is None or score > self.best_score:
@@ -224,11 +222,11 @@ class Selector:
       # Sample around best points ...
       next_pts = []
       for i in fsidx:
-        ds = _select_deltas(self.pts[i], self.space, self.delta_spacek, self.delta_std)
-        _select_missing(ds, self.processed, next_pts)
+        dpts = _select_deltas(self.pts[i], self.space, delta_spacek, delta_std)
+        _select_missing(dpts, self.processed, next_pts)
 
       # And randomly add ones in search of better scores.
-      rnd_pts, self.cpid = _random_generate(self.space, self.rnd_n, self.cpid)
+      rnd_pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
       _select_missing(rnd_pts, self.processed, next_pts)
       self.pts = next_pts
 
