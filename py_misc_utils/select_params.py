@@ -77,7 +77,7 @@ def _make_param(idx, skeys, params):
     # We keep parameters as numpy arrays, but when we pluck values we want to
     # return them in Python scalar form.
     pvalue = params[k][idx[i]]
-    param[k] = pvalue.item() if isinstance(pvalue, np.ndarray) else pvalue
+    param[k] = pvalue.item()
 
   return param
 
