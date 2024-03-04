@@ -10,6 +10,7 @@ import subprocess
 import numpy as np
 
 from . import alog
+from . import np_utils as npu
 from . import utils as ut
 
 
@@ -77,7 +78,7 @@ def _make_param(idx, skeys, params):
     # We keep parameters as numpy arrays, but when we pluck values we want to
     # return them in Python scalar form.
     pvalue = params[k][idx[i]]
-    param[k] = pvalue.item() if ut.is_numpy(pvalue) else pvalue
+    param[k] = pvalue.item() if npu.is_numpy(pvalue) else pvalue
 
   return param
 
