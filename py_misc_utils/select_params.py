@@ -213,8 +213,7 @@ class Selector:
         self.best_param = _make_param(self.best_idx, self.skeys, self.nparams)
         self.blanks = 0
 
-        alog.debug0(f'BestScore = {self.best_score:.5e}\t' \
-                    f'Param = {_make_param(best_idx, self.skeys, self.nparams)}')
+        alog.debug0(f'BestScore = {self.best_score:.5e}\tParam = {self.best_param}')
       else:
         self.blanks += 1
 
