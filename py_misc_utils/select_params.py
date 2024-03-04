@@ -190,7 +190,7 @@ class Selector:
 
     max_explore = int(np.prod(self.space) * self.explore_pct)
 
-    while self.pts and len(self.processed) < max_explore and self.blanks < max_blanks:
+    while self.pts and len(self.processed) < max_explore and self.blanks < self.max_blanks:
       alog.debug0(f'{len(pts)} points, {len(processed)} processed ' \
                   f'(max {max_explore}), {blanks} blanks')
 
