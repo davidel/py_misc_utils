@@ -74,7 +74,9 @@ def _random_generate(space, count, pid):
 def _make_param(idx, skeys, params):
   param = dict()
   for i, k in enumerate(skeys):
-    param[k] = params[k][idx[i]]
+    # We keep parameter as numpy arrays, but when we pluck values we want to
+    # return them in Python scalar form.
+    param[k] = params[k][idx[i]].item()
 
   return param
 
