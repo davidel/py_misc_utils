@@ -191,8 +191,8 @@ class Selector:
     max_explore = int(np.prod(self.space) * self.explore_pct)
 
     while self.pts and len(self.processed) < max_explore and self.blanks < self.max_blanks:
-      alog.debug0(f'{len(pts)} points, {len(processed)} processed ' \
-                  f'(max {max_explore}), {blanks} blanks')
+      alog.debug0(f'{len(self.pts)} points, {len(self.processed)} processed ' \
+                  f'(max {max_explore}), {self.blanks} blanks')
 
       scores, xparams = _get_scores(self.pts, self.skeys, self.nparams, score_fn,
                                     scores_db=self.scores_db,
