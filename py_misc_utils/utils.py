@@ -623,7 +623,7 @@ def randseed(seed=None):
   return seed
 
 
-def shuffle(*args):
+def shuffle(args):
   return random.sample(args, k=len(args))
 
 
