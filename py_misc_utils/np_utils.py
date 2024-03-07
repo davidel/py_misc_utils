@@ -242,7 +242,7 @@ class RingBuffer:
       if start > stop:
         slices.append(slice(start, stop, step))
       else:
-        slices.append(slice(start, -1, step))
+        slices.append(slice(start, None, step))
 
         rem = step + 1 + start % -step
         slices.append(slice(self._size - 1 + rem, stop, step))
