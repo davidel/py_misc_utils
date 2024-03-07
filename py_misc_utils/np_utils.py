@@ -1,3 +1,5 @@
+import types
+
 import numpy as np
 
 from . import alog
@@ -150,4 +152,100 @@ def is_ordered(v, reverse=False):
   npv = to_numpy(v)
 
   return np.all(npv[:-1] >= npv[1:]) if reverse else np.all(npv[:-1] <= npv[1:])
+
+
+class RingBuffer:
+
+  def __init__(self, size, dtype, init=None):
+    self._size = size
+    self._data = np.empty(size, dtype=dtype)
+    self._rpos, self._wpos, self._avail = 0, 0, size
+
+    if init is not None:
+      vinit = tuple(init) if isinstance(init, types.GeneratorType) else init
+      idata = np.array(vinit[-size: ], dtype=dtype)
+      self._data[: len(idata)] = idata
+      self._avail -= len(idata)
+      self._wpos = len(idata) % size
+
+  @property
+  def dtype(self):
+    return self._data.dtype
+
+  @property
+  def shape(self):
+    return (len(self), )
+
+  def push(self, v):
+    self._data[self._wpos] = v
+    self._wpos = (self._wpos + 1) % self._size
+    if self._avail > 0:
+      self._avail -= 1
+    else:
+      self._rpos = self._wpos
+
+  def pop(self):
+    tas.check_lt(self._avail, self._size, msg=f'Empty buffer')
+
+    v = self._data[self._rpos]
+    self._rpos = (self._rpos + 1) % self._size
+    self._avail += 1
+
+    return v
+
+  def to_numpy(self):
+    if len(self) == 0:
+      return np.empty(0, dtype=self.dtype)
+
+    if self._wpos > self._rpos:
+      arr = self._data[self._rpos: self._wpos]
+    else:
+      arr = np.concatenate((self._data[self._rpos:], self._data[: self._wpos]))
+
+    return arr
+
+  def __len__(self):
+    return self._size - self._avail
+
+  def __getitem__(self, i):
+    if isinstance(i, slice):
+      return np.concatenate(tuple(self._data[s] for s in self._slice(i)))
+
+    return self._data[self._rindex(i)]
+
+  def __array__(self, dtype=None):
+    arr = self.to_numpy()
+
+    return arr if dtype is None else arr.astype(dtype)
+
+  def _rindex(self, i):
+    return (self._rpos + i) % self._size
+
+  def _slice(self, s):
+    start = s.start if s.start is not None else 0
+    stop = s.stop if s.stop is not None else len(self)
+    step = s.step if s.step is not None else 1
+
+    start = self._rindex(start)
+    stop = self._rindex(stop)
+
+    slices = []
+    if step > 0:
+      if start < stop:
+        slices.append(slice(start, stop, step))
+      else:
+        slices.append(slice(start, self._size, step))
+
+        base = step - (self._size - start) % step
+        slices.append(slice(base, stop, step))
+    else:
+      if start > stop:
+        slices.append(slice(start, stop, step))
+      else:
+        slices.append(slice(start, -1, step))
+
+        rem = step + 1 + start % -step
+        slices.append(slice(self._size - 1 + rem, stop, step))
+
+    return slices
 
