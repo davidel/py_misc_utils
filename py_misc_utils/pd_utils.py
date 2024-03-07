@@ -74,9 +74,10 @@ def save_dataframe(df, path, **kwargs):
                            'date_format', 'doublequote', 'escapechar',
                            'decimal', 'compression', 'error', 'storage_options')
 
-    # For CSV file, unless otherwise specified, drop the index column as it
-    # adds no value to the output.
-    args = pyu.dict_setmissing(args, index=None)
+    # For CSV file, unless otherwise specified, and the index has no name, drop
+    # the index column as it adds no value to the output (it's simply a sequential).
+    if not df.index.name:
+      args = pyu.dict_setmissing(args, index=None)
 
     df.to_csv(path, **args)
   else:
