@@ -53,7 +53,7 @@ def parse_date(dstr, tz=None):
 def day_offset(dt):
   ddt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
 
-  return dt.timestamp() - ddt.timestamp()
+  return dt.timestamp() - ddt.timestamp(), ddt
 
 
 def np_datetime_to_epoch(dt, dtype=np.float64):
