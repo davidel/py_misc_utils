@@ -17,31 +17,35 @@ def register(fn, *args, **kwargs):
   global _NEXT_ID
 
   with _LOCK:
-    fdata = _CLEANUPS.get(fn, None)
-    if fdata is not None:
-      _CLEANUPS[fn] = (fdata[0], args, kwargs)
-    else:
-      _CLEANUPS[fn] = (_NEXT_ID, args, kwargs)
-      _NEXT_ID += 1
+    cid = _NEXT_ID
+    _CLEANUPS[cid] = (fn, args, kwargs)
+    _NEXT_ID += 1
+
+  return cid
+
+
+# Decorator style registration.
+def reg(fn):
+  register(fn)
 
   return fn
 
 
-def unregister(fn):
+def unregister(cid):
   with _LOCK:
-    _CLEANUPS.pop(fn, None)
+    return _CLEANUPS.pop(cid, None)
 
 
 def run():
   with _LOCK:
     # Sort by reverse ID, which is reverse register order.
-    fns = sorted(_CLEANUPS.keys(), key=lambda x: _CLEANUPS[x][0], reverse=True)
-    fdata = [_CLEANUPS[fn] for fn in fns]
+    cids = sorted(_CLEANUPS.keys(), reverse=True)
+    cfdata = [_CLEANUPS[cid] for cid in cids]
     _CLEANUPS.clear()
 
-  for fn, data in zip(fns, fdata):
+  for fn, arg, kwargs in cfdata:
     try:
-      fn(*data[1], **data[2])
+      fn(*args, **kwargs)
     except Exception as e:
       tb = traceback.format_exc()
       alog.error(f'Exception while running cleanups: {e}\n{tb}')
