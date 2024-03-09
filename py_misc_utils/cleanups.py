@@ -43,7 +43,7 @@ def run():
     cfdata = [_CLEANUPS[cid] for cid in cids]
     _CLEANUPS.clear()
 
-  for fn, arg, kwargs in cfdata:
+  for fn, args, kwargs in cfdata:
     try:
       fn(*args, **kwargs)
     except Exception as e:
