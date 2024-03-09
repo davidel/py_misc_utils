@@ -1101,3 +1101,9 @@ def state_update(path, **kwargs):
 def args(*uargs, **kwargs):
   return uargs, kwargs
 
+
+def maybe_call(obj, name, *args, **kwargs):
+  fn = getattr(obj, name, None)
+
+  return fn(*args, **kwargs) if fn is not None else NONE
+
