@@ -24,7 +24,6 @@ def now(tz=None):
 
 
 def from_timestamp(ts, tz=None):
-
   return datetime.datetime.fromtimestamp(ts, tz=tz or DEFAULT_TZ)
 
 
@@ -49,6 +48,12 @@ def parse_date(dstr, tz=None):
     dt = tz.localize(dt)
 
   return dt
+
+
+def day_offset(dt):
+  ddt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+  return dt.timestamp() - ddt.timestamp()
 
 
 def np_datetime_to_epoch(dt, dtype=np.float64):
