@@ -1,4 +1,5 @@
 import datetime
+import os
 import pytz
 import re
 
@@ -10,13 +11,8 @@ import pandas as pd
 from . import assert_checks as tas
 
 
-def make_datetime_from_epoch(s, tz=None):
-  ds = pd.to_datetime(s, unit='s', origin='unix', utc=True)
-
-  if tz is not None:
-    return ds.dt.tz_convert(tz) if isinstance(ds, pd.Series) else ds.tz_convert(tz)
-
-  return ds
+# Default timezone so code shows/works with such timezone.
+DEFAULT_TZ = pytz.timezone(os.getenv('DEFAULT_TZ', 'US/Eastern'))
 
 
 def us_eastern_timezone():
@@ -24,11 +20,21 @@ def us_eastern_timezone():
 
 
 def now(tz=None):
-  return datetime.datetime.now(tz=tz or us_eastern_timezone())
+  return datetime.datetime.now(tz=tz or DEFAULT_TZ)
 
 
 def from_timestamp(ts, tz=None):
-  return datetime.datetime.fromtimestamp(ts, tz=tz or us_eastern_timezone())
+
+  return datetime.datetime.fromtimestamp(ts, tz=tz or DEFAULT_TZ)
+
+
+def make_datetime_from_epoch(s, tz=None):
+  ds = pd.to_datetime(s, unit='s', origin='unix', utc=True)
+
+  if tz is not None:
+    return ds.dt.tz_convert(tz) if isinstance(ds, pd.Series) else ds.tz_convert(tz)
+
+  return ds
 
 
 def parse_date(dstr, tz=None):
