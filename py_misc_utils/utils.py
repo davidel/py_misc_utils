@@ -1097,3 +1097,7 @@ def state_update(path, **kwargs):
 
   return state
 
+
+def args(*uargs, **kwargs):
+  return uargs, kwargs
+
