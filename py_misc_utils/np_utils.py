@@ -24,12 +24,15 @@ def diff_split(data, mask_fn, sort=True):
   return [indices[s] for s in splits] if indices is not None else splits
 
 
-def group_by_delta(data, mask_fn):
+def group_splits(data, mask_fn):
   diff = np.diff(data)
   mask = mask_fn(diff)
-  msteps = np.flatnonzero(np.asarray(mask))
 
-  return np.split(data, msteps + 1)
+  return np.flatnonzero(np.asarray(mask))
+
+
+def group_by_delta(data, mask_fn):
+  return np.split(data, group_splits(data, mask_fn) + 1)
 
 
 def fillna(data, copy=False, defval=0):
