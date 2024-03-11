@@ -1,7 +1,8 @@
 import collections
 
-from . import utils as ut
 import numpy as np
+
+from . import utils as ut
 
 
 class TransformArray(collections.abc.Sequence):

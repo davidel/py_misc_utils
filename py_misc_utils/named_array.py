@@ -1,10 +1,11 @@
 import array
 import re
 
-from . import assert_checks as tas
-from . import utils as ut
 import numpy as np
 import pandas as pd
+
+from . import assert_checks as tas
+from . import utils as ut
 
 
 _NOT_NUMERIC = 'xS'

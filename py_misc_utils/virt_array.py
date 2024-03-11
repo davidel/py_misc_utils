@@ -1,7 +1,8 @@
 import collections
 
-from . import utils as ut
 import numpy as np
+
+from . import utils as ut
 
 
 def _compute_shape(data, indices):
