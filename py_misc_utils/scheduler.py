@@ -58,7 +58,7 @@ class Scheduler:
 
       heapq.heappush(self._queue, event)
       if id(event) == id(self._queue[0]):
-        self._cond.notifyAll()
+        self._cond.notify_all()
 
     return event
 
