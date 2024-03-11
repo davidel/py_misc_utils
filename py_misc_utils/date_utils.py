@@ -12,11 +12,11 @@ from . import assert_checks as tas
 
 
 # Default timezone so code shows/works with such timezone.
-DEFAULT_TZ = pytz.timezone(os.getenv('DEFAULT_TZ', 'US/Eastern'))
+DEFAULT_TZ = pytz.timezone(os.getenv('DEFAULT_TZ', 'America/New_York'))
 
 
-def us_eastern_timezone():
-  return pytz.timezone('US/Eastern')
+def ny_market_timezone():
+  return pytz.timezone('America/New_York')
 
 
 def now(tz=None):
