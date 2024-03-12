@@ -13,14 +13,25 @@ Event = collections.namedtuple(
     'time, sequence, ref, action, argument, kwargs')
 
 
+class TimeGen:
+
+  def __init__(self):
+    self.lock = threading.Lock()
+    self.cond = threading.Condition(lock=self.lock)
+
+  def now(self):
+    return time.time()
+
+  def wait(self, timeout=None):
+    self.cond.wait(timeout=timeout)
+
+
 class Scheduler:
 
-  def __init__(self, timefn=time.time, max_workers=None, name='Scheduler'):
-    self._timefn = timefn
+  def __init__(self, timegen=None, max_workers=None, name='Scheduler'):
     self._queue = []
     self._sequence = 0
-    self._lock = threading.Lock()
-    self._cond = threading.Condition(lock=self._lock)
+    self._timegen = TimeGen() if timegen is None else timegen
     self._pool = concurrent.futures.ThreadPoolExecutor(
       max_workers=max_workers,
       thread_name_prefix=name)
@@ -36,11 +47,11 @@ class Scheduler:
   def _run(self):
     while True:
       event = None
-      now = self._timefn()
-      with self._lock:
+      now = self._timegen.now()
+      with self._timegen.lock:
         timeout = (self._queue[0].time - now) if self._queue else None
         if timeout is None or timeout > 0:
-          self._cond.wait(timeout=timeout)
+          self._timegen.wait(timeout=timeout)
         else:
           event = heapq.heappop(self._queue)
 
@@ -51,24 +62,24 @@ class Scheduler:
     return uuid.uuid4()
 
   def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
-    with self._lock:
+    with self._timegen.lock:
       event = Event(time=ts, sequence=self._sequence, ref=ref, action=action,
                     argument=argument, kwargs=kwargs)
       self._sequence += 1
 
       heapq.heappush(self._queue, event)
       if id(event) == id(self._queue[0]):
-        self._cond.notify_all()
+        self._timegen.cond.notify_all()
 
     return event
 
   def enter(self, delay, action, ref=None, argument=(), kwargs={}):
-    return self.enterabs(self._timefn() + delay, action, ref=ref,
+    return self.enterabs(self._timegen.now() + delay, action, ref=ref,
                          argument=argument, kwargs=kwargs)
 
   def _cancel_fn(self, fn):
     events = []
-    with self._lock:
+    with self._timegen.lock:
       pos = []
       for i, qe in enumerate(self._queue):
         if fn(qe):
@@ -100,7 +111,7 @@ class Scheduler:
 
   def get_events(self, fn):
     events = []
-    with self._lock:
+    with self._timegen.lock:
       for qe in self._queue:
         if fn(qe):
           events.append(qe)
