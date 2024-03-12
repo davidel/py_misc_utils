@@ -38,6 +38,9 @@ class Scheduler:
     self._runner = threading.Thread(target=self._run, daemon=True)
     self._runner.start()
 
+  def now(self):
+    return self._timegen.now()
+
   def _run_event(self, event):
     try:
       event.action(*event.argument, **event.kwargs)
@@ -47,7 +50,7 @@ class Scheduler:
   def _run(self):
     while True:
       event = None
-      now = self._timegen.now()
+      now = self.now()
       with self._timegen.lock:
         timeout = (self._queue[0].time - now) if self._queue else None
         if timeout is None or timeout > 0:
@@ -63,8 +66,11 @@ class Scheduler:
 
   def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
     with self._timegen.lock:
-      event = Event(time=ts, sequence=self._sequence, ref=ref, action=action,
-                    argument=argument, kwargs=kwargs)
+      event = Event(time=ts, sequence=self._sequence,
+                    ref=ref,
+                    action=action,
+                    argument=argument,
+                    kwargs=kwargs)
       self._sequence += 1
 
       heapq.heappush(self._queue, event)
@@ -74,8 +80,10 @@ class Scheduler:
     return event
 
   def enter(self, delay, action, ref=None, argument=(), kwargs={}):
-    return self.enterabs(self._timegen.now() + delay, action, ref=ref,
-                         argument=argument, kwargs=kwargs)
+    return self.enterabs(self.now() + delay, action,
+                         ref=ref,
+                         argument=argument,
+                         kwargs=kwargs)
 
   def _cancel_fn(self, fn):
     events = []
