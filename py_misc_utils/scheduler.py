@@ -36,8 +36,9 @@ class Scheduler:
     self._runner = threading.Thread(target=self._run, daemon=True)
     self._runner.start()
 
-  def now(self):
-    return self._timegen.now()
+  @property
+  def timegen(self):
+    return self._timegen
 
   def _run_event(self, event):
     try:
@@ -47,7 +48,7 @@ class Scheduler:
 
   def _run(self):
     while True:
-      now, event = self.now(), None
+      now, event = self._timegen.now(), None
       with self._lock:
         timeout = (self._queue[0].time - now) if self._queue else None
         if timeout is None or timeout > 0:
@@ -78,7 +79,7 @@ class Scheduler:
     return event
 
   def enter(self, delay, action, ref=None, argument=(), kwargs={}):
-    return self.enterabs(self.now() + delay, action,
+    return self.enterabs(self._timegen.now() + delay, action,
                          ref=ref,
                          argument=argument,
                          kwargs=kwargs)
