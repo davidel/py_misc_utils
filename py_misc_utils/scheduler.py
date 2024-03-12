@@ -49,8 +49,7 @@ class Scheduler:
 
   def _run(self):
     while True:
-      event = None
-      now = self.now()
+      now, event = self.now(), None
       with self._timegen.lock:
         timeout = (self._queue[0].time - now) if self._queue else None
         if timeout is None or timeout > 0:
