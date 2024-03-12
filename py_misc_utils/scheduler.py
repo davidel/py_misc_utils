@@ -15,15 +15,11 @@ Event = collections.namedtuple(
 
 class TimeGen:
 
-  def __init__(self):
-    self.lock = threading.Lock()
-    self.cond = threading.Condition(lock=self.lock)
-
   def now(self):
     return time.time()
 
-  def wait(self, timeout=None):
-    self.cond.wait(timeout=timeout)
+  def wait(self, cond, timeout=None):
+    cond.wait(timeout=timeout)
 
 
 class Scheduler:
@@ -31,6 +27,8 @@ class Scheduler:
   def __init__(self, timegen=None, max_workers=None, name='Scheduler'):
     self._queue = []
     self._sequence = 0
+    self._lock = threading.Lock()
+    self._cond = threading.Condition(lock=self._lock)
     self._timegen = TimeGen() if timegen is None else timegen
     self._pool = concurrent.futures.ThreadPoolExecutor(
       max_workers=max_workers,
@@ -50,10 +48,10 @@ class Scheduler:
   def _run(self):
     while True:
       now, event = self.now(), None
-      with self._timegen.lock:
+      with self._lock:
         timeout = (self._queue[0].time - now) if self._queue else None
         if timeout is None or timeout > 0:
-          self._timegen.wait(timeout=timeout)
+          self._timegen.wait(self._cond, timeout=timeout)
         else:
           event = heapq.heappop(self._queue)
 
@@ -64,7 +62,7 @@ class Scheduler:
     return uuid.uuid4()
 
   def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
-    with self._timegen.lock:
+    with self._lock:
       event = Event(time=ts,
                     sequence=self._sequence,
                     ref=ref,
@@ -75,7 +73,7 @@ class Scheduler:
 
       heapq.heappush(self._queue, event)
       if id(event) == id(self._queue[0]):
-        self._timegen.cond.notify_all()
+        self._cond.notify_all()
 
     return event
 
@@ -87,7 +85,7 @@ class Scheduler:
 
   def _cancel_fn(self, fn):
     events = []
-    with self._timegen.lock:
+    with self._lock:
       pos = []
       for i, qe in enumerate(self._queue):
         if fn(qe):
@@ -119,7 +117,7 @@ class Scheduler:
 
   def get_events(self, fn):
     events = []
-    with self._timegen.lock:
+    with self._lock:
       for qe in self._queue:
         if fn(qe):
           events.append(qe)
