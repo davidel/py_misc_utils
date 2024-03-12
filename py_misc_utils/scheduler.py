@@ -65,7 +65,8 @@ class Scheduler:
 
   def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
     with self._timegen.lock:
-      event = Event(time=ts, sequence=self._sequence,
+      event = Event(time=ts,
+                    sequence=self._sequence,
                     ref=ref,
                     action=action,
                     argument=argument,
