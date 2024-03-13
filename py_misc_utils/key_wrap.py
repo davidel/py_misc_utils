@@ -3,9 +3,10 @@ from . import utils as ut
 _KW_TEMPLATE = '''
 class $CLASS:
 
-  def __init__(self, $KEY, $VALUE):
+  def __init__(self, $KEY, **kwargs):
     self.$KEY = $KEY
-    self.$VALUE = $VALUE
+    for k, v in kwargs.items():
+      setattr(self, k, v)
 
   def __lt__(self, other):
     return self.$KEY < other.$KEY
@@ -29,12 +30,14 @@ class $CLASS:
     return hash(self.$KEY)
 
   def __str__(self):
-    return f'$KEY="{$KEY}", $VALUE="{$VALUE}"'
+    args = {k: getattr(self, k) for k in dir(self) if not k.startswith('__')}
+
+    return f'$KEY=[{$KEY}] : {args}'
 '''
 
 
-def key_wrap(cname, key_name, value_name):
-  replaces = dict(CLASS=cname, KEY=key_name, VALUE=value_name)
+def key_wrap(cname, key_name):
+  replaces = dict(CLASS=cname, KEY=key_name)
 
   results = ut.compile(_KW_TEMPLATE, (cname,), vals=replaces)
 
