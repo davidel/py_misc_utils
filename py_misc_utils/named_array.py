@@ -23,10 +23,20 @@ def _fast_extend(dest, src):
 
 class NamedArray:
 
-  def __init__(self, names, fmt):
+  def __init__(self, names, fmt=None):
     # Support names as comma separated string.
-    fnames = re.split(r'\s*,', names) if isinstance(names, str) else names
-    tas.check_eq(len(fnames), len(fmt), msg=f'Mismatching names and format sizes: {fnames} vs "{fmt}"')
+    fnames = re.split(r'\s*,\s*', names) if isinstance(names, str) else names
+    if fmt is None:
+      cnames, cfmt = [], []
+      for name_format in fnames:
+        m = re.match(r'([^\s=]+)\s*=\s*([a-zA-Z])$', name_format)
+        tas.check(m, msg=f'Invalid name=format specification: {name_format}')
+        cnames.append(m.group(1))
+        cfmt.append(m.group(2))
+
+      fnames, fmt = cnames, ''.join(cfmt)
+    else:
+      tas.check_eq(len(fnames), len(fmt), msg=f'Mismatching names and format sizes: {fnames} vs "{fmt}"')
 
     self._names = tuple(fnames)
     self._fmt = fmt
