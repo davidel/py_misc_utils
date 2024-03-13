@@ -1,11 +1,13 @@
 import collections
 import concurrent.futures
 import heapq
+import os
 import threading
 import time
 import uuid
 
 from . import alog
+from . import utils as ut
 
 
 Event = collections.namedtuple(
@@ -24,21 +26,26 @@ class TimeGen:
 
 class Scheduler:
 
-  def __init__(self, timegen=None, max_workers=None, name='Scheduler'):
+  def __init__(self, timegen=None, executor=None, max_workers=None, name='Scheduler'):
     self._queue = []
     self._sequence = 0
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
     self._timegen = TimeGen() if timegen is None else timegen
-    self._pool = concurrent.futures.ThreadPoolExecutor(
-      max_workers=max_workers,
-      thread_name_prefix=name)
+    self._executor = (executor if executor is not None else
+                      concurrent.futures.ThreadPoolExecutor(
+                        max_workers=max_workers,
+                        thread_name_prefix=name))
     self._runner = threading.Thread(target=self._run, daemon=True)
     self._runner.start()
 
   @property
   def timegen(self):
     return self._timegen
+
+  @property
+  def executor(self):
+    return self._executor
 
   def _run_event(self, event):
     try:
@@ -57,7 +64,7 @@ class Scheduler:
           event = heapq.heappop(self._queue)
 
       if event is not None:
-        self._pool.submit(self._run_event, event)
+        self._executor.submit(self._run_event, event)
 
   def gen_unique_ref(self):
     return uuid.uuid4()
@@ -127,14 +134,32 @@ class Scheduler:
 
 
 _LOCK = threading.Lock()
+_EXECUTOR = None
 _SCHEDULER = None
+
+def _common_executor():
+  global _EXECUTOR
+
+  if _EXECUTOR is None:
+    _EXECUTOR = concurrent.futures.ThreadPoolExecutor(
+      max_workers=ut.getenv('EXECUTOR_WORKERS', dtype=int),
+      thread_name_prefix=os.getenv('EXECUTOR_NAME', 'Common Executor'),
+    )
+
+  return _EXECUTOR
+
+
+def common_executor():
+  with _LOCK:
+    return _common_executor()
+
 
 def common_scheduler():
   global _SCHEDULER
 
   with _LOCK:
     if _SCHEDULER is None:
-      _SCHEDULER = Scheduler()
+      _SCHEDULER = Scheduler(executor=_common_executor())
 
     return _SCHEDULER
 
