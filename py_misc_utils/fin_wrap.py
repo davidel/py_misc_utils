@@ -17,3 +17,13 @@ class fin_wrap:
       if hasattr(parent, fname):
         delattr(parent, fname)
 
+
+class _Wrapper:
+  pass
+
+def fin_wrap_np(obj, finfn=None):
+  wrapper = _Wrapper()
+  fin_wrap(wrapper, 'wrapped', obj, finfn=finfn)
+
+  return wrapper
+
