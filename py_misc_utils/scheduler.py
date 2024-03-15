@@ -31,21 +31,13 @@ class Scheduler:
     self._sequence = 0
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
-    self._timegen = TimeGen() if timegen is None else timegen
-    self._executor = (executor if executor is not None else
-                      concurrent.futures.ThreadPoolExecutor(
-                        max_workers=max_workers,
-                        thread_name_prefix=name))
+    self.timegen = TimeGen() if timegen is None else timegen
+    self.executor = (executor if executor is not None else
+                     concurrent.futures.ThreadPoolExecutor(
+                       max_workers=max_workers,
+                       thread_name_prefix=name))
     self._runner = threading.Thread(target=self._run, daemon=True)
     self._runner.start()
-
-  @property
-  def timegen(self):
-    return self._timegen
-
-  @property
-  def executor(self):
-    return self._executor
 
   def _run_event(self, event):
     try:
@@ -55,16 +47,16 @@ class Scheduler:
 
   def _run(self):
     while True:
-      now, event = self._timegen.now(), None
+      now, event = self.timegen.now(), None
       with self._lock:
         timeout = (self._queue[0].time - now) if self._queue else None
         if timeout is None or timeout > 0:
-          self._timegen.wait(self._cond, timeout=timeout)
+          self.timegen.wait(self._cond, timeout=timeout)
         else:
           event = heapq.heappop(self._queue)
 
       if event is not None:
-        self._executor.submit(self._run_event, event)
+        self.executor.submit(self._run_event, event)
 
   def gen_unique_ref(self):
     return uuid.uuid4()
@@ -86,7 +78,7 @@ class Scheduler:
     return event
 
   def enter(self, delay, action, ref=None, argument=(), kwargs={}):
-    return self.enterabs(self._timegen.now() + delay, action,
+    return self.enterabs(self.timegen.now() + delay, action,
                          ref=ref,
                          argument=argument,
                          kwargs=kwargs)

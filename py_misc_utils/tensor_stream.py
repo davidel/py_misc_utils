@@ -140,51 +140,39 @@ class Reader:
     self._path = path
     self._tensors = load_tensors(path)
     self._sizes = get_sizes(self._tensors)
-    self._shape = get_shapes(self._tensors)
-    self._num_streams = len(self._tensors)
-    self._state = dict()
+    self.shape = get_shapes(self._tensors)
+    self.num_streams = len(self._tensors)
+    self.state = dict()
     self._transforms = list(transforms) if transforms else None
 
     state_path = os.path.join(path, _STATE_FILE)
     if os.path.exists(state_path):
       with open(state_path, mode='rb') as f:
-        self._state = pickle.load(f)
-
-  @property
-  def num_streams(self):
-    return self._num_streams
-
-  @property
-  def shape(self):
-    return self._shape
-
-  @property
-  def state(self):
-    return self._state
+        self.state = pickle.load(f)
 
   @property
   def dtype(self):
-    return tuple([self._tensors[n][0].dtype for n in range(self._num_streams)])
+    return tuple([self._tensors[n][0].dtype for n in range(self.num_streams)])
 
   def __len__(self):
-    lens = [self._shape[i][0] for i in range(self._num_streams)]
+    lens = [self.shape[i][0] for i in range(self.num_streams)]
     tas.check(all(lens[0] == l for l in lens), msg=f'Mismatching sizes: {lens}')
 
     return lens[0] if lens else 0
 
   def tensor_sequence(self, streamno):
-    if streamno < 0 or streamno >= self._num_streams:
-      alog.xraise(RuntimeError, f'Bad stream number {streamno}, must be >= 0 and < {self._num_streams}')
+    if streamno < 0 or streamno >= self.num_streams:
+      alog.xraise(RuntimeError, f'Bad stream number {streamno}, must be >= 0 and < {self.num_streams}')
 
     return self._tensors[streamno]
 
   def get_slice(self, streamno, start, size=None):
-    if streamno < 0 or streamno >= self._num_streams:
-      alog.xraise(RuntimeError, f'Bad stream number {streamno}, must be >= 0 and < {self._num_streams}')
+    if streamno < 0 or streamno >= self.num_streams:
+      alog.xraise(RuntimeError, f'Bad stream number {streamno}, must be >= 0 and < {self.num_streams}')
 
     stream_tensors = self._tensors[streamno]
     stream_sizes = self._sizes[streamno]
-    stream_shape = self._shape[streamno]
+    stream_shape = self.shape[streamno]
 
     if start < 0 or start >= stream_shape[0]:
       alog.xraise(IndexError, f'Invalid slice start index {start}, must be >= 0 and < {stream_shape[0]}')
@@ -214,28 +202,16 @@ class Reader:
     return sliced_tensor
 
   def get_slices(self, start, size=None):
-    return [self.get_slice(x, start, size=size) for x in range(self._num_streams)]
+    return [self.get_slice(x, start, size=size) for x in range(self.num_streams)]
 
 
 class StreamArray(collections.abc.Sequence):
 
   def __init__(self, reader, streamno):
     super().__init__()
-    self._reader = reader
-    self._streamno = streamno
-    self._shape = reader.shape[streamno]
-
-  @property
-  def reader(self):
-    return self._reader
-
-  @property
-  def streamno(self):
-    return self._streamno
-
-  @property
-  def shape(self):
-    return self._shape
+    self.reader = reader
+    self.streamno = streamno
+    self.shape = reader.shape[streamno]
 
   def __getitem__(self, i):
     if isinstance(i, slice):
@@ -243,18 +219,18 @@ class StreamArray(collections.abc.Sequence):
       if step != 1:
         parts = []
         for x in range(start, end, step):
-          parts.append(self._reader.get_slice(self._streamno, x, size=1))
+          parts.append(self.reader.get_slice(self.streamno, x, size=1))
         return np.concatenate(parts)
 
-      return self._reader.get_slice(self._streamno, start, size=end - start)
+      return self.reader.get_slice(self.streamno, start, size=end - start)
 
-    return np.squeeze(self._reader.get_slice(self._streamno, i, size=1), axis=0)
+    return np.squeeze(self.reader.get_slice(self.streamno, i, size=1), axis=0)
 
   def __len__(self):
-    return self._shape[0]
+    return self.shape[0]
 
   def to_numpy(self, dtype=None):
-    npa = self._reader.get_slice(self._streamno, 0)
+    npa = self.reader.get_slice(self.streamno, 0)
 
     return npa.astype(dtype) if dtype is not None else npa
 
@@ -266,16 +242,12 @@ class Dataset(data_utils.Dataset):
 
   def __init__(self, path, transforms=None):
     super().__init__()
-    self._reader = Reader(path, transforms=transforms)
-
-  @property
-  def reader(self):
-    return self._reader
+    self.reader = Reader(path, transforms=transforms)
 
   def __len__(self):
-    shape = self._reader.shape
+    shape = self.reader.shape
     return shape[0][0] if shape else 0
 
   def __getitem__(self, i):
-    return tuple([torch.from_numpy(x) for x in self._reader.get_slices(i, size=1)])
+    return tuple([torch.from_numpy(x) for x in self.reader.get_slices(i, size=1)])
 

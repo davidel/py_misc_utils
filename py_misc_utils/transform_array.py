@@ -9,38 +9,30 @@ class TransformArray(collections.abc.Sequence):
 
   def __init__(self, data, transforms):
     super().__init__()
-    self._data = data
+    self.data = data
     self._transforms = tuple(transforms)
-    self._shape = ut.compute_shape(data)
-
-  @property
-  def data(self):
-    return self._data
-
-  @property
-  def shape(self):
-    return self._shape
+    self.shape = ut.compute_shape(data)
 
   def __getitem__(self, i):
     if isinstance(i, slice):
       start, end, step = i.indices(len(self))
       slices = []
       for j in range(start, end, step):
-        item = self._data[j]
+        item = self.data[j]
         for trs in self._transforms:
           item = trs(item)
         slices.append(item)
 
       return ut.maybe_stack_np_slices(slices)
 
-    item = self._data[i]
+    item = self.data[i]
     for trs in self._transforms:
       item = trs(item)
 
     return item
 
   def __len__(self):
-    return len(self._data)
+    return len(self.data)
 
   def to_numpy(self, dtype=None):
     slices = [self[i] for i in range(len(self))]

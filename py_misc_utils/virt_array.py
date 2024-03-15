@@ -18,33 +18,21 @@ class VirtArray(collections.abc.Sequence):
 
   def __init__(self, data, indices):
     super().__init__()
-    self._data = data
-    self._indices = indices if isinstance(indices, np.ndarray) else np.array(indices)
-    self._shape = _compute_shape(data, indices)
-
-  @property
-  def data(self):
-    return self._data
-
-  @property
-  def indices(self):
-    return self._indices
-
-  @property
-  def shape(self):
-    return self._shape
+    self.data = data
+    self.indices = indices if isinstance(indices, np.ndarray) else np.array(indices)
+    self.shape = _compute_shape(data, indices)
 
   def __getitem__(self, i):
     if isinstance(i, slice):
-      return type(self)(self._data, self._indices[i])
+      return type(self)(self.data, self.indices[i])
 
-    return self._data[self._indices[i]]
+    return self.data[self.indices[i]]
 
   def __len__(self):
-    return len(self._indices)
+    return len(self.indices)
 
   def to_numpy(self, dtype=None):
-    parts = [self._data[i] for i in self._indices]
+    parts = [self.data[i] for i in self.indices]
     if not parts:
       return np.empty((0,))
     if not isinstance(parts[0], np.ndarray):
@@ -60,4 +48,5 @@ class VirtArray(collections.abc.Sequence):
   def shuffle(self, rng=None):
     if rng is None:
       rng = np.random.default_rng()
-    rng.shuffle(self._indices)
+    rng.shuffle(self.indices)
+

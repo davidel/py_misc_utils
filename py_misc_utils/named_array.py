@@ -38,19 +38,19 @@ class NamedArray:
     else:
       tas.check_eq(len(fnames), len(fmt), msg=f'Mismatching names and format sizes: {fnames} vs "{fmt}"')
 
-    self._names = tuple(fnames)
-    self._fmt = fmt
-    self._names_index = {n: i for i, n in enumerate(self._names)}
+    self.names = tuple(fnames)
+    self.fmt = fmt
+    self._names_index = {n: i for i, n in enumerate(self.names)}
     self._str_tbl = ut.StringTable()
     self._data = tuple([[] if f in _NOT_NUMERIC else array.array(f) for f in fmt])
 
   def append(self, *args):
-    if 'S' not in self._fmt:
+    if 'S' not in self.fmt:
       for data, arg in zip(self._data, args):
         data.append(arg)
     else:
       for i, (data, arg) in enumerate(zip(self._data, args)):
-        if self._fmt[i] == 'S':
+        if self.fmt[i] == 'S':
           arg = self._str_tbl.add(arg)
         data.append(arg)
 
@@ -59,12 +59,12 @@ class NamedArray:
       _fast_extend(data, odata)
 
   def append_extend(self, *args):
-    if 'S' not in self._fmt:
+    if 'S' not in self.fmt:
       for data, arg in zip(self._data, args):
         _fast_extend(data, arg)
     else:
       for i, (data, arg) in enumerate(zip(self._data, args)):
-        if self._fmt[i] == 'S':
+        if self.fmt[i] == 'S':
           arg = [self._str_tbl.add(x) for x in arg]
         _fast_extend(data, arg)
 
@@ -72,7 +72,7 @@ class NamedArray:
     return len(self._data[0]) if self._data else 0
 
   def __getitem__(self, i):
-    return {name: data[i] for name, data in zip(self._names, self._data)}
+    return {name: data[i] for name, data in zip(self.names, self._data)}
 
   def get_tuple_item(self, i):
     return tuple([data[i] for data in self._data])
@@ -87,11 +87,11 @@ class NamedArray:
     return self._data[self._names_index[name]]
 
   def to_numpy(self, dtype=None):
-    tas.check(all([x not in self._fmt for x in _NOT_NUMERIC]),
-              msg=f'Only purely numeric arrays can be converted to numpy: {self._fmt}')
+    tas.check(all([x not in self.fmt for x in _NOT_NUMERIC]),
+              msg=f'Only purely numeric arrays can be converted to numpy: {self.fmt}')
 
     if dtype is None:
-      dtype = ut.infer_np_dtype([np.dtype(f) for f in self._fmt])
+      dtype = ut.infer_np_dtype([np.dtype(f) for f in self.fmt])
 
     na = np.empty(self.shape, dtype=dtype)
     for i in range(na.shape[1]):
@@ -107,7 +107,7 @@ class NamedArray:
 
   @property
   def data(self):
-    return {name: data for name, data in zip(self._names, self._data)}
+    return {name: data for name, data in zip(self.names, self._data)}
 
   @property
   def shape(self):
@@ -118,14 +118,6 @@ class NamedArray:
     return len(self._data)
 
   @property
-  def names(self):
-    return self._names
-
-  @property
   def dtypes(self):
-    return tuple([np.dtype('O') if f in _NOT_NUMERIC else np.dtype(f) for f in self._fmt])
-
-  @property
-  def fmt(self):
-    return self._fmt
+    return tuple([np.dtype('O') if f in _NOT_NUMERIC else np.dtype(f) for f in self.fmt])
 
