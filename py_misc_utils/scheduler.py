@@ -7,6 +7,7 @@ import uuid
 
 from . import alog
 from . import executor as xe
+from . import fin_wrap as fw
 from . import utils as ut
 
 
@@ -32,8 +33,13 @@ class Scheduler:
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
     self.timegen = TimeGen() if timegen is None else timegen
-    self.executor = (executor if executor is not None else
-                     xe.Executor(max_threads=max_workers, name_prefix=name))
+
+    if executor is not None:
+      self.executor = executor
+    else:
+      executor = xe.Executor(max_threads=max_workers, name_prefix=name)
+      fw.fin_wrap(self, 'executor', executor, finfn=executor.shutdown)
+
     self._runner = threading.Thread(target=self._run, daemon=True)
     self._runner.start()
 
