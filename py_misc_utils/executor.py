@@ -147,6 +147,7 @@ class Executor:
     self._queue = _Queue()
     self._workers = dict()
     self._thread_count = 0
+    self._shutdown = False
 
   def _register_worker(self, worker):
     alog.debug0(f'Registering worker thread {worker.ident}')
@@ -185,9 +186,14 @@ class Executor:
 
       alog.debug0(f'New thread #{self._thread_count} with ID {worker.ident}')
 
+  def _enqueue_nosync(self, task):
+    self._maybe_add_worker()
+    self._queue.put(task)
+
   def submit(self, fn, *args, sync=False, **kwargs):
     with self._lock:
-      self._maybe_add_worker()
+      if self._shutdown:
+        alog.xraise(RuntimeError, f'Cannot submit after shutdown!')
 
       task = _Task(fn=fn, args=args, kwargs=kwargs)
 
@@ -196,15 +202,17 @@ class Executor:
         if worker is not None:
           worker.sync_queue.append(task)
         else:
-          self._queue.put(task)
+          self._enqueue_nosync(task)
       else:
-        self._queue.put(task)
+        self._enqueue_nosync(task)
 
   def stop(self):
     alog.debug0(f'Stopping executor')
 
-    for _ in range(self._max_threads):
-      self._queue.put(None)
+    with self._lock:
+      self._shutdown = True
+      for _ in range(self._thread_count):
+        self._queue.put(None)
 
     while True:
       with self._lock:
