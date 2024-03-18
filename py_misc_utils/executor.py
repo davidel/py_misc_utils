@@ -149,6 +149,7 @@ class Executor:
     self._idle_timeout = idle_timeout or 5
     self._lock = threading.Lock()
     self._completed_cond = threading.Condition(lock=self._lock)
+    self._unregister_cond = threading.Condition(lock=self._lock)
     self._queue = _Queue()
     self._workers = dict()
     self._id = 0
@@ -164,6 +165,8 @@ class Executor:
       if worker is not rworker:
         # Should not happen ...
         self._workers[rworker.ident] = rworker
+      else:
+        self._unregister_cond.notify()
 
   def _complete(self, task):
     with self._lock:
@@ -240,6 +243,7 @@ class Executor:
       with self._lock:
         if self._workers:
           self._queue.put(None)
+          self._unregister_cond.wait()
         else:
           break
 
