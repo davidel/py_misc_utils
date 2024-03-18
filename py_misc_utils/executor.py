@@ -208,5 +208,5 @@ class Executor:
         break
 
       for worker in workers:
-        worker,join()
+        worker.join()
 
