@@ -220,7 +220,7 @@ class Executor:
     expires = time.time() + timeout if timeout is not None else Non
     with self._lock:
       while True:
-        minid = min(self._pending.keys()):
+        minid = min(self._pending.keys())
         if minid > task.id:
           break
 
