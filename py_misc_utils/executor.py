@@ -202,7 +202,7 @@ class Executor:
 
     while True:
       with self._lock:
-        workers = self._workers.values()
+        workers = tuple(self._workers.values())
 
       if not workers:
         break
