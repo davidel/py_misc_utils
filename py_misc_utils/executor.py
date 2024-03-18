@@ -162,6 +162,8 @@ class Executor:
         self._thread_count -= 1
 
   def _maybe_add_worker(self):
+    print('EEEEK', self._thread_count, self._min_threads, self._max_threads)
+
     if ((len(self._queue) > 0 and self._thread_count < self._max_threads) or
         self._thread_count < self._min_threads):
       idle_timeout = self._idle_timeout if self._thread_count > self._min_threads else None
