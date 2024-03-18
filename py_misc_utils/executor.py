@@ -8,7 +8,7 @@ import weakref
 from . import alog
 
 
-_Task = collections.namedtuple('Task', 'id, fn, args, kwargs')
+_Task = collections.namedtuple('Task', 'fn, args, kwargs')
 
 
 class _Void:
@@ -74,7 +74,7 @@ class _Worker:
     self.init_fn = init_fn
     self.idle_timeout = idle_timeout
     self.sync_queue = collections.deque()
-    self.thread = threading.Thread(target=self._run, daemon=True)
+    self.thread = threading.Thread(target=self._run)
     self.thread.start()
 
   def _run_task(self, task):
@@ -82,8 +82,6 @@ class _Worker:
       task.fn(*task.args, **task.kwargs)
     except Exception as e:
       alog.exception(e, exmsg=f'Exception while running scheduled task')
-
-    self._complete(task)
 
   def _register(self):
     executor = self.executor()
@@ -94,11 +92,6 @@ class _Worker:
     executor = self.executor()
     if executor is not None:
       executor._unregister_worker(self)
-
-  def _complete(self, task):
-    executor = self.executor()
-    if executor is not None:
-      executor._complete(task)
 
   def _run(self):
     if self.init_fn is not None:
@@ -124,6 +117,9 @@ class _Worker:
   def ident(self):
     return self.thread.ident
 
+  def join(self):
+    self.thread.join()
+
 
 def _wrap_init_fn(init_fn):
   ares = AsyncResult()
@@ -148,12 +144,8 @@ class Executor:
     self._init_fn = init_fn
     self._idle_timeout = idle_timeout or 5
     self._lock = threading.Lock()
-    self._completed_cond = threading.Condition(lock=self._lock)
-    self._unregister_cond = threading.Condition(lock=self._lock)
     self._queue = _Queue()
     self._workers = dict()
-    self._id = 0
-    self._pending = dict()
 
   def _register_worker(self, worker):
     with self._lock:
@@ -165,13 +157,6 @@ class Executor:
       if worker is not rworker:
         # Should not happen ...
         self._workers[rworker.ident] = rworker
-      else:
-        self._unregister_cond.notify()
-
-  def _complete(self, task):
-    with self._lock:
-      self._pending.pop(task.id)
-      self._completed_cond.notify_all()
 
   def _maybe_add_worker(self):
     num_workers = len(self._workers)
@@ -198,10 +183,8 @@ class Executor:
     with self._lock:
       self._maybe_add_worker()
 
-      task = _Task(id=self._id, fn=fn, args=args, kwargs=kwargs)
-      self._id += 1
+      task = _Task(fn=fn, args=args, kwargs=kwargs)
 
-      self._pending[task.id] = task
       if sync:
         worker = self._workers.get(threading.get_ident(), None)
         if worker is not None:
@@ -211,39 +194,19 @@ class Executor:
       else:
         self._queue.put(task)
 
-      return task
-
-  def wait_task(self, task, timeout=None):
-    expires = time.time() + timeout if timeout is not None else None
-    with self._lock:
-      while task.id in self._pending:
-        curr_timeout = expires - time.time() if expires is not None else None
-        if not self._completed_cond.wait(timeout=curr_timeout):
-          return False
-
-      return True
-
-  def task_barrier(self, task, timeout=None):
-    expires = time.time() + timeout if timeout is not None else None
-    with self._lock:
-      while self._pending:
-        minid = min(self._pending.keys())
-        if minid > task.id:
-          break
-
-        curr_timeout = expires - time.time() if expires is not None else None
-        if not self._completed_cond.wait(timeout=curr_timeout):
-          return False
-
-      return True
-
   def stop(self):
     alog.debug0(f'Stopping executor')
+
+    for _ in range(self._max_threads):
+      self._queue.put(None)
+
     while True:
       with self._lock:
-        if self._workers:
-          self._queue.put(None)
-          self._unregister_cond.wait()
-        else:
-          break
+        workers = self._workers.values()
+
+      if not workers:
+        break
+
+      for worker in workers:
+        worker,join()
 
