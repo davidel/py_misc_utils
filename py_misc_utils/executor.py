@@ -197,15 +197,15 @@ class Executor:
   def stop(self):
     alog.debug0(f'Stopping executor')
 
-    for _ in range(self._max_threads):
-      self._queue.put(None)
-
     while True:
       with self._lock:
         workers = tuple(self._workers.values())
 
       if not workers:
         break
+
+      for _ in range(len(workers)):
+        self._queue.put(None)
 
       for worker in workers:
         worker.join()
