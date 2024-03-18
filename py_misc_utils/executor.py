@@ -161,6 +161,11 @@ class Executor:
       self._workers.pop(worker.ident, None)
       self._num_threads -= 1
 
+  def _new_name(self):
+    self._thread_counter += 1
+
+    return f'{self._name_prefix}-{self._thread_counter}'
+
   def _maybe_add_worker(self):
     if ((len(self._queue) > 0 and self._num_threads < self._max_threads) or
         self._num_threads < self._min_threads):
@@ -170,10 +175,7 @@ class Executor:
       else:
         ares, init_fn = None, None
 
-      name = f'{self._name_prefix}-{self._thread_counter}'
-      self._thread_counter += 1
-
-      worker = _Worker(weakref.ref(self), self._queue, name,
+      worker = _Worker(weakref.ref(self), self._queue, self._new_name(),
                        init_fn=init_fn,
                        idle_timeout=idle_timeout)
 
