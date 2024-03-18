@@ -223,7 +223,7 @@ class Executor:
   def task_barrier(self, task, timeout=None):
     expires = time.time() + timeout if timeout is not None else None
     with self._lock:
-      while True:
+      while self._pending:
         minid = min(self._pending.keys())
         if minid > task.id:
           break
