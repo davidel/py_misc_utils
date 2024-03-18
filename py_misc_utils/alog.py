@@ -5,15 +5,18 @@ import sys
 import time
 import traceback
 
+from . import call_limiter as cl
 from . import run_once as ro
 
 
+SPAM = logging.DEBUG - 1
 DEBUG0 = logging.DEBUG + 1
 DEBUG1 = logging.DEBUG + 2
 DEBUG2 = logging.DEBUG + 3
 DEBUG3 = logging.DEBUG + 4
 
 _SHORT_LEV = {
+  SPAM: 'SP',
   DEBUG0: '0D',
   DEBUG1: '1D',
   DEBUG2: '2D',
@@ -59,14 +62,17 @@ class Formatter(logging.Formatter):
 
 def add_logging_options(parser):
   parser.add_argument('--log_level', type=str, default='INFO',
-                      choices={'DEBUG', 'DEBUG0', 'DEBUG1', 'DEBUG2', 'DEBUG3', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'},
+                      choices={'SPAM', 'DEBUG', 'DEBUG0', 'DEBUG1', 'DEBUG2', 'DEBUG3', \
+                               'INFO', 'WARNING', 'ERROR', 'CRITICAL'},
                       help='The logging level')
   parser.add_argument('--log_file', type=str, default='STDERR',
-                      help='Comma separated list of target log files (STDOUT, STDERR are also recognized)')
+                      help='Comma separated list of target log files (STDOUT, STDERR ' \
+                      f'are also recognized)')
 
 
 @ro.run_once
 def _add_levels():
+  logging.addLevelName(SPAM, 'SPAM')
   logging.addLevelName(DEBUG0, 'DEBUG0')
   logging.addLevelName(DEBUG1, 'DEBUG1')
   logging.addLevelName(DEBUG2, 'DEBUG2')
@@ -116,7 +122,7 @@ def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
   if limit < 0 or cl.trigger(2, limit):
     if _HAS_STACKLEVEL:
-      kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
+      kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 2
 
     return kwargs
 
@@ -127,58 +133,44 @@ def log(level, msg, *args, **kwargs):
     logging.log(level, msg, *args, **kwargs)
 
 
+def spam(msg, *args, **kwargs):
+  log(SPAM, msg, *args, **kwargs)
+
+
 def debug0(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.log(DEBUG0, msg, *args, **kwargs)
+  log(DEBUG0, msg, *args, **kwargs)
 
 
 def debug1(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.log(DEBUG1, msg, *args, **kwargs)
+  log(DEBUG1, msg, *args, **kwargs)
 
 
 def debug2(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.log(DEBUG2, msg, *args, **kwargs)
+  log(DEBUG2, msg, *args, **kwargs)
 
 
 def debug3(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.log(DEBUG3, msg, *args, **kwargs)
+  log(DEBUG3, msg, *args, **kwargs)
 
 
 def debug(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.debug(msg, *args, **kwargs)
+  log(logging.DEBUG, msg, *args, **kwargs)
 
 
 def info(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.info(msg, *args, **kwargs)
+  log(logging.INFO, msg, *args, **kwargs)
 
 
 def warning(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.warning(msg, *args, **kwargs)
+  log(logging.WARNING, msg, *args, **kwargs)
 
 
 def error(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.error(msg, *args, **kwargs)
+  log(logging.ERROR, msg, *args, **kwargs)
 
 
 def critical(msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None:
-    logging.critical(msg, *args, **kwargs)
+  log(logging.CRITICAL, msg, *args, **kwargs)
 
 
 def exception(e, *args, **kwargs):

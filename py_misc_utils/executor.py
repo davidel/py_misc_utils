@@ -150,19 +150,15 @@ class Executor:
     self._shutdown = False
 
   def _register_worker(self, worker):
-    alog.debug0(f'Registering worker thread {worker.ident}')
+    alog.spam(f'Registering worker thread {worker.ident}')
     with self._lock:
       self._workers[worker.ident] = worker
 
   def _unregister_worker(self, worker):
-    alog.debug0(f'Unregistering worker thread {worker.ident}')
+    alog.spam(f'Unregistering worker thread {worker.ident}')
     with self._lock:
-      rworker = self._workers.pop(worker.ident, None)
-      if worker is not rworker:
-        # Should not happen ...
-        self._workers[rworker.ident] = rworker
-      else:
-        self._thread_count -= 1
+      self._workers.pop(worker.ident, None)
+      self._thread_count -= 1
 
   def _maybe_add_worker(self):
     if ((len(self._queue) > 0 and self._thread_count < self._max_threads) or
@@ -182,9 +178,11 @@ class Executor:
         if isinstance(init_result, Exception):
           raise init_result
 
+      # At this point the thread started correctly, and _unregister_worker() will
+      # be called at some point (dropping _thread_count value by one).
       self._thread_count += 1
 
-      alog.debug0(f'New thread #{self._thread_count} with ID {worker.ident}')
+      alog.spam(f'New thread #{self._thread_count} with ID {worker.ident}')
 
   def _enqueue_nosync(self, task):
     self._maybe_add_worker()
@@ -207,7 +205,7 @@ class Executor:
         self._enqueue_nosync(task)
 
   def shutdown(self):
-    alog.debug0(f'Stopping executor')
+    alog.spam(f'Stopping executor')
 
     with self._lock:
       self._shutdown = True
@@ -217,7 +215,7 @@ class Executor:
 
       workers = tuple(self._workers.values())
 
-    alog.debug0(f'Waiting {len(workers)} worker threads to complete')
+    alog.spam(f'Waiting {len(workers)} worker threads to complete')
     for worker in workers:
       worker.join()
 
