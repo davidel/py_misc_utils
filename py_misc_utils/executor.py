@@ -74,7 +74,7 @@ class _Worker:
     self.init_fn = init_fn
     self.idle_timeout = idle_timeout
     self.sync_queue = collections.deque()
-    self.thread = threading.Thread(target=self._run)
+    self.thread = threading.Thread(target=self._run, daemon=True)
     self.thread.start()
 
   def _run_task(self, task):
@@ -206,22 +206,18 @@ class Executor:
       else:
         self._enqueue_nosync(task)
 
-  def stop(self):
+  def shutdown(self):
     alog.debug0(f'Stopping executor')
 
     with self._lock:
       self._shutdown = True
+
       for _ in range(self._thread_count):
         self._queue.put(None)
 
-    while True:
-      with self._lock:
-        workers = tuple(self._workers.values())
+      workers = tuple(self._workers.values())
 
-      if not workers:
-        break
-
-      alog.debug0(f'Waiting {len(workers)} worker threads to complete')
-      for worker in workers:
-        worker.join()
+    alog.debug0(f'Waiting {len(workers)} worker threads to complete')
+    for worker in workers:
+      worker.join()
 
