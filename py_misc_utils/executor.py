@@ -181,7 +181,7 @@ class Executor:
 
       self._thread_count += 1
 
-      alog.debug0(f'New thread #{num_workers} with ID {worker.ident}')
+      alog.debug0(f'New thread #{self._thread_count} with ID {worker.ident}')
 
   def submit(self, fn, *args, sync=False, **kwargs):
     with self._lock:
