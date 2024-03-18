@@ -130,7 +130,7 @@ def _wrap_init_fn(init_fn):
 
   def fn():
     try:
-      ares.set(fn())
+      ares.set(init_fn())
     except Exception as e:
       alog.exception(e, exmsg=f'Exception while running executor thread init function')
       ares.set(e)
