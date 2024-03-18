@@ -146,6 +146,7 @@ class Executor:
     self._lock = threading.Lock()
     self._queue = _Queue()
     self._workers = dict()
+    self._thread_count = 0
 
   def _register_worker(self, worker):
     with self._lock:
@@ -157,12 +158,13 @@ class Executor:
       if worker is not rworker:
         # Should not happen ...
         self._workers[rworker.ident] = rworker
+      else:
+        self._thread_count -= 1
 
   def _maybe_add_worker(self):
-    num_workers = len(self._workers)
-    if ((len(self._queue) > 0 and num_workers < self._max_threads) or
-        num_workers < self._min_threads):
-      idle_timeout = self._idle_timeout if num_workers > self._min_threads else None
+    if ((len(self._queue) > 0 and self._thread_count < self._max_threads) or
+        self._thread_count < self._min_threads):
+      idle_timeout = self._idle_timeout if self._thread_count > self._min_threads else None
       if self._init_fn:
         ares, init_fn = _wrap_init_fn(self._init_fn)
       else:
@@ -176,6 +178,8 @@ class Executor:
         init_result = ares.wait()
         if isinstance(init_result, Exception):
           raise init_result
+
+      self._thread_count += 1
 
       alog.debug0(f'New thread #{num_workers} with ID {worker.ident}')
 
@@ -197,15 +201,15 @@ class Executor:
   def stop(self):
     alog.debug0(f'Stopping executor')
 
+    for _ in range(self._max_threads):
+      self._queue.put(None)
+
     while True:
       with self._lock:
         workers = tuple(self._workers.values())
 
       if not workers:
         break
-
-      for _ in range(len(workers)):
-        self._queue.put(None)
 
       for worker in workers:
         worker.join()
