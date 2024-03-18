@@ -149,10 +149,12 @@ class Executor:
     self._thread_count = 0
 
   def _register_worker(self, worker):
+    alog.debug0(f'Registering worker thread {worker.ident}')
     with self._lock:
       self._workers[worker.ident] = worker
 
   def _unregister_worker(self, worker):
+    alog.debug0(f'Unregistering worker thread {worker.ident}')
     with self._lock:
       rworker = self._workers.pop(worker.ident, None)
       if worker is not rworker:
@@ -162,8 +164,6 @@ class Executor:
         self._thread_count -= 1
 
   def _maybe_add_worker(self):
-    print('EEEEK', self._thread_count, self._min_threads, self._max_threads)
-
     if ((len(self._queue) > 0 and self._thread_count < self._max_threads) or
         self._thread_count < self._min_threads):
       idle_timeout = self._idle_timeout if self._thread_count > self._min_threads else None
@@ -213,6 +213,7 @@ class Executor:
       if not workers:
         break
 
+      alog.debug0(f'Waiting {len(workers)} worker threads to complete')
       for worker in workers:
         worker.join()
 
