@@ -195,11 +195,11 @@ class Executor:
     self._queue.put(task)
 
   def submit(self, fn, *args, _sync=False, **kwargs):
+    task = _Task(fn=fn, args=args, kwargs=kwargs)
+
     with self._lock:
       if self._shutdown:
         alog.xraise(RuntimeError, f'Cannot submit after shutdown!')
-
-      task = _Task(fn=fn, args=args, kwargs=kwargs)
 
       if _sync:
         worker = self._workers.get(threading.get_ident(), None)
