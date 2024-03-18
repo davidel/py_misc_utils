@@ -61,6 +61,10 @@ class _Queue:
 
       return self.queue.popleft() if self.queue else None
 
+  def __len__(self):
+    with self.lock:
+      return len(self.queue)
+
 
 class _Worker:
 
