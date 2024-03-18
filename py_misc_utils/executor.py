@@ -68,13 +68,13 @@ class _Queue:
 
 class _Worker:
 
-  def __init__(self, executor, queue, init_fn=None, idle_timeout=None):
+  def __init__(self, executor, queue, name, init_fn=None, idle_timeout=None):
     self.executor = executor
     self.queue = queue
     self.init_fn = init_fn
     self.idle_timeout = idle_timeout
     self.sync_queue = collections.deque()
-    self.thread = threading.Thread(target=self._run, daemon=True)
+    self.thread = threading.Thread(target=self._run, name=name, daemon=True)
     self.thread.start()
 
   def _run_task(self, task):
@@ -138,15 +138,16 @@ def _wrap_init_fn(init_fn):
 class Executor:
 
   def __init__(self, max_threads=None, min_threads=None, init_fn=None,
-               idle_timeout=None):
+               name_prefix=None, idle_timeout=None):
     self._max_threads = max_threads or os.cpu_count()
     self._min_threads = min_threads or max(1, self._max_threads // 4)
     self._init_fn = init_fn
+    self._name_prefix = name_prefix or 'Executor'
     self._idle_timeout = idle_timeout or 5
     self._lock = threading.Lock()
     self._queue = _Queue()
     self._workers = dict()
-    self._thread_count = 0
+    self._num_threads, self._thread_counter = 0, 0
     self._shutdown = False
 
   def _register_worker(self, worker):
@@ -158,18 +159,21 @@ class Executor:
     alog.spam(f'Unregistering worker thread {worker.ident}')
     with self._lock:
       self._workers.pop(worker.ident, None)
-      self._thread_count -= 1
+      self._num_threads -= 1
 
   def _maybe_add_worker(self):
-    if ((len(self._queue) > 0 and self._thread_count < self._max_threads) or
-        self._thread_count < self._min_threads):
-      idle_timeout = self._idle_timeout if self._thread_count > self._min_threads else None
+    if ((len(self._queue) > 0 and self._num_threads < self._max_threads) or
+        self._num_threads < self._min_threads):
+      idle_timeout = self._idle_timeout if self._num_threads > self._min_threads else None
       if self._init_fn:
         ares, init_fn = _wrap_init_fn(self._init_fn)
       else:
         ares, init_fn = None, None
 
-      worker = _Worker(weakref.ref(self), self._queue,
+      name = f'{self._name_prefix}-{self._thread_counter}'
+      self._thread_counter += 1
+
+      worker = _Worker(weakref.ref(self), self._queue, name,
                        init_fn=init_fn,
                        idle_timeout=idle_timeout)
 
@@ -179,10 +183,10 @@ class Executor:
           raise init_result
 
       # At this point the thread started correctly, and _unregister_worker() will
-      # be called at some point (dropping _thread_count value by one).
-      self._thread_count += 1
+      # be called at some point (dropping _num_threads value by one).
+      self._num_threads += 1
 
-      alog.spam(f'New thread #{self._thread_count} with ID {worker.ident}')
+      alog.spam(f'New thread #{self._num_threads} with ID {worker.ident}')
 
   def _enqueue_nosync(self, task):
     self._maybe_add_worker()
@@ -210,7 +214,7 @@ class Executor:
     with self._lock:
       self._shutdown = True
 
-      for _ in range(self._thread_count):
+      for _ in range(self._num_threads):
         self._queue.put(None)
 
       workers = tuple(self._workers.values())

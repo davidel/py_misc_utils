@@ -1,5 +1,4 @@
 import collections
-import concurrent.futures
 import heapq
 import os
 import threading
@@ -7,6 +6,7 @@ import time
 import uuid
 
 from . import alog
+from . import executor as xe
 from . import utils as ut
 
 
@@ -33,9 +33,7 @@ class Scheduler:
     self._cond = threading.Condition(lock=self._lock)
     self.timegen = TimeGen() if timegen is None else timegen
     self.executor = (executor if executor is not None else
-                     concurrent.futures.ThreadPoolExecutor(
-                       max_workers=max_workers,
-                       thread_name_prefix=name))
+                     xe.Executor(max_threads=max_workers, name_prefix=name))
     self._runner = threading.Thread(target=self._run, daemon=True)
     self._runner.start()
 
@@ -133,9 +131,9 @@ def _common_executor():
   global _EXECUTOR
 
   if _EXECUTOR is None:
-    _EXECUTOR = concurrent.futures.ThreadPoolExecutor(
-      max_workers=ut.getenv('EXECUTOR_WORKERS', dtype=int),
-      thread_name_prefix=os.getenv('EXECUTOR_NAME', 'Common Executor'),
+    _EXECUTOR = xe.Executor(
+      max_threads=ut.getenv('EXECUTOR_WORKERS', dtype=int),
+      name_prefix=os.getenv('EXECUTOR_NAME', 'Common Executor'),
     )
 
   return _EXECUTOR
