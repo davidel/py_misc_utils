@@ -211,7 +211,7 @@ class Executor:
       return task
 
   def wait_task(self, task, timeout=None):
-    expires = time.time() + timeout if timeout is not None else Non
+    expires = time.time() + timeout if timeout is not None else None
     with self._lock:
       while task.id in self._pending:
         curr_timeout = expires - time.time() if expires is not None else None
@@ -221,7 +221,7 @@ class Executor:
       return True
 
   def task_barrier(self, task, timeout=None):
-    expires = time.time() + timeout if timeout is not None else Non
+    expires = time.time() + timeout if timeout is not None else None
     with self._lock:
       while True:
         minid = min(self._pending.keys())
