@@ -64,10 +64,7 @@ class _Queue:
   def put(self, task):
     with self.lock:
       self.queue.append(task)
-      if task is None:
-        self.cond.notify_all()
-      else:
-        self.cond.notify()
+      self.cond.notify()
 
       return len(self.queue)
 
