@@ -87,10 +87,9 @@ class _Queue:
 
 class _Worker:
 
-  def __init__(self, executor, queue, name, init_fn=None, idle_timeout=None):
+  def __init__(self, executor, queue, name, idle_timeout=None):
     self.executor = executor
     self.queue = queue
-    self.init_fn = init_fn
     self.idle_timeout = idle_timeout
     self.thread = threading.Thread(target=self._run, name=name, daemon=True)
     self.thread.start()
@@ -106,10 +105,6 @@ class _Worker:
       executor._unregister_worker(self)
 
   def _run(self):
-    if self.init_fn is not None:
-      self.init_fn()
-      self.init_fn = None
-
     self._register()
 
     while True:
@@ -131,27 +126,12 @@ class _Worker:
     self.thread.join()
 
 
-def _wrap_init_fn(init_fn):
-  ares = AsyncResult()
-
-  def fn():
-    try:
-      ares.set(init_fn())
-    except Exception as e:
-      alog.exception(e, exmsg=f'Exception while running executor thread init function')
-      ares.set(e)
-      raise
-
-  return ares, fn
-
-
 class Executor:
 
-  def __init__(self, max_threads=None, min_threads=None, init_fn=None,
-               name_prefix=None, idle_timeout=None):
+  def __init__(self, max_threads=None, min_threads=None, name_prefix=None,
+               idle_timeout=None):
     self._max_threads = max_threads or os.cpu_count()
     self._min_threads = min_threads or max(1, self._max_threads // 4)
-    self._init_fn = init_fn
     self._name_prefix = name_prefix or 'Executor'
     self._idle_timeout = idle_timeout or 5
     self._lock = threading.Lock()
@@ -183,25 +163,10 @@ class Executor:
       # timeout, while the one after that will get _idle_timeout which will
       # make them quit if no task is fetched within such timeout.
       idle_timeout = self._idle_timeout if self._num_threads > self._min_threads else None
-      if self._init_fn:
-        ares, init_fn = _wrap_init_fn(self._init_fn)
-      else:
-        ares, init_fn = None, None
 
       worker = _Worker(weakref.ref(self), self._queue, self._new_name(),
-                       init_fn=init_fn,
                        idle_timeout=idle_timeout)
 
-      if ares is not None:
-        # We are holding the Executor lock here, but the worker thread will call
-        # the init code before trying to register itself (and hence ending up
-        # trying to grab the Executor lock), so there is no deadlock here.
-        init_result = ares.wait()
-        if isinstance(init_result, Exception):
-          raise init_result
-
-      # At this point the thread started correctly, and _unregister_worker() will
-      # be called at some point (dropping _num_threads value by one).
       self._num_threads += 1
 
       alog.spam(f'New thread #{self._num_threads} with ID {worker.ident}')
