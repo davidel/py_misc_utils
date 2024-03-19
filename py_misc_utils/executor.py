@@ -226,7 +226,7 @@ class Executor:
         self._enqueue_nosync(task)
 
   def submit(self, fn, *args, _sync=False, **kwargs):
-    self._submit_task(Task(fn, args, kwargs), sync=_sync)
+    self._submit_task(Task(fn, args, kwargs), _sync)
 
   def submit_result(self, fn, *args, _sync=False, **kwargs):
     aresult = AsyncResult()
