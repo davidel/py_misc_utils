@@ -119,6 +119,7 @@ class _Worker:
         break
 
       task.run()
+      del task
 
     self._unregister()
 
