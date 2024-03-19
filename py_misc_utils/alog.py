@@ -204,13 +204,12 @@ def exception(e, *args, **kwargs):
   if kwargs is not None:
     msg = kwargs.pop('exmsg', 'Exception')
     tb = traceback.format_exc()
-    logging.error(f'{msg}: {e}\n{tb}', *args, **kwargs)
+    error(f'{msg}: {e}\n{tb}', *args, **kwargs)
 
 
 def xraise(e, msg, *args, **kwargs):
-  kwargs = logging_args(kwargs)
-  if kwargs is not None and kwargs.pop('logit', False):
-    logging.error(msg, *args, **kwargs)
+  if kwargs.pop('logit', False):
+    error(msg, *args, **kwargs)
 
   raise e(msg)
 
