@@ -20,10 +20,12 @@ class Task:
   def run(self):
     try:
       fnres = self.fn(*self.args, **self.kwargs)
-      if self.aresult is not None:
-        self.aresult.set(fnres)
     except Exception as e:
       alog.exception(e, exmsg=f'Exception while running scheduled task')
+      fnres = e
+
+    if self.aresult is not None:
+      self.aresult.set(fnres)
 
 
 class _Void:
