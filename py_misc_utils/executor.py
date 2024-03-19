@@ -69,6 +69,8 @@ class _Queue:
       else:
         self.cond.notify()
 
+      return len(self.queue)
+
   def get(self, timeout=None):
     atimeo = abst.AbsTimeout(timeout)
     with self.lock:
@@ -90,7 +92,6 @@ class _Worker:
     self.queue = queue
     self.init_fn = init_fn
     self.idle_timeout = idle_timeout
-    self.sync_queue = collections.deque()
     self.thread = threading.Thread(target=self._run, name=name, daemon=True)
     self.thread.start()
 
@@ -112,10 +113,7 @@ class _Worker:
     self._register()
 
     while True:
-      if self.sync_queue:
-        task = self.sync_queue.popleft()
-      else:
-        task = self.queue.get(timeout=self.idle_timeout)
+      task = self.queue.get(timeout=self.idle_timeout)
 
       if task is None:
         break
@@ -177,8 +175,8 @@ class Executor:
 
     return f'{self._name_prefix}-{self._thread_counter}'
 
-  def _maybe_add_worker(self):
-    if ((len(self._queue) > 0 and self._num_threads < self._max_threads) or
+  def _maybe_add_worker(self, queued):
+    if ((queued > 1 and self._num_threads < self._max_threads) or
         self._num_threads < self._min_threads):
       # Up to min_threads the workers should never quit, so they get None as
       # timeout, while the one after that will get _idle_timeout which will
@@ -207,31 +205,21 @@ class Executor:
 
       alog.spam(f'New thread #{self._num_threads} with ID {worker.ident}')
 
-  def _enqueue_nosync(self, task):
-    self._maybe_add_worker()
-    self._queue.put(task)
-
-  def _submit_task(self, task, sync):
+  def _submit_task(self, task):
     with self._lock:
       if self._shutdown:
         alog.xraise(RuntimeError, f'Cannot submit after shutdown!')
 
-      if sync:
-        worker = self._workers.get(threading.get_ident(), None)
-        if worker is not None:
-          worker.sync_queue.append(task)
-        else:
-          self._enqueue_nosync(task)
-      else:
-        self._enqueue_nosync(task)
+      queued = self._queue.put(task)
+      self._maybe_add_worker(queued)
 
-  def submit(self, fn, *args, _sync=False, **kwargs):
-    self._submit_task(Task(fn, args, kwargs), _sync)
+  def submit(self, fn, *args, **kwargs):
+    self._submit_task(Task(fn, args, kwargs))
 
-  def submit_result(self, fn, *args, _sync=False, **kwargs):
+  def submit_result(self, fn, *args, **kwargs):
     aresult = AsyncResult()
 
-    self._submit_task(Task(fn, args, kwargs, aresult=aresult), _sync)
+    self._submit_task(Task(fn, args, kwargs, aresult=aresult))
 
     return aresult
 
