@@ -139,7 +139,7 @@ def _common_executor():
   if _EXECUTOR is None:
     _EXECUTOR = xe.Executor(
       max_threads=ut.getenv('EXECUTOR_WORKERS', dtype=int),
-      name_prefix=os.getenv('EXECUTOR_NAME', 'Common Executor'),
+      name_prefix=os.getenv('EXECUTOR_NAME', 'CommonExecutor'),
     )
 
   return _EXECUTOR
