@@ -6,6 +6,7 @@ import time
 import weakref
 
 from . import alog
+from . import abs_timeout as abst
 
 
 class Task:
@@ -43,6 +44,8 @@ class AsyncResult:
 
   def wait(self, timeout=None):
     with self.cond:
+      # No need for a loop here, as the condition is signaled only when result
+      # is set by the producer.
       if self.result is VOID:
         self.cond.wait(timeout=timeout)
 
@@ -65,9 +68,10 @@ class _Queue:
         self.cond.notify()
 
   def get(self, timeout=None):
+    atimeo = abst.AbsTimeout(timeout)
     with self.lock:
       while not self.queue:
-        if not self.cond.wait(timeout=timeout):
+        if not self.cond.wait(timeout=atimeo.get()):
           break
 
       return self.queue.popleft() if self.queue else None
