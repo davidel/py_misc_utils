@@ -220,14 +220,12 @@ class Executor:
         self._enqueue_nosync(task)
 
   def submit(self, fn, *args, _sync=False, **kwargs):
-    task = Task(fn, args, kwargs)
-
     self._submit_task(Task(fn, args, kwargs), sync=_sync)
 
   def submit_result(self, fn, *args, _sync=False, **kwargs):
     aresult = AsyncResult()
 
-    self._submit_task(Task(fn, args, kwargs, aresult=aresult), sync=_sync)
+    self._submit_task(Task(fn, args, kwargs, aresult=aresult), _sync)
 
     return aresult
 
