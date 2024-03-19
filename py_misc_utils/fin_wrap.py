@@ -21,7 +21,7 @@ class fin_wrap:
 class _Wrapper:
   pass
 
-def fin_wrap_np(obj, finfn=None):
+def fin_wrap_np(obj, finfn):
   wrapper = _Wrapper()
   fin_wrap(wrapper, 'wrapped', obj, finfn=finfn)
 
