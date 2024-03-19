@@ -180,6 +180,9 @@ class Executor:
   def _maybe_add_worker(self):
     if ((len(self._queue) > 0 and self._num_threads < self._max_threads) or
         self._num_threads < self._min_threads):
+      # Up to min_threads the workers should never quit, so they get None as
+      # timeout, while the one after that will get _idle_timeout which will
+      # make them quit if no task is fetched within such timeout.
       idle_timeout = self._idle_timeout if self._num_threads > self._min_threads else None
       if self._init_fn:
         ares, init_fn = _wrap_init_fn(self._init_fn)
@@ -191,6 +194,9 @@ class Executor:
                        idle_timeout=idle_timeout)
 
       if ares is not None:
+        # We are holding the Executor lock here, but the worker thread will call
+        # the init code before trying to register itself (and hence ending up
+        # trying to grab the Executor lock), so there is no deadlock here.
         init_result = ares.wait()
         if isinstance(init_result, Exception):
           raise init_result

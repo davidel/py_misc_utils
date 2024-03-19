@@ -109,9 +109,25 @@ def setup_logging(args):
 
   logging.basicConfig(level=numeric_level, handlers=handlers)
 
+  set_current_level(numeric_level, set_logger=False)
+
+
+_LEVEL = logging.DEBUG
+
+def set_current_level(level, set_logger=True):
+  if set_logger:
+    logger = logging.getLogger()
+    logger.setLevel(level)
+    for handler in logger.handlers:
+      handler.setLevel(level)
+
+  global _LEVEL
+
+  _LEVEL = level
+
 
 def level_active(level):
-  return logging.getLogger().getEffectiveLevel() <= level
+  return _LEVEL <= level
 
 
 def level_run(level, fn):
@@ -134,43 +150,53 @@ def log(level, msg, *args, **kwargs):
 
 
 def spam(msg, *args, **kwargs):
-  log(SPAM, msg, *args, **kwargs)
+  if SPAM >= _LEVEL:
+    log(SPAM, msg, *args, **kwargs)
 
 
 def debug0(msg, *args, **kwargs):
-  log(DEBUG0, msg, *args, **kwargs)
+  if DEBUG0 >= _LEVEL:
+    log(DEBUG0, msg, *args, **kwargs)
 
 
 def debug1(msg, *args, **kwargs):
-  log(DEBUG1, msg, *args, **kwargs)
+  if DEBUG1 >= _LEVEL:
+    log(DEBUG1, msg, *args, **kwargs)
 
 
 def debug2(msg, *args, **kwargs):
-  log(DEBUG2, msg, *args, **kwargs)
+  if DEBUG2 >= _LEVEL:
+    log(DEBUG2, msg, *args, **kwargs)
 
 
 def debug3(msg, *args, **kwargs):
-  log(DEBUG3, msg, *args, **kwargs)
+  if DEBUG3 >= _LEVEL:
+    log(DEBUG3, msg, *args, **kwargs)
 
 
 def debug(msg, *args, **kwargs):
-  log(logging.DEBUG, msg, *args, **kwargs)
+  if DEBUG >= _LEVEL:
+    log(logging.DEBUG, msg, *args, **kwargs)
 
 
 def info(msg, *args, **kwargs):
-  log(logging.INFO, msg, *args, **kwargs)
+  if logging.INFO >= _LEVEL:
+    log(logging.INFO, msg, *args, **kwargs)
 
 
 def warning(msg, *args, **kwargs):
-  log(logging.WARNING, msg, *args, **kwargs)
+  if logging.WARNING >= _LEVEL:
+    log(logging.WARNING, msg, *args, **kwargs)
 
 
 def error(msg, *args, **kwargs):
-  log(logging.ERROR, msg, *args, **kwargs)
+  if logging.ERROR >= _LEVEL:
+    log(logging.ERROR, msg, *args, **kwargs)
 
 
 def critical(msg, *args, **kwargs):
-  log(logging.CRITICAL, msg, *args, **kwargs)
+  if logging.CRITICAL >= _LEVEL:
+    log(logging.CRITICAL, msg, *args, **kwargs)
 
 
 def exception(e, *args, **kwargs):
