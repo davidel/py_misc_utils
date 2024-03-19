@@ -8,7 +8,21 @@ import weakref
 from . import alog
 
 
-_Task = collections.namedtuple('Task', 'fn, args, kwargs')
+class Task:
+
+  def __init__(self, fn, args, kwargs, aresult=None):
+    self.fn = fn
+    self.args = args
+    self.kwargs = kwargs
+    self.aresult = aresult
+
+  def run(self):
+    try:
+      fnres = self.fn(*self.args, **self.kwargs)
+      if self.aresult is not None:
+        self.aresult.set(fnres)
+    except Exception as e:
+      alog.exception(e, exmsg=f'Exception while running scheduled task')
 
 
 class _Void:
@@ -16,24 +30,21 @@ class _Void:
 
 VOID = _Void()
 
-
 class AsyncResult:
 
   def __init__(self):
-    self.lock = threading.Lock()
-    self.cond = threading.Condition(lock=self.lock)
+    self.cond = threading.Condition(lock=threading.Lock())
     self.result = VOID
 
   def set(self, result):
-    with self.lock:
+    with self.cond:
       self.result = result
       self.cond.notify_all()
 
   def wait(self, timeout=None):
-    with self.lock:
-      while self.result is VOID:
-        if not self.cond.wait(timeout=timeout):
-          break
+    with self.cond:
+      if self.result is VOID:
+        self.cond.wait(timeout=timeout)
 
       return self.result
 
@@ -77,12 +88,6 @@ class _Worker:
     self.thread = threading.Thread(target=self._run, name=name, daemon=True)
     self.thread.start()
 
-  def _run_task(self, task):
-    try:
-      task.fn(*task.args, **task.kwargs)
-    except Exception as e:
-      alog.exception(e, exmsg=f'Exception while running scheduled task')
-
   def _register(self):
     executor = self.executor()
     if executor is not None:
@@ -109,7 +114,7 @@ class _Worker:
       if task is None:
         break
 
-      self._run_task(task)
+      task.run()
 
     self._unregister()
 
@@ -194,14 +199,12 @@ class Executor:
     self._maybe_add_worker()
     self._queue.put(task)
 
-  def submit(self, fn, *args, _sync=False, **kwargs):
-    task = _Task(fn=fn, args=args, kwargs=kwargs)
-
+  def _submit_task(self, task, sync):
     with self._lock:
       if self._shutdown:
         alog.xraise(RuntimeError, f'Cannot submit after shutdown!')
 
-      if _sync:
+      if sync:
         worker = self._workers.get(threading.get_ident(), None)
         if worker is not None:
           worker.sync_queue.append(task)
@@ -210,12 +213,23 @@ class Executor:
       else:
         self._enqueue_nosync(task)
 
+  def submit(self, fn, *args, _sync=False, **kwargs):
+    task = Task(fn, args, kwargs)
+
+    self._submit_task(Task(fn, args, kwargs), sync=_sync)
+
+  def submit_result(self, fn, *args, _sync=False, **kwargs):
+    aresult = AsyncResult()
+
+    self._submit_task(Task(fn, args, kwargs, aresult=aresult), sync=_sync)
+
+    return aresult
+
   def shutdown(self):
     alog.spam(f'Stopping executor')
 
     with self._lock:
       self._shutdown = True
-
       for _ in range(self._num_threads):
         self._queue.put(None)
 
