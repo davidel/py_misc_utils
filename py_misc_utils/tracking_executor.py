@@ -67,8 +67,8 @@ class TrackingExecutor:
     self.executor.shutdown()
     self.wait()
 
-  def wait(self, timeout=None):
-    atimeo = abst.AbsTimeout(timeout)
+  def wait(self, timeout=None, timefn=None):
+    atimeo = abst.AbsTimeout(timeout, timefn=timefn)
     with self._lock:
       while self._pending:
         self._pending_cv.wait(timeout=atimeo.get())

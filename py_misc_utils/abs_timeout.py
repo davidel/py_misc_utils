@@ -3,8 +3,8 @@ import time
 
 class AbsTimeout:
 
-  def __init__(self, timeout, timefn=time.time):
-    self._timefn = timefn
+  def __init__(self, timeout, timefn=None):
+    self._timefn = time.time if timefn is None else timefn
     self._expires = timefn() + timeout if timeout is not None else None
 
   def get(self):
