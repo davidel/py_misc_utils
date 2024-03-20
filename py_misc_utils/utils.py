@@ -1107,7 +1107,3 @@ def maybe_call(obj, name, *args, **kwargs):
 
   return fn(*args, **kwargs) if fn is not None else NONE
 
-
-def cpu_yield():
-  time.sleep(0)
-
