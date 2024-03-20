@@ -270,6 +270,17 @@ def dict_setmissing(d, **kwargs):
   return kwargs
 
 
+def state_override(obj, state, cs_keys, prefix=None, set_missing=False):
+  aprefix = prefix if prefix is not None else '_'
+  for key in re.split(r'\s*,\s*', cs_keys):
+    sv = state.get(key, NONE)
+    if sv is NONE:
+      if set_missing:
+        setattr(f'{aprefix}{key}', None)
+    else:
+      setattr(f'{aprefix}{key}', sv)
+
+
 def genhash(v):
   if isinstance(v, dict):
     vdata = []
