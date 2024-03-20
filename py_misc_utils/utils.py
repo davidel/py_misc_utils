@@ -274,14 +274,9 @@ def state_override(obj, state, cs_keys):
   for key in re.split(r'\s*,\s*', cs_keys):
     sv = state.get(key, NONE)
     if sv is not NONE:
-      fkey = f'_{key}'
-      curv = getattr(obj, fkey, NONE)
-      if curv is NONE:
-        fkey = key
-        curv = getattr(obj, fkey, NONE)
-
+      curv = getattr(obj, key, NONE)
       if curv is not NONE:
-        setattr(obj, fkey, sv)
+        setattr(obj, key, sv)
 
 
 def genhash(v):
