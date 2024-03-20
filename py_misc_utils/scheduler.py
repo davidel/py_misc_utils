@@ -130,32 +130,14 @@ class Scheduler:
 
 
 _LOCK = threading.Lock()
-_EXECUTOR = None
 _SCHEDULER = None
-
-def _common_executor():
-  global _EXECUTOR
-
-  if _EXECUTOR is None:
-    _EXECUTOR = xe.Executor(
-      max_threads=ut.getenv('EXECUTOR_WORKERS', dtype=int),
-      name_prefix=os.getenv('EXECUTOR_NAME', 'CommonExecutor'),
-    )
-
-  return _EXECUTOR
-
-
-def common_executor():
-  with _LOCK:
-    return _common_executor()
-
 
 def common_scheduler():
   global _SCHEDULER
 
   with _LOCK:
     if _SCHEDULER is None:
-      _SCHEDULER = Scheduler(executor=_common_executor())
+      _SCHEDULER = Scheduler(executor=xe.common_executor())
 
     return _SCHEDULER
 

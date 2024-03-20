@@ -6,6 +6,7 @@ import time
 import weakref
 
 from . import alog
+from . import utils as ut
 
 
 class Task:
@@ -197,4 +198,20 @@ class Executor:
     alog.spam(f'Waiting {len(workers)} worker threads to complete')
     for worker in workers:
       worker.join()
+
+
+_LOCK = threading.Lock()
+_EXECUTOR = None
+
+def common_executor():
+  global _EXECUTOR
+
+  with _LOCK:
+    if _EXECUTOR is None:
+      _EXECUTOR = Executor(
+        max_threads=ut.getenv('EXECUTOR_WORKERS', dtype=int),
+        name_prefix=os.getenv('EXECUTOR_NAME', 'CommonExecutor'),
+      )
+
+    return _EXECUTOR
 
