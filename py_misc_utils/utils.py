@@ -1108,8 +1108,6 @@ def maybe_call(obj, name, *args, **kwargs):
   return fn(*args, **kwargs) if fn is not None else NONE
 
 
-_YIELD_FN = getattr(os, 'sched_yield', lambda: time.sleep(0))
-
 def cpu_yield():
-  _YIELD_FN()
+  time.sleep(0)
 
