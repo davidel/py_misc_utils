@@ -9,6 +9,7 @@ GONE = _Gone()
 
 def weak_call(obj, name, *args, **kwargs):
   ref = weakref.ref(obj)
+  del obj
 
   def wfn():
     wobj = ref()

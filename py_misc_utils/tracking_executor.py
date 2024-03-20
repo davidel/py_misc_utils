@@ -7,6 +7,7 @@ from . import executor as xe
 
 def _wrap_task(executor, tid, fn, *args, **kwargs):
   eref = weakref.ref(executor)
+  del executor
 
   def wfn():
     try:
