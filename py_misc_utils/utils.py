@@ -248,6 +248,10 @@ def dict_subset(d, *keys):
   return subd
 
 
+def dict_subset_cs(d, cs_keys):
+  return dict_subset(d, *re.split(r'\s*,\s*', cs_keys))
+
+
 def dict_extract(d, prefix=None, rx=None):
   if rx is None:
     rx = f'{prefix}(.*)'
