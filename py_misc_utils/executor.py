@@ -6,7 +6,6 @@ import time
 import weakref
 
 from . import alog
-from . import abs_timeout as abst
 
 
 class Task:
@@ -69,10 +68,9 @@ class _Queue:
       return len(self.queue)
 
   def get(self, timeout=None):
-    atimeo = abst.AbsTimeout(timeout)
     with self.lock:
       while not self.queue:
-        if not self.cond.wait(timeout=atimeo.get()):
+        if not self.cond.wait(timeout=timeout):
           break
 
       return self.queue.popleft() if self.queue else None
