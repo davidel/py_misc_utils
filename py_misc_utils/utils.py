@@ -238,7 +238,7 @@ def get_property(obj, name, defval=None):
   return p() if callable(p) else p
 
 
-def dict_subset(d, *keys):
+def dict_subset(d, keys):
   subd = dict()
   for k in keys:
     v = d.get(k, NONE)
@@ -246,10 +246,6 @@ def dict_subset(d, *keys):
       subd[k] = v
 
   return subd
-
-
-def dict_subset_cs(d, cs_keys):
-  return dict_subset(d, *re.split(r'\s*,\s*', cs_keys))
 
 
 def dict_extract(d, prefix=None, rx=None):
@@ -270,13 +266,17 @@ def dict_setmissing(d, **kwargs):
   return kwargs
 
 
-def state_override(obj, state, cs_keys):
-  for key in re.split(r'\s*,\s*', cs_keys):
+def state_override(obj, state, keys):
+  for key in keys:
     sv = state.get(key, NONE)
     if sv is not NONE:
       curv = getattr(obj, key, NONE)
       if curv is not NONE:
         setattr(obj, key, sv)
+
+
+def comma_split(csstr):
+  return re.split(r'\s*,\s*', csstr)
 
 
 def genhash(v):

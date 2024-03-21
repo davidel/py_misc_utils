@@ -25,7 +25,7 @@ class NamedArray:
 
   def __init__(self, names, fmt=None):
     # Support names as comma separated string.
-    fnames = re.split(r'\s*,\s*', names) if isinstance(names, str) else names
+    fnames = ut.comma_split(names) if isinstance(names, str) else names
     if fmt is None:
       cnames, cfmt = [], []
       for name_format in fnames:

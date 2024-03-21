@@ -63,16 +63,16 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
 def save_dataframe(df, path, **kwargs):
   _, ext = os.path.splitext(os.path.basename(path))
   if ext == '.pkl':
-    args = pyu.dict_subset(kwargs, 'compression', 'protocol', 'storage_options')
+    args = pyu.dict_subset(kwargs, ('compression', 'protocol', 'storage_options'))
     if 'protocol' not in args:
       args['protocol'] = pyu.pickle_proto()
     df.to_pickle(path, **args)
   elif ext == '.csv':
-    args = pyu.dict_subset(kwargs, 'float_format', 'columns', 'header', 'index',
-                           'index_label', 'mode', 'encoding', 'quoting',
-                           'quotechar', 'line_terminator', 'chunksize',
-                           'date_format', 'doublequote', 'escapechar',
-                           'decimal', 'compression', 'error', 'storage_options')
+    args = pyu.dict_subset(kwargs, ('float_format', 'columns', 'header', 'index',
+                                    'index_label', 'mode', 'encoding', 'quoting',
+                                    'quotechar', 'line_terminator', 'chunksize',
+                                    'date_format', 'doublequote', 'escapechar',
+                                    'decimal', 'compression', 'error', 'storage_options'))
 
     # For CSV file, unless otherwise specified, and the index has no name, drop
     # the index column as it adds no value to the output (it's simply a sequential).
@@ -91,20 +91,20 @@ def load_dataframe(path, **kwargs):
   elif ext == '.csv':
     rows_sample = kwargs.pop('rows_sample', 100)
     dtype = kwargs.pop('dtype', None)
-    args = pyu.dict_subset(kwargs, 'sep', 'delimiter', 'header', 'names',
-                           'index_col', 'usecols', 'squeeze', 'prefix',
-                           'mangle_dupe_cols', 'dtype', 'engine',
-                           'converters', 'true_values', 'false_values',
-                           'skipinitialspace', 'skiprows', 'skipfooter',
-                           'nrows', 'na_values', 'keep_default_na', 'na_filter',
-                           'verbose', 'skip_blank_lines', 'parse_dates',
-                           'infer_datetime_format', 'keep_date_col', 'date_parser',
-                           'dayfirst', 'cache_dates', 'iterator', 'chunksize',
-                           'compression', 'thousands', 'decimal', 'lineterminator',
-                           'quotechar', 'quoting', 'doublequote', 'escapechar',
-                           'comment', 'encoding', 'dialect', 'error_bad_lines',
-                           'warn_bad_lines', 'delim_whitespace', 'low_memory',
-                           'memory_map', 'float_precision', 'storage_options')
+    args = pyu.dict_subset(kwargs, ('sep', 'delimiter', 'header', 'names',
+                                    'index_col', 'usecols', 'squeeze', 'prefix',
+                                    'mangle_dupe_cols', 'dtype', 'engine',
+                                    'converters', 'true_values', 'false_values',
+                                    'skipinitialspace', 'skiprows', 'skipfooter',
+                                    'nrows', 'na_values', 'keep_default_na', 'na_filter',
+                                    'verbose', 'skip_blank_lines', 'parse_dates',
+                                    'infer_datetime_format', 'keep_date_col', 'date_parser',
+                                    'dayfirst', 'cache_dates', 'iterator', 'chunksize',
+                                    'compression', 'thousands', 'decimal', 'lineterminator',
+                                    'quotechar', 'quoting', 'doublequote', 'escapechar',
+                                    'comment', 'encoding', 'dialect', 'error_bad_lines',
+                                    'warn_bad_lines', 'delim_whitespace', 'low_memory',
+                                    'memory_map', 'float_precision', 'storage_options'))
 
     return read_csv(path, rows_sample=rows_sample, dtype=dtype,
                     args=args)
