@@ -8,21 +8,13 @@ import uuid
 from . import alog
 from . import executor as xe
 from . import fin_wrap as fw
+from . import timegen as tg
 from . import utils as ut
 
 
 Event = collections.namedtuple(
     'Event',
     'time, sequence, ref, action, argument, kwargs')
-
-
-class TimeGen:
-
-  def now(self):
-    return time.time()
-
-  def wait(self, cond, timeout=None):
-    cond.wait(timeout=timeout)
 
 
 class Scheduler:
@@ -32,7 +24,7 @@ class Scheduler:
     self._sequence = 0
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
-    self.timegen = TimeGen() if timegen is None else timegen
+    self.timegen = tg.TimeGen() if timegen is None else timegen
 
     if executor is not None:
       self.executor = executor

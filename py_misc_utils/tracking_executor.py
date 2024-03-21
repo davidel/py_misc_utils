@@ -3,6 +3,7 @@ import weakref
 
 from . import abs_timeout as abst
 from . import executor as xe
+from . import timegen as tg
 
 
 def _wrap_task(executor, tid, fn, *args, **kwargs):
@@ -67,9 +68,10 @@ class TrackingExecutor:
     self.executor.shutdown()
     self.wait()
 
-  def wait(self, timeout=None, timefn=None):
-    atimeo = abst.AbsTimeout(timeout, timefn=timefn)
+  def wait(self, timeout=None, timegen=None):
+    atimegen = tg.TimeGen() if timegen is None else timegen
+    atimeo = abst.AbsTimeout(timeout, timefn=timegen.now)
     with self._lock:
       while self._pending:
-        self._pending_cv.wait(timeout=atimeo.get())
+        atimegen.wait(self._pending_cv, timeout=atimeo.get())
 
