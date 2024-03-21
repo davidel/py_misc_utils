@@ -70,7 +70,7 @@ class TrackingExecutor:
 
   def wait(self, timeout=None, timegen=None):
     atimegen = tg.TimeGen() if timegen is None else timegen
-    atimeo = abst.AbsTimeout(timeout, timefn=timegen.now)
+    atimeo = abst.AbsTimeout(timeout, timefn=atimegen.now)
     with self._lock:
       while self._pending:
         atimegen.wait(self._pending_cv, timeout=atimeo.get())
