@@ -15,6 +15,12 @@ def get_state(obj):
   return {n: getattr(obj, n, None) for n in fields}
 
 
+def to_state(obj, path):
+  state = get_state(obj)
+  with open(path, mode='wb') as sfd:
+    pickle.dump(state, sfd)
+
+
 def from_state(cls, path, *args, **kwargs):
   with open(path, mode='rb') as sfd:
     state = pickle.load(sfd)
