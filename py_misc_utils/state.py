@@ -44,5 +44,9 @@ def from_state(cls, path, *args, **kwargs):
   for sn in getattr(cls, STATE_FIELDS, []):
     setattr(obj, sn, state[sn])
 
+  finit = getattr(obj, '_state_finit', None)
+  if finit is not None:
+    finit()
+
   return obj
 
