@@ -90,19 +90,12 @@ class _Worker:
     self.thread = threading.Thread(target=self._run, name=name, daemon=True)
     self.thread.start()
 
-  def _register(self):
-    executor = self.executor()
-    if executor is not None:
-      executor._register_worker(self)
-
   def _unregister(self):
     executor = self.executor()
     if executor is not None:
       executor._unregister_worker(self)
 
   def _run(self):
-    self._register()
-
     while True:
       task = self.queue.get(timeout=self.idle_timeout)
 
@@ -133,19 +126,13 @@ class Executor:
     self._lock = threading.Lock()
     self._queue = _Queue()
     self._workers = dict()
-    self._num_threads, self._thread_counter = 0, 0
+    self._thread_counter = 0
     self._shutdown = False
-
-  def _register_worker(self, worker):
-    alog.spam(f'Registering worker thread {worker.ident}')
-    with self._lock:
-      self._workers[worker.ident] = worker
 
   def _unregister_worker(self, worker):
     alog.spam(f'Unregistering worker thread {worker.ident}')
     with self._lock:
       self._workers.pop(worker.ident, None)
-      self._num_threads -= 1
 
   def _new_name(self):
     self._thread_counter += 1
@@ -153,19 +140,19 @@ class Executor:
     return f'{self._name_prefix}-{self._thread_counter}'
 
   def _maybe_add_worker(self, queued):
-    if ((queued > 1 and self._num_threads < self._max_threads) or
-        self._num_threads < self._min_threads):
+    num_threads = len(self._workers)
+    if ((queued > 1 and num_threads < self._max_threads) or num_threads < self._min_threads):
       # Up to min_threads the workers should never quit, so they get None as
       # timeout, while the one after that will get _idle_timeout which will
       # make them quit if no task is fetched within such timeout.
-      idle_timeout = self._idle_timeout if self._num_threads > self._min_threads else None
+      idle_timeout = self._idle_timeout if num_threads > self._min_threads else None
 
       worker = _Worker(weakref.ref(self), self._queue, self._new_name(),
                        idle_timeout=idle_timeout)
 
-      self._num_threads += 1
+      self._workers[worker.ident] = worker
 
-      alog.spam(f'New thread #{self._num_threads} with ID {worker.ident}')
+      alog.spam(f'New thread #{num_threads} with ID {worker.ident}')
 
   def _submit_task(self, task):
     with self._lock:
@@ -190,7 +177,7 @@ class Executor:
 
     with self._lock:
       self._shutdown = True
-      for _ in range(self._num_threads):
+      for _ in range(len(self._workers)):
         self._queue.put(None)
 
       workers = tuple(self._workers.values())
