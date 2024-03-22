@@ -51,6 +51,9 @@ class AsyncResult:
       if self.result is VOID:
         self.cond.wait(timeout=timeout)
 
+      if isinstance(self.result, Exception):
+        raise self.result
+
       return self.result
 
 
