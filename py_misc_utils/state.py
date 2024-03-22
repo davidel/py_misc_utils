@@ -12,7 +12,16 @@ def get_state(obj):
   for fn in (ARGS_FIELDS, KWARGS_FIELDS, STATE_FIELDS):
     fields.extend(list(getattr(cls, fn, [])))
 
-  return {n: getattr(obj, n, None) for n in fields}
+  state = dict()
+  for n in fields:
+    fv = getattr(obj, n, None)
+    if fv is None and not n.startswith('_'):
+      # Handle cases where fields are hidden.
+      fv = getattr(obj, f'_{n}', None)
+
+    state[n] = fv
+
+  return state
 
 
 def to_state(obj, path):
