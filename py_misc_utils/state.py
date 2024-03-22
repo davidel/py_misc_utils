@@ -16,7 +16,7 @@ def get_state(obj):
 
 
 def from_state(cls, path, *args, **kwargs):
-  with open(path, mode=rb) as sfd:
+  with open(path, mode='rb') as sfd:
     state = pickle.load(sfd)
 
   skwargs = {n: getattr(obj, n, None) for n in getattr(cls, KWARGS_FIELDS, [])}
