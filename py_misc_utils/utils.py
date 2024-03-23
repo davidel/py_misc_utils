@@ -295,6 +295,24 @@ def genhash(v):
   return hash((type(v), v))
 
 
+def fetch_args(func, locs):
+  sig = inspect.signature(func)
+
+  args, kwargs = [], dict()
+  for n, p in sig.parameters.items():
+    if p.kind == p.POSITIONAL_ONLY:
+      args.append(locs[n])
+    elif p.kind == p.POSITIONAL_OR_KEYWORD:
+      if p.default is inspect.Signature.empty:
+        args.append(locs[n])
+      else:
+        kwargs[n] = locs[n]
+    else:
+      kwargs[n] = locs[n]
+
+  return args, kwargs
+
+
 def signature(v):
   if isinstance(v, dict):
     vdata = dict()
