@@ -125,7 +125,7 @@ class Executor:
     self._max_threads = max_threads or os.cpu_count()
     self._min_threads = min_threads or max(1, self._max_threads // 4)
     self._name_prefix = name_prefix or 'Executor'
-    self._idle_timeout = idle_timeout or 5
+    self._idle_timeout = idle_timeout or ut.getenv('EXECUTOR_IDLE_TIMEOUT', dtype=int, defval=5)
     self._lock = threading.Lock()
     self._queue = Queue()
     self._workers = dict()
