@@ -57,7 +57,7 @@ class AsyncResult:
       return self.result
 
 
-class _Queue:
+class Queue:
 
   def __init__(self):
     self.lock = threading.Lock()
@@ -127,7 +127,7 @@ class Executor:
     self._name_prefix = name_prefix or 'Executor'
     self._idle_timeout = idle_timeout or 5
     self._lock = threading.Lock()
-    self._queue = _Queue()
+    self._queue = Queue()
     self._workers = dict()
     self._thread_counter = 0
     self._shutdown = False
