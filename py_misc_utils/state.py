@@ -11,7 +11,7 @@ STATE_FIELDS = 'STATE_FIELDS'
 
 def store_args(func, locs, obj=None, ovr=None, nohide=None):
   if obj is None:
-    obj = func.im_self
+    obj = func.__self__
 
   ovr = ovr or dict()
   nohide = nohide or set()
