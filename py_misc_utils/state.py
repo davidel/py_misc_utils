@@ -1,9 +1,24 @@
+import inspect
 import pickle
+
+from . import alog
 
 
 ARGS_FIELDS = 'ARGS_FIELDS'
 KWARGS_FIELDS = 'KWARGS_FIELDS'
 STATE_FIELDS = 'STATE_FIELDS'
+
+
+def store_args(func, locs, obj=None, ovr=None, nohide=None):
+  if obj is None:
+    obj = func.im_self
+
+  ovr = ovr or dict()
+  nohide = nohide or set()
+  sig = inspect.signature(func)
+  for n, p in sig.parameters.items():
+    fn = f'_{n}' if n not in nohide else n
+    setattr(obj, fn, ovr.get(n, locs[n]))
 
 
 def get_state(obj):
@@ -12,12 +27,15 @@ def get_state(obj):
   for fn in (ARGS_FIELDS, KWARGS_FIELDS, STATE_FIELDS):
     fields.extend(list(getattr(cls, fn, [])))
 
-  state = dict()
+  state, missing = dict(), object()
   for n in fields:
-    fv = getattr(obj, n, None)
-    if fv is None and not n.startswith('_'):
-      # Handle cases where fields are hidden.
-      fv = getattr(obj, f'_{n}', None)
+    fv = getattr(obj, n, missing)
+    if fv is missing and not n.startswith('_'):
+      # Handle cases where fields are stored as hidden.
+      fv = getattr(obj, f'_{n}', missing)
+
+    if fv is missing:
+      alog.xraise(RuntimeError, f'Missing field: "{n}" and "_{n}"')
 
     state[n] = fv
 
