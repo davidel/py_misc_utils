@@ -24,7 +24,7 @@ class Task:
     try:
       fnres = self.fn(*self.args, **self.kwargs)
     except Exception as e:
-      alog.exception(e, exmsg=f'Exception while running scheduled task')
+      alog.exception(e, exmsg=f'Exception while running executor task')
       fnres = _ExceptionWrapper(exception=e)
 
     if self.aresult is not None:
