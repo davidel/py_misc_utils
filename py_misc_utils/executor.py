@@ -121,12 +121,20 @@ class _Worker:
     self.thread.join()
 
 
+def _compute_num_threads(min_threads, max_threads):
+  if max_threads is None:
+    max_threads = max(8, int(os.cpu_count() * 1.5))
+  if min_threads is None:
+    min_threads = max(2, max_threads // 4)
+
+  return min_threads, max_threads
+
+
 class Executor:
 
   def __init__(self, max_threads=None, min_threads=None, name_prefix=None,
                idle_timeout=None):
-    self._max_threads = max_threads or os.cpu_count()
-    self._min_threads = min_threads or max(1, self._max_threads // 4)
+    self._min_threads, self._max_threads = _compute_num_threads(min_threads, max_threads)
     self._name_prefix = name_prefix or 'Executor'
     self._idle_timeout = idle_timeout or ut.getenv('EXECUTOR_IDLE_TIMEOUT', dtype=int, defval=5)
     self._lock = threading.Lock()
