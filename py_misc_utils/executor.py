@@ -9,6 +9,9 @@ from . import alog
 from . import utils as ut
 
 
+_ExceptionWrapper = collections.namedtuple('ExceptionWrapper', 'exception')
+
+
 class Task:
 
   def __init__(self, fn, args, kwargs, aresult=None):
@@ -22,7 +25,7 @@ class Task:
       fnres = self.fn(*self.args, **self.kwargs)
     except Exception as e:
       alog.exception(e, exmsg=f'Exception while running scheduled task')
-      fnres = e
+      fnres = _ExceptionWrapper(exception=e)
 
     if self.aresult is not None:
       self.aresult.set(fnres)
@@ -51,8 +54,8 @@ class AsyncResult:
       if self.result is VOID:
         self.cond.wait(timeout=timeout)
 
-      if isinstance(self.result, Exception):
-        raise self.result
+      if isinstance(self.result, _ExceptionWrapper):
+        raise self.result.exception
 
       return self.result
 
