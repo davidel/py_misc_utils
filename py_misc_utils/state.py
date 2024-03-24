@@ -9,16 +9,15 @@ KWARGS_FIELDS = 'KWARGS_FIELDS'
 STATE_FIELDS = 'STATE_FIELDS'
 
 
-def store_args(func, locs, obj=None, ovr=None, nohide=None):
+def store_args(func, locs, obj=None, nohide=None):
   if obj is None:
     obj = func.__self__
 
-  ovr = ovr or dict()
   nohide = nohide or set()
   sig = inspect.signature(func)
   for n, p in sig.parameters.items():
     fn = f'_{n}' if n not in nohide else n
-    setattr(obj, fn, ovr.get(n, locs[n]))
+    setattr(obj, fn, locs[n])
 
 
 def get_state(obj):
