@@ -2,6 +2,7 @@ import inspect
 import pickle
 
 from . import alog
+from . import assert_checks as tas
 
 
 ARGS_FIELDS = 'ARGS_FIELDS'
@@ -11,7 +12,8 @@ STATE_FIELDS = 'STATE_FIELDS'
 
 def store_args(func, locs, obj=None, nohide=None):
   if obj is None:
-    obj = func.__self__
+    obj = getattr(func, '__self__', None)
+    tas.check_is_not_none(obj, msg=f'An object must be specified')
 
   nohide = nohide or set()
   sig = inspect.signature(func)

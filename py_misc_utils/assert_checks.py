@@ -9,8 +9,9 @@ def get_loc(path, lineno):
   if os.path.isfile(path):
     with open(path, mode='r') as f:
       lines = f.read().splitlines()
+
       return lines[lineno - 1] if len(lines) > lineno else None
-      
+
 
 def get_caller_info(n_back):
   frame = inspect.stack()[n_back + 1][0]
@@ -18,7 +19,7 @@ def get_caller_info(n_back):
   loc = get_loc(caller.filename, caller.lineno)
   if loc:
     return f'{caller.filename}:{caller.lineno}: {loc.lstrip()}'
-  
+
   return f'{caller.filename}:{caller.lineno}'
 
 
@@ -42,7 +43,9 @@ def report_fail(level, op, *args, **kwargs):
       msg = f'{args[0]} {op} {args[1]} failed from {cinfo}'
   else:
     msg = f'Check failed from {cinfo}'
+
   alog.log(level, msg)
+
   raise AssertionError(msg)
 
 
