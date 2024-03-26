@@ -71,9 +71,9 @@ def make_ntuple(ntc, args):
   for f in ntc._fields:
     fv = args.get(f, NONE)
     if fv is NONE:
-      fv = ntc._field_defaults.get(f, NONE)
+      fv = ntc._field_defaults.get(f, None)
 
-    targs.append(None if fv is NONE else fv)
+    targs.append(fv)
 
   return ntc._make(targs)
 
