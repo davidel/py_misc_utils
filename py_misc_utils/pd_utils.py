@@ -112,7 +112,7 @@ def load_dataframe(path, **kwargs):
     alog.xraise(RuntimeError, f'Unknown extension: {ext}')
 
 
-def load_dataframe_as_npdict(path, reset_index=True):
+def load_dataframe_as_npdict(path, reset_index=False):
   df = load_dataframe(path)
 
   if reset_index and df.index.name:
