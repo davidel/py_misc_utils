@@ -115,7 +115,8 @@ def load_dataframe(path, **kwargs):
 def load_dataframe_as_npdict(path, reset_index=None):
   df = load_dataframe(path)
 
-  if reset_index is True or (isinstance(reset_index, str) and reset_index == df.index.name):
+  if df.index.name and (reset_index is True or
+                        (isinstance(reset_index, str) and reset_index == df.index.name)):
     df = df.reset_index()
 
   cdata = dict()
