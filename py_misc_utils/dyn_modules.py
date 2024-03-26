@@ -3,20 +3,26 @@ import importlib
 import os
 
 from . import alog
+from . import assert_checks as tas
 from . import utils as ut
 
 
 class DynLoader:
 
-  def __init__(self, modname, postfix):
-    parent_mod = importlib.import_module(modname)
+  def __init__(self, postfix, modname=None, path=None):
+    if modname is not None:
+      tas.check_is_none(path, msg=f'Cannot specify path="{path}" when specified modname="{modname}"')
+
+      parent_mod = importlib.import_module(modname)
+      mpath = os.path.dirname(parent_mod.__file__)
+    else:
+      tas.check_is_not_none(path, msg=f'Path must be specified if "modname" is missing')
+      mpath = path
+
     module_names = []
-    for fname, m in ut.re_enumerate_files(os.path.dirname(parent_mod.__file__),
-                                          r'(.*)' + postfix + r'\.py$'):
+    for fname, m in ut.re_enumerate_files(mpath, r'(.*)' + postfix + r'\.py$'):
       module_names.append(m.group(1))
 
-    self._modname = modname
-    self._postfix = postfix
     self._modules = collections.OrderedDict()
     for imod_name in module_names:
       imod = importlib.import_module(f'{modname}.{imod_name}{postfix}')
