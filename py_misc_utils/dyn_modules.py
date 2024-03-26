@@ -29,6 +29,9 @@ class DynLoader:
   def modules(self):
     return tuple(self._modules.values())
 
+  def get(self, name, defval=None):
+    return self._modules.get(name, defval)
+
   def __getitem__(self, name):
     return self._modules[name]
 
