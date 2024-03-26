@@ -91,26 +91,6 @@ def fname():
   return inspect.currentframe().f_back.f_code.co_name
 
 
-def get_back_frame(level):
-  frame = inspect.currentframe()
-  while frame is not None and level >= 0:
-    frame = frame.f_back
-    level -= 1
-
-  return frame
-
-def parent_coords(level=1):
-  frame = get_back_frame(level + 1)
-
-  return frame.f_code.co_filename, frame.f_lineno
-
-
-def parent_locals(level=1):
-  frame = get_back_frame(level + 1)
-
-  return frame.f_locals
-
-
 def cname(obj):
   cls = classof(obj)
   return cls.__name__ if cls is not None else None
@@ -293,24 +273,6 @@ def genhash(v):
     return hash((type(v), tuple(vdata)))
 
   return hash((type(v), v))
-
-
-def fetch_args(func, locs):
-  sig = inspect.signature(func)
-
-  args, kwargs = [], dict()
-  for n, p in sig.parameters.items():
-    if p.kind == p.POSITIONAL_ONLY:
-      args.append(locs[n])
-    elif p.kind == p.POSITIONAL_OR_KEYWORD:
-      if p.default is inspect.Signature.empty:
-        args.append(locs[n])
-      else:
-        kwargs[n] = locs[n]
-    else:
-      kwargs[n] = locs[n]
-
-  return args, kwargs
 
 
 def signature(v):
