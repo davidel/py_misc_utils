@@ -53,7 +53,12 @@ def from_state(cls, path, *args, **kwargs):
     state = pickle.load(sfd)
 
   skwargs = {n: state[n] for n in getattr(cls, KWARGS_FIELDS, [])}
-  skwargs.update(kwargs)
+
+  sig, missing = inspect.signature(cls.__init__), object()
+  for n, p in sig.parameters.items():
+    pv = kwargs.get(n, missing)
+    if pv is not missing:
+      skwargs[n] = pv
 
   sargs = list(args) + [state[an] for an in getattr(cls, ARGS_FIELDS, [])]
 
