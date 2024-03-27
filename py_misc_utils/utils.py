@@ -269,8 +269,12 @@ def state_override(obj, state, keys):
         setattr(obj, key, sv)
 
 
+def split(csstr, sep):
+  return re.split(r'\s*' + sep + r'\s*', csstr)
+
+
 def comma_split(csstr):
-  return re.split(r'\s*,\s*', csstr)
+  return split(csstr, ',')
 
 
 def genhash(v):

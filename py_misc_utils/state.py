@@ -4,6 +4,7 @@ import pickle
 
 from . import alog
 from . import assert_checks as tas
+from . import utils as ut
 
 
 ARGS_FIELDS = 'ARGS_FIELDS'
@@ -11,15 +12,15 @@ KWARGS_FIELDS = 'KWARGS_FIELDS'
 STATE_FIELDS = 'STATE_FIELDS'
 
 
-def store_args(func, locs, obj=None, nohide=()):
-  if obj is None:
-    obj = getattr(func, '__self__', None)
-    tas.check_is_not_none(obj, msg=f'An object must be specified')
+def store_args(obj, locs, args):
+  for av in ut.comma_split(args):
+    if av.startswith('$'):
+      gn = av[1: ]
+      sn = gn
+    else:
+      gn, sn = av, f'_{av}'
 
-  sig = inspect.signature(func)
-  for n, p in sig.parameters.items():
-    fn = n if n in nohide else f'_{n}'
-    setattr(obj, fn, locs[n])
+    setattr(obj, sn, locs[gn])
 
 
 def get_state(obj):
