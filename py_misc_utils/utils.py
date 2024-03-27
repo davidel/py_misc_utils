@@ -529,7 +529,7 @@ def idx_expand(data, idx, filler=None):
   return data
 
 
-def as_sequence(v, t=tuple):
+def as_sequence(v, t=(tuple, list)):
   if isinstance(t, (list, tuple)):
     for st in t:
       if isinstance(v, st):
