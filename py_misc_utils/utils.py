@@ -3,6 +3,7 @@ import binascii
 import collections
 import copy
 import datetime
+import importlib
 import importlib.util
 import inspect
 import json
@@ -65,6 +66,18 @@ def load_module(path, install=False):
     sys.modules[modname] = mod
 
   return mod
+
+
+def import_module_names(modname, names=None):
+  if names is None:
+    npos = modname.rfind('.')
+    tas.check_gt(npos, 0)
+    names = [modname[npos + 1: ]]
+    modname = modname[: npos]
+
+  mod = importlib.import_module(modname)
+
+  return tuple(getattr(mod, n) for n in names)
 
 
 def make_ntuple(ntc, args):
