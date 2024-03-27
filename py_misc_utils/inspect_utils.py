@@ -45,9 +45,11 @@ def fetch_args(func, locs):
       if p.default is inspect.Signature.empty:
         args.append(locs[n])
       else:
-        kwargs[n] = locs[n]
+        kwargs[n] = locs.get(n, p.default)
     else:
-      kwargs[n] = locs[n]
+      pv = locs.get(n, p.default)
+      if pv is not inspect.Signature.empty:
+        kwargs[n] = pv
 
   return args, kwargs
 
