@@ -34,23 +34,28 @@ def get_caller_function(back=0, frame=None):
   return _fn_lookup(frame, frame.f_code.co_qualname)
 
 
-def fetch_args(func, locs, skips=()):
+def fetch_args(func, locs):
   sig = inspect.signature(func)
 
   args, kwargs = [], dict()
   for n, p in sig.parameters.items():
-    if n not in skips:
-      if p.kind == p.POSITIONAL_ONLY:
-        args.append(locs[n])
-      elif p.kind == p.POSITIONAL_OR_KEYWORD:
-        if p.default is inspect.Signature.empty:
-          args.append(locs[n])
-        else:
-          kwargs[n] = locs.get(n, p.default)
+    if p.kind == p.POSITIONAL_ONLY:
+      pv = locs.get(n, inspect.Signature.empty)
+      if pv is not inspect.Signature.empty:
+        args.append(pv)
       else:
-        pv = locs.get(n, p.default)
-        if pv is not inspect.Signature.empty:
-          kwargs[n] = pv
+        fself = getattr(func, '__self__', None)
+        if args or fself is not None:
+          alog.xraise(RuntimeError, f'Missing argument: {n}')
+    elif p.kind == p.POSITIONAL_OR_KEYWORD:
+      if p.default is inspect.Signature.empty:
+        args.append(locs[n])
+      else:
+        kwargs[n] = locs.get(n, p.default)
+    else:
+      pv = locs.get(n, p.default)
+      if pv is not inspect.Signature.empty:
+        kwargs[n] = pv
 
   return args, kwargs
 
