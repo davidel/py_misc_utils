@@ -18,6 +18,7 @@ import threading
 import time
 import traceback
 import types
+import urllib.parse as uparse
 import yaml
 
 import numpy as np
@@ -352,7 +353,7 @@ def load_config(cfg_file=None, **kwargs):
   else:
     cfg = dict()
 
-  for k, v in kwargs:
+  for k, v in kwargs.items():
     if v is not None:
       cfg[k] = v
 
@@ -360,7 +361,6 @@ def load_config(cfg_file=None, **kwargs):
 
 
 def parse_config(cfg, **kwargs):
-  cfgd = dict()
   if os.path.exists(cfg):
     with open(cfg, mode='r') as fp:
       cfgd = yaml.safe_load(fp)
@@ -369,7 +369,7 @@ def parse_config(cfg, **kwargs):
   else:
     cfgd = parse_dict(cfg)
 
-  for k, v in kwargs:
+  for k, v in kwargs.items():
     if v is not None:
       cfgd[k] = v
 
@@ -996,7 +996,7 @@ def infer_value(v, vtype=None):
   m = re.match(r'\[(.*)\]$', v) or re.match(r'\((.*)\)$', v)
   if m:
     values = []
-    for part in split(m.group(1), ','):
+    for part in comma_split(m.group(1)):
       values.append(infer_value(part.strip()))
 
     return tuple(values) if v.startswith('(') else values
@@ -1010,7 +1010,7 @@ def split_unquote(data, sep, maxsplit=-1):
 
 def parse_dict(data, ktype=str, vtype=None):
   ma_dict = dict()
-  for part in split(data, ','):
+  for part in comma_split(data):
     name, value = [x.strip() for x in split_unquote(part, '=', maxsplit=1)]
     ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
 
