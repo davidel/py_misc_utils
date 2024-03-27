@@ -10,15 +10,14 @@ KWARGS_FIELDS = 'KWARGS_FIELDS'
 STATE_FIELDS = 'STATE_FIELDS'
 
 
-def store_args(func, locs, obj=None, nohide=None):
+def store_args(func, locs, obj=None, nohide=()):
   if obj is None:
     obj = getattr(func, '__self__', None)
     tas.check_is_not_none(obj, msg=f'An object must be specified')
 
-  nohide = nohide or set()
   sig = inspect.signature(func)
   for n, p in sig.parameters.items():
-    fn = f'_{n}' if n not in nohide else n
+    fn = n if n in nohide else f'_{n}'
     setattr(obj, fn, locs[n])
 
 
