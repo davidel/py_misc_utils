@@ -529,14 +529,15 @@ def idx_expand(data, idx, filler=None):
   return data
 
 
-def as_sequence(v, t=(tuple, list)):
+def as_sequence(v, t=tuple):
   if isinstance(t, (list, tuple)):
     for st in t:
       if isinstance(v, st):
         return v
 
     return t[0]([v]) if not isinstance(v, types.GeneratorType) else t[0](v)
-  elif isinstance(v, types.GeneratorType):
+
+  if isinstance(v, types.GeneratorType):
     return t(v)
 
   return v if isinstance(v, t) else t([v])
