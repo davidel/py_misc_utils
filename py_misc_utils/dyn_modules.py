@@ -24,7 +24,7 @@ class DynLoader:
       module_names.append(m.group(1))
 
     self._modules = collections.OrderedDict()
-    for imod_name in module_names:
+    for imod_name in sorted(module_names):
       imod = importlib.import_module(f'{modname}.{imod_name}{postfix}')
       mname = getattr(imod, 'MODULE_NAME', imod_name)
       self._modules[mname] = imod
