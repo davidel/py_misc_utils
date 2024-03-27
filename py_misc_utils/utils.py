@@ -536,6 +536,8 @@ def as_sequence(v, t=tuple):
         return v
 
     return t[0]([v])
+  elif isinstance(v, types.GeneratorType):
+    return t(v)
 
   return v if isinstance(v, t) else t([v])
 
