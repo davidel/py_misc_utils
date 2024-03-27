@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import pickle
 
 from . import alog
@@ -54,8 +55,10 @@ def from_state(cls, path, *args, **kwargs):
 
   skwargs = {n: state[n] for n in getattr(cls, KWARGS_FIELDS, [])}
 
+  # Use islice() to skip the first parameter, which for an unbound __init__()
+  # is going to be "self".
   sig, missing = inspect.signature(cls.__init__), object()
-  for n, p in sig.parameters.items():
+  for n, p in itertools.islice(sig.parameters.items(), 1, None):
     pv = kwargs.get(n, missing)
     if pv is not missing:
       skwargs[n] = pv
