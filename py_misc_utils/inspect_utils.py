@@ -37,19 +37,23 @@ def get_caller_function(back=0, frame=None):
 def fetch_args(func, locs):
   sig = inspect.signature(func)
 
+  def args_append(args, n):
+    pv = locs.get(n, inspect.Signature.empty)
+    if pv is not inspect.Signature.empty:
+      args.append(pv)
+    else:
+      fself = getattr(func, '__self__', None)
+      if args or fself is not None:
+        alog.xraise(RuntimeError, f'Missing argument: {n}')
+
+
   args, kwargs = [], dict()
   for n, p in sig.parameters.items():
     if p.kind == p.POSITIONAL_ONLY:
-      pv = locs.get(n, inspect.Signature.empty)
-      if pv is not inspect.Signature.empty:
-        args.append(pv)
-      else:
-        fself = getattr(func, '__self__', None)
-        if args or fself is not None:
-          alog.xraise(RuntimeError, f'Missing argument: {n}')
+      args_append(args, n)
     elif p.kind == p.POSITIONAL_OR_KEYWORD:
       if p.default is inspect.Signature.empty:
-        args.append(locs[n])
+        args_append(args, n)
       else:
         kwargs[n] = locs.get(n, p.default)
     else:
