@@ -12,17 +12,6 @@ KWARGS_FIELDS = 'KWARGS_FIELDS'
 STATE_FIELDS = 'STATE_FIELDS'
 
 
-def store_args(obj, locs, args):
-  for av in ut.comma_split(args):
-    if av.startswith('$'):
-      gn = av[1: ]
-      sn = gn
-    else:
-      gn, sn = av, f'_{av}'
-
-    setattr(obj, sn, locs[gn])
-
-
 def get_state(obj):
   cls = obj.__class__
   fields = []
