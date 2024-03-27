@@ -537,10 +537,10 @@ def as_sequence(v, t=tuple):
 
     return t[0]([v]) if not isinstance(v, types.GeneratorType) else t[0](v)
 
-  if isinstance(v, types.GeneratorType):
-    return t(v)
+  if isinstance(v, t):
+    return v
 
-  return v if isinstance(v, t) else t([v])
+  return t(v) if isinstance(v, (list, tuple, types.GeneratorType)) else t([v])
 
 
 def format(seq, fmt):
