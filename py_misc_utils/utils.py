@@ -1116,3 +1116,9 @@ def maybe_call(obj, name, *args, **kwargs):
 
   return fn(*args, **kwargs) if fn is not None else NONE
 
+
+def maybe_call_dv(obj, name, defval, *args, **kwargs):
+  fn = getattr(obj, name, None)
+
+  return fn(*args, **kwargs) if fn is not None else defval
+
