@@ -987,7 +987,7 @@ def split(sdata, sc, sseq=_STD_SPLIT_SEQ, esc='\\'):
 def infer_value(v, vtype=None):
   if vtype is not None:
     return vtype(v)
-  if re.match(r'[+-]?[1-9]\d*$', v):
+  if re.match(r'[+-]?([1-9]\d*|0)$', v):
     return int(v)
   if re.match(r'0x[0-9a-fA-F]+$', v):
     return int(v, 16)
