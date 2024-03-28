@@ -25,11 +25,10 @@ class StateBase:
     for k, v in kwargs.items():
       sdict[_kname(cls, k)] = v
 
+  def _load_state(self, cls, state, name):
+    sdict = state.get(_STATE_KEY, None)
 
-def fetch(cls, state, name):
-  sdict = state.get(_STATE_KEY, None)
-
-  return sdict.get(_kname(cls, name), None) if sdict is not None else None
+    return sdict.get(_kname(cls, name), None) if sdict is not None else None
 
 
 def to_state(obj, path):
