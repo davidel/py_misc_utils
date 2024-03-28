@@ -4,6 +4,10 @@ import pickle
 _STATE_KEY = '_StateBase_STATE'
 
 
+def _kname(cls, name):
+  return f'{cls.__name__}.{name}'
+
+
 class StateBase:
 
   def _get_state(self, state):
@@ -12,19 +16,20 @@ class StateBase:
   def _set_state(self, state):
     self.__dict__.update(state)
 
-  def _store_state(self, **kwargs):
+  def _store_state(self, cls, **kwargs):
     sdict = getattr(self, _STATE_KEY, None)
     if sdict is None:
       sdict = dict()
       setattr(self, _STATE_KEY, sdict)
 
-    sdict.update(kwargs)
+    for k, v in kwargs.items():
+      sdict[_kname(cls, k)] = v
 
 
-def fetch(state, name):
+def fetch(cls, state, name):
   sdict = state.get(_STATE_KEY, None)
 
-  return sdict.get(name, None) if sdict is not None else None
+  return sdict.get(_kname(cls, name), None) if sdict is not None else None
 
 
 def to_state(obj, path):
