@@ -48,7 +48,9 @@ class TrackingExecutor:
     try:
       self.executor.submit(wfn)
     except Exception:
-      self._report_done(tid)
+      with self._lock:
+        self._pending.remove(tid)
+
       raise
 
     return tid
@@ -58,7 +60,9 @@ class TrackingExecutor:
     try:
       return self.executor.submit_result(wfn)
     except Exception:
-      self._report_done(tid)
+      with self._lock:
+        self._pending.remove(tid)
+
       raise
 
   def shutdown(self):
