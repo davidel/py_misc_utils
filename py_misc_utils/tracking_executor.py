@@ -68,22 +68,20 @@ class TrackingExecutor:
   def wait(self, tids=None, timeout=None, timegen=None):
     atimegen = tg.TimeGen() if timegen is None else timegen
     atimeo = abst.AbsTimeout(timeout, timefn=atimegen.now)
-    success = False
     if not tids:
       with self._lock:
         while self._pending:
-          atimegen.wait(self._pending_cv, timeout=atimeo.get())
+          if not atimegen.wait(self._pending_cv, timeout=atimeo.get()):
+            break
 
-        success = not self._pending
+        return not self._pending
     else:
       stids = set(tids)
       with self._lock:
         while True:
           rem = stids & self._pending
-          if rem:
-            atimegen.wait(self._pending_cv, timeout=atimeo.get())
-          else:
-            success = True
+          if not (rem and atimegen.wait(self._pending_cv, timeout=atimeo.get())):
+            break
 
-        while self._pending:
+        return not rem
 
