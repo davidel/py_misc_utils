@@ -1,7 +1,7 @@
 import pickle
 
 
-_STATE_KEY = '_StateBase_STATE'
+_STATE_KEY = '__SB_STATE__'
 
 
 def _kname(cls, name):
