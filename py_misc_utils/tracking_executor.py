@@ -33,8 +33,7 @@ class TrackingExecutor:
   def _report_done(self, tid):
     with self._lock:
       self._pending.remove(tid)
-      if not self._pending:
-        self._pending_cv.notify_all()
+      self._pending_cv.notify_all()
 
   def _wrap(self, fn, *args, **kwargs):
     with self._lock:
@@ -49,29 +48,42 @@ class TrackingExecutor:
     try:
       self.executor.submit(wfn)
     except Exception:
-      with self._lock:
-        self._pending.remove(tid)
-
+      self._report_done(tid)
       raise
+
+    return tid
 
   def submit_result(self, fn, *args, **kwargs):
     wfn, tid = self._wrap(fn, *args, **kwargs)
     try:
       return self.executor.submit_result(wfn)
     except Exception:
-      with self._lock:
-        self._pending.remove(tid)
-
+      self._report_done(tid)
       raise
 
   def shutdown(self):
     self.executor.shutdown()
     self.wait()
 
-  def wait(self, timeout=None, timegen=None):
+  def wait(self, tids=None, timeout=None, timegen=None):
     atimegen = tg.TimeGen() if timegen is None else timegen
     atimeo = abst.AbsTimeout(timeout, timefn=atimegen.now)
-    with self._lock:
-      while self._pending:
-        atimegen.wait(self._pending_cv, timeout=atimeo.get())
+    success = False
+    if not tids:
+      with self._lock:
+        while self._pending:
+          atimegen.wait(self._pending_cv, timeout=atimeo.get())
+
+        success = not self._pending
+    else:
+      stids = set(tids)
+      with self._lock:
+        while True:
+          rem = stids & self._pending
+          if rem:
+            atimegen.wait(self._pending_cv, timeout=atimeo.get())
+          else:
+            success = True
+
+        while self._pending:
 
