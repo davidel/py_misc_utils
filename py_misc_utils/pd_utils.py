@@ -112,7 +112,7 @@ def load_dataframe(path, **kwargs):
     alog.xraise(RuntimeError, f'Unknown extension: {ext}')
 
 
-def load_dataframe_as_npdict(path, reset_index=False):
+def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=()):
   df = load_dataframe(path)
 
   if reset_index and df.index.name:
@@ -120,7 +120,14 @@ def load_dataframe_as_npdict(path, reset_index=False):
 
   cdata = dict()
   for c in df.columns:
-    cdata[c] = df[c].to_numpy()
+    data = df[c].to_numpy()
+
+    if dtype is not None and c not in no_convert and pyn.is_numeric(data.dtype):
+      cdtype = dtype.get(c, None) if isinstance(dtype, dict) else dtype
+      if cdtype is not None:
+        data = data.astype(cdtype)
+
+    cdata[c] = data
 
   return cdata
 
