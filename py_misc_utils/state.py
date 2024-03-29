@@ -11,7 +11,7 @@ def _kname(cls, name):
 class StateBase:
 
   def _get_state(self, state):
-    return state.copy()
+    return state
 
   def _set_state(self, state):
     self.__dict__.update(state)
@@ -32,6 +32,7 @@ class StateBase:
 
 
 def to_state(obj, path):
+  # Needs a copy here, as the _get_state() call chains will modify the state.
   state = obj._get_state(obj.__dict__.copy())
   with open(path, mode='wb') as sfd:
     pickle.dump(state, sfd)
