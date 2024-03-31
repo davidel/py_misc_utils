@@ -162,16 +162,15 @@ def _register_scores(xparams, scores, scores_db):
 
 class Selector:
 
-  def __init__(self, params, init_count=10):
+  def __init__(self, params):
     self.processed = set()
     self.scores_db = collections.defaultdict(list)
     self.best_score, self.best_idx, self.best_param = None, None, None
     self.pid_scores = dict()
     self.blanks = 0
-
     self.nparams = _norm_params(params)
     self.skeys, self.space = _get_space(self.nparams)
-    self.pts, self.cpid = _random_generate(self.space, init_count, 0)
+    self.pts, self.cpid = [], 0
 
   def __call__(self, score_fn,
                status_path=None,
@@ -181,16 +180,19 @@ class Selector:
                rnd_n=10,
                explore_pct=0.05,
                min_pid_gain_pct=0.01,
-               max_blanks=10,
+               max_blanks_pct=0.1,
                n_jobs=None,
                mp_ctx=None):
     alog.debug0(f'{len(self.space)} parameters, {np.prod(self.space)} configurations')
 
-    max_explore = int(np.prod(self.space) * explore_pct)
+    if not self.pts:
+      self.pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
 
+    max_explore = int(np.prod(self.space) * explore_pct)
+    max_blanks = int(max_explore * max_blanks_pct)
     while self.pts and len(self.processed) < max_explore and self.blanks < max_blanks:
       alog.debug0(f'{len(self.pts)} points, {len(self.processed)} processed ' \
-                  f'(max {max_explore}), {self.blanks} blanks')
+                  f'(max {max_explore}), {self.blanks} / {max_blanks} blanks')
 
       scores, xparams = _get_scores(self.pts, self.skeys, self.nparams, score_fn,
                                     scores_db=self.scores_db,
@@ -213,7 +215,7 @@ class Selector:
 
         alog.debug0(f'BestScore = {self.best_score:.5e}\tParam = {self.best_param}')
       else:
-        self.blanks += 1
+        self.blanks += len(self.pts)
 
       # Add the current parameter points to the set of the processed ones.
       for pt in self.pts:
