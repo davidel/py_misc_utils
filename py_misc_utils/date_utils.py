@@ -24,7 +24,7 @@ def now(tz=None):
 
 
 def from_timestamp(ts, tz=None):
-  return datetime.datetime.fromtimestamp(ts, tz=tz or DEFAULT_TZ)
+  return datetime.datetime.fromtimestamp(ts, tz=tz if tz is not None else DEFAULT_TZ)
 
 
 def make_datetime_from_epoch(s, tz=None):
