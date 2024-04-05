@@ -84,10 +84,13 @@ def _mp_score_fn(score_fn, params):
   return score_fn(**params)
 
 
-def _select_missing(pts, processed, dest):
+def _select_missing(pts, processed):
+  new_pts = []
   for pt in pts:
     if pt.idx.tobytes() not in processed:
-      dest.append(pt)
+      new_pts.append(pt)
+
+  return new_pts
 
 
 def _is_worth_gain(pscore, score, min_gain_pct):
@@ -111,13 +114,14 @@ def _register_scores(xparams, scores, scores_db):
 
 class Selector:
 
-  def __init__(self, params):
+  def __init__(self, params, scores_x_run=None):
+    self.nparams = _norm_params(params)
+    self.scores_x_run = scores_x_run or ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
     self.processed = set()
     self.scores_db = collections.defaultdict(list)
     self.best_score, self.best_idx, self.best_param = None, None, None
     self.pid_scores = dict()
     self.blanks = 0
-    self.nparams = _norm_params(params)
     self.skeys, self.space = _get_space(self.nparams)
     self.pts, self.cpid = [], 0
     self.current_scores, self.processed_scores = [], 0
@@ -132,22 +136,18 @@ class Selector:
       with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
         scores = list(pool.map(fn, xparams))
 
-    return scores, xparams
+    _register_scores(xparams, scores, self.scores_db)
+
+    return scores
 
   def _fetch_scores(self, score_fn, n_jobs=None, mp_ctx=None, status_path=None):
-    scores_x_run = ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
+    for i in range(self.processed_scores, len(self.pts), self.scores_x_run):
+      current_points = self.pts[i: i + self.scores_x_run]
 
-    for i in range(self.processed_scores, len(self.pts), scores_x_run):
-      current_points = self.pts[i: i + scores_x_run]
+      scores = self._score_slice(current_points, score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx)
 
-      cscores, cparams = self._score_slice(current_points, score_fn,
-                                           n_jobs=n_jobs,
-                                           mp_ctx=mp_ctx)
-
-      self.current_scores.extend(cscores)
+      self.current_scores.extend(scores)
       self.processed_scores += len(current_points)
-
-      _register_scores(cparams, cscores, self.scores_db)
 
       if status_path is not None:
         self.save_status(status_path)
@@ -174,6 +174,11 @@ class Selector:
 
     return fsidx
 
+  def _randgen(self, rnd_n):
+    rnd_pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
+
+    return _select_missing(rnd_pts, self.processed)
+
   def __call__(self, score_fn,
                status_path=None,
                delta_spacek=None,
@@ -188,7 +193,7 @@ class Selector:
     alog.debug0(f'{len(self.space)} parameters, {np.prod(self.space)} configurations')
 
     if not self.pts:
-      self.pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
+      self.pts.extend(self._randgen(rnd_n))
 
     max_explore = int(np.prod(self.space) * explore_pct)
     max_blanks = int(max_explore * max_blanks_pct)
@@ -218,11 +223,10 @@ class Selector:
       next_pts = []
       for i in fsidx:
         dpts = _select_deltas(self.pts[i], self.space, delta_spacek, delta_std)
-        _select_missing(dpts, self.processed, next_pts)
+        next_pts.extend(_select_missing(dpts, self.processed))
 
       # And randomly add ones in search of better scores.
-      rnd_pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
-      _select_missing(rnd_pts, self.processed, next_pts)
+      next_pts.extend(self._randgen(rnd_n))
 
       self.pts = next_pts
       self.current_scores, self.processed_scores = [], 0
