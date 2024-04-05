@@ -10,13 +10,11 @@ _PREV_HANDLERS = dict()
 def _handler(sig, ctx):
   with _LOCK:
     handlers = _HANDLERS.get(sig, ())
+    prev_handler = _PREV_HANDLERS.get(sig, None)
 
   for handler in handlers:
     if handler(sig, ctx):
       return
-
-  with _LOCK:
-    prev_handler = _PREV_HANDLERS.get(sig, None)
 
   if prev_handler is not None:
     prev_handler(sig, ctx)
