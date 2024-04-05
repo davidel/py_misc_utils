@@ -12,6 +12,8 @@ def _handler(sig, ctx):
     for h in _HANDLERS:
       h.trigger()
 
+  return 0
+
 
 class BreakControl:
 

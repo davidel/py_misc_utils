@@ -12,11 +12,15 @@ def _handler(sig, ctx):
     handlers = _HANDLERS.get(sig, ())
     prev_handler = _PREV_HANDLERS.get(sig, None)
 
+  mhres = -1
   for prio, handler in handlers:
-    if handler(sig, ctx):
+    hres = handler(sig, ctx)
+    if hres > 0:
       return
 
-  if prev_handler is not None:
+    mhres = max(hres, mhres)
+
+  if mhres < 0 and prev_handler is not None:
     prev_handler(sig, ctx)
 
 
