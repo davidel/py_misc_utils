@@ -4,7 +4,6 @@ import multiprocessing as mp
 import multiprocessing.pool as mp_pool
 import os
 import pickle
-import random
 import re
 import subprocess
 
@@ -54,19 +53,6 @@ def _select_deltas(pt, space, delta_spacek, delta_std):
     num_deltas = int(np.rint(-delta_spacek))
 
   return [Point(pt.pid, _mkdelta(pt.idx, space, delta_std)) for _ in range(num_deltas)]
-
-
-def _random_generate(space, count, pid):
-  rng = np.random.default_rng()
-  low = np.zeros(len(space), dtype=np.int32)
-  high = np.array(space)
-
-  rpoints = []
-  for n in range(count):
-    ridx = rng.integers(low, high)
-    rpoints.append(Point(pid + n, ridx))
-
-  return rpoints, pid + count
 
 
 def _make_param(idx, skeys, params):
@@ -174,8 +160,21 @@ class Selector:
 
     return fsidx
 
+  def _random_generate(self, count):
+    rng = np.random.default_rng()
+    low = np.zeros(len(self.space), dtype=np.int32)
+    high = np.array(self.space)
+
+    rpoints = []
+    for _ in range(count):
+      ridx = rng.integers(low, high)
+      rpoints.append(Point(self.cpid, ridx))
+      self.cpid += 1
+
+    return rpoints
+
   def _randgen(self, rnd_n):
-    rnd_pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
+    rnd_pts = self._random_generate(rnd_n)
 
     return _select_missing(rnd_pts, self.processed)
 
