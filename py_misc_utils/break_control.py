@@ -1,10 +1,10 @@
-import signal
 import threading
+
+from . import signal
 
 
 _LOCK = threading.Lock()
 _HANDLERS = set()
-_PREV_HANDLER = None
 
 
 def _handler(sig, ctx):
@@ -19,21 +19,18 @@ class BreakControl:
     self._hit = False
 
   def __enter__(self):
-    global _PREV_HANDLER
     with _LOCK:
       if not _HANDLERS:
-        _PREV_HANDLER = signal.signal(signal.SIGINT, _handler)
+        signal.signal(signal.SIGINT, _handler)
       _HANDLERS.add(self)
 
     return self
 
   def __exit__(self, type, value, traceback):
-    global _PREV_HANDLER
     with _LOCK:
       _HANDLERS.remove(self)
       if not _HANDLERS:
-        signal.signal(signal.SIGINT, _PREV_HANDLER)
-        _PREV_HANDLER = None
+        signal.unsignal(signal.SIGINT, _handler)
 
     return False
 
