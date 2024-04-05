@@ -84,38 +84,6 @@ def _mp_score_fn(score_fn, params):
   return score_fn(**params)
 
 
-def _score_slice(pts, skeys, params, score_fn, scores_db=None, n_jobs=None,
-                 mp_ctx=None):
-  xparams = [_make_param(pt.idx, skeys, params) for pt in pts]
-  if n_jobs is None:
-    scores = [score_fn(**p) for p in xparams]
-  else:
-    context = mp.get_context(mp_ctx if mp_ctx is not None else mp.get_start_method())
-    fn = functools.partial(_mp_score_fn, score_fn)
-    with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
-      scores = list(pool.map(fn, xparams))
-
-  return scores, xparams
-
-
-def _get_scores(pts, skeys, params, score_fn, scores_db=None, n_jobs=None,
-                mp_ctx=None):
-  scores_x_run = ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
-
-  xparams, scores = [], []
-  for i in range(0, len(pts), scores_x_run):
-    cscores, cparams = _score_slice(pts[i: i + scores_x_run], skeys, params, score_fn,
-                                    scores_db=scores_db,
-                                    n_jobs=n_jobs,
-                                    mp_ctx=mp_ctx)
-    scores.extend(cscores)
-    xparams.extend(cparams)
-    if scores_db is not None:
-      _register_scores(cparams, cscores, scores_db)
-
-  return scores, xparams
-
-
 def _select_missing(pts, processed, dest):
   for pt in pts:
     if pt.idx.tobytes() not in processed:
@@ -130,25 +98,6 @@ def _is_worth_gain(pscore, score, min_gain_pct):
   delta = (score - pscore) / pabs
 
   return delta >= min_gain_pct
-
-
-def _select_top_n(pts, scores, sidx, pid_scores, top_n, min_pid_gain_pct):
-  pseen, fsidx = set(), []
-  for i in sidx:
-    pt = pts[i]
-    if pt.pid not in pseen:
-      pseen.add(pt.pid)
-      pscore = pid_scores.get(pt.pid, None)
-      if pscore is None or _is_worth_gain(pscore, scores[i], min_pid_gain_pct):
-        pid_scores[pt.pid] = scores[i]
-        fsidx.append(i)
-        # The sidx array contains indices mapping to a descending sort of the
-        # scores, so once we have top_n of them, we know we have selected the
-        # higher ones available.
-        if len(fsidx) >= top_n:
-          break
-
-  return fsidx
 
 
 def _register_scores(xparams, scores, scores_db):
@@ -171,6 +120,59 @@ class Selector:
     self.nparams = _norm_params(params)
     self.skeys, self.space = _get_space(self.nparams)
     self.pts, self.cpid = [], 0
+    self.current_scores, self.processed_scores = [], 0
+
+  def _score_slice(self, pts, score_fn, n_jobs=None, mp_ctx=None):
+    xparams = [_make_param(pt.idx, self.skeys, self.nparams) for pt in pts]
+    if n_jobs is None:
+      scores = [score_fn(**p) for p in xparams]
+    else:
+      context = mp.get_context(mp_ctx if mp_ctx is not None else mp.get_start_method())
+      fn = functools.partial(_mp_score_fn, score_fn)
+      with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
+        scores = list(pool.map(fn, xparams))
+
+    return scores, xparams
+
+  def _fetch_scores(self, score_fn, n_jobs=None, mp_ctx=None, status_path=None):
+    scores_x_run = ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
+
+    for i in range(self.processed_scores, len(self.pts), scores_x_run):
+      current_points = self.pts[i: i + scores_x_run]
+
+      cscores, cparams = self._score_slice(current_points, score_fn,
+                                           n_jobs=n_jobs,
+                                           mp_ctx=mp_ctx)
+
+      self.current_scores.extend(cscores)
+      self.processed_scores += len(current_points)
+
+      _register_scores(cparams, cscores, self.scores_db)
+
+      if status_path is not None:
+        self.save_status(status_path)
+
+  def _select_top_n(self, top_n, min_pid_gain_pct):
+    # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
+    # the scores.
+    sidx = np.flip(np.argsort(self.current_scores))
+
+    pseen, fsidx = set(), []
+    for i in sidx:
+      pt = self.pts[i]
+      if pt.pid not in pseen:
+        pseen.add(pt.pid)
+        pscore = self.pid_scores.get(pt.pid, None)
+        if pscore is None or _is_worth_gain(pscore, self.current_scores[i], min_pid_gain_pct):
+          self.pid_scores[pt.pid] = self.current_scores[i]
+          fsidx.append(i)
+          # The sidx array contains indices mapping to a descending sort of the
+          # scores, so once we have top_n of them, we know we have selected the
+          # higher ones available.
+          if len(fsidx) >= top_n:
+            break
+
+    return fsidx
 
   def __call__(self, score_fn,
                status_path=None,
@@ -194,19 +196,11 @@ class Selector:
       alog.debug0(f'{len(self.pts)} points, {len(self.processed)} processed ' \
                   f'(max {max_explore}), {self.blanks} / {max_blanks} blanks')
 
-      scores, xparams = _get_scores(self.pts, self.skeys, self.nparams, score_fn,
-                                    scores_db=self.scores_db,
-                                    n_jobs=n_jobs,
-                                    mp_ctx=mp_ctx)
+      self._fetch_scores(score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx, status_path=status_path)
 
-      # The np.argsort() has no "reverse" option, so it's either np.flip() or negate
-      # the scores.
-      sidx = np.flip(np.argsort(scores))
+      fsidx = self._select_top_n(top_n, min_pid_gain_pct)
 
-      fsidx = _select_top_n(self.pts, scores, sidx, self.pid_scores, top_n,
-                            min_pid_gain_pct)
-
-      score = scores[fsidx[0]]
+      score = self.current_scores[fsidx[0]]
       if self.best_score is None or score > self.best_score:
         self.best_score = score
         self.best_idx = self.pts[fsidx[0]].idx
@@ -217,7 +211,6 @@ class Selector:
       else:
         self.blanks += len(self.pts)
 
-      # Add the current parameter points to the set of the processed ones.
       for pt in self.pts:
         self.processed.add(pt.idx.tobytes())
 
@@ -230,10 +223,9 @@ class Selector:
       # And randomly add ones in search of better scores.
       rnd_pts, self.cpid = _random_generate(self.space, rnd_n, self.cpid)
       _select_missing(rnd_pts, self.processed, next_pts)
-      self.pts = next_pts
 
-      if status_path is not None:
-        self.save_status(status_path)
+      self.pts = next_pts
+      self.current_scores, self.processed_scores = [], 0
 
   def save_status(self, path):
     with open(path, mode='wb') as sfd:
