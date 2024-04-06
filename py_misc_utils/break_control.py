@@ -1,6 +1,7 @@
+import signal
 import threading
 
-from . import signal
+from . import signal as sgn
 
 
 _LOCK = threading.Lock()
@@ -23,7 +24,7 @@ class BreakControl:
   def __enter__(self):
     with _LOCK:
       if not _HANDLERS:
-        signal.signal(signal.SIGINT, _handler)
+        sgn.signal(signal.SIGINT, _handler)
       _HANDLERS.add(self)
 
     return self
@@ -32,7 +33,7 @@ class BreakControl:
     with _LOCK:
       _HANDLERS.remove(self)
       if not _HANDLERS:
-        signal.unsignal(signal.SIGINT, _handler)
+        sgn.unsignal(signal.SIGINT, _handler)
 
     return False
 
