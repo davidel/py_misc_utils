@@ -55,28 +55,8 @@ def _select_deltas(pt, space, delta_spacek, delta_std):
   return [Point(pt.pid, _mkdelta(pt.idx, space, delta_std)) for _ in range(num_deltas)]
 
 
-def _make_param(idx, skeys, params):
-  param = dict()
-  for i, k in enumerate(skeys):
-    # We keep parameters as numpy arrays, but when we pluck values we want to
-    # return them in Python scalar form.
-    pvalue = params[k][idx[i]]
-    param[k] = pvalue.item() if npu.is_numpy(pvalue) else pvalue
-
-  return param
-
-
 def _mp_score_fn(score_fn, params):
   return score_fn(**params)
-
-
-def _select_missing(pts, processed):
-  new_pts = []
-  for pt in pts:
-    if pt.idx.tobytes() not in processed:
-      new_pts.append(pt)
-
-  return new_pts
 
 
 def _is_worth_gain(pscore, score, min_gain_pct):
@@ -87,15 +67,6 @@ def _is_worth_gain(pscore, score, min_gain_pct):
   delta = (score - pscore) / pabs
 
   return delta >= min_gain_pct
-
-
-def _register_scores(xparams, scores, scores_db):
-  for params, score in zip(xparams, scores):
-    alog.debug0(f'SCORE: {score} -- {params}')
-
-    for k, v in params.items():
-      scores_db[k].append(v)
-    scores_db['SCORE'].append(score)
 
 
 class Selector:
@@ -112,8 +83,26 @@ class Selector:
     self.pts, self.cpid = [], 0
     self.current_scores, self.processed_scores = [], 0
 
+  def _register_scores(self, xparams, scores):
+    for params, score in zip(xparams, scores):
+      alog.debug0(f'SCORE: {score} -- {params}')
+
+      for k, v in params.items():
+        self.scores_db[k].append(v)
+      self.scores_db['SCORE'].append(score)
+
+  def _make_param(self, idx):
+    param = dict()
+    for i, k in enumerate(self.skeys):
+      # We keep parameters as numpy arrays, but when we pluck values we want to
+      # return them in Python scalar form.
+      pvalue = self.nparams[k][idx[i]]
+      param[k] = pvalue.item() if npu.is_numpy(pvalue) else pvalue
+
+    return param
+
   def _score_slice(self, pts, score_fn, n_jobs=None, mp_ctx=None):
-    xparams = [_make_param(pt.idx, self.skeys, self.nparams) for pt in pts]
+    xparams = [self._make_param(pt.idx) for pt in pts]
     if n_jobs is None:
       scores = [score_fn(**p) for p in xparams]
     else:
@@ -122,7 +111,7 @@ class Selector:
       with mp_pool.Pool(processes=n_jobs if n_jobs > 0 else None, context=context) as pool:
         scores = list(pool.map(fn, xparams))
 
-    _register_scores(xparams, scores, self.scores_db)
+    self._register_scores(xparams, scores)
 
     return scores
 
@@ -160,6 +149,14 @@ class Selector:
 
     return fsidx
 
+  def _select_missing(self, pts):
+    new_pts = []
+    for pt in pts:
+      if pt.idx.tobytes() not in self.processed:
+        new_pts.append(pt)
+
+    return new_pts
+
   def _random_generate(self, count):
     rng = np.random.default_rng()
     low = np.zeros(len(self.space), dtype=np.int32)
@@ -176,7 +173,7 @@ class Selector:
   def _randgen(self, rnd_n):
     rnd_pts = self._random_generate(rnd_n)
 
-    return _select_missing(rnd_pts, self.processed)
+    return self._select_missing(rnd_pts)
 
   def __call__(self, score_fn,
                status_path=None,
@@ -208,7 +205,7 @@ class Selector:
       if self.best_score is None or score > self.best_score:
         self.best_score = score
         self.best_idx = self.pts[fsidx[0]].idx
-        self.best_param = _make_param(self.best_idx, self.skeys, self.nparams)
+        self.best_param = self._make_param(self.best_idx)
         self.blanks = 0
 
         alog.debug0(f'BestScore = {self.best_score:.5e}\tParam = {self.best_param}')
@@ -222,7 +219,7 @@ class Selector:
       next_pts = []
       for i in fsidx:
         dpts = _select_deltas(self.pts[i], self.space, delta_spacek, delta_std)
-        next_pts.extend(_select_missing(dpts, self.processed))
+        next_pts.extend(self._select_missing(dpts))
 
       # And randomly add ones in search of better scores.
       next_pts.extend(self._randgen(rnd_n))
