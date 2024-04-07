@@ -220,6 +220,7 @@ class Selector:
         alog.debug0(f'BestScore = {self.best_score:.5e}\tParam = {self.best_param}')
       else:
         self.blanks += len(self.pts)
+        alog.info(f'Score not improved: blanks={self.blanks}/{max_blanks}')
 
       for pt in self.pts:
         self.processed.add(pt.idx.tobytes())
