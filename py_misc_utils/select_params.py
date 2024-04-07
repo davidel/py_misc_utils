@@ -102,7 +102,9 @@ class Selector:
 
   def _score_slice(self, pts, score_fn, n_jobs=None, mp_ctx=None):
     xparams = [self._make_param(pt.idx) for pt in pts]
-    if n_jobs is None:
+
+    n_jobs = os.cpu_count() if n_jobs is None else n_jobs
+    if n_jobs == 1:
       scores = [score_fn(**p) for p in xparams]
     else:
       context = mp.get_context(mp_ctx if mp_ctx is not None else mp.get_start_method())
