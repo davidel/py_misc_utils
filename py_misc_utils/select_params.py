@@ -128,6 +128,9 @@ class Selector:
       self.current_scores.extend(scores)
       self.processed_scores += len(current_points)
 
+      alog.info(f'Processed {self.processed_scores}/{len(self.pts)}: ' \
+                f'{ut.format(sorted(self.current_scores), reverse=True), ".6e"}')
+
       if status_path is not None:
         self.save_status(status_path)
 
