@@ -71,9 +71,8 @@ def _is_worth_gain(pscore, score, min_gain_pct):
 
 class Selector:
 
-  def __init__(self, params, scores_x_run=None):
+  def __init__(self, params):
     self.nparams = _norm_params(params)
-    self.scores_x_run = scores_x_run or ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
     self.processed = set()
     self.scores_db = collections.defaultdict(list)
     self.best_score, self.best_idx, self.best_param = None, None, None
@@ -115,9 +114,12 @@ class Selector:
 
     return scores
 
-  def _fetch_scores(self, score_fn, n_jobs=None, mp_ctx=None, status_path=None):
-    for i in range(self.processed_scores, len(self.pts), self.scores_x_run):
-      current_points = self.pts[i: i + self.scores_x_run]
+  def _fetch_scores(self, score_fn, n_jobs=None, mp_ctx=None, scores_x_run=None,
+                    status_path=None):
+    scores_x_run = scores_x_run or ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
+
+    for i in range(self.processed_scores, len(self.pts), scores_x_run):
+      current_points = self.pts[i: i + scores_x_run]
 
       scores = self._score_slice(current_points, score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx)
 
@@ -184,6 +186,7 @@ class Selector:
                explore_pct=0.05,
                min_pid_gain_pct=0.01,
                max_blanks_pct=0.1,
+               scores_x_run=None,
                n_jobs=None,
                mp_ctx=None):
     alog.debug0(f'{len(self.space)} parameters, {np.prod(self.space)} configurations')
@@ -197,7 +200,11 @@ class Selector:
       alog.debug0(f'{len(self.pts)} points, {len(self.processed)} processed ' \
                   f'(max {max_explore}), {self.blanks} / {max_blanks} blanks')
 
-      self._fetch_scores(score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx, status_path=status_path)
+      self._fetch_scores(score_fn,
+                         n_jobs=n_jobs,
+                         mp_ctx=mp_ctx,
+                         scores_x_run=scores_x_run,
+                         status_path=status_path)
 
       fsidx = self._select_top_n(top_n, min_pid_gain_pct)
 
