@@ -44,17 +44,6 @@ def _mkdelta(idx, space, delta_std):
   return np.clip(delta, np.zeros_like(delta), aspace - 1)
 
 
-def _select_deltas(pt, space, delta_spacek, delta_std):
-  if delta_spacek is None:
-    num_deltas = len(space)
-  elif delta_spacek > 0:
-    num_deltas = int(np.ceil(len(space) * delta_spacek))
-  else:
-    num_deltas = int(np.rint(-delta_spacek))
-
-  return [Point(pt.pid, _mkdelta(pt.idx, space, delta_std)) for _ in range(num_deltas)]
-
-
 def _mp_score_fn(score_fn, params):
   return score_fn(**params)
 
@@ -156,31 +145,45 @@ class Selector:
 
     return fsidx
 
-  def _select_missing(self, pts):
-    new_pts = []
-    for pt in pts:
-      if pt.idx.tobytes() not in self.processed:
-        new_pts.append(pt)
+  def _is_processed(self, idx):
+    return idx.tobytes() in self.processed
 
-    return new_pts
+  def _generating(self, dest, count):
+    max_attempts = round(count * ut.getenv('KGEN_EXTRA', dtype=float, defval=2))
+    n = 0
+    while count > len(dest) and n < max_attempts:
+      yield n
+      n += 1
 
-  def _random_generate(self, count):
+  def _randgen(self, count):
     rng = np.random.default_rng()
     high = np.array(self.space, dtype=np.int32)
     low = np.zeros_like(high)
 
     rpoints = []
-    for _ in range(count):
-      ridx = rng.integers(low, high)
-      rpoints.append(Point(self.cpid, ridx))
-      self.cpid += 1
+    for _ in self._generating(rpoints, count):
+      idx = rng.integers(low, high)
+      if not self._is_processed(idx):
+        rpoints.append(Point(self.cpid, idx))
+        self.cpid += 1
 
     return rpoints
 
-  def _randgen(self, rnd_n):
-    rnd_pts = self._random_generate(rnd_n)
+  def _select_deltas(self, pt, delta_spacek, delta_std):
+    if delta_spacek is None:
+      num_deltas = len(self.space)
+    elif delta_spacek > 0:
+      num_deltas = int(np.ceil(len(self.space) * delta_spacek))
+    else:
+      num_deltas = int(np.rint(-delta_spacek))
 
-    return self._select_missing(rnd_pts)
+    deltas = []
+    for _ in self._generating(deltas, num_deltas):
+      idx = _mkdelta(pt.idx, self.space, delta_std)
+      if not self._is_processed(idx):
+        deltas.append(Point(pt.pid, idx))
+
+    return deltas
 
   def __call__(self, score_fn,
                status_path=None,
@@ -231,8 +234,7 @@ class Selector:
       # Sample around best points ...
       next_pts = []
       for i in fsidx:
-        dpts = _select_deltas(self.pts[i], self.space, delta_spacek, delta_std)
-        next_pts.extend(self._select_missing(dpts))
+        next_pts.extend(self._select_deltas(self.pts[i], delta_spacek, delta_std))
 
       # And randomly add ones in search of better scores.
       rnd_count = max(top_n, int(rnd_pct * len(next_pts)))
