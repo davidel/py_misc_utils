@@ -96,7 +96,7 @@ class Selector:
       # We keep parameters as numpy arrays, but when we pluck values we want to
       # return them in Python scalar form.
       pvalue = self.nparams[k][idx[i]]
-      param[k] = pvalue.item() if npu.is_numpy(pvalue) else pvalue
+      param[k] = pvalue.item()
 
     return param
 
