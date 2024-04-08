@@ -166,8 +166,8 @@ class Selector:
 
   def _random_generate(self, count):
     rng = np.random.default_rng()
-    low = np.zeros(len(self.space), dtype=np.int32)
     high = np.array(self.space, dtype=np.int32)
+    low = np.zeros_like(high)
 
     rpoints = []
     for _ in range(count):
