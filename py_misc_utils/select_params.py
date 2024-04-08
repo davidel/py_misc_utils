@@ -203,7 +203,7 @@ class Selector:
     max_blanks = int(max_explore * max_blanks_pct)
     while self.pts and len(self.processed) < max_explore and self.blanks < max_blanks:
       alog.debug0(f'{len(self.pts)} points, {len(self.processed)} processed ' \
-                  f'(max {max_explore}), {self.blanks} / {max_blanks} blanks')
+                  f'(max {max_explore}), {self.blanks}/{max_blanks} blanks')
 
       self._fetch_scores(score_fn,
                          n_jobs=n_jobs,
@@ -223,7 +223,7 @@ class Selector:
         alog.debug0(f'BestScore = {self.best_score:.5e}\tParam = {self.best_param}')
       else:
         self.blanks += len(self.pts)
-        alog.info(f'Score not improved: blanks={self.blanks}/{max_blanks}')
+        alog.info(f'Score not improved (current run top {score}, best {self.best_score})')
 
       for pt in self.pts:
         self.processed.add(pt.idx.tobytes())
