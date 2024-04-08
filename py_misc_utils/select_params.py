@@ -187,8 +187,8 @@ class Selector:
                delta_spacek=None,
                delta_std=0.2,
                top_n=10,
-               rnd_n=10,
                explore_pct=0.05,
+               rnd_pct=0.2,
                min_pid_gain_pct=0.01,
                max_blanks_pct=0.1,
                scores_x_run=None,
@@ -197,7 +197,7 @@ class Selector:
     alog.debug0(f'{len(self.space)} parameters, {np.prod(self.space)} configurations')
 
     if not self.pts:
-      self.pts.extend(self._randgen(rnd_n))
+      self.pts.extend(self._randgen(top_n))
 
     max_explore = int(np.prod(self.space) * explore_pct)
     max_blanks = int(max_explore * max_blanks_pct)
@@ -235,7 +235,8 @@ class Selector:
         next_pts.extend(self._select_missing(dpts))
 
       # And randomly add ones in search of better scores.
-      next_pts.extend(self._randgen(rnd_n))
+      rnd_count = max(top_n, int(rnd_pct * len(next_pts)))
+      next_pts.extend(self._randgen(rnd_count))
 
       self.pts = next_pts
       self.current_scores, self.processed_scores = [], 0
