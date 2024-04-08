@@ -185,7 +185,7 @@ class Selector:
   def __call__(self, score_fn,
                status_path=None,
                delta_spacek=None,
-               delta_std=0.2,
+               delta_std=0.1,
                top_n=10,
                explore_pct=0.05,
                rnd_pct=0.2,
