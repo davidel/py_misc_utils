@@ -17,6 +17,10 @@ from . import utils as ut
 Point = collections.namedtuple('Point', 'pid, idx')
 
 
+_SCORES_X_RUN = ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
+_KGEN_EXTRA = ut.getenv('KGEN_EXTRA', dtype=float, defval=2)
+
+
 def _norm_params(params):
   nparams = dict()
   for k, v in params.items():
@@ -107,7 +111,7 @@ class Selector:
 
   def _fetch_scores(self, score_fn, n_jobs=None, mp_ctx=None, scores_x_run=None,
                     status_path=None):
-    scores_x_run = scores_x_run or ut.getenv('SCORES_X_RUN', dtype=int, defval=10)
+    scores_x_run = scores_x_run or _SCORES_X_RUN
 
     for i in range(self.processed_scores, len(self.pts), scores_x_run):
       current_points = self.pts[i: i + scores_x_run]
@@ -149,7 +153,7 @@ class Selector:
     return idx.tobytes() in self.processed
 
   def _generating(self, dest, count):
-    max_attempts = round(count * ut.getenv('KGEN_EXTRA', dtype=float, defval=2))
+    max_attempts = round(count * _KGEN_EXTRA)
     n = 0
     while count > len(dest) and n < max_attempts:
       yield n
