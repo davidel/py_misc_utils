@@ -20,7 +20,7 @@ def _handler(sig, ctx):
 
     mhres = max(hres, mhres)
 
-  if mhres < 0 and prev_handler is not None:
+  if mhres < 0 and callable(prev_handler):
     prev_handler(sig, ctx)
 
 
