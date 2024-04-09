@@ -21,7 +21,7 @@ class BreakControl:
   def __init__(self):
     self._hit = False
 
-  def __enter__(self):
+  def open(self):
     with _LOCK:
       if not _HANDLERS:
         sgn.signal(signal.SIGINT, _handler)
@@ -29,11 +29,17 @@ class BreakControl:
 
     return self
 
-  def __exit__(self, type, value, traceback):
+  def close(self):
     with _LOCK:
       _HANDLERS.remove(self)
       if not _HANDLERS:
         sgn.unsignal(signal.SIGINT, _handler)
+
+  def __enter__(self):
+    return self.open()
+
+  def __exit__(self, type, value, traceback):
+    self.close()
 
     return False
 
