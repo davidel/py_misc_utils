@@ -64,7 +64,7 @@ def _is_worth_gain(pscore, score, min_gain_pct):
 
 class Selector:
 
-  def __init__(self, params):
+  def __init__(self, params, seeds=None):
     self.nparams = _norm_params(params)
     self.processed = set()
     self.scores_db = collections.defaultdict(list)
@@ -74,6 +74,21 @@ class Selector:
     self.skeys, self.space = _get_space(self.nparams)
     self.pts, self.cpid = [], 0
     self.current_scores, self.processed_scores = [], 0
+    if seeds:
+      self._load_seeds(seeds)
+
+  def _load_seeds(self, seeds):
+    for sd in seeds:
+      idx = np.zeros(len(self.space), dtype=np.int32)
+      for i, k in enumerate(self.skeys):
+        v = sd[k]
+        idx[i] = np.argmin(np.abs(self.nparams[k] - v))
+
+      if not self._is_processed(idx):
+        self.pts.append(Point(self.cpid, idx))
+        self.cpid += 1
+      else:
+        alog.info(f'Seed already processed: {sd}')
 
   def _register_scores(self, xparams, scores):
     for params, score in zip(xparams, scores):
