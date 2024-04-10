@@ -54,5 +54,5 @@ class BreakControl:
 def create():
   bc = BreakControl()
 
-  return fw.fin_wrap_np(bc.open(), bc.close())
+  return fw.fin_wrap_np(bc.open(), bc.close)
 
