@@ -1,6 +1,7 @@
 import signal
 import threading
 
+from . import fin_wrap as fw
 from . import signal as sgn
 
 
@@ -48,4 +49,10 @@ class BreakControl:
 
   def hit(self):
     return self._hit
+
+
+def create():
+  bc = BreakControl()
+
+  return fw.fin_wrap_np(bc.open(), bc.close())
 
