@@ -3,6 +3,7 @@ import binascii
 import collections
 import copy
 import datetime
+import gzip
 import importlib
 import importlib.util
 import inspect
@@ -12,6 +13,7 @@ import os
 import pickle
 import random
 import re
+import shutil
 import string
 import struct
 import sys
@@ -1133,4 +1135,10 @@ def maybe_call_dv(obj, name, defval, *args, **kwargs):
   fn = getattr(obj, name, None)
 
   return fn(*args, **kwargs) if fn is not None else defval
+
+
+def fgzip(src, dest):
+  with open(src, mode='rb') as infd:
+    with gzip.open(dest, mode='wb') as outfd:
+      shutil.copyfileobj(infd, outfd)
 
