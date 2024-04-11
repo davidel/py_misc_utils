@@ -741,6 +741,14 @@ def data_rewrite(v, rwfn):
     return v
 
 
+def stringify(s):
+  def rwfn(v):
+    if not isinstance(v, (list, tuple, dict)):
+      return str(v)
+
+  return data_rewrite(s, rwfn)
+
+
 def mlog(msg, level=logging.DEBUG):
   # No reason to split the message in lines, as the GLOG formatter alreay handles it.
   if logging.getLogger().isEnabledFor(level):
