@@ -81,6 +81,23 @@ def get_shapes(tensors):
   return tuple(shapes)
 
 
+class Chunk:
+
+  def __init__(self, init=None):
+    self._data = [init] if init is not None else []
+    self._size = init.nbytes if init is not None else 0
+
+  def size(self):
+    return self._size
+
+  def append(self, t):
+    self._data.append(t)
+    self._size += t.nbytes
+
+  def coalesce(self):
+    return np.concatenate(self._data)
+
+
 class Writer:
 
   def __init__(self, path, chunk_size=100 * 1024 * 1024):
@@ -96,8 +113,8 @@ class Writer:
   def write(self, *args):
     size = len(args[0]) if args else 0
     if not self._chunks:
-      self._chunks = list(args)
-      self._shapes = [x.shape for x in args]
+      self._chunks = [Chunk(init=t) for t in args]
+      self._shapes = [t.shape for t in args]
       self._indices = [0] * len(args)
       for i in range(len(args)):
         if size != len(args[i]):
@@ -105,26 +122,23 @@ class Writer:
         os.mkdir(os.path.join(self._path, str(i)))
     else:
       if len(args) != len(self._chunks):
-        alog.xraise(RuntimeError, f'Written streams count must match: {len(args)} vs {len(self._chunk)}')
+        alog.xraise(RuntimeError, f'Written streams count must match: {len(args)} vs {len(self._chunks)}')
       for i, t in enumerate(args):
         if size != len(t):
           alog.xraise(RuntimeError, f'The major dimension of a write operation must match: {size} vs {len(args[i])}')
         check_shapes(self._shapes[i], t.shape)
-        if self._chunks[i] is None:
-          self._chunks[i] = t
-        else:
-          self._chunks[i] = np.concatenate([self._chunks[i], t])
+        self._chunks[i].append(t)
 
     self.flush(final=False)
 
   def flush(self, final=True, state=None):
-    for i, t in enumerate(self._chunks):
-      if t is not None and (final or t.nbytes >= self._chunk_size):
+    for i, chunk in enumerate(self._chunks):
+      if chunk is not None and (final or chunk.size() >= self._chunk_size):
         path = os.path.join(self._path, str(i), str(self._indices[i]) + '.npy')
-        np.save(path, t)
+        np.save(path, chunk.coalesce())
 
         self._indices[i] += 1
-        self._chunks[i] = None
+        self._chunks[i] = Chunk()
 
     if state is not None:
       with open(os.path.join(self._path, _STATE_FILE), mode='wb') as f:
