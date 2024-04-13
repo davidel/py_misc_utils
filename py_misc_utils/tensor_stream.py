@@ -10,7 +10,7 @@ import torch.utils.data as data_utils
 
 from . import alog
 from . import assert_checks as tas
-from . import utils as pyu
+from . import utils as ut
 
 
 _STATE_FILE = 'state.pkl'
@@ -29,7 +29,7 @@ def load_stream_tensors(path):
     tas.check_eq(ext, '.npy')
 
     tid = int(tid)
-    stream_tensors = pyu.idx_expand(stream_tensors, tid)
+    stream_tensors = ut.idx_expand(stream_tensors, tid)
 
     tpath = os.path.join(path, tname)
     stream_tensors[tid] = np.lib.format.open_memmap(tpath, mode='r')
@@ -43,9 +43,7 @@ def load_tensors(path):
     spath = os.path.join(path, name)
     if re.match(r'\d+$', name) and os.path.isdir(spath):
       streamno = int(name)
-      if streamno >= len(tensors):
-        tensors = tensors + [()] * (streamno + 1 - len(tensors))
-
+      tensors = ut.idx_expand(tensors, streamno, filler=())
       tensors[streamno] = load_stream_tensors(spath)
 
   return tuple(tensors)
@@ -142,7 +140,7 @@ class Writer:
 
     if state is not None:
       with open(os.path.join(self._path, _STATE_FILE), mode='wb') as f:
-        pickle.dump(state, f, protocol=pyu.pickle_proto())
+        pickle.dump(state, f, protocol=ut.pickle_proto())
 
 
 
