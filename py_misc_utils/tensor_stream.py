@@ -143,7 +143,6 @@ class Writer:
         pickle.dump(state, f, protocol=ut.pickle_proto())
 
 
-
 class Reader:
 
   def __init__(self, path, transforms=None):
