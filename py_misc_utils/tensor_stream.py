@@ -190,6 +190,8 @@ class Reader:
 
     if size is None:
       size = stream_shape[0] - start
+    else:
+      size = min(size, stream_shape[0] - start)
 
     pos = bisect.bisect_right(stream_sizes, start) - 1
     tensor = stream_tensors[pos]
