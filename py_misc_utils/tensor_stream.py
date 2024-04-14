@@ -131,7 +131,7 @@ class Writer:
 
   def flush(self, final=True, state=None):
     for i, chunk in enumerate(self._chunks):
-      if chunk is not None and (final or chunk.size() >= self._chunk_size):
+      if chunk is not None and chunk.size() > 0 and (final or chunk.size() >= self._chunk_size):
         path = os.path.join(self._path, str(i), str(self._indices[i]) + '.npy')
         np.save(path, chunk.coalesce())
 
