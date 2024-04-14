@@ -1142,3 +1142,9 @@ def fgzip(src, dest):
     with gzip.open(dest, mode='wb') as outfd:
       shutil.copyfileobj(infd, outfd)
 
+
+def fgunzip(src, dest):
+  with gzip.open(dest, mode='rb') as infd:
+    with open(src, mode='wb') as outfd:
+      shutil.copyfileobj(infd, outfd)
+
