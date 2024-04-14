@@ -16,12 +16,12 @@ from . import utils as ut
 _STATE_FILE = 'state.pkl'
 
 
-def check_shapes(prev_shape, new_shape):
+def _check_shapes(prev_shape, new_shape):
   if tuple(prev_shape[1:]) != tuple(new_shape[1:]):
     alog.xraise(RuntimeError, f'Shapes are not compatible: {new_shape} vs {prev_shape}')
 
 
-def load_stream_tensors(path):
+def _load_stream_tensors(path):
   stream_tensors = []
   for tname in os.listdir(path):
     # File names within the stream tensors folder is ID.npy.
@@ -37,19 +37,19 @@ def load_stream_tensors(path):
   return tuple(stream_tensors)
 
 
-def load_tensors(path):
+def _load_tensors(path):
   tensors = []
   for name in os.listdir(path):
     spath = os.path.join(path, name)
     if re.match(r'\d+$', name) and os.path.isdir(spath):
       streamno = int(name)
       tensors = ut.idx_expand(tensors, streamno, filler=())
-      tensors[streamno] = load_stream_tensors(spath)
+      tensors[streamno] = _load_stream_tensors(spath)
 
   return tuple(tensors)
 
 
-def get_sizes(tensors):
+def _get_sizes(tensors):
   sizes = []
   for stream_tensors in tensors:
     stream_sizes = [0]
@@ -61,7 +61,7 @@ def get_sizes(tensors):
   return tuple(sizes)
 
 
-def get_shapes(tensors):
+def _get_shapes(tensors):
   shapes = []
   for stream_tensors in tensors:
     shape = None
@@ -69,7 +69,7 @@ def get_shapes(tensors):
       if shape is None:
         shape = list(tensor.shape)
       else:
-        check_shapes(shape, tensor.shape)
+        _check_shapes(shape, tensor.shape)
         shape[0] += len(tensor)
 
     if shapes and shapes[0][0] != shape[0]:
@@ -79,7 +79,7 @@ def get_shapes(tensors):
   return tuple(shapes)
 
 
-class Chunk:
+class _ChunkList:
 
   def __init__(self, init=None):
     self._data = [init] if init is not None else []
@@ -111,7 +111,7 @@ class Writer:
   def write(self, *args):
     size = len(args[0]) if args else 0
     if not self._chunks:
-      self._chunks = [Chunk(init=t) for t in args]
+      self._chunks = [_ChunkList(init=t) for t in args]
       self._shapes = [t.shape for t in args]
       self._indices = [0] * len(args)
       for i in range(len(args)):
@@ -124,7 +124,7 @@ class Writer:
       for i, t in enumerate(args):
         if size != len(t):
           alog.xraise(RuntimeError, f'The major dimension of a write operation must match: {size} vs {len(args[i])}')
-        check_shapes(self._shapes[i], t.shape)
+        _check_shapes(self._shapes[i], t.shape)
         self._chunks[i].append(t)
 
     self.flush(final=False)
@@ -136,7 +136,7 @@ class Writer:
         np.save(path, chunk.coalesce())
 
         self._indices[i] += 1
-        self._chunks[i] = Chunk()
+        self._chunks[i] = _ChunkList()
 
     if state is not None:
       with open(os.path.join(self._path, _STATE_FILE), mode='wb') as f:
@@ -149,9 +149,9 @@ class Reader:
     if not os.path.isdir(path):
       alog.xraise(RuntimeError, f'Tensor stream folder does not exist: {path}')
     self._path = path
-    self._tensors = load_tensors(path)
-    self._sizes = get_sizes(self._tensors)
-    self.shape = get_shapes(self._tensors)
+    self._tensors = _load_tensors(path)
+    self._sizes = _get_sizes(self._tensors)
+    self.shape = _get_shapes(self._tensors)
     self.num_streams = len(self._tensors)
     self.state = dict()
     self._transforms = list(transforms) if transforms else None
