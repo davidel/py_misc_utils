@@ -9,7 +9,7 @@ from . import tensor_stream as ts
 from . import utils as ut
 
 
-_WriteField = collections.namedtuple('WriteField', 'dtype')
+WriteField = collections.namedtuple('WriteField', 'dtype')
 
 
 class StreamDataWriter:
@@ -23,7 +23,7 @@ class StreamDataWriter:
       sfields = fields
 
     for field, dtype in sfields:
-      self._fields[field] = _WriteField(dtype=np.dtype(dtype))
+      self._fields[field] = WriteField(dtype=np.dtype(dtype))
 
   def write(self, **kwargs):
     args = []
