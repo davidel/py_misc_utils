@@ -116,7 +116,7 @@ class StreamSortedScan:
     widx = 0
     for idx in self._indices:
       if widx == self._slice_size:
-        yield rdata
+        yield widx, rdata
         widx = 0
 
       sdata, sidx = self._get_slice(idx)
@@ -129,5 +129,5 @@ class StreamSortedScan:
       for field, data in rdata.items():
         rdata[field] = data[: widx]
 
-      yield rdata
+      yield widx, rdata
 
