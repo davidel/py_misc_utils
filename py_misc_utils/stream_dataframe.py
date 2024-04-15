@@ -46,7 +46,7 @@ class StreamDataWriter:
     self.write(**wargs)
 
   def flush(self):
-    state = dict(fields=tuple(self._fields.keys()))
+    state = dict(fields=tuple(self._fields))
 
     self._writer.flush(state=state)
 
@@ -55,16 +55,22 @@ class StreamDataReader:
 
   def __init__(self, path):
     self._reader = ts.Reader(path)
-    self.fields = self._reader.state['fields']
-    self.dtype = self._reader.dtype
-    self._fields_id = {field: i for i, field in enumerate(self.fields)}
+    self._fields = self._reader.state['fields']
+    self._fields_id = {field: i for i, field in enumerate(self._fields.keys())}
 
   def __len__(self):
     return len(self._reader)
 
+  def fields(self):
+    return tuple(self._fields.keys())
+
+  @property
+  def dtype(self):
+    return tuple(wfield.dtype for wfield in self._fields.values())
+
   def get_slice(self, start, size=None):
     data = collections.OrderedDict()
-    for i, field in enumerate(self.fields):
+    for i, field in enumerate(self._fields.keys()):
       data[field] = self._reader.get_slice(i, start, size=size)
 
     return data
@@ -75,7 +81,7 @@ class StreamDataReader:
     return self._reader.get_slice(fid, start, size=size)
 
   def typed_fields(self):
-    return tuple(zip(self.fields, self.dtype))
+    return tuple((field, wfield.dtype) for field, wfield in self._fields.items())
 
   def empty_array(self, size):
     rdata = collections.OrderedDict()
