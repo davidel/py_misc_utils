@@ -46,7 +46,7 @@ class StreamDataWriter:
     self.write(**wargs)
 
   def flush(self):
-    state = dict(fields=tuple(self._fields))
+    state = dict(fields=self._fields)
 
     self._writer.flush(state=state)
 
