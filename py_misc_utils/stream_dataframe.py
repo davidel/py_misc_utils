@@ -73,9 +73,12 @@ class StreamDataReader:
 
     return self._reader.get_slice(fid, start, size=size)
 
+  def fields(self):
+    return tuple(zip(self.fields, self.dtype))
+
   def empty_array(self, size):
     rdata = collections.OrderedDict()
-    for field, dtype in zip(self.fields, self.dtype):
+    for field, dtype in self.fields():
       rdata[field] = np.empty(size, dtype=dtype)
 
     return rdata
