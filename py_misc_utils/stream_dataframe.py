@@ -63,7 +63,7 @@ class StreamDataReader:
     return len(self._reader)
 
   def get_slice(self, start, size=None):
-    data = dict()
+    data = collections.OrderedDict()
     for i, field in enumerate(self.fields):
       data[field] = self._reader.get_slice(i, start, size=size)
 
