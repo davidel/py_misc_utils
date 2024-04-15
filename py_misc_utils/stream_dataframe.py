@@ -148,8 +148,9 @@ class StreamSortedScan:
       widx += 1
 
     if widx:
+      frdata = collections.OrderedDict()
       for field, data in rdata.items():
-        rdata[field] = data[: widx]
+        frdata[field] = data[: widx]
 
-      yield widx, rdata
+      yield widx, frdata
 
