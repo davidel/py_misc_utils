@@ -135,7 +135,7 @@ class StreamSortedScan:
     data = self._slices.get(sidx)
     if data is None:
       if len(self._slices) >= self._max_slices:
-        self._slices.popitem(0)
+        self._slices.popitem(last=False)
 
       slice_size = min(self._slice_size, len(self._indices) - sidx)
 
