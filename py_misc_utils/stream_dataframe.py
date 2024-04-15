@@ -73,6 +73,13 @@ class StreamDataReader:
 
     return self._reader.get_slice(fid, start, size=size)
 
+  def empty_array(self, size):
+    rdata = collections.OrderedDict()
+    for field, dtype in zip(self.fields, self.dtype):
+      rdata[field] = np.empty(size, dtype=dtype)
+
+    return rdata
+
 
 class StreamSortedScan:
 
@@ -102,10 +109,7 @@ class StreamSortedScan:
     return data, idx - sidx
 
   def scan(self):
-    rdata = dict()
-    for field, dtype in zip(self._reader.fields, self._reader.dtype):
-      rdata[field] = np.empty(self._slice_size, dtype=dtype)
-
+    rdata = self._reader.empty_array(self._slice_size)
     widx = 0
     for idx in self._indices:
       if widx == self._slice_size:
