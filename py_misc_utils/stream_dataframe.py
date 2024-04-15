@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from . import assert_checks as tas
+from . import np_utils as npu
 from . import tensor_stream as ts
 from . import utils as ut
 
@@ -31,8 +32,11 @@ class StreamDataWriter:
       data = kwargs.get(field, None)
       tas.check_is_not_none(data, msg=f'Missing "{field}" data in write operation')
 
-      if data.dtype != wfield.dtype:
-        data = data.astype(wfield.dtype)
+      if isinstance(data, np.ndarray):
+        if data.dtype != wfield.dtype:
+          data = data.astype(wfield.dtype)
+      else:
+        data = np.array(data, dtype=wfield.dtype)
 
       args.append(data)
 
@@ -86,7 +90,10 @@ class StreamDataReader:
   def empty_array(self, size):
     rdata = collections.OrderedDict()
     for field, dtype in self.typed_fields():
-      rdata[field] = np.empty(size, dtype=dtype)
+      if npu.is_numeric(dtype):
+        rdata[field] = np.empty(size, dtype=dtype)
+      else:
+        rdata[field] = [None] * size
 
     return rdata
 
