@@ -85,6 +85,24 @@ class StreamDataReader:
     return rdata
 
 
+def _compute_indices(reader, field, start=None, end=None, reverse=False):
+  fvalues = reader.get_field_slice(field, 0)
+  indices = np.argsort(fvalues)
+  if reverse:
+    indices = np.flip(indices)
+
+  if start is not None or end is not None:
+    fvalues = fvalues[indices]
+    start_index = bisect.bisect(fvalues, start) if start is not None else 0
+    end_index = bisect.bisect(fvalues, end) if end is not None else len(indices)
+    if start_index > end_index:
+      start_index, end_index = end_index, start_index
+
+    indices = indices[start_index: end_index]
+
+  return indices
+
+
 class StreamSortedScan:
 
   def __init__(self, reader, field,
@@ -97,22 +115,7 @@ class StreamSortedScan:
     self._max_slices = max_slices or 16
     self._reader = reader
     self._slices = collections.OrderedDict()
-
-    fvalues = reader.get_field_slice(field, 0)
-    indices = np.argsort(fvalues)
-    if reverse:
-      indices = np.flip(indices)
-
-    if start is not None or end is not None:
-      sfvalues = fvalues[indices]
-      start_index = bisect.bisect(sfvalues, start) if start is not None else 0
-      end_index = bisect.bisect(sfvalues, end) if end is not None else len(indices)
-      if start_index > end_index:
-        start_index, end_index = end_index, start_index
-
-      self._indices = indices[start_index: end_index]
-    else:
-      self._indices = indices
+    self._indices = _compute_indices(reader, field, start=start, end=end, reverse=reverse)
 
   def _get_slice(self, idx):
     sidx = (idx // self._slice_size) * self._slice_size
