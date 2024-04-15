@@ -1,3 +1,4 @@
+import bisect
 import collections
 
 import numpy as np
@@ -86,14 +87,32 @@ class StreamDataReader:
 
 class StreamSortedScan:
 
-  def __init__(self, reader, field, slice_size=None, max_slices=None, reverse=False):
+  def __init__(self, reader, field,
+               start=None,
+               end=None,
+               slice_size=None,
+               max_slices=None,
+               reverse=False):
     self._slice_size = slice_size or 100000
     self._max_slices = max_slices or 16
     self._reader = reader
     self._slices = collections.OrderedDict()
-    self._indices = np.argsort(reader.get_field_slice(field, 0))
+
+    fvalues = reader.get_field_slice(field, 0)
+    indices = np.argsort(fvalues)
     if reverse:
-      self._indices = np.flip(self._indices)
+      indices = np.flip(indices)
+
+    if start is not None or end is not None:
+      sfvalues = fvalues[indices]
+      start_index = bisect.bisect(sfvalues, start) if start is not None else 0
+      end_index = bisect.bisect(sfvalues, end) if end is not None else len(indices)
+      if start_index > end_index:
+        start_index, end_index = end_index, start_index
+
+      self._indices = indices[start_index: end_index]
+    else:
+      self._indices = indices
 
   def _get_slice(self, idx):
     sidx = (idx // self._slice_size) * self._slice_size
