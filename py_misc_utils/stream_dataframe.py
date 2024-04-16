@@ -26,6 +26,8 @@ class StreamDataWriter:
     for field, dtype in sfields:
       self._fields[field] = WriteField(dtype=np.dtype(dtype))
 
+  # Note that the tensors handed over to the write() API will become owned by
+  # the StreamDataWriter obect, and cannot be written over after the write operation.
   def write(self, **kwargs):
     args = []
     for field, wfield in self._fields.items():

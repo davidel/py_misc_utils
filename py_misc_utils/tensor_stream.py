@@ -108,6 +108,8 @@ class Writer:
     self._shapes = []
     self._indices = []
 
+  # Note that the tensors handed over to the write() API will become owned by
+  # the Writer obect, and cannot be written over after the write operation.
   def write(self, *args):
     size = len(args[0]) if args else 0
     if not self._chunks:
