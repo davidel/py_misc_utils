@@ -82,14 +82,14 @@ def _get_shapes(tensors):
 class _ChunkList:
 
   def __init__(self, init=None):
-    self._data = [init] if init is not None else []
+    self._data = [np.copy(init)] if init is not None else []
     self._size = init.nbytes if init is not None else 0
 
   def size(self):
     return self._size
 
   def append(self, t):
-    self._data.append(t)
+    self._data.append(np.copy(t))
     self._size += t.nbytes
 
   def coalesce(self):
