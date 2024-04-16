@@ -97,7 +97,7 @@ class OwnTensor:
 
 
 def _grab_tensor(t):
-  return t.t if isinstance(t, OwnTensor) else np.copy(t.t)
+  return t.t if isinstance(t, OwnTensor) else np.copy(t)
 
 
 class _ChunkList:
