@@ -79,38 +79,17 @@ def _get_shapes(tensors):
   return tuple(shapes)
 
 
-class OwnTensor:
-
-  def __init__(self, t):
-    self.t = t
-
-  def __len__(self):
-    return len(self.t)
-
-  @property
-  def shape(self):
-    return self.t.shape
-
-  @property
-  def nbytes(self):
-    return self.t.nbytes
-
-
-def _grab_tensor(t):
-  return t.t if isinstance(t, OwnTensor) else np.copy(t)
-
-
 class _ChunkList:
 
   def __init__(self, init=None):
-    self._data = [_grab_tensor(init)] if init is not None else []
+    self._data = [init] if init is not None else []
     self._size = init.nbytes if init is not None else 0
 
   def size(self):
     return self._size
 
   def append(self, t):
-    self._data.append(_grab_tensor(t))
+    self._data.append(t)
     self._size += t.nbytes
 
   def coalesce(self):

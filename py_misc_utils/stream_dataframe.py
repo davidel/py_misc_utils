@@ -34,9 +34,9 @@ class StreamDataWriter:
 
       if isinstance(data, np.ndarray):
         if data.dtype != wfield.dtype:
-          data = ts.OwnTensor(data.astype(wfield.dtype))
+          data = data.astype(wfield.dtype)
       else:
-        data = ts.OwnTensor(np.array(data, dtype=wfield.dtype))
+        data = np.array(data, dtype=wfield.dtype)
 
       args.append(data)
 
