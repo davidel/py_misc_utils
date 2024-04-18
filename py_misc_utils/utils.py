@@ -87,7 +87,7 @@ def make_ntuple(ntc, args):
   for f in ntc._fields:
     fv = args.get(f, NONE)
     if fv is NONE:
-      fv = ntc._field_defaults.get(f, None)
+      fv = ntc._field_defaults.get(f)
 
     targs.append(fv)
 
@@ -316,7 +316,7 @@ def equal_signature(a, b, subcls=True):
       return False
 
     for k, t in a.items():
-      tb = b.get(k, None)
+      tb = b.get(k)
       if tb is None or not equal_signature(t, tb, subcls=subcls):
         return False
 
@@ -449,7 +449,7 @@ class StringTable:
     self._tbl = dict()
 
   def add(self, s):
-    x = self._tbl.get(s, None)
+    x = self._tbl.get(s)
     if x is None:
       x = s
       self._tbl[x] = x
@@ -976,7 +976,7 @@ def split(sdata, sc, sseq=_STD_SPLIT_SEQ, esc='\\'):
         parts.append(''.join(seq))
         seq = []
       else:
-        cc = sseq.get(c, None)
+        cc = sseq.get(c)
         if cc is not None:
           oc = c if c != cc else None
           count += 1
@@ -1062,7 +1062,7 @@ def to_bool(v):
   if isinstance(v, bool):
     return v
 
-  bv = _BOOLS.get(v, None)
+  bv = _BOOLS.get(v)
   tas.check_is_not_none(bv, msg=f'Unable to convert to bool: {v}')
 
   return bv

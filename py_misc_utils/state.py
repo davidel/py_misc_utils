@@ -26,7 +26,7 @@ class StateBase:
       sdict[_kname(cls, k)] = v
 
   def _load_state(self, cls, state, name, defval=None):
-    sdict = state.get(_STATE_KEY, None)
+    sdict = state.get(_STATE_KEY)
 
     return sdict.get(_kname(cls, name), defval) if sdict is not None else defval
 

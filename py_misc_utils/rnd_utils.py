@@ -38,7 +38,7 @@ def torch_gen(device='cpu'):
   tls = _get_tls()
 
   tdevice = torch.device(device)
-  rndg = tls.torch_rnds.get(tdevice, None)
+  rndg = tls.torch_rnds.get(tdevice)
   if rndg is None:
     rndg = torch.Generator()
     rndg.manual_seed(_SEED)

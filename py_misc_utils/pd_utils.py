@@ -41,7 +41,7 @@ def re_select_columns(df, re_cols):
 
 def read_csv(path, rows_sample=100, dtype=None, args=None):
   args = dict() if args is None else args
-  if args.get('index_col', None) is None:
+  if args.get('index_col') is None:
     args = args.copy()
     with open(path, mode='r') as f:
       fields = f.readline().rstrip().split(',')
@@ -123,7 +123,7 @@ def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=())
     data = df[c].to_numpy()
 
     if dtype is not None and c not in no_convert and pyn.is_numeric(data.dtype):
-      cdtype = dtype.get(c, None) if isinstance(dtype, dict) else dtype
+      cdtype = dtype.get(c) if isinstance(dtype, dict) else dtype
       if cdtype is not None:
         data = data.astype(cdtype)
 
@@ -133,7 +133,7 @@ def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=())
 
 
 def column_or_index(df, name, numpy=True):
-  data = df.get(name, None)
+  data = df.get(name)
   if data is None and df.index.name == name:
     data = df.index
   if data is not None:
@@ -142,7 +142,7 @@ def column_or_index(df, name, numpy=True):
 
 def columns_transform(df, cols, tfn):
   for c in cols:
-    cv = df.get(c, None)
+    cv = df.get(c)
     if cv is not None:
       df[c] = tfn(c, cv, index=False)
     elif df.index.name == c:
@@ -203,7 +203,7 @@ def limit_per_group(df, cols, limit):
 
 
 def dataframe_column_rewrite(df, name, fn):
-  data = df.get(name, None)
+  data = df.get(name)
   if data is not None:
     df[name] = fn(data.to_numpy())
   elif df.index.name == name:

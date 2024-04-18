@@ -24,7 +24,7 @@ def get_caller_info(n_back):
 
 
 def report_fail(level, op, *args, **kwargs):
-  fmsg = kwargs.get('msg', None)
+  fmsg = kwargs.get('msg')
   cinfo = get_caller_info(2)
   if fmsg:
     cinfo = f'{cinfo}; {fmsg}'
@@ -32,7 +32,7 @@ def report_fail(level, op, *args, **kwargs):
     if callable(op):
       fname = getattr(op, '__name__', str(op))
       arg_list = ', '.join([str(arg) for arg in args])
-      res = kwargs.get('res', None)
+      res = kwargs.get('res')
       if res:
         res_op = kwargs['res_op']
         msg = f'{fname}({arg_list}) {res_op} {res} failed from {cinfo}'

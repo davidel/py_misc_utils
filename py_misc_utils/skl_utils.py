@@ -64,7 +64,7 @@ def parse_transform(trs_spec):
 
   alog.debug0(f'Parsed Transformer: {trs}\t{spec_cfg}')
 
-  trs_fn = _TRANSFORMERS.get(trs, None)
+  trs_fn = _TRANSFORMERS.get(trs)
   tas.check_is_not_none(trs_fn, msg=f'Unknown transformation requested: {trs_spec}')
 
   return trs_fn(**spec_cfg)

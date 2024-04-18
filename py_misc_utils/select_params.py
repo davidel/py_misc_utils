@@ -152,7 +152,7 @@ class Selector:
       pt = self.pts[i]
       if pt.pid not in pseen:
         pseen.add(pt.pid)
-        pscore = self.pid_scores.get(pt.pid, None)
+        pscore = self.pid_scores.get(pt.pid)
         if pscore is None or _is_worth_gain(pscore, self.current_scores[i], min_pid_gain_pct):
           self.pid_scores[pt.pid] = self.current_scores[i]
           fsidx.append(i)

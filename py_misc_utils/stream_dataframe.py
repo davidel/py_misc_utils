@@ -31,7 +31,7 @@ class StreamDataWriter:
   def write(self, **kwargs):
     args = []
     for field, wfield in self._fields.items():
-      data = kwargs.get(field, None)
+      data = kwargs.get(field)
       tas.check_is_not_none(data, msg=f'Missing "{field}" data in write operation')
 
       if isinstance(data, np.ndarray):
