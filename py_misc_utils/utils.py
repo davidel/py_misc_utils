@@ -594,14 +594,6 @@ def dict_rget(sdict, path, defval=None, sep='/'):
   return result
 
 
-def mget(idict, *fields):
-  gfields = []
-  for field in fields:
-    gfields.extend(comma_split(field))
-
-  return tuple(idict[f] for f in gfields)
-
-
 def make_index_dict(vals):
   return {v: i for i, v in enumerate(vals)}
 
