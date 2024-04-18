@@ -148,12 +148,17 @@ class StreamSortedScan:
 
     return data, idx - sidx
 
+  def _as_numpy(self, rdata):
+    return {field: np.array(data) for field, data in rdata}
+
   def scan(self):
+    # An ampty array can contain fields which are Python lists, so _as_numpy() is
+    # used when returning data to the caller.
     rdata = self._reader.empty_array(self._slice_size)
     widx = 0
     for idx in self._indices:
       if widx == self._slice_size:
-        yield widx, rdata
+        yield widx, self._as_numpy(rdata)
         widx = 0
 
       sdata, sidx = self._get_slice(idx)
@@ -167,5 +172,5 @@ class StreamSortedScan:
       for field, data in rdata.items():
         frdata[field] = data[: widx]
 
-      yield widx, frdata
+      yield widx, self._as_numpy(frdata)
 
