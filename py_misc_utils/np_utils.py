@@ -142,7 +142,7 @@ def complement_indices(indices, size):
 
 
 def polyfit_std(yv, xv=None, deg=1):
-  xv = xv or np.arange(len(yv), dtype=np.float32)
+  xv = np.arange(len(yv), dtype=np.float32) if xv is None else np.array(xv)
   yv = yv if isinstance(yv, np.ndarray) else np.array(yv)
 
   yfit = np.polynomial.Polynomial.fit(xv, yv, deg)
