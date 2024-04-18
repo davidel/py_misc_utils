@@ -149,7 +149,7 @@ class StreamSortedScan:
     return data, idx - sidx
 
   def _as_numpy(self, rdata):
-    return {field: np.array(data) for field, data in rdata}
+    return {field: np.array(data) for field, data in rdata.items()}
 
   def scan(self):
     # An ampty array can contain fields which are Python lists, so _as_numpy() is
