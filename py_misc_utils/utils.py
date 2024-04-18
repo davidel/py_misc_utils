@@ -1148,3 +1148,11 @@ def fgunzip(src, dest):
     with open(dest, mode='wb') as outfd:
       shutil.copyfileobj(infd, outfd)
 
+
+def unique(data):
+  udata = collections.defaultdict(lambda: array.array('L'))
+  for i, v in enumerate(data):
+    udata[v].append(i)
+
+  return udata
+
