@@ -84,3 +84,7 @@ def align(dt, step, ceil=False):
 
   return from_timestamp(ip * secs, tz=dt.tzinfo)
 
+
+def at_time(dt, hour=0, minute=0, second=0, microsecond=0):
+  return dt.replace(hour=hour, minute=minute, second=second, microsecond=microsecond)
+
