@@ -151,6 +151,14 @@ def polyfit_std(yv, xv=None, deg=1):
   return np.std(yv - fyv), fyv, yfit
 
 
+def npdict_clone(npd):
+  cloned = type(npd)()
+  for k, v in npd.items():
+    cloned[k] = np.array(v)
+
+  return cloned
+
+
 def is_ordered(v, reverse=False):
   npv = to_numpy(v)
 
