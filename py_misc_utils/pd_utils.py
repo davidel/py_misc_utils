@@ -112,9 +112,7 @@ def load_dataframe(path, **kwargs):
     alog.xraise(RuntimeError, f'Unknown extension: {ext}')
 
 
-def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=()):
-  df = load_dataframe(path)
-
+def to_npdict(df, reset_index=False, dtype=None, no_convert=()):
   if reset_index and df.index.name:
     df.reset_index(inplace=True)
 
@@ -130,6 +128,12 @@ def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=())
     cdata[c] = data
 
   return cdata
+
+
+def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=()):
+  df = load_dataframe(path)
+
+  return to_npdict(df, reset_index=reset_index, dtype=dtype, no_convert=no_convert)
 
 
 def column_or_index(df, name, numpy=True):
