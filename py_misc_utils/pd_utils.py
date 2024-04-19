@@ -114,7 +114,7 @@ def load_dataframe(path, **kwargs):
 
 def to_npdict(df, reset_index=False, dtype=None, no_convert=()):
   if reset_index and df.index.name:
-    df.reset_index(inplace=True)
+    df = df.reset_index()
 
   cdata = dict()
   for c in df.columns:
