@@ -104,6 +104,21 @@ def is_numpy(v):
   return type(v).__module__ == np.__name__
 
 
+def astype(data, col, dtype, no_convert=()):
+  if dtype is not None and col not in no_convert:
+    if isinstance(dtype, dict):
+      cdtype = dtype.get(col)
+    elif pyn.is_numeric(data.dtype):
+      cdtype = dtype
+    else:
+      cdtype = None
+
+    if cdtype is not None:
+      return data.astype(cdtype)
+
+  return data
+
+
 def moving_average(data, window, include_current=True):
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')

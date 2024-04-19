@@ -118,14 +118,7 @@ def to_npdict(df, reset_index=False, dtype=None, no_convert=()):
 
   cdata = dict()
   for c in df.columns:
-    data = df[c].to_numpy()
-
-    if dtype is not None and c not in no_convert and pyn.is_numeric(data.dtype):
-      cdtype = dtype.get(c) if isinstance(dtype, dict) else dtype
-      if cdtype is not None:
-        data = data.astype(cdtype)
-
-    cdata[c] = data
+    cdata[c] = pyn.astype(df[c].to_numpy(), c, dtype, no_convert=no_convert)
 
   return cdata
 
