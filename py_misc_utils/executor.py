@@ -83,8 +83,6 @@ class Queue:
         if self.closed or not self.cond.wait(timeout=timeout):
           break
 
-      return None
-
   def close(self):
     with self.lock:
       self.closed = True
