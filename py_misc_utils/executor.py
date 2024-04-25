@@ -66,6 +66,7 @@ class Queue:
     self.lock = threading.Lock()
     self.cond = threading.Condition(lock=self.lock)
     self.queue = collections.deque()
+    self.closed = False
 
   def put(self, task):
     with self.lock:
@@ -76,11 +77,16 @@ class Queue:
 
   def get(self, timeout=None):
     with self.lock:
-      while not self.queue:
+      while not self.queue and not self.closed:
         if not self.cond.wait(timeout=timeout):
           break
 
       return self.queue.popleft() if self.queue else None
+
+  def close(self):
+    with self.lock:
+      self.closed = True
+      self.cond.notify_all()
 
   def __len__(self):
     with self.lock:
@@ -191,10 +197,9 @@ class Executor:
 
     with self._lock:
       self._shutdown = True
-      for _ in range(len(self._workers)):
-        self._queue.put(None)
-
       workers = tuple(self._workers.values())
+
+    self._queue.close()
 
     alog.spam(f'Waiting {len(workers)} worker threads to complete')
     for worker in workers:
