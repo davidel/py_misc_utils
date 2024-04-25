@@ -77,11 +77,13 @@ class Queue:
 
   def get(self, timeout=None):
     with self.lock:
-      while not self.queue and not self.closed:
-        if not self.cond.wait(timeout=timeout):
+      while True:
+        if self.queue:
+          return self.queue.popleft()
+        if self.closed or not self.cond.wait(timeout=timeout):
           break
 
-      return self.queue.popleft() if self.queue else None
+      return None
 
   def close(self):
     with self.lock:
