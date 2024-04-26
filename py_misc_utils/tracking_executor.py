@@ -1,9 +1,8 @@
 import threading
 import weakref
 
-from . import abs_timeout as abst
+from . import cond_waiter as cwait
 from . import executor as xe
-from . import timegen as tg
 
 
 def _wrap_task(executor, tid, fn, *args, **kwargs):
@@ -65,13 +64,12 @@ class TrackingExecutor:
     self.executor.shutdown()
     self.wait()
 
-  def wait(self, tids=None, timeout=None, timegen=None):
-    atimegen = tg.TimeGen() if timegen is None else timegen
-    atimeo = abst.AbsTimeout(timeout, timefn=atimegen.now)
+  def wait(self, tids=None, timeout=None, timegen=None, waiter=None):
+    waiter = waiter or cwait.CondWaiter(timeout=timeout, timegen=timegen)
     if not tids:
       with self._lock:
         while self._pending:
-          if not atimegen.wait(self._pending_cv, timeout=atimeo.get()):
+          if not waiter.wait(self._pending_cv):
             break
 
         return not self._pending
@@ -80,8 +78,13 @@ class TrackingExecutor:
       with self._lock:
         while True:
           rem = stids & self._pending
-          if not (rem and atimegen.wait(self._pending_cv, timeout=atimeo.get())):
+          if not (rem and waiter.wait(self._pending_cv)):
             break
 
         return not rem
+
+  def wait_for_idle(self, timeout=None, timegen=None):
+    waiter = cwait.CondWaiter(timeout=timeout, timegen=timegen)
+    self.wait(waiter=waiter)
+    self.executor.wait_for_idle(waiter=waiter)
 

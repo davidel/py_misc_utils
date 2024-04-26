@@ -6,6 +6,7 @@ import time
 import weakref
 
 from . import alog
+from . import cond_waiter as cwait
 from . import utils as ut
 
 
@@ -202,11 +203,12 @@ class Executor:
     with self._lock:
       self._idle_cond.wait()
 
-  def wait_for_idle(self, timeout=None):
+  def wait_for_idle(self, timeout=None, timegen=None, waiter=None):
+    waiter = waiter or cwait.CondWaiter(timeout=timeout, timegen=timegen)
     self._queue.stop()
     try:
       with self._lock:
-        return self._idle_cond.wait(timeout=timeout)
+        return waiter.wait(self._idle_cond)
     finally:
       self._queue.start()
 
