@@ -4,7 +4,7 @@ from . import assert_checks as tas
 class MovingAverage:
 
   def __init__(self, factor):
-    tas.check(factor > 0.0 and factor < 1.0, msg=f'Invalid factor: {factor:.4e}')
+    tas.check(factor >= 0.0 and factor <= 1.0, msg=f'Invalid factor: {factor:.4e}')
     self._factor = factor
     self.value = 0
 
