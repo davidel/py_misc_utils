@@ -67,7 +67,7 @@ class Queue:
     self.lock = threading.Lock()
     self.cond = threading.Condition(lock=self.lock)
     self.queue = collections.deque()
-    self.stopped = False
+    self.stopped = 0
 
   def put(self, task):
     with self.lock:
@@ -82,16 +82,16 @@ class Queue:
         # Even in case of stopped queue, always return pending items if available.
         if self.queue:
           return self.queue.popleft()
-        if self.stopped or not self.cond.wait(timeout=timeout):
+        if self.stopped > 0 or not self.cond.wait(timeout=timeout):
           break
 
   def start(self):
     with self.lock:
-      self.stopped = False
+      self.stopped -= 1
 
   def stop(self):
     with self.lock:
-      self.stopped = True
+      self.stopped += 1
       self.cond.notify_all()
 
   def __len__(self):
