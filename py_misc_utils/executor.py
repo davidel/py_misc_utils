@@ -198,12 +198,14 @@ class Executor:
     return aresult
 
   def shutdown(self):
-    alog.spam(f'Stopping executor')
+    alog.debug0(f'Stopping executor')
     self._queue.stop()
     with self._lock:
       self._idle_cond.wait()
 
   def wait_for_idle(self, timeout=None, timegen=None, waiter=None):
+    alog.debug0(f'Waiting for idle ...')
+
     waiter = waiter or cwait.CondWaiter(timeout=timeout, timegen=timegen)
     self._queue.stop()
     try:
@@ -211,6 +213,7 @@ class Executor:
         return waiter.wait(self._idle_cond)
     finally:
       self._queue.start()
+      alog.debug0(f'Waiting for idle ... done')
 
 
 _LOCK = threading.Lock()

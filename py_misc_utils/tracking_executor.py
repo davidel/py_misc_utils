@@ -1,6 +1,7 @@
 import threading
 import weakref
 
+from . import alog
 from . import cond_waiter as cwait
 from . import executor as xe
 
@@ -65,6 +66,8 @@ class TrackingExecutor:
     self.wait()
 
   def wait(self, tids=None, timeout=None, timegen=None, waiter=None):
+    alog.debug0(f'Waiting for pending: {tids or ()}')
+
     waiter = waiter or cwait.CondWaiter(timeout=timeout, timegen=timegen)
     if not tids:
       with self._lock:
