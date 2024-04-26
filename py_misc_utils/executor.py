@@ -66,7 +66,7 @@ class Queue:
     self.lock = threading.Lock()
     self.cond = threading.Condition(lock=self.lock)
     self.queue = collections.deque()
-    self.closed = False
+    self.stopped = False
 
   def put(self, task):
     with self.lock:
@@ -78,14 +78,19 @@ class Queue:
   def get(self, timeout=None):
     with self.lock:
       while True:
+        # Even in case of stopped queue, always return pending items if available.
         if self.queue:
           return self.queue.popleft()
-        if self.closed or not self.cond.wait(timeout=timeout):
+        if self.stopped or not self.cond.wait(timeout=timeout):
           break
 
-  def close(self):
+  def start(self):
     with self.lock:
-      self.closed = True
+      self.stopped = False
+
+  def stop(self):
+    with self.lock:
+      self.stopped = True
       self.cond.notify_all()
 
   def __len__(self):
@@ -147,12 +152,14 @@ class Executor:
     self._queue = Queue()
     self._workers = dict()
     self._thread_counter = 0
-    self._shutdown = False
+    self._idle_cond = threading.Condition(lock=self._lock)
 
   def _unregister_worker(self, worker):
     alog.spam(f'Unregistering worker thread {worker.ident}')
     with self._lock:
       self._workers.pop(worker.ident, None)
+      if not self._workers:
+        self._idle_cond.notify_all()
 
   def _new_name(self):
     self._thread_counter += 1
@@ -176,9 +183,6 @@ class Executor:
 
   def _submit_task(self, task):
     with self._lock:
-      if self._shutdown:
-        alog.xraise(RuntimeError, f'Cannot submit after shutdown!')
-
       queued = self._queue.put(task)
       self._maybe_add_worker(queued)
 
@@ -194,16 +198,17 @@ class Executor:
 
   def shutdown(self):
     alog.spam(f'Stopping executor')
-
+    self._queue.stop()
     with self._lock:
-      self._shutdown = True
-      workers = tuple(self._workers.values())
+      self._idle_cond.wait()
 
-    self._queue.close()
-
-    alog.spam(f'Waiting {len(workers)} worker threads to complete')
-    for worker in workers:
-      worker.join()
+  def wait_for_idle(self, timeout=None):
+    self._queue.stop()
+    try:
+      with self._lock:
+        return self._idle_cond.wait(timeout=timeout)
+    finally:
+      self._queue.start()
 
 
 _LOCK = threading.Lock()
