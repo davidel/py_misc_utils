@@ -86,6 +86,6 @@ class TrackingExecutor:
 
   def wait_for_idle(self, timeout=None, timegen=None):
     waiter = cwait.CondWaiter(timeout=timeout, timegen=timegen)
-    self.wait(waiter=waiter)
-    self.executor.wait_for_idle(waiter=waiter)
+
+    return self.wait(waiter=waiter) and self.executor.wait_for_idle(waiter=waiter)
 
