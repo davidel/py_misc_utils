@@ -201,7 +201,9 @@ class Executor:
     alog.debug0(f'Stopping executor')
     self._queue.stop()
     with self._lock:
-      self._idle_cond.wait()
+      alog.debug0(f'Waiting executor workers exit')
+      while self._workers:
+        self._idle_cond.wait()
 
   def wait_for_idle(self, timeout=None, timegen=None, waiter=None):
     alog.debug0(f'Waiting for idle ...')
@@ -210,10 +212,14 @@ class Executor:
     self._queue.stop()
     try:
       with self._lock:
-        return waiter.wait(self._idle_cond)
+        while self._workers:
+          if not waiter.wait(self._idle_cond):
+            return False
     finally:
       self._queue.start()
       alog.debug0(f'Waiting for idle ... done')
+
+    return True
 
 
 _LOCK = threading.Lock()
