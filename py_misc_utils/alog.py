@@ -117,8 +117,15 @@ def setup_logging(args):
 
 
 def basic_setup(**kwargs):
-  args = _DEFAULT_ARGS.copy()
-  args.update(kwargs)
+  class _Dummy:
+    pass
+
+  args = _Dummy()
+  for k, v in _DEFAULT_ARGS.items():
+    setattr(args, k, v)
+  for k, v in kwargs.items():
+    setattr(args, k, v)
+
   setup_logging(args)
 
 
