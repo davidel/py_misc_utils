@@ -59,13 +59,17 @@ class Formatter(logging.Formatter):
     return f'{lid}{tstr};{os.getpid()}'
 
 
+_DEFAULT_ARGS = dict(
+  log_level='INFO',
+  log_file='STDERR',
+)
 
 def add_logging_options(parser):
-  parser.add_argument('--log_level', type=str, default='INFO',
+  parser.add_argument('--log_level', type=str, default=_DEFAULT_ARGS.get('log_level'),
                       choices={'SPAM', 'DEBUG', 'DEBUG0', 'DEBUG1', 'DEBUG2', 'DEBUG3', \
                                'INFO', 'WARNING', 'ERROR', 'CRITICAL'},
                       help='The logging level')
-  parser.add_argument('--log_file', type=str, default='STDERR',
+  parser.add_argument('--log_file', type=str, default=_DEFAULT_ARGS.get('log_file'),
                       help='Comma separated list of target log files (STDOUT, STDERR ' \
                       f'are also recognized)')
 
@@ -110,6 +114,12 @@ def setup_logging(args):
   logging.basicConfig(level=numeric_level, handlers=handlers)
 
   set_current_level(numeric_level, set_logger=False)
+
+
+def basic_setup(**kwargs):
+  args = _DEFAULT_ARGS.copy()
+  args.update(kwargs)
+  setup_logging(**args)
 
 
 _LEVEL = logging.DEBUG
