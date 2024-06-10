@@ -6,6 +6,7 @@ import time
 import traceback
 
 from . import call_limiter as cl
+from . import obj
 from . import run_once as ro
 
 
@@ -117,16 +118,9 @@ def setup_logging(args):
 
 
 def basic_setup(**kwargs):
-  class _Dummy:
-    pass
-
-  args = _Dummy()
-  for k, v in _DEFAULT_ARGS.items():
-    setattr(args, k, v)
-  for k, v in kwargs.items():
-    setattr(args, k, v)
-
-  setup_logging(args)
+  args = _DEFAULT_ARGS.copy()
+  args.update(kwargs)
+  setup_logging(Obj(**args))
 
 
 _LEVEL = logging.DEBUG
