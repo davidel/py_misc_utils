@@ -120,7 +120,7 @@ def setup_logging(args):
 def basic_setup(**kwargs):
   args = _DEFAULT_ARGS.copy()
   args.update(kwargs)
-  setup_logging(Obj(**args))
+  setup_logging(obj.Obj(**args))
 
 
 _LEVEL = logging.DEBUG
