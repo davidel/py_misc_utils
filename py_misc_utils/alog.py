@@ -186,7 +186,7 @@ def debug3(msg, *args, **kwargs):
 
 
 def debug(msg, *args, **kwargs):
-  if DEBUG >= _LEVEL:
+  if logging.DEBUG >= _LEVEL:
     log(logging.DEBUG, msg, *args, **kwargs)
 
 
