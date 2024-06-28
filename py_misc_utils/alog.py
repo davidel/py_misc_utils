@@ -10,11 +10,17 @@ from . import obj
 from . import run_once as ro
 
 
-SPAM = logging.DEBUG - 1
-DEBUG0 = logging.DEBUG + 1
-DEBUG1 = logging.DEBUG + 2
-DEBUG2 = logging.DEBUG + 3
-DEBUG3 = logging.DEBUG + 4
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
+
+SPAM = DEBUG - 1
+DEBUG0 = DEBUG + 1
+DEBUG1 = DEBUG + 2
+DEBUG2 = DEBUG + 3
+DEBUG3 = DEBUG + 4
 
 _SHORT_LEV = {
   SPAM: 'SP',
@@ -22,11 +28,11 @@ _SHORT_LEV = {
   DEBUG1: '1D',
   DEBUG2: '2D',
   DEBUG3: '3D',
-  logging.DEBUG: 'DD',
-  logging.INFO: 'IN',
-  logging.WARNING: 'WA',
-  logging.ERROR: 'ER',
-  logging.CRITICAL: 'CR',
+  DEBUG: 'DD',
+  INFO: 'IN',
+  WARNING: 'WA',
+  ERROR: 'ER',
+  CRITICAL: 'CR',
 }
 
 _HAS_STACKLEVEL = sys.version_info >= (3, 8)
@@ -123,7 +129,7 @@ def basic_setup(**kwargs):
   setup_logging(obj.Obj(**args))
 
 
-_LEVEL = logging.DEBUG
+_LEVEL = DEBUG
 
 def set_current_level(level, set_logger=True):
   if set_logger:
@@ -186,28 +192,28 @@ def debug3(msg, *args, **kwargs):
 
 
 def debug(msg, *args, **kwargs):
-  if logging.DEBUG >= _LEVEL:
-    log(logging.DEBUG, msg, *args, **kwargs)
+  if DEBUG >= _LEVEL:
+    log(DEBUG, msg, *args, **kwargs)
 
 
 def info(msg, *args, **kwargs):
-  if logging.INFO >= _LEVEL:
-    log(logging.INFO, msg, *args, **kwargs)
+  if INFO >= _LEVEL:
+    log(INFO, msg, *args, **kwargs)
 
 
 def warning(msg, *args, **kwargs):
-  if logging.WARNING >= _LEVEL:
-    log(logging.WARNING, msg, *args, **kwargs)
+  if WARNING >= _LEVEL:
+    log(WARNING, msg, *args, **kwargs)
 
 
 def error(msg, *args, **kwargs):
-  if logging.ERROR >= _LEVEL:
-    log(logging.ERROR, msg, *args, **kwargs)
+  if ERROR >= _LEVEL:
+    log(ERROR, msg, *args, **kwargs)
 
 
 def critical(msg, *args, **kwargs):
-  if logging.CRITICAL >= _LEVEL:
-    log(logging.CRITICAL, msg, *args, **kwargs)
+  if CRITICAL >= _LEVEL:
+    log(CRITICAL, msg, *args, **kwargs)
 
 
 def exception(e, *args, **kwargs):
