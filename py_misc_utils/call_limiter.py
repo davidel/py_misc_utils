@@ -1,21 +1,16 @@
-import traceback
 import threading
+
+from . import traceback as tb
 
 
 _LOCK = threading.Lock()
 _TB = dict()
 
 
-def _get_tb(n):
-  for f, _ in traceback.walk_stack(None):
-    if n == 0:
-      return f.f_code.co_filename, f.f_lineno
-    n -= 1
-
-
 def trigger(n, count):
-  tb = _get_tb(n + 1)
-  if tb is not None:
+  f = tb.get_frame(n + 1)
+  if f is not None:
+    tb = f.f_code.co_filename, f.f_lineno
     with _LOCK:
       c = _TB.get(tb, 0)
       _TB[tb] = c + 1
