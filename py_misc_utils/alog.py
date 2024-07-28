@@ -144,10 +144,13 @@ def level_run(level, fn):
   return fn() if level_active(level) else None
 
 
+_LOGGING_FRAMES = 2
+
 def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
-  if limit < 0 or cl.trigger(2, limit):
-    kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 2
+  stacklevel = kwargs.get('stacklevel', 1)
+  if limit < 0 or cl.trigger(stacklevel + 1, limit):
+    kwargs['stacklevel'] = stacklevel + _LOGGING_FRAMES
 
     return kwargs
 
