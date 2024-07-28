@@ -155,9 +155,15 @@ def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
   if limit < 0 or cl.trigger(2, limit):
     if _HAS_STACKLEVEL:
-      kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 2
+      kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
 
     return kwargs
+
+
+def _nested_args(kwargs):
+  kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
+
+  return kwargs
 
 
 def log(level, msg, *args, **kwargs):
@@ -168,52 +174,52 @@ def log(level, msg, *args, **kwargs):
 
 def spam(msg, *args, **kwargs):
   if SPAM >= _LEVEL:
-    log(SPAM, msg, *args, **kwargs)
+    log(SPAM, msg, *args, **_nested_args(kwargs))
 
 
 def debug0(msg, *args, **kwargs):
   if DEBUG0 >= _LEVEL:
-    log(DEBUG0, msg, *args, **kwargs)
+    log(DEBUG0, msg, *args, **_nested_args(kwargs))
 
 
 def debug1(msg, *args, **kwargs):
   if DEBUG1 >= _LEVEL:
-    log(DEBUG1, msg, *args, **kwargs)
+    log(DEBUG1, msg, *args, **_nested_args(kwargs))
 
 
 def debug2(msg, *args, **kwargs):
   if DEBUG2 >= _LEVEL:
-    log(DEBUG2, msg, *args, **kwargs)
+    log(DEBUG2, msg, *args, **_nested_args(kwargs))
 
 
 def debug3(msg, *args, **kwargs):
   if DEBUG3 >= _LEVEL:
-    log(DEBUG3, msg, *args, **kwargs)
+    log(DEBUG3, msg, *args, **_nested_args(kwargs))
 
 
 def debug(msg, *args, **kwargs):
   if DEBUG >= _LEVEL:
-    log(DEBUG, msg, *args, **kwargs)
+    log(DEBUG, msg, *args, **_nested_args(kwargs))
 
 
 def info(msg, *args, **kwargs):
   if INFO >= _LEVEL:
-    log(INFO, msg, *args, **kwargs)
+    log(INFO, msg, *args, **_nested_args(kwargs))
 
 
 def warning(msg, *args, **kwargs):
   if WARNING >= _LEVEL:
-    log(WARNING, msg, *args, **kwargs)
+    log(WARNING, msg, *args, **_nested_args(kwargs))
 
 
 def error(msg, *args, **kwargs):
   if ERROR >= _LEVEL:
-    log(ERROR, msg, *args, **kwargs)
+    log(ERROR, msg, *args, **_nested_args(kwargs))
 
 
 def critical(msg, *args, **kwargs):
   if CRITICAL >= _LEVEL:
-    log(CRITICAL, msg, *args, **kwargs)
+    log(CRITICAL, msg, *args, **_nested_args(kwargs))
 
 
 def exception(e, *args, **kwargs):
@@ -221,12 +227,12 @@ def exception(e, *args, **kwargs):
   if kwargs is not None:
     msg = kwargs.pop('exmsg', 'Exception')
     tb = traceback.format_exc()
-    error(f'{msg}: {e}\n{tb}', *args, **kwargs)
+    error(f'{msg}: {e}\n{tb}', *args, **_nested_args(kwargs))
 
 
 def xraise(e, msg, *args, **kwargs):
   if kwargs.pop('logit', False):
-    error(msg, *args, **kwargs)
+    error(msg, *args, **_nested_args(kwargs))
 
   raise e(msg)
 
