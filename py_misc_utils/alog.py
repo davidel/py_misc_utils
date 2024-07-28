@@ -35,8 +35,6 @@ _SHORT_LEV = {
   CRITICAL: 'CR',
 }
 
-_HAS_STACKLEVEL = sys.version_info >= (3, 8)
-
 
 class Formatter(logging.Formatter):
 
@@ -58,12 +56,7 @@ class Formatter(logging.Formatter):
     tstr = self.formatTime(r)
     lid = _SHORT_LEV.get(r.levelno, r.levelname[:2])
 
-    if _HAS_STACKLEVEL:
-      return f'{lid}{tstr};{os.getpid()};{r.module}'
-
-    # No point of returning the module if 'stacklevel' is not supported, as the
-    # module name will be 'alog' itself.
-    return f'{lid}{tstr};{os.getpid()}'
+    return f'{lid}{tstr};{os.getpid()};{r.module}'
 
 
 _DEFAULT_ARGS = dict(
@@ -154,8 +147,7 @@ def level_run(level, fn):
 def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
   if limit < 0 or cl.trigger(2, limit):
-    if _HAS_STACKLEVEL:
-      kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 2
+    kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 2
 
     return kwargs
 
