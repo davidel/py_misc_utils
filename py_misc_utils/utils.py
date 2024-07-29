@@ -650,6 +650,18 @@ def env(name, defval, vtype=None):
   return getenv(name, dtype=vtype, defval=defval)
 
 
+def map_env(g, prefix=''):
+  ovr = dict()
+  for k, v in g.items():
+    ev = getenv(f'{prefix}{k}', dtype=type(v))
+    if ev is not None:
+      ovr[k] = ev
+
+  g.update(ovr)
+
+  return g
+
+
 MAJOR = 1
 MINOR = -1
 
