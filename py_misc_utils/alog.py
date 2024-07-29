@@ -144,7 +144,7 @@ def level_run(level, fn):
   return fn() if level_active(level) else None
 
 
-_LOGGING_FRAMES = 0 if sys.version_info >= (3, 11) else 2
+_LOGGING_FRAMES = 1 if sys.version_info >= (3, 11) else 2
 
 def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
