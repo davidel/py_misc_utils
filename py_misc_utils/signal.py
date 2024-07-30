@@ -10,7 +10,7 @@ _PREV_HANDLERS = dict()
 def _handler(sig, ctx):
   with _LOCK:
     handlers = _HANDLERS.get(sig, ())
-    prev_handler = _PREV_HANDLERS.get(sig, None)
+    prev_handler = _PREV_HANDLERS.get(sig)
 
   mhres = -1
   for prio, handler in handlers:
