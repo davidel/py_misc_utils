@@ -9,10 +9,10 @@ _LOCK = threading.Lock()
 _HANDLERS = set()
 
 
-def _handler(sig, ctx):
+def _handler(sig, frame):
   with _LOCK:
     for h in _HANDLERS:
-      h.trigger()
+      h.trigger(frame)
 
   return 0
 
@@ -21,6 +21,7 @@ class BreakControl:
 
   def __init__(self):
     self._hit = False
+    self._frame = None
 
   def open(self):
     with _LOCK:
@@ -44,11 +45,15 @@ class BreakControl:
 
     return False
 
-  def trigger(self):
+  def trigger(self, frame):
     self._hit = True
+    self._frame = frame
 
   def hit(self):
     return self._hit
+
+  def frame(self):
+    return self._frame
 
 
 def create():
