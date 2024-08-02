@@ -28,7 +28,7 @@ def _handler(sig, frame):
   if callable(prev_handler):
     prev_handler(sig, frame)
   else:
-    handler = signal.getsignal(sig)
+    handler = sgn.getsignal(sig)
     if callable(handler):
       handler(sig, frame)
 
