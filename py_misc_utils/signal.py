@@ -7,21 +7,21 @@ _HANDLERS = dict()
 _PREV_HANDLERS = dict()
 
 
-def _handler(sig, ctx):
+def _handler(sig, frame):
   with _LOCK:
     handlers = _HANDLERS.get(sig, ())
     prev_handler = _PREV_HANDLERS.get(sig)
 
   mhres = -1
   for prio, handler in handlers:
-    hres = handler(sig, ctx)
+    hres = handler(sig, frame)
     if hres > 0:
       return
 
     mhres = max(hres, mhres)
 
   if mhres < 0 and callable(prev_handler):
-    prev_handler(sig, ctx)
+    prev_handler(sig, frame)
 
 
 def signal(sig, handler, prio=99):
