@@ -1,10 +1,18 @@
 import signal as sgn
 import threading
 
+from . import traceback as tb
+
 
 _LOCK = threading.Lock()
 _HANDLERS = dict()
 _PREV_HANDLERS = dict()
+
+MAX_PRIO = 0
+MIN_PRIO = 99
+STD_PRIO = MIN_PRIO
+CALL_NEXT = 0
+HANDLED = 1
 
 
 def _handler(sig, frame):
@@ -12,19 +20,20 @@ def _handler(sig, frame):
     handlers = _HANDLERS.get(sig, ())
     prev_handler = _PREV_HANDLERS.get(sig)
 
-  mhres = -1
   for prio, handler in handlers:
     hres = handler(sig, frame)
-    if hres > 0:
+    if hres == HANDLED:
       return
 
-    mhres = max(hres, mhres)
-
-  if mhres < 0 and callable(prev_handler):
+  if callable(prev_handler):
     prev_handler(sig, frame)
 
 
-def signal(sig, handler, prio=99):
+def trigger(sig, frame=None):
+  _handler(sig, frame or tb.get_frame(n=1))
+
+
+def signal(sig, handler, prio=STD_PRIO):
   with _LOCK:
     handlers = _HANDLERS.get(sig, ())
     _HANDLERS[sig] = tuple(sorted(handlers + ((prio, handler),), key=lambda h: h[0]))
