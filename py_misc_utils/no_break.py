@@ -19,7 +19,7 @@ class NoBreak:
   def __enter__(self):
     self._signal_received = []
     for sig in self._signals:
-      sgn.signal(sig, self._handler, prio=sgn.MAX_PRIO)
+      sgn.signal(sig, self._handler, prio=sgn.STD_PRIO)
 
     return self
 
