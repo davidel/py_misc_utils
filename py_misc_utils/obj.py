@@ -1,6 +1,9 @@
 class Obj:
 
   def __init__(self, **kwargs):
+    self.update(**kwargs)
+
+  def update(self, **kwargs):
     for k, v in kwargs.items():
       setattr(self, k, v)
 
