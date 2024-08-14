@@ -14,7 +14,7 @@ def _handler(sig, frame):
     for h in _HANDLERS:
       h.trigger(frame)
 
-  return 0
+  return sgn.HANDLED
 
 
 class BreakControl:
