@@ -643,7 +643,7 @@ def getenv(name, dtype=None, defval=None):
   if env is None:
     env = defval
   if env is not None:
-    return dtype(env) if dtype is not None else env
+    return to_type(env, dtype) if dtype is not None else env
 
 
 def env(name, defval, vtype=None):
@@ -983,15 +983,19 @@ def split(sdata, sc, sseq=_STD_SPLIT_SEQ, esc='\\'):
 
 
 _BOOL_MAP = {
-  'True': True,
+  'true': True,
   '1': True,
-  'False': False,
+  'false': False,
   '0': False,
 }
 
+def to_type(v, vtype):
+  return _BOOL_MAP[v.lower()] if vtype == bool else vtype(v)
+
+
 def infer_value(v, vtype=None):
   if vtype is not None:
-    return _BOOL_MAP[v] if vtype == bool else vtype(v)
+    return to_type(v, vtype)
   if re.match(r'[+-]?([1-9]\d*|0)$', v):
     return int(v)
   if re.match(r'0x[0-9a-fA-F]+$', v):
