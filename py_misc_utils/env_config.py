@@ -1,9 +1,13 @@
+import argparse
+
 from . import utils as ut
 
 
 class EnvConfig:
 
   def __init__(self):
+    parser = argparse.ArgumentParser()
+    state = dict()
     for name in dir(self):
       if not name.startswith('_'):
         value = getattr(self, name)
@@ -12,5 +16,13 @@ class EnvConfig:
         if not callable(value):
           env = ut.getenv(name, dtype=type(value))
           if env is not None:
-            setattr(self, name, env)
+            value = env
+
+          parser.add_argument(f'--{name}', type=type(value))
+          state[name] = value
+
+    args = parser.parse_args()
+    for name, value in state.items():
+      avalue = getattr(args, name, None)
+      setattr(self, name, value if avalue is None else avalue)
 
