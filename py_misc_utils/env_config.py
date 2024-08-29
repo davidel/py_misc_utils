@@ -14,15 +14,12 @@ class EnvConfig:
         # Do not try to override functions (even though there really should not
         # be in an EnvConfig derived object).
         if not callable(value):
-          env = ut.getenv(name, dtype=type(value))
-          if env is not None:
-            value = env
-
+          state[name] = ut.getenv(name, dtype=type(value))
           parser.add_argument(f'--{name}', type=type(value))
-          state[name] = value
 
     args, _ = parser.parse_known_args()
     for name, value in state.items():
-      avalue = getattr(args, name, None)
-      setattr(self, name, value if avalue is None else avalue)
+      avalue = getattr(args, name, value)
+      if avalue is not None:
+        setattr(self, name, avalue)
 
