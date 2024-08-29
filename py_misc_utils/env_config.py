@@ -21,7 +21,7 @@ class EnvConfig:
           parser.add_argument(f'--{name}', type=type(value))
           state[name] = value
 
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
     for name, value in state.items():
       avalue = getattr(args, name, None)
       setattr(self, name, value if avalue is None else avalue)
