@@ -19,7 +19,8 @@ class EnvConfig:
 
     args, _ = parser.parse_known_args()
     for name, value in state.items():
-      avalue = getattr(args, name, value)
+      avalue = getattr(args, name, None)
+      avalue = value if avalue is None else avalue
       if avalue is not None:
         setattr(self, name, avalue)
 
