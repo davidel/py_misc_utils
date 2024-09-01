@@ -56,19 +56,22 @@ def maybe_add_path(plist, path):
     plist.append(path)
 
 
-def load_module(path, install=False, modname=None):
-  maybe_add_path(sys.path, os.path.dirname(os.path.abspath(path)))
-
+def load_module(path, modname=None, install=False, add_sys_path=False):
+  pathdir = os.path.dirname(os.path.abspath(path))
+  if add_sys_path:
+    maybe_add_path(sys.path, pathdir)
   if modname is None:
     modname = os.path.splitext(os.path.basename(path))[0]
 
-  modspec = importlib.util.spec_from_file_location(modname, path)
+  modspec = importlib.util.spec_from_file_location(
+    modname, path,
+    submodule_search_locations=[pathdir])
   module = importlib.util.module_from_spec(modspec)
-
-  modspec.loader.exec_module(module)
 
   if install and modname not in sys.modules:
     sys.modules[modname] = module
+
+  modspec.loader.exec_module(module)
 
   return module
 
