@@ -56,7 +56,7 @@ def maybe_add_path(plist, path):
     plist.append(path)
 
 
-def load_module(path, modname=None, install=False, add_sys_path=False):
+def load_module(path, modname=None, install=True, add_sys_path=False):
   pathdir = os.path.dirname(os.path.abspath(path))
   if add_sys_path:
     maybe_add_path(sys.path, pathdir)

@@ -28,7 +28,7 @@ class DynLoader:
       if modname is not None:
         imod = importlib.import_module(f'{modname}.{imod_name}{postfix}')
       else:
-        imod = ut.load_module(imod_path, modname=imod_name, install=True)
+        imod = ut.load_module(imod_path, modname=f'{imod_name}{postfix}')
       mname = getattr(imod, 'MODULE_NAME', imod_name)
       self._modules[mname] = imod
 
