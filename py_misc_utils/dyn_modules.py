@@ -21,11 +21,14 @@ class DynLoader:
 
     module_names = []
     for fname, m in ut.re_enumerate_files(mpath, r'(.*)' + postfix + r'\.py$'):
-      module_names.append(m.group(1))
+      module_names.append((m.group(1), os.path.join(mpath, fname)))
 
     self._modules = collections.OrderedDict()
-    for imod_name in sorted(module_names):
-      imod = importlib.import_module(f'{modname}.{imod_name}{postfix}')
+    for (imod_name, imod_path) in sorted(module_names):
+      if modname is not None:
+        imod = importlib.import_module(f'{modname}.{imod_name}{postfix}')
+      else:
+        imod = ut.load_module(imod_path, modname=imod_name)
       mname = getattr(imod, 'MODULE_NAME', imod_name)
       self._modules[mname] = imod
 
