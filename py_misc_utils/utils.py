@@ -229,6 +229,9 @@ def dget(sdict, name, defval, dtype=None):
   if v is NONE:
     return defval
 
+  if dtype is None and defval is not None:
+    dtype = type(defval)
+
   return dtype(v) if v is not None and dtype is not None else v
 
 
