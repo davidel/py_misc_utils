@@ -62,6 +62,7 @@ class Formatter(logging.Formatter):
 _DEFAULT_ARGS = dict(
   log_level='INFO',
   log_file='STDERR',
+  log_mod_levels=[],
 )
 
 def add_logging_options(parser):
@@ -72,6 +73,8 @@ def add_logging_options(parser):
   parser.add_argument('--log_file', type=str, default=_DEFAULT_ARGS.get('log_file'),
                       help='Comma separated list of target log files (STDOUT, STDERR ' \
                       f'are also recognized)')
+  parser.add_argument('--log_mod_levels', nargs='*',
+                      help='Comma separated list of LOGGER_NAME,LEVEL')
 
 
 @ro.run_once
@@ -90,6 +93,16 @@ def _clear_logging_handlers():
   for handler in tuple(root_logger.handlers):
     handler.flush()
     root_logger.removeHandler(handler)
+
+
+def _set_logmod_levels(mlevels):
+  mlevels = list(mlevels) if mlevels else []
+  env_mlevels = os.getenv('LOGMOD_LEVELS', None)
+  if env_mlevels is not None:
+    mlevels.extend(env_mlevels.split(':'))
+  for mlev in mlevels:
+    mod, level = mlev.split(',')
+    logging.getLogger(mod).setLevel(logging.getLevelName(level.upper()))
 
 
 def setup_logging(args):
@@ -114,6 +127,8 @@ def setup_logging(args):
   logging.basicConfig(level=numeric_level, handlers=handlers)
 
   set_current_level(numeric_level, set_logger=False)
+
+  _set_logmod_levels(args.log_mod_levels)
 
 
 def basic_setup(**kwargs):
