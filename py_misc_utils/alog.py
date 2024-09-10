@@ -74,7 +74,7 @@ def add_logging_options(parser):
                       help='Comma separated list of target log files (STDOUT, STDERR ' \
                       f'are also recognized)')
   parser.add_argument('--log_mod_levels', nargs='*',
-                      help='Comma separated list of LOGGER_NAME,LEVEL')
+                      help='Comma separated list of LOGGER_NAME,LEVEL to set the log level at')
 
 
 @ro.run_once
