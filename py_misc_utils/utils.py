@@ -290,6 +290,10 @@ def dict_setmissing(d, **kwargs):
   return kwargs
 
 
+def index_select(arr, idx):
+  return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
+
+
 def state_override(obj, state, keys):
   for key in keys:
     sv = state.get(key, NONE)
