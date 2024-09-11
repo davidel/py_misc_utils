@@ -25,8 +25,8 @@ class GitRepo:
 
   def _outcmd(self, *cmd, strip=False):
     output = subprocess.check_output(self._git(*cmd))
-
-    output = output.decode() if isinstance(output, bytes) else output
+    if isinstance(output, bytes):
+      output = output.decode()
 
     return output.strip() if strip else output
 
