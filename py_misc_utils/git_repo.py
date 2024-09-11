@@ -54,7 +54,7 @@ class GitRepo:
         git_cmd = ['git', '-C', parent_path, 'clone', '-q', repo, os.path.basename(self.path)]
 
       alog.debug(f'Running GIT: {git_cmd}')
-      self._run(git_cmd)
+      self._run(*git_cmd)
 
   def current_commit(self):
     return self._outcmd('rev-parse', 'HEAD', strip=True)
