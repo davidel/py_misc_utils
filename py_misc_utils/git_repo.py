@@ -18,10 +18,17 @@ class GitRepo:
     return git_cmd
 
   def _run(self, *cmd):
-    subprocess.run(cmd, capture_output=True, check=True)
+    rcmd = []
+    for arg in cmd:
+      if isinstance(arg, (list, tuple)):
+        rcmd.extend(arg)
+      else:
+        rcmd.appen(arg)
+
+    subprocess.run(rcmd, capture_output=True, check=True)
 
   def _cmd(self, *cmd):
-    self._run(*self._git(*cmd))
+    self._run(self._git(*cmd))
 
   def _outcmd(self, *cmd, strip=False):
     output = subprocess.check_output(self._git(*cmd))
@@ -54,7 +61,7 @@ class GitRepo:
         git_cmd = ['git', '-C', parent_path, 'clone', '-q', repo, os.path.basename(self.path)]
 
       alog.debug(f'Running GIT: {git_cmd}')
-      self._run(*git_cmd)
+      self._run(git_cmd)
 
   def current_commit(self):
     return self._outcmd('rev-parse', 'HEAD', strip=True)
