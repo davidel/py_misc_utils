@@ -24,7 +24,9 @@ class GitRepo:
     self._run(*self._git(*cmd))
 
   def _outcmd(self, *cmd):
-    return subprocess.check_output(self._git(*cmd))
+    output = subprocess.check_output(self._git(*cmd))
+
+    return output.decode() if isinstance(output, bytes) else output
 
   def repo(self):
     return self._outcmd('config', '--get', 'remote.origin.url')
