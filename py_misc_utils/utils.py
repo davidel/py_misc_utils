@@ -55,9 +55,9 @@ def add_sys_path(path):
   append_if_missing(sys.path, path)
 
 
-def load_module(path, modname=None, install=True, add_sys_path=False):
+def load_module(path, modname=None, install=True, add_syspath=False):
   pathdir = os.path.dirname(os.path.abspath(path))
-  if add_sys_path:
+  if add_syspath:
     add_sys_path(pathdir)
   if modname is None:
     modname = os.path.splitext(os.path.basename(path))[0]
