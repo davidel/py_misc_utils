@@ -51,15 +51,14 @@ def split_module_name(name):
   return name[: pos], name[pos + 1: ]
 
 
-def maybe_add_path(plist, path):
-  if path not in plist:
-    plist.append(path)
+def add_sys_path(path):
+  append_if_missing(sys.path, path)
 
 
 def load_module(path, modname=None, install=True, add_sys_path=False):
   pathdir = os.path.dirname(os.path.abspath(path))
   if add_sys_path:
-    maybe_add_path(sys.path, pathdir)
+    add_sys_path(pathdir)
   if modname is None:
     modname = os.path.splitext(os.path.basename(path))[0]
 
@@ -69,6 +68,10 @@ def load_module(path, modname=None, install=True, add_sys_path=False):
   module = importlib.util.module_from_spec(modspec)
 
   if install and modname not in sys.modules:
+    xmodule = sys.modules.get(modname)
+    tas.check(xmodule is None or
+              inspect.getfile(xmodule) == inspect.getfile(module),
+              msg=f'Module "{modname}" already defined')
     sys.modules[modname] = module
 
   modspec.loader.exec_module(module)
@@ -292,6 +295,11 @@ def dict_setmissing(d, **kwargs):
 
 def index_select(arr, idx):
   return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
+
+
+def append_if_missing(arr, elem):
+  if elem not in arr:
+    arr.append(elem)
 
 
 def state_override(obj, state, keys):
