@@ -23,21 +23,19 @@ class GitRepo:
   def _cmd(self, *cmd):
     self._run(*self._git(*cmd))
 
-  def _outcmd(self, *cmd):
+  def _outcmd(self, *cmd, strip=False):
     output = subprocess.check_output(self._git(*cmd))
 
-    return output.decode() if isinstance(output, bytes) else output
+    output = output.decode() if isinstance(output, bytes) else output
+
+    return output.strip() if strip else output
 
   def repo(self):
-    return self._outcmd('config', '--get', 'remote.origin.url')
+    return self._outcmd('config', '--get', 'remote.origin.url', strip=True)
 
   def clone(self, repo, force=False, shallow=False):
     do_clone = True
     if os.path.isdir(self.path):
-      rr = self.repo()
-      print(type(repo), f'"{repo}"')
-      print(type(rr), f'"{rr}"')
-
       tas.check_eq(repo, self.repo(), msg=f'Repo mismatch!')
       if force or shallow != self.is_shallow():
         alog.info(f'Purging old GIT folder: {self.path}')
@@ -56,10 +54,10 @@ class GitRepo:
         self._run('git', '-C', parent_path, 'clone', '-q', repo, os.path.basename(self.path))
 
   def current_commit(self):
-    return self._outcmd('rev-parse', 'HEAD')
+    return self._outcmd('rev-parse', 'HEAD', strip=True)
 
   def is_shallow(self):
-    return self._outcmd('rev-parse', '--is-shallow-repository') == 'true'
+    return self._outcmd('rev-parse', '--is-shallow-repository', strip=True) == 'true'
 
   def pull(self):
     self._cmd('pull', '-q')
