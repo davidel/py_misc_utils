@@ -34,6 +34,10 @@ class GitRepo:
   def clone(self, repo, force=False, shallow=False):
     do_clone = True
     if os.path.isdir(self.path):
+      rr = self.repo()
+      print(type(repo), repo)
+      print(type(rr), rr)
+
       tas.check_eq(repo, self.repo(), msg=f'Repo mismatch!')
       if force or shallow != self.is_shallow():
         alog.info(f'Purging old GIT folder: {self.path}')
