@@ -48,10 +48,13 @@ class GitRepo:
       parent_path = os.path.dirname(self.path)
       os.makedirs(parent_path, exist_ok=True)
       if shallow:
-        self._run('git', '-C', parent_path, 'clone', '-q', '--depth', '1',
-                  repo, os.path.basename(self.path))
+        git_cmd = ['git', '-C', parent_path, 'clone', '-q', '--depth', '1',
+                   repo, os.path.basename(self.path)]
       else:
-        self._run('git', '-C', parent_path, 'clone', '-q', repo, os.path.basename(self.path))
+        git_cmd = ['git', '-C', parent_path, 'clone', '-q', repo, os.path.basename(self.path)]
+
+      alog.debug(f'Running GIT: {git_cmd}')
+      self._run(git_cmd)
 
   def current_commit(self):
     return self._outcmd('rev-parse', 'HEAD', strip=True)
