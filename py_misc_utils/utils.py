@@ -542,6 +542,17 @@ def idx_expand(data, idx, filler=None):
   return data
 
 
+def expand_args(args):
+  xargs = []
+  for arg in args:
+    if isinstance(arg, types.GeneratorType):
+      xargs.extend(list(arg))
+    else:
+      xargs.append(arg)
+
+  return xargs
+
+
 def as_sequence(v, t=tuple):
   if isinstance(t, (list, tuple)):
     for st in t:
