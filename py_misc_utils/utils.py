@@ -543,12 +543,10 @@ def idx_expand(data, idx, filler=None):
 
 
 def expand_args(args):
-  xargs = []
-  for arg in args:
-    if isinstance(arg, types.GeneratorType):
-      xargs.extend(list(arg))
-    else:
-      xargs.append(arg)
+  # Allows APIs to be called both with expanded arguments, and with a single
+  # argument which is a {list, tuple, generator}.
+  if len(args) == 1 and isinstance(args[0], (list, tuple, types.GeneratorType)):
+    return tuple(args[0])
 
   return xargs
 
