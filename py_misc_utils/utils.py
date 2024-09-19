@@ -414,7 +414,7 @@ def get_context(name):
 def load_config(cfg_file=None, **kwargs):
   if cfg_file is not None:
     with open(cfg_file, mode='r') as cf:
-      cfg = yaml.load(cf, Loader=yaml.Loader)
+      cfg = yaml.safe_load(cf)
   else:
     cfg = dict()
 
