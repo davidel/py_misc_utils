@@ -12,15 +12,15 @@ def prime_factors(n):
     yield n
 
 
-def nearest_divisor(size, n):
+def nearest_divisor(value, n):
   nmin, nmax = n, n
 
-  q, r = divmod(size, nmin)
+  q, r = divmod(value, nmin)
   if r != 0:
     if n > q:
       cq, nmin = q, 1
-      while cq * 2 <= size:
-        qn, r = divmod(size, cq)
+      while cq * 2 <= value:
+        qn, r = divmod(value, cq)
         if r == 0:
           nmin = qn
           break
@@ -28,23 +28,23 @@ def nearest_divisor(size, n):
 
       cq, nmax = q, None
       while cq > 1:
-        qn, r = divmod(size, cq)
+        qn, r = divmod(value, cq)
         if r == 0:
           nmax = qn
           break
         cq -= 1
     else:
       while nmin > 1:
-        if size % nmin == 0:
+        if value % nmin == 0:
           break
         nmin -= 1
 
-      while nmax * 2 <= size:
-        if size % nmax == 0:
+      while nmax * 2 <= value:
+        if value % nmax == 0:
           break
         nmax += 1
 
-      if size % nmax != 0:
+      if value % nmax != 0:
         nmax = None
 
   if nmax is None:
