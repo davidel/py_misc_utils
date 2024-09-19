@@ -13,21 +13,41 @@ def prime_factors(n):
 
 
 def nearest_divisor(size, n):
-  nmin = n
-  while nmin > 1:
-    if size % nmin == 0:
-      break
+  nmin, nmax = n, n
 
-    nmin -= 1
+  q, r = divmod(size, nmin)
+  if r != 0:
+    if n > q:
+      cq, nmin = q, 1
+      while cq * 2 <= size:
+        qn, r = divmod(size, cq)
+        if r == 0:
+          nmin = qn
+          break
+        cq += 1
 
-  nmax = n
-  while nmax * 2 <= size:
-    if size % nmax == 0:
-      break
+      cq, nmax = q, None
+      while cq > 1:
+        qn, r = divmod(size, cq)
+        if r == 0:
+          nmax = qn
+          break
+        cq -= 1
+    else:
+      while nmin > 1:
+        if size % nmin == 0:
+          break
+        nmin -= 1
 
-    nmax += 1
+      while nmax * 2 <= size:
+        if size % nmax == 0:
+          break
+        nmax += 1
 
-  if size % nmax != 0:
+      if size % nmax != 0:
+        nmax = None
+
+  if nmax is None:
     return nmin
 
   dmin, dmax = n - nmin, nmax - n
