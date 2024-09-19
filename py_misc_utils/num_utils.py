@@ -27,6 +27,9 @@ def nearest_divisor(size, n):
 
     nmax += 1
 
+  if size % nmax != 0:
+    return nmin
+
   dmin, dmax = n - nmin, nmax - n
 
   return nmin if dmin < dmax else nmax
