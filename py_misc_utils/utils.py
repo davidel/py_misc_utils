@@ -1079,13 +1079,21 @@ def split_unquote(data, sep, maxsplit=-1):
   return [uparse.unquote(x) for x in data.split(sep, maxsplit=maxsplit)]
 
 
-def parse_dict(data, ktype=str, vtype=None):
-  ma_dict = dict()
+def parse_dict(data, ktype=str, vtype=None, allow_args=False):
+  ma_dict, ma_args = dict(), []
   for part in comma_split(data):
-    name, value = [x.strip() for x in split_unquote(part, '=', maxsplit=1)]
-    ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
+    parts = [x.strip() for x in split_unquote(part, '=', maxsplit=1)]
+    if len(parts) == 2:
+      name, value = parts
+      ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
+    else:
+      if not allow_args:
+        alog.xraise(ValueError, f'Arguments parsing disabled: {data}')
+      if ma_dict:
+        alog.xraise(ValueError, f'Arguments can appear only at the beginning: {data}')
+      ma_args.append(infer_value(parts[0], vtype=vtype))
 
-  return ma_dict
+  return (ma_dict, ma_args) if allow_args else ma_dict
 
 
 _BOOLS = {
