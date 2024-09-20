@@ -2,8 +2,9 @@
 def prime_factors(n):
   i = 2
   while i * i <= n:
-    if n % i == 0:
-      n /= i
+    q, r = divmod(n, i)
+    if r == 0:
+      n = q
       yield i
     else:
       i += 1
