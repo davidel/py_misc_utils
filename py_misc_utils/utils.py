@@ -297,6 +297,19 @@ def dict_setmissing(d, **kwargs):
   return kwargs
 
 
+def pop_kwargs(kwargs, names, suffix=None):
+  suffix = suffix or '_'
+  args = []
+  for name in as_sequence(names):
+    v = kwargs.pop(f'{name}{suffix}', NONE)
+    if v is NONE:
+      v = kwargs.pop(name, None)
+
+    args.append(v)
+
+  return tuple(args)
+
+
 def index_select(arr, idx):
   return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
 
