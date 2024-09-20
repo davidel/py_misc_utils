@@ -9,7 +9,7 @@ from . import utils as ut
 
 class DynLoader:
 
-  def __init__(self, postfix, modname=None, path=None):
+  def __init__(self, modname=None, path=None, postfix=''):
     if modname is not None:
       tas.check_is_none(path, msg=f'Cannot specify path="{path}" when specified modname="{modname}"')
 
