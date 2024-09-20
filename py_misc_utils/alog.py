@@ -60,8 +60,8 @@ class Formatter(logging.Formatter):
 
 
 _DEFAULT_ARGS = dict(
-  log_level='INFO',
-  log_file='STDERR',
+  log_level=os.getenv('LOG_LEVEL', 'INFO'),
+  log_file=os.getenv('LOG_FILE', 'STDERR'),
   log_mod_levels=[],
 )
 
