@@ -299,13 +299,17 @@ def dict_setmissing(d, **kwargs):
 
 def pop_kwargs(kwargs, names, suffix=None):
   suffix = suffix or '_'
-  args = []
-  for name in as_sequence(names):
-    v = kwargs.pop(f'{name}{suffix}', NONE)
-    if v is NONE:
-      v = kwargs.pop(name, None)
+  xargs = kwargs.pop(f'args{suffix}', None)
+  if xargs is not None:
+    args = [xargs.get(name) for name in as_sequence(names)]
+  else:
+    args = []
+    for name in as_sequence(names):
+      v = kwargs.pop(f'{name}{suffix}', NONE)
+      if v is NONE:
+        v = kwargs.pop(name, None)
 
-    args.append(v)
+      args.append(v)
 
   return tuple(args)
 
