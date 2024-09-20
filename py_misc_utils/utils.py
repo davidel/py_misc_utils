@@ -150,10 +150,6 @@ def classof(obj):
   return obj if inspect.isclass(obj) else getattr(obj, '__class__', None)
 
 
-def current_module():
-  return inspect.getmodule(inspect.currentframe().f_back)
-
-
 def infer_str(v):
   return infer_value(v) if isinstance(v, str) else v
 

@@ -34,6 +34,10 @@ def get_caller_function(back=0, frame=None):
   return _fn_lookup(frame, frame.f_code.co_qualname)
 
 
+def current_module():
+  return inspect.getmodule(inspect.currentframe().f_back)
+
+
 def fetch_args(func, locs):
   sig = inspect.signature(func)
 
