@@ -1103,7 +1103,7 @@ def parse_dict(data, ktype=str, vtype=None, allow_args=False):
         alog.xraise(ValueError, f'Arguments can appear only at the beginning: {data}')
       ma_args.append(infer_value(parts[0], vtype=vtype))
 
-  return (ma_dict, ma_args) if allow_args else ma_dict
+  return (ma_dict, tuple(ma_args)) if allow_args else ma_dict
 
 
 _BOOLS = {
