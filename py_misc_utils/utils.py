@@ -88,10 +88,10 @@ def import_module(name_or_path,
                   add_syspath=None,
                   package=None):
   if os.path.isfile(name_or_path):
-    module = pyu.load_module(name_or_path,
-                             modname=modname,
-                             install=install,
-                             add_syspath=add_syspath)
+    module = load_module(name_or_path,
+                         modname=modname,
+                         install=install,
+                         add_syspath=add_syspath)
   else:
     module = importlib.import_module(name_or_path, package=package)
 
