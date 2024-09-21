@@ -55,7 +55,10 @@ def add_sys_path(path):
   append_if_missing(sys.path, path)
 
 
-def load_module(path, modname=None, install=True, add_syspath=False):
+def load_module(path, modname=None, install=None, add_syspath=None):
+  install = install or True
+  add_syspath = add_syspath or False
+
   pathdir = os.path.dirname(os.path.abspath(path))
   if add_syspath:
     add_sys_path(pathdir)
@@ -75,6 +78,22 @@ def load_module(path, modname=None, install=True, add_syspath=False):
     sys.modules[modname] = module
 
   modspec.loader.exec_module(module)
+
+  return module
+
+
+def import_module(name_or_path,
+                  modname=None,
+                  install=None,
+                  add_syspath=None,
+                  package=None):
+  if os.path.isfile(name_or_path):
+    module = pyu.load_module(name_or_path,
+                             modname=modname,
+                             install=install,
+                             add_syspath=add_syspath)
+  else:
+    module = importlib.import_module(name_or_path, package=package)
 
   return module
 
