@@ -1071,7 +1071,7 @@ def infer_value(v, vtype=None):
     return int(v)
   if re.match(r'0x[0-9a-fA-F]+$', v):
     return int(v, 16)
-  if re.match(r'0o\d+$', v):
+  if re.match(r'0o[0-7]+$', v):
     return int(v, 8)
 
   #    [-+]? # optional sign
