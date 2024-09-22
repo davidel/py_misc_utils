@@ -90,20 +90,18 @@ def load_module(path, modname=None, install=None, add_syspath=None):
   if parent is not None:
     init_path, mod_path = parent
 
-    module = load_module(init_path,
-                         install=True,
-                         add_syspath=add_syspath)
+    parent_module = load_module(init_path,
+                                install=True,
+                                add_syspath=add_syspath)
 
     names = []
     for name in mod_path:
       names.append(name)
-      ipath = os.path.join(os.path.dirname(module.__file__), *names, '__init__.py')
+      ipath = os.path.join(os.path.dirname(parent_module.__file__), *names, '__init__.py')
       if os.path.isfile(ipath):
-        module = importlib.import_module(module.__name__ + '.' + '.'.join(names))
-        names = []
+        importlib.import_module(parent_module.__name__ + '.' + '.'.join(names))
 
-    if names:
-      module = importlib.import_module(module.__name__ + '.' + '.'.join(names))
+    module = importlib.import_module(parent_module.__name__ + '.' + '.'.join(mod_path))
   else:
     pathdir = os.path.dirname(apath)
 
