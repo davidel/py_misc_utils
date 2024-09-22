@@ -72,12 +72,11 @@ def find_module_parent(path):
 
       return ipath, '.'.join(tails)
 
-    cname, fname = os.path.split(cname)
-    if not cname:
+    rname, fname = os.path.split(cname)
+    if not rname or rname == cname:
       break
 
-    print(cname)
-
+    cname = rname
     tails.append(fname)
 
 
