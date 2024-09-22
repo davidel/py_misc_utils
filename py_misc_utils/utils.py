@@ -104,12 +104,11 @@ def load_module(path, modname=None, install=None, add_syspath=None):
                                 install=True,
                                 add_syspath=add_syspath)
 
-    names = []
-    for name in mod_path:
-      names.append(name)
-      ipath = os.path.join(os.path.dirname(parent_module.__file__), *names, '__init__.py')
+    for i in range(len(mod_path) - 1):
+      partial = mod_path[: i + 1]
+      ipath = os.path.join(os.path.dirname(parent_module.__file__), *partial, '__init__.py')
       if os.path.isfile(ipath):
-        importlib.import_module(parent_module.__name__ + '.' + '.'.join(names))
+        importlib.import_module(parent_module.__name__ + '.' + '.'.join(partial))
 
     module = importlib.import_module(parent_module.__name__ + '.' + '.'.join(mod_path))
   else:
