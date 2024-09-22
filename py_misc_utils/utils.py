@@ -64,20 +64,20 @@ def drop_ext(path, exts):
 def find_module_parent(path):
   dname, fname = os.path.split(path)
 
-  tails, cname = [drop_ext(fname, '.py')], dname
+  mod_path, cname = [drop_ext(fname, '.py')], dname
   while True:
     ipath = os.path.join(cname, '__init__.py')
     if os.path.isfile(ipath):
-      tails.reverse()
+      mod_path.reverse()
 
-      return ipath, '.'.join(tails)
+      return ipath, mod_path
 
     rname, fname = os.path.split(cname)
     if not rname or rname == cname:
       break
 
     cname = rname
-    tails.append(fname)
+    mod_path.append(fname)
 
 
 def load_module(path, modname=None, install=None, add_syspath=None):
@@ -90,10 +90,20 @@ def load_module(path, modname=None, install=None, add_syspath=None):
   if parent is not None:
     init_path, mod_path = parent
 
-    parent_module = load_module(init_path,
-                                install=True,
-                                add_syspath=add_syspath)
-    module = importlib.import_module(parent_module.__name__ + '.' + mod_path)
+    module = load_module(init_path,
+                         install=True,
+                         add_syspath=add_syspath)
+
+    names = []
+    for name in mod_path:
+      names.append(name)
+      ipath = os.path.join(os.path.dirname(module.__file__), *names, '__init__.py')
+      if os.path.isfile(ipath):
+        module = importlib.import_module(module.__name__ + '.' + '.'.join(names))
+        names = []
+
+    if names:
+      module = importlib.import_module(module.__name__ + '.' + '.'.join(names))
   else:
     pathdir = os.path.dirname(apath)
 
