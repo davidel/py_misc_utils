@@ -61,23 +61,33 @@ def drop_ext(path, exts):
   return xpath if ext in as_sequence(exts) else path
 
 
-def find_module_parent(path):
-  dname, fname = os.path.split(path)
-
-  mod_path, cname = [drop_ext(fname, '.py')], dname
+def path_split(path):
+  path_parts = []
   while True:
-    ipath = os.path.join(cname, '__init__.py')
-    if os.path.isfile(ipath):
-      mod_path.reverse()
-
-      return ipath, mod_path
-
-    rname, fname = os.path.split(cname)
-    if not rname or rname == cname:
+    parts = os.path.split(path)
+    if parts[0] == path:
+      path_parts.append(parts[0])
       break
+    elif parts[1] == path:
+      path_parts.append(parts[1])
+      break
+    else:
+      path = parts[0]
+      path_parts.append(parts[1])
 
-    cname = rname
-    mod_path.append(fname)
+  path_parts.reverse()
+
+  return path_parts
+
+
+def find_module_parent(path):
+  parts = path_split(path)
+  modname = drop_ext(parts.pop(), '.py')
+
+  for i in range(len(parts)):
+    ipath = os.path.join(*parts[: i + 1], '__init__.py')
+    if os.path.isfile(ipath):
+      return ipath, parts[i + 1:] + [modname]
 
 
 def load_module(path, modname=None, install=None, add_syspath=None):
