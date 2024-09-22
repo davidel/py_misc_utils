@@ -101,7 +101,7 @@ def load_module(path, modname=None, install=None, add_syspath=None):
       if os.path.isfile(ipath):
         iname = parent_module.__name__ + '.' + '.'.join(names)
         imodule = importlib.import_module(iname)
-        sys.modules[iname] = imodule
+        sys.modules['.'.join(names)] = imodule
 
     module = importlib.import_module(parent_module.__name__ + '.' + '.'.join(mod_path))
   else:
