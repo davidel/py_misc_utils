@@ -62,3 +62,7 @@ def numpy_gen():
 
   return tls.np_rdngen
 
+
+def choices(weights, n):
+  return random.choices(range(len(weights)), weights=weights, k=n)
+
