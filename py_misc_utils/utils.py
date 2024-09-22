@@ -55,29 +55,69 @@ def add_sys_path(path):
   append_if_missing(sys.path, path)
 
 
+def drop_ext(path, exts):
+  xpath, ext = os.path.splitext(path)
+
+  return xpath if ext in as_sequence(exts) else path
+
+
+def find_module_parent(path):
+  dname, fname = os.path.split(path)
+
+  tails, cname = [drop_ext(fname, '.py')], dname
+  while True:
+    ipath = os.path.join(cname, '__init__.py')
+    if os.path.isfile(ipath):
+      tails.reverse()
+
+      return ipath, '.'.join(tails)
+
+    cname, fname = os.path.split(cname)
+    if not cname:
+      break
+
+    tails.append(fname)
+
+
 def load_module(path, modname=None, install=None, add_syspath=None):
   install = install or True
   add_syspath = add_syspath or False
 
-  pathdir = os.path.dirname(os.path.abspath(path))
-  if add_syspath:
-    add_sys_path(pathdir)
-  if modname is None:
-    modname = os.path.splitext(os.path.basename(path))[0]
+  apath = os.path.abspath(path)
 
-  modspec = importlib.util.spec_from_file_location(
-    modname, path,
-    submodule_search_locations=[pathdir])
-  module = importlib.util.module_from_spec(modspec)
+  parent = find_module_parent(apath) if os.path.basename(apath) != '__init__.py' else None
+  if parent is not None:
+    init_path, mod_path = parent
 
-  if install and modname not in sys.modules:
-    xmodule = sys.modules.get(modname)
-    tas.check(xmodule is None or
-              inspect.getfile(xmodule) == inspect.getfile(module),
-              msg=f'Module "{modname}" already defined')
-    sys.modules[modname] = module
+    parent_module = load_module(init_path,
+                                install=True,
+                                add_syspath=add_syspath)
+    module = importlib.import_module(parent_module.__name__ + '.' + mod_path)
+  else:
+    pathdir = os.path.dirname(apath)
 
-  modspec.loader.exec_module(module)
+    if modname is None:
+      modname = drop_ext(os.path.basename(apath), '.py')
+      if modname == '__init__':
+        modname = os.path.basename(pathdir)
+        pathdir = os.path.dirname(pathdir)
+
+    if add_syspath:
+      add_sys_path(pathdir)
+
+    modspec = importlib.util.spec_from_file_location(
+      modname, apath,
+      submodule_search_locations=[pathdir])
+    module = importlib.util.module_from_spec(modspec)
+
+    if install and modname not in sys.modules:
+      xmodule = sys.modules.get(modname)
+      tas.check(xmodule is None or
+                inspect.getfile(xmodule) == inspect.getfile(module),
+                msg=f'Module "{modname}" already defined')
+      sys.modules[modname] = module
+
+    modspec.loader.exec_module(module)
 
   return module
 
