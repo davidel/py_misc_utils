@@ -99,9 +99,10 @@ def load_module(path, modname=None, install=None, add_syspath=None):
       names.append(name)
       ipath = os.path.join(os.path.dirname(parent_module.__file__), *names, '__init__.py')
       if os.path.isfile(ipath):
+        alog.info(f'Found module: {ipath}')
         iname = parent_module.__name__ + '.' + '.'.join(names)
         imodule = importlib.import_module(iname)
-        sys.modules['.'.join(names)] = imodule
+        sys.modules[iname] = imodule
 
     module = importlib.import_module(parent_module.__name__ + '.' + '.'.join(mod_path))
   else:
