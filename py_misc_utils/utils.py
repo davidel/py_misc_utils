@@ -76,6 +76,8 @@ def find_module_parent(path):
     if not cname:
       break
 
+    print(cname)
+
     tails.append(fname)
 
 
