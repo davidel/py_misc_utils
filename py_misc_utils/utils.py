@@ -1121,6 +1121,12 @@ def to_type(v, vtype):
   return _BOOL_MAP[v.lower()] if vtype == bool else vtype(v)
 
 
+_SPECIAL_VALUES = {
+  'True': True,
+  'False': False,
+  'None': None,
+}
+
 def infer_value(v, vtype=None):
   if vtype is not None:
     return to_type(v, vtype)
@@ -1145,10 +1151,6 @@ def infer_value(v, vtype=None):
   m = re.match(r'"(.*)"$', v) or re.match(r"'(.*)'$", v)
   if m:
     return m.group(1)
-  if v == 'True':
-    return True
-  if v == 'False':
-    return False
 
   m = re.match(r'\[(.*)\]$', v) or re.match(r'\((.*)\)$', v)
   if m:
@@ -1158,7 +1160,9 @@ def infer_value(v, vtype=None):
 
     return tuple(values) if v.startswith('(') else values
 
-  return v if v != 'None' else None
+  sv = _SPECIAL_VALUES.get(v, NONE)
+
+  return v if sv is NONE else sv
 
 
 def split_unquote(data, sep, maxsplit=-1):
