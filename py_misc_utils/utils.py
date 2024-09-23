@@ -108,19 +108,25 @@ def load_module(path, modname=None, install=None, add_syspath=None):
       partial = mod_path[: i + 1]
       ipath = os.path.join(os.path.dirname(parent_module.__file__), *partial, '__init__.py')
       if os.path.isfile(ipath):
-        importlib.import_module(parent_module.__name__ + '.' + '.'.join(partial))
+        imodname = parent_module.__name__ + '.' + '.'.join(partial)
+        alog.debug(f'Importing sub-module "{imodname}"')
+        importlib.import_module(imodname)
 
-    module = importlib.import_module(parent_module.__name__ + '.' + '.'.join(mod_path))
+    imodname = parent_module.__name__ + '.' + '.'.join(mod_path)
+    alog.debug(f'Importing sub-module "{imodname}"')
+    module = importlib.import_module(imodname)
   else:
-    pathdir = os.path.dirname(apath)
+    pathdir = syspath = os.path.dirname(apath)
 
     if modname is None:
       modname = drop_ext(os.path.basename(apath), '.py')
       if modname == '__init__':
-        pathdir, modname = os.path.split(pathdir)
+        syspath, modname = os.path.split(pathdir)
+
+    alog.debug(f'Installing module "{apath}" with name "{modname}" (syspath is "{syspath}")')
 
     if add_syspath:
-      add_sys_path(pathdir)
+      add_sys_path(syspath)
 
     modspec = importlib.util.spec_from_file_location(
       modname, apath,
