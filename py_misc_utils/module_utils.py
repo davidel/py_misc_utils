@@ -47,7 +47,7 @@ def install_module(modname, module):
     tas.check_eq(modfile, xmodfile,
                  msg=f'Module "{modname}" already defined at "{xmodfile}"')
   else:
-    alog.debug(f'Installing module at "{path}" with "{modname}" name')
+    alog.debug(f'Installing module at "{modfile}" with "{modname}" name')
     sys.modules[modname] = module
 
 
