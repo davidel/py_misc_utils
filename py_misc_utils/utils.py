@@ -4,8 +4,6 @@ import collections
 import copy
 import datetime
 import gzip
-import importlib
-import importlib.util
 import inspect
 import json
 import logging
@@ -43,18 +41,6 @@ def pickle_proto():
   return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
 
 
-def split_module_name(name):
-  pos = name.rfind('.')
-  if pos < 0:
-    return '', name
-
-  return name[: pos], name[pos + 1: ]
-
-
-def add_sys_path(path):
-  append_if_missing(sys.path, path)
-
-
 def drop_ext(path, exts):
   xpath, ext = os.path.splitext(path)
 
@@ -78,99 +64,6 @@ def path_split(path):
   path_parts.reverse()
 
   return path_parts
-
-
-def find_module_parent(path):
-  parts = path_split(path)
-  modname = drop_ext(parts.pop(), '.py')
-
-  for i in range(len(parts)):
-    ipath = os.path.join(*parts[: i + 1], '__init__.py')
-    if os.path.isfile(ipath):
-      return ipath, parts[i + 1:] + [modname]
-
-
-def load_module(path, modname=None, install=None, add_syspath=None):
-  install = install or True
-  add_syspath = add_syspath or False
-
-  apath = os.path.abspath(path)
-
-  parent = find_module_parent(apath) if os.path.basename(apath) != '__init__.py' else None
-  if parent is not None:
-    init_path, mod_path = parent
-
-    parent_module = load_module(init_path,
-                                install=True,
-                                add_syspath=add_syspath)
-
-    for i in range(len(mod_path) - 1):
-      partial = mod_path[: i + 1]
-      ipath = os.path.join(os.path.dirname(parent_module.__file__), *partial, '__init__.py')
-      if os.path.isfile(ipath):
-        imodname = parent_module.__name__ + '.' + '.'.join(partial)
-        alog.debug(f'Importing sub-module "{imodname}"')
-        importlib.import_module(imodname)
-
-    imodname = parent_module.__name__ + '.' + '.'.join(mod_path)
-    alog.debug(f'Importing sub-module "{imodname}"')
-    module = importlib.import_module(imodname)
-  else:
-    pathdir = syspath = os.path.dirname(apath)
-
-    if modname is None:
-      modname = drop_ext(os.path.basename(apath), '.py')
-      if modname == '__init__':
-        syspath, modname = os.path.split(pathdir)
-
-    alog.debug(f'Installing module "{apath}" with name "{modname}" (syspath is "{syspath}")')
-
-    if add_syspath:
-      add_sys_path(syspath)
-
-    modspec = importlib.util.spec_from_file_location(
-      modname, apath,
-      submodule_search_locations=[pathdir])
-    module = importlib.util.module_from_spec(modspec)
-
-    if install and modname not in sys.modules:
-      xmodule = sys.modules.get(modname)
-      tas.check(xmodule is None or
-                inspect.getfile(xmodule) == inspect.getfile(module),
-                msg=f'Module "{modname}" already defined')
-      sys.modules[modname] = module
-
-    modspec.loader.exec_module(module)
-
-  return module
-
-
-def import_module(name_or_path,
-                  modname=None,
-                  install=None,
-                  add_syspath=None,
-                  package=None):
-  if os.path.isfile(name_or_path):
-    module = load_module(name_or_path,
-                         modname=modname,
-                         install=install,
-                         add_syspath=add_syspath)
-  else:
-    module = importlib.import_module(name_or_path, package=package)
-
-  return module
-
-
-def import_module_names(modname, names=None):
-  if names is None:
-    npos = modname.rfind('.')
-    tas.check_gt(npos, 0)
-    names = [modname[npos + 1: ]]
-    modname = modname[: npos]
-
-  mod = importlib.import_module(modname)
-
-  return tuple(getattr(mod, n) for n in names)
 
 
 def make_ntuple(ntc, args):
