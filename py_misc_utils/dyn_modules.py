@@ -4,6 +4,7 @@ import os
 
 from . import alog
 from . import assert_checks as tas
+from . import module_utils as mu
 from . import utils as ut
 
 
@@ -28,7 +29,7 @@ class DynLoader:
       if modname is not None:
         imod = importlib.import_module(f'{modname}.{imod_name}{postfix}')
       else:
-        imod = ut.load_module(imod_path, modname=f'{imod_name}{postfix}')
+        imod = mu.load_module(imod_path, modname=f'{imod_name}{postfix}')
       mname = getattr(imod, 'MODULE_NAME', imod_name)
       self._modules[mname] = imod
 
