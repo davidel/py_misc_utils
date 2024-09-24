@@ -79,8 +79,7 @@ def load_module(path, modname=None, install=None, add_syspath=None):
       ipath = os.path.join(os.path.dirname(parent_module.__file__), *partial, '__init__.py')
       if os.path.isfile(ipath):
         imodname = parent_module.__name__ + '.' + '.'.join(partial)
-        alog.debug(f'Importing sub-module "{imodname}"')
-        importlib.import_module(imodname)
+        load_module(ipath, modname=imodname, install=True)
 
     imodname = parent_module.__name__ + '.' + '.'.join(mod_path)
     alog.debug(f'Importing sub-module "{imodname}"')
