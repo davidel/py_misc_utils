@@ -88,7 +88,7 @@ def load_module(path, modname=None, install=None, add_syspath=None):
     pathdir = syspath = os.path.dirname(apath)
 
     if modname is None:
-      modname = drop_ext(os.path.basename(apath), '.py')
+      modname = ut.drop_ext(os.path.basename(apath), '.py')
       if modname == '__init__':
         syspath, modname = os.path.split(pathdir)
 
