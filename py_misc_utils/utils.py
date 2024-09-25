@@ -269,7 +269,7 @@ def dict_setmissing(d, **kwargs):
 
 
 def pop_kwargs(kwargs, names, args_key=None):
-  xargs, args = kwargs.pop(args_key or '_', None), []
+  xargs = kwargs.pop(args_key or '_', None)
   if xargs is not None:
     args = [xargs.get(name) for name in as_sequence(names)]
   else:
