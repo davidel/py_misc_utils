@@ -9,6 +9,9 @@ from . import assert_checks as tas
 from . import utils as ut
 
 
+_PYINIT = '__init__.py'
+
+
 def split_module_name(name):
   pos = name.rfind('.')
   if pos < 0:
@@ -26,7 +29,7 @@ def find_module_parent(path):
   modname = ut.drop_ext(parts.pop(), '.py')
 
   for i in range(len(parts)):
-    ipath = os.path.join(*parts[: i + 1], '__init__.py')
+    ipath = os.path.join(*parts[: i + 1], _PYINIT)
     if os.path.isfile(ipath):
       return ipath, parts[i + 1:] + [modname]
 
@@ -66,7 +69,7 @@ def load_module(path, modname=None, install=None, add_syspath=None):
 
   apath = os.path.abspath(path)
 
-  parent = find_module_parent(apath) if os.path.basename(apath) != '__init__.py' else None
+  parent = find_module_parent(apath) if os.path.basename(apath) != _PYINIT else None
   if parent is not None:
     init_path, mod_path = parent
 
@@ -76,7 +79,7 @@ def load_module(path, modname=None, install=None, add_syspath=None):
 
     for i in range(len(mod_path) - 1):
       partial = mod_path[: i + 1]
-      ipath = os.path.join(os.path.dirname(parent_module.__file__), *partial, '__init__.py')
+      ipath = os.path.join(os.path.dirname(parent_module.__file__), *partial, _PYINIT)
       if os.path.isfile(ipath):
         imodname = parent_module.__name__ + '.' + '.'.join(partial)
         load_module(ipath, modname=imodname, install=True)
