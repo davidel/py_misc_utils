@@ -166,7 +166,7 @@ def get_fn_kwargs(args, fn, prefix=None, roffset=None):
   return fnargs
 
 
-def _stri(l, d):
+def _stri(l, d, float_fmt):
   s = d.get(id(l), NONE)
   if s is None:
     return '...'
@@ -174,22 +174,26 @@ def _stri(l, d):
     return s
 
   d[id(l)] = None
-  if isinstance(l, (tuple, list)):
-    sl = ', '.join(_stri(x, d) for x in l)
+  if isinstance(l, (tuple, list, types.GeneratorType)):
+    sl = ', '.join(_stri(x, d, float_fmt) for x in l)
 
     result = '[' + sl + ']' if isinstance(l, list) else '(' + sl + ')'
   elif isinstance(l, dict):
-    result = '{' + ', '.join(f'{k}: {_stri(v, d)}' for k, v in l.items()) + '}'
+    result = '{' + ', '.join(f'{k}: {_stri(v, d, float_fmt)}' for k, v in l.items()) + '}'
+  elif isinstance(l, str):
+    result = f'"{l}"'
+  elif isinstance(l, float):
+    result = f'{l:{float_fmt}}'
   else:
-    result = f'"{l}"' if isinstance(l, str) else str(l)
+    result = str(l)
 
   d[id(l)] = result
 
   return result
 
 
-def stri(l):
-  return _stri(l, dict())
+def stri(l, float_fmt=None):
+  return _stri(l, dict(), float_fmt or '.3e')
 
 
 def norm_slice(start, stop, size):
