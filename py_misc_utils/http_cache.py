@@ -23,11 +23,11 @@ def get_cache_coords(cache_dir, url):
   fparts = [clean_fsname(purl.netloc)]
   fparts += [clean_fsname(p) for p in ut.path_split(purl.path)]
 
-  filename = fparts.pop()
+  filename = fparts[-1]
   if purl.params:
-    filename += '_' + clean_fsname(purl.params)
+    fparts[-1] += '_' + clean_fsname(purl.params)
   if purl.query:
-    filename += '_' + clean_fsname(purl.query)
+    fparts[-1] += '_' + clean_fsname(purl.query)
 
   return os.path.join(cache_dir, *fparts), filename
 
@@ -74,14 +74,14 @@ def needs_download(url, upath, chpath):
   return pheaders != cheaders
 
 
-def fetch(url, dest_path=None, cache_dir=None):
+def fetch(url, dest_path=None, dest_dir=None, cache_dir=None):
   cache_dir = cache_dir or os.path.join(os.getenv('HOME', '.'), '.cache')
   cache_dir = os.path.join(cache_dir, 'http_cache')
 
-  udir, ufile = get_cache_coords(cache_dir, url)
+  udir, filename = get_cache_coords(cache_dir, url)
   os.makedirs(udir, exist_ok=True)
 
-  upath = os.path.join(udir, ufile)
+  upath = os.path.join(udir, 'content')
   chpath = os.path.join(udir, 'cache_headers')
 
   if needs_download(url, upath, chpath):
@@ -94,8 +94,14 @@ def fetch(url, dest_path=None, cache_dir=None):
 
   if dest_path is not None:
     shutil.copyfile(upath, dest_path)
+    rpath = dest_path
+  elif dest_dir is not None:
+    rpath = os.path.join(dest_dir, filename)
+    shutil.copyfile(upath, rpath)
+  else:
+    rpath = upath
 
-  return upath
+  return rpath, filename
 
 
 class LocalFile:
@@ -103,13 +109,19 @@ class LocalFile:
   def __init__(self, url_or_path, cache_dir=None):
     self.url_or_path = url_or_path
     self.cache_dir = cache_dir
+    self.tempdir = None
 
   def __enter__(self):
     if self.url_or_path.startswith('http:') or self.url_or_path.startswith('https:'):
-      return fetch(self.url_or_path, cache_dir=self.cache_dir)
+      self.tempdir = tempfile.mkdtemp()
+
+      return fetch(self.url_or_path, dest_dir=self.tempdir, cache_dir=self.cache_dir)[0]
     else:
       return self.url_or_path
 
   def __exit__(self, *exc):
+    if self.tempdir:
+      shutil.rmtree(self.tempdir, ignore_errors=True)
+
     return False
 
