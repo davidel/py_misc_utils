@@ -122,18 +122,24 @@ class LocalFile:
                        dest_dir=self.tempdir,
                        cache_dir=self.cache_dir)
 
-      if self.uncompress:
-        bpath, ext = os.path.splitext(rpath)
-        if ext == '.gz':
-          ut.fgunzip(rpath, bpath)
-          ut.copy_file_times(rpath, bpath)
-          rpath = bpath
-
       alog.debug(f'Returning local copy of "{self.url_or_path}" in "{rpath}"')
-
-      return rpath
     else:
-      return self.url_or_path
+      rpath = self.url_or_path
+
+    if self.uncompress:
+      bpath, ext = os.path.splitext(rpath)
+      if ext == '.gz':
+        if self.tempdir is None:
+          self.tempdir = tempfile.mkdtemp()
+          bpath = os.path.join(self.tempdir, os.path.basename(bpath))
+
+        alog.debug(f'Uncompressing "{rpath}" to "{bpath}"')
+
+        ut.fgunzip(rpath, bpath)
+        ut.copy_file_times(rpath, bpath)
+        rpath = bpath
+
+    return rpath
 
   def __exit__(self, *exc):
     if self.tempdir:
