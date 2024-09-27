@@ -75,7 +75,8 @@ def needs_download(url, upath, chpath):
 
 
 def fetch(url, dest_path=None, cache_dir=None):
-  cache_dir = cache_dir or os.path.join(os.getenv('HOME', '.'), '.cache', 'http_cache')
+  cache_dir = cache_dir or os.path.join(os.getenv('HOME', '.'), '.cache')
+  cache_dir = os.path.join(cache_dir, 'http_cache')
 
   udir, ufile = get_cache_coords(cache_dir, url)
   os.makedirs(udir, exist_ok=True)
