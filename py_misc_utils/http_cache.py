@@ -23,7 +23,7 @@ def get_cache_coords(cache_dir, url):
   fparts = [clean_fsname(purl.netloc)]
   fparts += [clean_fsname(p) for p in ut.path_split(purl.path)]
 
-  filename = parts.pop()
+  filename = fparts.pop()
   if purl.params:
     filename += '_' + clean_fsname(purl.params)
   if purl.query:
