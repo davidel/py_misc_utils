@@ -129,10 +129,11 @@ class LocalFile:
                        cache_dir=self.cache_dir)
 
       if self.uncompress:
-        base, ext = os.path.splitext(rpath)
+        bpath, ext = os.path.splitext(rpath)
         if ext == '.gz':
-          ut.fgunzip(rpath, base)
-          rpath = base
+          ut.fgunzip(rpath, bpath)
+          copy_file_times(rpath, bpath)
+          rpath = bpath
 
       alog.debug(f'Returning local copy of "{self.url_or_path}" in "{rpath}"')
 
