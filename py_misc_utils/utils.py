@@ -66,6 +66,12 @@ def path_split(path):
   return path_parts
 
 
+def newer_files(*paths):
+  mtimes = [os.stat(path).st_mtime for path in expand_args(paths)]
+
+  return np.argsort(mtimes).tolist()
+
+
 def make_ntuple(ntc, args):
   targs = []
   for f in ntc._fields:
