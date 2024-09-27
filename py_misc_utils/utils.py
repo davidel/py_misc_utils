@@ -66,10 +66,8 @@ def path_split(path):
   return path_parts
 
 
-def modtime_argsort(*paths):
-  mtimes = [os.stat(path).st_mtime for path in expand_args(paths)]
-
-  return np.argsort(mtimes).tolist()
+def is_newer_file(path, other):
+  return os.stat(path).st_mtime > os.stat(other).st_mtime
 
 
 def make_ntuple(ntc, args):
