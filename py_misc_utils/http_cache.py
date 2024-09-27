@@ -68,7 +68,7 @@ def needs_download(url, upath, chpath):
 
   pheaders = parse_headers(hreq.headers)
 
-  with open(chpath, mode='rb') as hfd:
+  with open(chpath, mode='rt') as hfd:
     cheaders = hfd.read()
 
   return pheaders != cheaders
@@ -88,7 +88,7 @@ def fetch(url, dest_path=None, cache_dir=None):
 
     alog.debug(f'Remote GET headers: {headers}')
 
-    with fow.FileOverwrite(chpath, mode='wb') as cfd:
+    with fow.FileOverwrite(chpath, mode='wt') as cfd:
       cfd.write(parse_headers(headers))
 
   if dest_path is not None:
