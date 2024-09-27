@@ -70,6 +70,12 @@ def is_newer_file(path, other):
   return os.stat(path).st_mtime > os.stat(other).st_mtime
 
 
+def copy_file_times(src_path, dest_path):
+  sst = os.stat(src_path)
+
+  os.utime(dest_path, ns=(sst.st_atime_ns, sst.st_mtime_ns))
+
+
 def make_ntuple(ntc, args):
   targs = []
   for f in ntc._fields:

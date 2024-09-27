@@ -74,12 +74,6 @@ def needs_download(url, upath, chpath):
   return pheaders != cheaders
 
 
-def copy_file_times(src_path, dest_path):
-  sst = os.stat(src_path)
-
-  os.utime(dest_path, ns=(sst.st_atime_ns, sst.st_mtime_ns))
-
-
 def fetch(url, dest_path=None, dest_dir=None, cache_dir=None):
   cache_dir = cache_dir or os.path.join(os.getenv('HOME', '.'), '.cache')
   cache_dir = os.path.join(cache_dir, 'http_cache')
@@ -101,11 +95,11 @@ def fetch(url, dest_path=None, dest_dir=None, cache_dir=None):
   if dest_path is not None:
     shutil.copyfile(upath, dest_path)
     rpath = dest_path
-    copy_file_times(upath, rpath)
+    ut.copy_file_times(upath, rpath)
   elif dest_dir is not None:
     rpath = os.path.join(dest_dir, filename)
     shutil.copyfile(upath, rpath)
-    copy_file_times(upath, rpath)
+    ut.copy_file_times(upath, rpath)
   else:
     rpath = upath
 
@@ -132,7 +126,7 @@ class LocalFile:
         bpath, ext = os.path.splitext(rpath)
         if ext == '.gz':
           ut.fgunzip(rpath, bpath)
-          copy_file_times(rpath, bpath)
+          ut.copy_file_times(rpath, bpath)
           rpath = bpath
 
       alog.debug(f'Returning local copy of "{self.url_or_path}" in "{rpath}"')
