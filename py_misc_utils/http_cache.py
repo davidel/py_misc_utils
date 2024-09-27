@@ -114,9 +114,10 @@ def fetch(url, dest_path=None, dest_dir=None, cache_dir=None):
 
 class LocalFile:
 
-  def __init__(self, url_or_path, cache_dir=None):
+  def __init__(self, url_or_path, cache_dir=None, uncompress=False):
     self.url_or_path = url_or_path
     self.cache_dir = cache_dir
+    self.uncompress = uncompress
     self.tempdir = None
 
   def __enter__(self):
@@ -126,6 +127,12 @@ class LocalFile:
       rpath, _ = fetch(self.url_or_path,
                        dest_dir=self.tempdir,
                        cache_dir=self.cache_dir)
+
+      if self.uncompress:
+        base, ext = os.path.splitext(rpath)
+        if ext == '.gz':
+          ut.fgunzip(rpath, base)
+          rpath = base
 
       alog.debug(f'Returning local copy of "{self.url_or_path}" in "{rpath}"')
 
