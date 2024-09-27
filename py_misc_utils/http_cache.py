@@ -115,7 +115,13 @@ class LocalFile:
     if self.url_or_path.startswith('http:') or self.url_or_path.startswith('https:'):
       self.tempdir = tempfile.mkdtemp()
 
-      return fetch(self.url_or_path, dest_dir=self.tempdir, cache_dir=self.cache_dir)[0]
+      rpath, filename = fetch(self.url_or_path,
+                              dest_dir=self.tempdir,
+                              cache_dir=self.cache_dir)
+
+      alog.debug(f'Returning local copy of "{self.url_or_path}" in "{rpath}"')
+
+      return rpath
     else:
       return self.url_or_path
 
