@@ -66,7 +66,7 @@ def path_split(path):
   return path_parts
 
 
-def newer_files(*paths):
+def modtime_argsort(*paths):
   mtimes = [os.stat(path).st_mtime for path in expand_args(paths)]
 
   return np.argsort(mtimes).tolist()
