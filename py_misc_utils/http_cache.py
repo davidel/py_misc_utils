@@ -128,14 +128,18 @@ class LocalFile:
 
     if self.uncompress:
       bpath, ext = os.path.splitext(rpath)
-      if ext == '.gz':
+      if ext in ('.gz', '.bz2', '.bzip'):
         if self.tempdir is None:
           self.tempdir = tempfile.mkdtemp()
           bpath = os.path.join(self.tempdir, os.path.basename(bpath))
 
         alog.debug(f'Uncompressing "{rpath}" to "{bpath}"')
 
-        ut.fgunzip(rpath, bpath)
+        if ext == '.gz':
+          ut.fgunzip(rpath, bpath)
+        else:
+          ut.fbunzip2(rpath, bpath)
+
         ut.copy_file_times(rpath, bpath)
         rpath = bpath
 

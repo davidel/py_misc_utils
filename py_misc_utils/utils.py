@@ -1,5 +1,6 @@
 import array
 import binascii
+import bz2
 import collections
 import copy
 import datetime
@@ -1196,6 +1197,12 @@ def fgzip(src, dest):
 
 
 def fgunzip(src, dest):
+  with gzip.open(src, mode='rb') as infd:
+    with open(dest, mode='wb') as outfd:
+      shutil.copyfileobj(infd, outfd)
+
+
+def fbunzip2(src, dest):
   with gzip.open(src, mode='rb') as infd:
     with open(dest, mode='wb') as outfd:
       shutil.copyfileobj(infd, outfd)
