@@ -71,10 +71,26 @@ def is_newer_file(path, other):
   return os.stat(path).st_mtime > os.stat(other).st_mtime
 
 
-def copy_file_times(src_path, dest_path):
-  sst = os.stat(src_path)
+def link_or_copy(src_path, dest_path, copy_stat=True):
+  try:
+    os.link(src_path, dest_path)
 
-  os.utime(dest_path, ns=(sst.st_atime_ns, sst.st_mtime_ns))
+    return dest_path
+  except OSError:
+    pass
+
+  try:
+    os.symlink(src_path, dest_path)
+
+    return dest_path
+  except OSError:
+    pass
+
+  shutil.copyfile(src_path, dest_path)
+  if copy_stat:
+    shutil.copystat(src_path, dest_path)
+
+  return dest_path
 
 
 def make_ntuple(ntc, args):

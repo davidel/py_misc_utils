@@ -93,11 +93,11 @@ def fetch(url, dest_path=None, dest_dir=None, cache_dir=None):
       cfd.write(parse_headers(headers))
 
   if dest_path is not None:
-    os.link(upath, dest_path)
+    ut.link_or_copy(upath, dest_path)
     rpath = dest_path
   elif dest_dir is not None:
     rpath = os.path.join(dest_dir, filename)
-    os.link(upath, rpath)
+    ut.link_or_copy(upath, rpath)
   else:
     rpath = upath
 
@@ -138,7 +138,7 @@ class LocalFile:
         else:
           ut.fbunzip2(rpath, bpath)
 
-        ut.copy_file_times(rpath, bpath)
+        shutil.copystat(rpath, bpath)
         rpath = bpath
 
     return rpath
