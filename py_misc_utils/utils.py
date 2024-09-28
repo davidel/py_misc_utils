@@ -76,15 +76,17 @@ def link_or_copy(src_path, dest_path, copy_stat=True):
     os.link(src_path, dest_path)
 
     return dest_path
-  except OSError:
-    pass
+  except OSError as ex:
+    alog.debug(f'Harklink failed from "{src_path}" to "{dest_path}", trying symlink. ' \
+               f'Error was: {ex}')
 
   try:
     os.symlink(src_path, dest_path)
 
     return dest_path
   except OSError:
-    pass
+    alog.debug(f'Symlink failed from "{src_path}" to "{dest_path}", going to copy. ' \
+               f'Error was: {ex}')
 
   shutil.copyfile(src_path, dest_path)
   if copy_stat:
