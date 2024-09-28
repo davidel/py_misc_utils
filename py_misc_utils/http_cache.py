@@ -93,13 +93,11 @@ def fetch(url, dest_path=None, dest_dir=None, cache_dir=None):
       cfd.write(parse_headers(headers))
 
   if dest_path is not None:
-    shutil.copyfile(upath, dest_path)
+    os.link(upath, dest_path)
     rpath = dest_path
-    ut.copy_file_times(upath, rpath)
   elif dest_dir is not None:
     rpath = os.path.join(dest_dir, filename)
-    shutil.copyfile(upath, rpath)
-    ut.copy_file_times(upath, rpath)
+    os.link(upath, rpath)
   else:
     rpath = upath
 
