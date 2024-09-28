@@ -1203,7 +1203,7 @@ def fgunzip(src, dest):
 
 
 def fbunzip2(src, dest):
-  with gzip.open(src, mode='rb') as infd:
+  with bz2.open(src, mode='rb') as infd:
     with open(dest, mode='wb') as outfd:
       shutil.copyfileobj(infd, outfd)
 
