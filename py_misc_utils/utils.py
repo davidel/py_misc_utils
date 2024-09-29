@@ -914,7 +914,7 @@ def scale_data(data, base_data, scale):
 _ARRAY_SIZES = tuple((array.array(c).itemsize, c) for c in 'B,H,I,L,Q'.split(','))
 
 def array_code(size):
-  nbytes = max(math.ceil(math.log2(size)), 8) // 8
+  nbytes = math.ceil(math.log2(size)) / 8
   for cb, code in _ARRAY_SIZES:
     if cb >= nbytes:
       return code
