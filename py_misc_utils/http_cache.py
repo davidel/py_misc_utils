@@ -42,8 +42,11 @@ def download(url, path, chunk_size=None):
   req = requests.get(url, stream=True)
 
   with fow.FileOverwrite(path, mode='wb') as fd:
-    for data in req.iter_content(chunk_size=chunk_size):
+    while True:
+      data = req.raw.read(chunk_size)
       fd.write(data)
+      if len(data) < chunk_size:
+        break
 
   return req.headers
 
