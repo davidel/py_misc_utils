@@ -8,6 +8,7 @@ import gzip
 import inspect
 import json
 import logging
+import math
 import os
 import pickle
 import random
@@ -40,59 +41,6 @@ NONE = _None()
 
 def pickle_proto():
   return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
-
-
-def drop_ext(path, exts):
-  xpath, ext = os.path.splitext(path)
-
-  return xpath if ext in as_sequence(exts) else path
-
-
-def path_split(path):
-  path_parts = []
-  while True:
-    parts = os.path.split(path)
-    if parts[0] == path:
-      path_parts.append(parts[0])
-      break
-    elif parts[1] == path:
-      path_parts.append(parts[1])
-      break
-    else:
-      path = parts[0]
-      path_parts.append(parts[1])
-
-  path_parts.reverse()
-
-  return path_parts
-
-
-def is_newer_file(path, other):
-  return os.stat(path).st_mtime > os.stat(other).st_mtime
-
-
-def link_or_copy(src_path, dest_path, copy_stat=True):
-  try:
-    os.link(src_path, dest_path)
-
-    return dest_path
-  except OSError as ex:
-    alog.debug(f'Harklink failed from "{src_path}" to "{dest_path}", trying symlink. ' \
-               f'Error was: {ex}')
-
-  try:
-    os.symlink(src_path, dest_path)
-
-    return dest_path
-  except OSError:
-    alog.debug(f'Symlink failed from "{src_path}" to "{dest_path}", going to copy. ' \
-               f'Error was: {ex}')
-
-  shutil.copyfile(src_path, dest_path)
-  if copy_stat:
-    shutil.copystat(src_path, dest_path)
-
-  return dest_path
 
 
 def make_ntuple(ntc, args):
@@ -963,6 +911,18 @@ def scale_data(data, base_data, scale):
   return ((data - base_data) / base_data) * scale
 
 
+_ARRAY_SIZES = tuple((array.array(c).itemsize, c) for c in 'B,H,I,L,Q'.split(','))
+
+def array_code(size):
+  nbytes = max(math.ceil(math.log2(size)) // 8, 1)
+  for cb, code in _ARRAY_SIZES:
+    if cb >= nbytes:
+      return code
+
+  alog.xraise(ValueError,
+              f'Size {size} too big to fit inside any array integer types')
+
+
 def checked_remove(l, o):
   try:
     l.remove(o)
@@ -1155,20 +1115,6 @@ def xwrap_fn(fn, *args, **kwargs):
   return fwrap
 
 
-def enumerate_files(path, matcher, fullpath=False):
-  for fname in sorted(os.listdir(path)):
-    if matcher(fname):
-      yield fname if not fullpath else os.path.join(path, fname)
-
-
-def re_enumerate_files(path, rex, fullpath=False):
-  for fname in sorted(os.listdir(path)):
-    m = re.match(rex, fname)
-    if m:
-      mpath = fname if not fullpath else os.path.join(path, fname)
-      yield mpath, m
-
-
 def add_bool_argument(parser, name, defval, help=None):
   parser.add_argument(f'--{name}', dest=name, action='store_true',
                       help=f'Enable {help or name}' if help else None)
@@ -1208,6 +1154,28 @@ def maybe_call_dv(obj, name, defval, *args, **kwargs):
   return fn(*args, **kwargs) if fn is not None else defval
 
 
+def unique(data):
+  udata = collections.defaultdict(lambda: array.array('L'))
+  for i, v in enumerate(data):
+    udata[v].append(i)
+
+  return udata
+
+
+def enumerate_files(path, matcher, fullpath=False):
+  for fname in sorted(os.listdir(path)):
+    if matcher(fname):
+      yield fname if not fullpath else os.path.join(path, fname)
+
+
+def re_enumerate_files(path, rex, fullpath=False):
+  for fname in sorted(os.listdir(path)):
+    m = re.match(rex, fname)
+    if m:
+      mpath = fname if not fullpath else os.path.join(path, fname)
+      yield mpath, m
+
+
 def fgzip(src, dest):
   with open(src, mode='rb') as infd:
     with gzip.open(dest, mode='wb') as outfd:
@@ -1226,10 +1194,55 @@ def fbunzip2(src, dest):
       shutil.copyfileobj(infd, outfd)
 
 
-def unique(data):
-  udata = collections.defaultdict(lambda: array.array('L'))
-  for i, v in enumerate(data):
-    udata[v].append(i)
+def drop_ext(path, exts):
+  xpath, ext = os.path.splitext(path)
 
-  return udata
+  return xpath if ext in as_sequence(exts) else path
+
+
+def path_split(path):
+  path_parts = []
+  while True:
+    parts = os.path.split(path)
+    if parts[0] == path:
+      path_parts.append(parts[0])
+      break
+    elif parts[1] == path:
+      path_parts.append(parts[1])
+      break
+    else:
+      path = parts[0]
+      path_parts.append(parts[1])
+
+  path_parts.reverse()
+
+  return path_parts
+
+
+def is_newer_file(path, other):
+  return os.stat(path).st_mtime > os.stat(other).st_mtime
+
+
+def link_or_copy(src_path, dest_path, copy_stat=True):
+  try:
+    os.link(src_path, dest_path)
+
+    return dest_path
+  except OSError as ex:
+    alog.debug(f'Harklink failed from "{src_path}" to "{dest_path}", trying symlink. ' \
+               f'Error was: {ex}')
+
+  try:
+    os.symlink(src_path, dest_path)
+
+    return dest_path
+  except OSError:
+    alog.debug(f'Symlink failed from "{src_path}" to "{dest_path}", going to copy. ' \
+               f'Error was: {ex}')
+
+  shutil.copyfile(src_path, dest_path)
+  if copy_stat:
+    shutil.copystat(src_path, dest_path)
+
+  return dest_path
 
