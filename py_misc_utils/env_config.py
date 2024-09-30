@@ -24,3 +24,12 @@ class EnvConfig:
       if avalue is not None:
         setattr(self, name, avalue)
 
+  def __repr__(self):
+    cvars = dict()
+    for name in dir(self):
+      if not name.startswith('_'):
+        cvars[name] = getattr(self, name)
+
+    return ut.stri(cvars)
+
+
