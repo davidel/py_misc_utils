@@ -58,9 +58,9 @@ def parse_headers(headers):
   for lk, k in sorted(keys):
     v = headers[k]
     if lk in STAMP_HEADERS:
-      pheaders.append(f'({lk}: {v})')
+      pheaders.append(f'{lk}: {v}')
 
-  return ','.join(pheaders)
+  return '\n'.join(pheaders)
 
 
 def needs_download(url, upath, chpath):
