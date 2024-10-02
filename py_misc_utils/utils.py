@@ -547,6 +547,10 @@ def seqfirst(s):
   return next(iter(s))
 
 
+def value_or(v, defval):
+  return v if v is not None else defval
+
+
 class _ArgList(list):
 
   def __init__(self, *args):
@@ -592,15 +596,13 @@ def append_index_dict(xlist, xdict, value):
 
 
 def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
-  xenv = dict() if env is None else env
+  env = value_or(env, dict())
   if vals is not None or lookup_fn is not None:
-    xcode = template_replace(code, vals=vals, lookup_fn=lookup_fn, delim=delim)
-  else:
-    xcode = code
+    code = template_replace(code, vals=vals, lookup_fn=lookup_fn, delim=delim)
 
-  exec(xcode, xenv)
+  exec(code, env)
 
-  return tuple(xenv[s] for s in as_sequence(syms))
+  return tuple(env[s] for s in as_sequence(syms))
 
 
 def unpack_n(l, n, defval=None):
