@@ -157,6 +157,8 @@ def _stri(l, d, float_fmt):
     result = f'{l:{float_fmt}}'
   elif isinstance(l, bytes):
     result = l.decode()
+  elif is_namedtuple(l):
+    result = str(l)
   elif isinstance(l, (tuple, list, types.GeneratorType)):
     sl = ', '.join(_stri(x, d, float_fmt) for x in l)
 
