@@ -151,16 +151,20 @@ def _stri(l, d, float_fmt):
     return s
 
   d[id(l)] = None
-  if isinstance(l, (tuple, list, types.GeneratorType)):
+  if isinstance(l, str):
+    result = f'"{l}"'
+  elif isinstance(l, float):
+    result = f'{l:{float_fmt}}'
+  elif isinstance(l, bytes):
+    result = l.decode()
+  elif isinstance(l, (tuple, list, types.GeneratorType)):
     sl = ', '.join(_stri(x, d, float_fmt) for x in l)
 
     result = '[' + sl + ']' if isinstance(l, list) else '(' + sl + ')'
   elif isinstance(l, dict):
     result = '{' + ', '.join(f'{k}: {_stri(v, d, float_fmt)}' for k, v in l.items()) + '}'
-  elif isinstance(l, str):
-    result = f'"{l}"'
-  elif isinstance(l, float):
-    result = f'{l:{float_fmt}}'
+  elif hasattr(l, '__dict__'):
+    result = _stri(l.__dict__, d, float_fmt)
   else:
     result = str(l)
 
