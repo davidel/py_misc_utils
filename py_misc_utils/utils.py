@@ -164,7 +164,7 @@ def _stri(l, d, float_fmt):
 
     result = '[' + sl + ']' if isinstance(l, list) else '(' + sl + ')'
   elif isinstance(l, dict):
-    result = '{' + ', '.join(f'{k}: {_stri(v, d, float_fmt)}' for k, v in l.items()) + '}'
+    result = '{' + ', '.join(f'{k}={_stri(v, d, float_fmt)}' for k, v in l.items()) + '}'
   elif hasattr(l, '__dict__'):
     result = _stri(l.__dict__, d, float_fmt)
   else:
