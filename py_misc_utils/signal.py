@@ -37,7 +37,9 @@ def trigger(sig, frame=None):
   _handler(sig, frame or tb.get_frame(n=1))
 
 
-def signal(sig, handler, prio=STD_PRIO):
+def signal(sig, handler, prio=None):
+  prio = STD_PRIO if prio is None else prio
+
   with _LOCK:
     handlers = _HANDLERS.get(sig, ())
     _HANDLERS[sig] = tuple(sorted(handlers + ((prio, handler),), key=lambda h: h[0]))
@@ -61,17 +63,18 @@ def unsignal(sig, uhandler):
 
 class Signals:
 
-  def __init__(self, sig, handler):
+  def __init__(self, sig, handler, prio=None):
     if not isinstance(sig, (list, tuple)):
       sig = [sig]
     if not isinstance(handler, (list, tuple)):
       handler = [handler] * len(sig)
 
     self._sigs = tuple(zip(sig, handler))
+    self._prio = prio
 
   def __enter__(self):
     for sig, handler in self._sigs:
-      signal(sig, handler)
+      signal(sig, handler, prio=self._prio)
 
     return self
 
