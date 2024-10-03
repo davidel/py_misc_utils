@@ -49,8 +49,8 @@ def signal(sig, handler, prio=None):
 
 
 def unsignal(sig, uhandler):
+  handlers, dropped = [], 0
   with _LOCK:
-    handlers, dropped = [], 0
     for prio, handler in _HANDLERS.get(sig, ()):
       if handler != uhandler:
         handlers.append((prio, handler))
@@ -62,7 +62,7 @@ def unsignal(sig, uhandler):
     if not handlers and dropped:
       sgn.signal(sig, _PREV_HANDLERS.pop(sig))
 
-    return dropped
+  return dropped
 
 
 class Signals:
