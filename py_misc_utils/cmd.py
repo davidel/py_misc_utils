@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 
-def run(cmd, outfd=None, tmpl_env=None, , **kwargs):
+def run(cmd, outfd=None, tmpl_env=None, **kwargs):
   if isinstance(cmd, str):
     tmpl_env = tmpl_env or inspect.currentframe().f_back.f_globals
     cmd = string.Template(cmd).substitute(tmpl_env).split()
