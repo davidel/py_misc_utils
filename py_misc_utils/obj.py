@@ -1,6 +1,6 @@
 from . import lazy_import as lyi
 
-pyu = lyi.lazy_import('pyu', modname='utils', package='.')
+pyu = lyi.lazy_import('utils', package='.')
 
 
 class Obj:
