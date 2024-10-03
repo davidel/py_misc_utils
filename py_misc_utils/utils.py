@@ -211,12 +211,15 @@ def dget(sdict, name, defval, dtype=None):
   return dtype(v) if v is not None and dtype is not None else v
 
 
-def mget(d, *args):
+def mget(d, *args, as_dict=False):
   margs = []
   for arg in args:
     margs.extend(comma_split(arg))
 
-  return tuple(d.get(f) for f in margs)
+  if as_dict:
+    return {f: d.get(f) for f in margs}
+  else:
+    return tuple(d.get(f) for f in margs)
 
 
 def get_property(obj, name, defval=None):
