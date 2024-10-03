@@ -39,7 +39,7 @@ class Obj:
     return ad
 
   def __repr__(self):
-    dstr = pyu.stri(self.__dict__)
+    dstr = pyu().stri(self.__dict__)
 
     return f'{__class__.__name__}({dstr[1: -1]})'
 
