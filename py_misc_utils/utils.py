@@ -211,11 +211,19 @@ def dget(sdict, name, defval, dtype=None):
   return dtype(v) if v is not None and dtype is not None else v
 
 
-def mget(d, *args, as_dict=False):
+def expand_strings(*args):
   margs = []
   for arg in args:
-    margs.extend(comma_split(arg))
+    if isinstance(arg, (list, tuple, types.GeneratorType)):
+      margs.extend(arg)
+    else:
+      margs.extend(comma_split(arg))
 
+  return tuple(margs)
+
+
+def mget(d, *args, as_dict=False):
+  margs = expand_strings(*args)
   if as_dict:
     return {f: d.get(f) for f in margs}
   else:
@@ -230,9 +238,10 @@ def get_property(obj, name, defval=None):
   return p() if callable(p) else p
 
 
-def dict_subset(d, keys):
+def dict_subset(d, *keys):
+  mkeys = expand_strings(*keys)
   subd = dict()
-  for k in keys:
+  for k in mkeys:
     v = d.get(k, NONE)
     if v is not NONE:
       subd[k] = v
