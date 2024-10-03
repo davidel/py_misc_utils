@@ -1,5 +1,7 @@
 from . import lazy_import as lyi
 
+# Prevent cross imports. The obj.py code has been moved out of utils.py but
+# there are users still accessing the API via utils.py.
 pyu = lyi.lazy_import('utils', package='.')
 
 
