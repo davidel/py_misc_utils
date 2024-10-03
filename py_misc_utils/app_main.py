@@ -18,11 +18,11 @@ def _main(parser, mainfn, args, setupfn, rem_args):
   alog.add_logging_options(parser)
 
   if rem_args:
-    xargs = args or sys.argv[1: ]
+    xargs = args or sys.argv[1:]
 
     ddpos = ut.lindex(xargs, '--')
     if ddpos >= 0:
-      rargs = xargs[ddpos + 1: ]
+      rargs = xargs[ddpos + 1:]
       xargs = xargs[: ddpos]
     else:
       rargs = []

@@ -196,7 +196,7 @@ def limit_per_group(df, cols, limit):
     if limit > 0:
       rows = g[: limit]
     else:
-      rows = g[limit: ]
+      rows = g[limit:]
     mask[rows] = True
 
   return df[mask]

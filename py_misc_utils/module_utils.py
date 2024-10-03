@@ -17,7 +17,7 @@ def split_module_name(name):
   if pos < 0:
     return '', name
 
-  return name[: pos], name[pos + 1: ]
+  return name[: pos], name[pos + 1:]
 
 
 def add_sys_path(path):
@@ -137,7 +137,7 @@ def import_module_names(modname, names=None):
   if names is None:
     npos = modname.rfind('.')
     tas.check_gt(npos, 0)
-    names = [modname[npos + 1: ]]
+    names = [modname[npos + 1:]]
     modname = modname[: npos]
 
   mod = importlib.import_module(modname)

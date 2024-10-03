@@ -185,7 +185,7 @@ class RingBuffer:
 
     if init is not None:
       vinit = tuple(init) if isinstance(init, types.GeneratorType) else init
-      idata = np.array(vinit[-size: ], dtype=dtype)
+      idata = np.array(vinit[-size:], dtype=dtype)
       self._data[: len(idata)] = idata
       self._avail -= len(idata)
       self._wpos = len(idata) % size

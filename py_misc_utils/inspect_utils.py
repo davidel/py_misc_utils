@@ -8,7 +8,7 @@ def _fn_lookup(frame, name):
   while True:
     dpos = xname.find('.')
     if dpos > 0:
-      cname, fname = xname[: dpos], xname[dpos + 1: ]
+      cname, fname = xname[: dpos], xname[dpos + 1:]
       if cname == '<locals>':
         code = getattr(xns, '__code__', None)
         if code is not None:

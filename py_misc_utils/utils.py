@@ -497,7 +497,7 @@ def sreplace(rex, data, mapfn, nmapfn=None, join=True):
     parts.append(mid)
 
   if lastpos < len(data):
-    parts.append(nmapfn(data[lastpos: ]))
+    parts.append(nmapfn(data[lastpos:]))
 
   return ''.join(parts) if join else parts
 
@@ -685,7 +685,7 @@ def squeeze(shape, keep_dims=0, sdir=MAJOR):
   sshape = list(shape)
   if sdir == MAJOR:
     while len(sshape) > keep_dims and sshape[0] == 1:
-      sshape = sshape[1: ]
+      sshape = sshape[1:]
   elif sdir == MINOR:
     while len(sshape) > keep_dims and sshape[-1] == 1:
       sshape = sshape[: -1]
@@ -699,7 +699,7 @@ def flat2shape(data, shape):
   assert len(data) == np.prod(shape), f'Shape {shape} is unsuitable for a {len(data)} long array'
 
   # For an Mx...xK input shape, return a M elements (nested) list.
-  for n in reversed(shape[1: ]):
+  for n in reversed(shape[1:]):
     data = [data[i: i + n] for i in range(len(data), n)]
 
   return data

@@ -23,13 +23,13 @@ def _ifize_stmt_list(slist):
     # which does not have the RETURN.
     if _ends_with_return(ifnode.body):
       if not _ends_with_return(orelse):
-        remlist = _ifize_stmt_list(slist[ni + 1: ])
+        remlist = _ifize_stmt_list(slist[ni + 1:])
         orelse.extend(remlist)
         ifnode.orelse = orelse
         slist = slist[: ni + 1]
 
     elif _ends_with_return(orelse):
-      remlist = _ifize_stmt_list(slist[ni + 1: ])
+      remlist = _ifize_stmt_list(slist[ni + 1:])
       ifnode.body.extend(remlist)
       slist = slist[: ni + 1]
 
