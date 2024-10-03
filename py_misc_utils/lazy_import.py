@@ -15,7 +15,7 @@ def lazy_import(modname, package=None):
   loader = importlib.util.LazyLoader(spec.loader)
   spec.loader = loader
   module = importlib.util.module_from_spec(spec)
-  # sys.modules[modname] = module
+  sys.modules[modname] = module
   loader.exec_module(module)
 
   return module
