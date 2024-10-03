@@ -14,11 +14,13 @@ def lazy_import(name, modname=None, package=None):
   def lazy():
     module = mstg.module
     if module is None:
-      if package is not None and package == '.':
+      if package == '.':
         parent_frame = inspect.currentframe().f_back
-        package = getattr(inspect.getmodule(parent_frame), '__package__', None)
+        lpackage = getattr(inspect.getmodule(parent_frame), '__package__', None)
+      else:
+        lpackage = package
 
-      mstg.module = importlib.import_module(modname or name, package=package)
+      mstg.module = module = importlib.import_module(modname or name, package=lpackage)
 
     return module
 
