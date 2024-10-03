@@ -58,3 +58,26 @@ def unsignal(sig, uhandler):
     if not handlers:
       sgn.signal(sig, _PREV_HANDLERS.pop(sig))
 
+
+class Signals:
+
+  def __init__(self, sig, handler):
+    if not isinstance(sig, (list, tuple)):
+      sig = [sig]
+    if not isinstance(handler, (list, tuple)):
+      handler = [handler] * len(sig)
+
+    self._sigs = tuple(zip(sig, handler))
+
+  def __enter__(self):
+    for sig, handler in self._sigs:
+      signal(sig, handler)
+
+    return self
+
+  def __exit__(self, *exc):
+    for sig, handler in self._sigs:
+      unsignal(sig, handler)
+
+    return True
+

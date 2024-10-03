@@ -1,9 +1,19 @@
 import inspect
+import signal
 import string
 import subprocess
 import sys
 
 from . import alog
+from . import signal as sgn
+
+
+def _handler(proc):
+  def sig_handler(sig, frame):
+    proc.send_signal(sig)
+    return sgn.HANDLED
+
+  return sig_handler
 
 
 def run(cmd, outfd=None, tmpl_env=None, **kwargs):
@@ -24,13 +34,14 @@ def run(cmd, outfd=None, tmpl_env=None, **kwargs):
   if readfn is None:
     readfn = getattr(proc.stdout, 'readline', None)
 
-  while True:
-    data = readfn()
-    if data:
-      outfd.write(data)
-      outfd.flush()
-    elif proc.poll() is not None:
-      break
+  with sgn.Signals((signal.SIGINT, signal.SIGTERM), _handler(proc)):
+    while True:
+      data = readfn()
+      if data:
+        outfd.write(data)
+        outfd.flush()
+      elif proc.poll() is not None:
+        break
 
   return proc.returncode
 
