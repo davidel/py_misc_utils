@@ -1,11 +1,6 @@
-import importlib
+import importlib.util
 import inspect
-
-
-class ModuleStorage:
-
-  def __init__(self):
-    self.module = None
+import sys
 
 
 def lazy_import(modname, package=None):
@@ -16,14 +11,12 @@ def lazy_import(modname, package=None):
     modname = '.'.join(package_path + [modname])
     package = None
 
-  mstg = ModuleStorage()
+  spec = importlib.util.find_spec(modname, package=package)
+  loader = importlib.util.LazyLoader(spec.loader)
+  spec.loader = loader
+  module = importlib.util.module_from_spec(spec)
+  # sys.modules[modname] = module
+  loader.exec_module(module)
 
-  def lazy():
-    module = mstg.module
-    if module is None:
-      mstg.module = module = importlib.import_module(modname, package=package)
-
-    return module
-
-  return lazy
+  return module
 
