@@ -14,7 +14,7 @@ def lazy_import(name, modname=None, package=None):
   def lazy():
     module = mstg.module
     if module is None:
-      if package == '.':
+      if package is not None and package == '.':
         parent_frame = inspect.currentframe().f_back
         package = getattr(inspect.getmodule(parent_frame), '__package__', None)
 
