@@ -1,3 +1,8 @@
+from . import lazy_import as lyi
+
+pyu = lyi.lazy_import('pyu', modname='utils', package='.')
+
+
 class Obj:
 
   def __init__(self, **kwargs):
@@ -34,7 +39,7 @@ class Obj:
     return ad
 
   def __repr__(self):
-    dstr = str(self.__dict__)
+    dstr = pyu.stri(self.__dict__)
 
     return f'{__class__.__name__}({dstr[1: -1]})'
 
