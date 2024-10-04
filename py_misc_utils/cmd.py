@@ -1,8 +1,8 @@
+import shlex
 import signal
 import string
 import subprocess
 import sys
-import urllib.parse as uparse
 
 from . import alog
 from . import inspect_utils as iu
@@ -20,7 +20,7 @@ def _handler(proc):
 def run(cmd, outfd=None, tmpl_env=None, **kwargs):
   if isinstance(cmd, str):
     tmpl_env = tmpl_env or iu.parent_globals()
-    cmd = [uparse.unquote(x) for x in string.Template(cmd).substitute(tmpl_env).split()]
+    cmd = shlex.split(string.Template(cmd).substitute(tmpl_env))
 
   outfd = outfd or sys.stdout
 
