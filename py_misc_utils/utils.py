@@ -29,7 +29,7 @@ import numpy as np
 from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
-from . import obj import Obj
+from . import obj
 from . import traceback as tb
 
 
