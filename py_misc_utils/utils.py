@@ -994,21 +994,23 @@ def sleep_until(date, msg=None):
 
 _SPLIT_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
 
-def split(data, split_chars, split_map=None, esc=None):
+def split(data, split_rx, split_map=None, esc=None):
   split_map = value_or(split_map, _SPLIT_MAP)
   esc = value_or(esc, '\\')
 
-  split_chars = set(split_chars)
+  seq, parts, pos = [], [], 0
   oc, cc, count = None, None, 0
-  seq, parts = [], []
-  for c in data:
+  while pos < len(data):
+    c = data[pos]
     if seq and seq[-1] == esc:
       seq[-1] = c
     elif count == 0:
-      if c in split_chars:
+      m = re.match(split_rx, data[pos:])
+      if m:
         if seq:
           parts.append(''.join(seq))
           seq = []
+        pos += m.end() - 1
       else:
         cc = split_map.get(c)
         if cc is not None:
@@ -1021,6 +1023,7 @@ def split(data, split_chars, split_map=None, esc=None):
       elif c == oc:
         count += 1
       seq.append(c)
+    pos += 1
 
   if seq:
     parts.append(''.join(seq))
@@ -1029,7 +1032,7 @@ def split(data, split_chars, split_map=None, esc=None):
 
 
 def whitespace_split(data, split_map=None, esc=None):
-  return split(data, ' \t\r\n', split_map=split_map, esc=esc)
+  return split(data, r'\s+', split_map=split_map, esc=esc)
 
 
 _BOOL_MAP = {
