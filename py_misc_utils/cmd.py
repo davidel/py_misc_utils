@@ -1,4 +1,3 @@
-import inspect
 import signal
 import string
 import subprocess
@@ -6,8 +5,8 @@ import sys
 import urllib.parse as uparse
 
 from . import alog
+from . import inspect_utils as iu
 from . import signal as sgn
-from . import traceback as tb
 
 
 def _handler(proc):
@@ -20,7 +19,7 @@ def _handler(proc):
 
 def run(cmd, outfd=None, tmpl_env=None, **kwargs):
   if isinstance(cmd, str):
-    tmpl_env = tmpl_env or tb.get_frame(1).f_globals
+    tmpl_env = tmpl_env or iu.parent_globals()
     cmd = [uparse.unquote(x) for x in string.Template(cmd).substitute(tmpl_env).split()]
 
   outfd = outfd or sys.stdout

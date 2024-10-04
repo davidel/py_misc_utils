@@ -70,14 +70,20 @@ def fetch_args(func, locs):
   return args, kwargs
 
 
-def parent_locals(level=1):
-  frame = tb.get_frame(level + 1)
+def parent_locals(level=0):
+  frame = tb.get_frame(level + 2)
 
   return frame.f_locals
 
 
-def parent_coords(level=1):
-  frame = tb.get_frame(level + 1)
+def parent_globals(level=0):
+  frame = tb.get_frame(level + 2)
+
+  return frame.f_globals
+
+
+def parent_coords(level=0):
+  frame = tb.get_frame(level + 2)
 
   return frame.f_code.co_filename, frame.f_lineno
 
