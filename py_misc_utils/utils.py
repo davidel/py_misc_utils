@@ -888,10 +888,6 @@ def template_replace(st, vals=None, lookup_fn=None, delim=None):
   return _Template(st).substitute(_FnDict(lookup_fn))
 
 
-def strip_split(svalue, delim, maxsplit=-1):
-  return [x.strip() for x in svalue.split(delim, maxsplit=maxsplit)]
-
-
 def compute_shape(data):
   sp = get_property(data, 'shape')
   if sp is not None:
