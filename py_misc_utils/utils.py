@@ -296,14 +296,12 @@ def state_override(obj, state, keys):
         setattr(obj, key, sv)
 
 
-def resplit(csstr, sep, drop_empty=True):
-  parts = re.split(r'\s*' + sep + r'\s*', csstr)
-
-  return list(filter(None, parts)) if drop_empty else parts
+def resplit(csstr, sep):
+  return split(csstr, r'\s*' + sep + r'\s*')
 
 
-def comma_split(csstr, drop_empty=True):
-  return resplit(csstr, ',', drop_empty=drop_empty)
+def comma_split(csstr):
+  return resplit(csstr, ',')
 
 
 def genhash(v):
@@ -992,10 +990,10 @@ def sleep_until(date, msg=None):
     time.sleep(date.timestamp() - now.timestamp())
 
 
-_SPLIT_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
+_QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
 
-def split(data, split_rx, split_map=None, esc=None):
-  split_map = value_or(split_map, _SPLIT_MAP)
+def split(data, split_rx, quote_map=None, esc=None):
+  quote_map = value_or(quote_map, _QUOTE_MAP)
   esc = value_or(esc, '\\')
 
   seq, parts, pos = [], [], 0
@@ -1012,7 +1010,7 @@ def split(data, split_rx, split_map=None, esc=None):
           seq = []
         pos += m.end() - 1
       else:
-        cc = split_map.get(c)
+        cc = quote_map.get(c)
         if cc is not None:
           oc = c if c != cc else None
           count += 1
@@ -1031,8 +1029,19 @@ def split(data, split_rx, split_map=None, esc=None):
   return tuple(parts)
 
 
-def whitespace_split(data, split_map=None, esc=None):
-  return split(data, r'\s+', split_map=split_map, esc=esc)
+def whitespace_split(data, quote_map=None, esc=None):
+  return split(data, r'\s+', quote_map=quote_map, esc=esc)
+
+
+def unquote(data, quote_map=None):
+  quote_map = value_or(quote_map, _QUOTE_MAP)
+  if len(data) >= 2:
+    cc = quote_map.get(data[0])
+    if cc == data[-1]:
+      return data[1: -1]
+
+  return data
+
 
 
 _BOOL_MAP = {
