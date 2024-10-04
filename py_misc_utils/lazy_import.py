@@ -2,10 +2,12 @@ import importlib.util
 import inspect
 import sys
 
+from . import traceback as tb
+
 
 def lazy_import(modname, package=None):
   if package.startswith('.'):
-    parent_frame = inspect.currentframe().f_back
+    parent_frame = tb.get_frame(1)
     parent_packages = inspect.getmodule(parent_frame).__package__.split('.')
     package_path = parent_packages[: len(parent_packages) - len(package) + 1]
     modname = '.'.join(package_path + [modname])

@@ -29,7 +29,8 @@ import numpy as np
 from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
-from .obj import Obj
+from . import obj import Obj
+from . import traceback as tb
 
 
 class _None:
@@ -65,7 +66,7 @@ def enum_values(obj):
 
 
 def fname():
-  return inspect.currentframe().f_back.f_code.co_name
+  return tb.get_frame(1).f_code.co_name
 
 
 def cname(obj):
@@ -484,7 +485,7 @@ class StringTable:
 
 
 def make_object(**kwargs):
-  return Obj(**kwargs)
+  return obj.Obj(**kwargs)
 
 
 def make_object_recursive(**kwargs):

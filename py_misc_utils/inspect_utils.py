@@ -2,6 +2,8 @@ import inspect
 import sys
 import types
 
+from . import traceback as tb
+
 
 def _fn_lookup(frame, name):
   xns, xname = None, name
@@ -29,13 +31,13 @@ def _fn_lookup(frame, name):
 
 def get_caller_function(back=0, frame=None):
   if frame is None:
-    frame = get_back_frame(back + 1)
+    frame = tb.get_frame(back + 1)
 
   return _fn_lookup(frame, frame.f_code.co_qualname)
 
 
 def current_module():
-  return inspect.getmodule(inspect.currentframe().f_back)
+  return inspect.getmodule(tb.get_frame(1))
 
 
 def fetch_args(func, locs):
@@ -68,23 +70,14 @@ def fetch_args(func, locs):
   return args, kwargs
 
 
-def get_back_frame(level):
-  frame = inspect.currentframe()
-  while frame is not None and level >= 0:
-    frame = frame.f_back
-    level -= 1
-
-  return frame
-
-
 def parent_locals(level=1):
-  frame = get_back_frame(level + 1)
+  frame = tb.get_frame(level + 1)
 
   return frame.f_locals
 
 
 def parent_coords(level=1):
-  frame = get_back_frame(level + 1)
+  frame = tb.get_frame(level + 1)
 
   return frame.f_code.co_filename, frame.f_lineno
 

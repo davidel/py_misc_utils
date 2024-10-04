@@ -18,19 +18,19 @@ else:
 
 
 def get_frame(n=0):
-  f = _get_frame().f_back
-  while n > 0 and f is not None:
-    f = f.f_back
+  frame = _get_frame().f_back
+  while n > 0 and frame is not None:
+    frame = frame.f_back
     n -= 1
 
-  return f
+  return frame
 
 
-def walk_stack(f=None):
-  if f is None:
-    f = _get_frame().f_back
+def walk_stack(frame=None):
+  if frame is None:
+    frame = get_frame(1)
 
-  while f is not None:
-    yield f
-    f = f.f_back
+  while frame is not None:
+    yield frame
+    frame = frame.f_back
 
