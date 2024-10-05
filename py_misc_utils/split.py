@@ -64,7 +64,7 @@ def split(data, split_rx, quote_map=None):
       tq = qstack[-1]
       if c == tq.closec:
         qstack.pop()
-      elif tq.nest_ok and cc := quote_map.get(c):
+      elif tq.nest_ok and (cc := quote_map.get(c)):
         qstack.append(_Quote(cc, c != cc))
       seq.append(c)
       pos += 1
