@@ -75,11 +75,11 @@ def split(data, split_rx, quote_map=None):
           parts.append(''.join(seq))
           seq = ['']
       elif kpos < len(data):
-        if kpos - 1 > pos:
-          c = data[kpos - 1]
+        c = data[kpos]
         if cc := quote_map.get(c):
           qstack.append(_Quote(cc, c != cc))
         seq.append(c)
+        kpos += 1
       pos = max(kpos, pos + 1)
     else:
       tq = qstack[-1]
