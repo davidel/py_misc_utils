@@ -4,13 +4,33 @@ import re
 from . import assert_checks as tas
 
 
+_Quote = collections.namedtuple('Quote', 'closec, nest_ok')
+
+
+class _Skipper:
+
+  def __init__(self, quote_rx):
+    self.quote_rx = quote_rx
+    self.next_pos = 0
+
+  def skip(self, data, pos):
+    if pos >= self.next_pos:
+      m = re.search(self.quote_rx, data)
+      if m:
+        self.next_pos = pos + m.start()
+      else:
+        self.next_pos = pos + len(data)
+
+    return self.next_pos - pos
+
+
 def _build_skiprx(qmap):
   stopvals = sorted(qmap.keys())
 
   return re.compile(r'[\\' + ''.join([rf'\{c}' for c in stopvals]) + ']')
 
 
-def _split_forward(data, pos, split_rx, quote_rx, seq):
+def _split_forward(data, pos, split_rx, skipper, seq):
   pdata = data[pos:]
 
   xm = re.search(split_rx, pdata)
@@ -19,9 +39,9 @@ def _split_forward(data, pos, split_rx, quote_rx, seq):
   else:
     seq_pos, next_pos = 0, 0
 
-  km = re.search(quote_rx, pdata)
-  if km and km.start() < seq_pos:
-    seq_pos = next_pos = km.start()
+  skip_pos = skipper.skip(pdata, pos)
+  if skip_pos < seq_pos:
+    seq_pos = next_pos = skip_pos
     xm = None
 
   if seq_pos:
@@ -29,8 +49,6 @@ def _split_forward(data, pos, split_rx, quote_rx, seq):
 
   return pos + next_pos, xm is not None
 
-
-_Quote = collections.namedtuple('Quote', 'closec, nest_ok')
 
 _QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']', '<': '>'}
 _QUOTE_RX = _build_skiprx(_QUOTE_MAP)
@@ -42,6 +60,7 @@ def split(data, split_rx, quote_map=None):
     quote_rx = _build_skiprx(quote_map)
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
+  skipper = _Skipper(quote_rx)
 
   pos, qstack, seq, parts = 0, [], [], []
   while pos < len(data):
@@ -50,7 +69,7 @@ def split(data, split_rx, quote_map=None):
       seq[-1] = c
       pos += 1
     elif not qstack:
-      kpos, is_split = _split_forward(data, pos, split_rx, quote_rx, seq)
+      kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
       if is_split:
         if seq:
           parts.append(''.join(seq))
