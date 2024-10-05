@@ -28,13 +28,13 @@ def _split_forward(data, pos, split_rx, skip_rx, seq):
 
 
 _QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
-_SKIP_QUOTE = _build_skiprx(_QUOTE_MAP)
+_QUOTE_RX = _build_skiprx(_QUOTE_MAP)
 
 def split(data, split_rx, quote_map=None):
   quote_map = _QUOTE_MAP if quote_map is None else quote_map
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
-  skip_rx = _SKIP_QUOTE if quote_map is _QUOTE_MAP else _build_skiprx(quote_map)
+  skip_rx = _QUOTE_RX if quote_map is _QUOTE_MAP else _build_skiprx(quote_map)
 
   seq, parts = [], []
   pos, oc, cc, count = 0, None, None, 0
