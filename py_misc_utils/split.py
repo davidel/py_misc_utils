@@ -27,6 +27,14 @@ def _split_forward(data, pos, split_rx, quote_rx, seq):
   return pos + next_pos, xm is not None
 
 
+class Quote:
+
+  def __init__(self, openc, closec):
+    self.openc = openc
+    self.closec = closec
+    self.count = 1
+
+
 _QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
 _QUOTE_RX = _build_skiprx(_QUOTE_MAP)
 
@@ -38,14 +46,13 @@ def split(data, split_rx, quote_map=None):
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
 
-  seq, parts = [], []
-  pos, oc, cc, count = 0, None, None, 0
+  pos, qstack, seq, parts = 0, [], [], []
   while pos < len(data):
     c = data[pos]
     if seq and seq[-1] == '\\':
       seq[-1] = c
       pos += 1
-    elif count == 0:
+    elif not qstack:
       kpos, is_split = _split_forward(data, pos, split_rx, quote_rx, seq)
       if is_split:
         if seq:
@@ -56,15 +63,17 @@ def split(data, split_rx, quote_map=None):
           c = data[kpos - 1]
         cc = quote_map.get(c)
         if cc is not None:
-          oc = c if c != cc else None
-          count += 1
+          qstack.append(Quote(c if c != cc else None, cc))
         seq.append(c)
       pos = max(kpos, pos + 1)
     else:
-      if c == cc:
-        count -= 1
-      elif c == oc:
-        count += 1
+      tq = qstack[-1]
+      if c == tq.closec:
+        tq.count -= 1
+        if not tq.count:
+          qstack.pop()
+      elif c == tq.openc:
+        tq.count += 1
       seq.append(c)
       pos += 1
 
