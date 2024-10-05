@@ -32,7 +32,7 @@ def _split_forward(data, pos, split_rx, quote_rx, seq):
 
 _Quote = collections.namedtuple('Quote', 'closec, nest_ok')
 
-_QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
+_QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']', '<': '>'}
 _QUOTE_RX = _build_skiprx(_QUOTE_MAP)
 
 def split(data, split_rx, quote_map=None):
