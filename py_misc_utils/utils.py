@@ -29,6 +29,7 @@ from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
 from . import obj
+from . import split as sp
 from . import traceback as tb
 
 
@@ -296,11 +297,15 @@ def state_override(obj, state, keys):
 
 
 def resplit(csstr, sep):
-  return split(csstr, r'\s*' + sep + r'\s*')
+  return sp.split(csstr, r'\s*' + sep + r'\s*')
 
 
 def comma_split(csstr):
   return resplit(csstr, ',')
+
+
+def ws_split(data):
+  return sp.split(data, r'\s+')
 
 
 def genhash(v):
@@ -985,49 +990,6 @@ def sleep_until(date, msg=None):
     time.sleep(date.timestamp() - now.timestamp())
 
 
-_QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
-
-def split(data, split_rx, quote_map=None, esc=None):
-  quote_map = value_or(quote_map, _QUOTE_MAP)
-  esc = value_or(esc, '\\')
-
-  seq, parts, pos = [], [], 0
-  oc, cc, count = None, None, 0
-  while pos < len(data):
-    c = data[pos]
-    if seq and seq[-1] == esc:
-      seq[-1] = c
-    elif count == 0:
-      m = re.match(split_rx, data[pos:])
-      if m:
-        if seq:
-          parts.append(''.join(seq))
-          seq = []
-        pos += m.end() - 1
-      else:
-        cc = quote_map.get(c)
-        if cc is not None:
-          oc = c if c != cc else None
-          count += 1
-        seq.append(c)
-    else:
-      if c == cc:
-        count -= 1
-      elif c == oc:
-        count += 1
-      seq.append(c)
-    pos += 1
-
-  if seq:
-    parts.append(''.join(seq))
-
-  return tuple(parts)
-
-
-def whitespace_split(data, quote_map=None, esc=None):
-  return split(data, r'\s+', quote_map=quote_map, esc=esc)
-
-
 def unquote(data, quote_map=None):
   quote_map = value_or(quote_map, _QUOTE_MAP)
   if len(data) >= 2:
@@ -1036,7 +998,6 @@ def unquote(data, quote_map=None):
       return data[1: -1]
 
   return data
-
 
 
 _BOOL_MAP = {
