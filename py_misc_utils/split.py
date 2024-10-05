@@ -1,3 +1,4 @@
+import collections
 import re
 
 
@@ -27,13 +28,7 @@ def _split_forward(data, pos, split_rx, quote_rx, seq):
   return pos + next_pos, xm is not None
 
 
-class Quote:
-
-  def __init__(self, openc, closec):
-    self.openc = openc
-    self.closec = closec
-    self.count = 1
-
+_Quote = collections.namedtuple('Quote', 'closec, nest_ok')
 
 _QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
 _QUOTE_RX = _build_skiprx(_QUOTE_MAP)
@@ -62,19 +57,15 @@ def split(data, split_rx, quote_map=None):
         if kpos - 1 > pos:
           c = data[kpos - 1]
         if cc := quote_map.get(c):
-          qstack.append(Quote(c if c != cc else None, cc))
+          qstack.append(_Quote(cc, c != cc))
         seq.append(c)
       pos = max(kpos, pos + 1)
     else:
       tq = qstack[-1]
       if c == tq.closec:
-        tq.count -= 1
-        if not tq.count:
-          qstack.pop()
-      elif c == tq.openc:
-        tq.count += 1
-      elif cc := quote_map.get(c):
-        qstack.append(Quote(c if c != cc else None, cc))
+        qstack.pop()
+      elif tq.nest_ok and cc := quote_map.get(c):
+        qstack.append(_Quote(cc, c != cc))
       seq.append(c)
       pos += 1
 
