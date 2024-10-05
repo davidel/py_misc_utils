@@ -656,7 +656,7 @@ def sign_extend(value, nbits):
 
 
 def range_split(n, split, minsize, reverse=False):
-  splits = list(range(n, split))
+  splits = list(range(0, n, split))
   if len(splits) > 1 and (n - splits[-1]) < minsize:
     splits.pop()
 
