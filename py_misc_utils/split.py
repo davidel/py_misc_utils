@@ -73,3 +73,13 @@ def split(data, split_rx, quote_map=None):
 
   return tuple(parts)
 
+
+def unquote(data, quote_map=None):
+  if len(data) >= 2:
+    quote_map = quote_map or _QUOTE_MAP
+    cc = quote_map.get(data[0])
+    if cc == data[-1]:
+      return data[1: -1]
+
+  return data
+

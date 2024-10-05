@@ -990,16 +990,6 @@ def sleep_until(date, msg=None):
     time.sleep(date.timestamp() - now.timestamp())
 
 
-def unquote(data, quote_map=None):
-  quote_map = value_or(quote_map, _QUOTE_MAP)
-  if len(data) >= 2:
-    cc = quote_map.get(data[0])
-    if cc == data[-1]:
-      return data[1: -1]
-
-  return data
-
-
 _BOOL_MAP = {
   'true': True,
   '1': True,
@@ -1038,17 +1028,16 @@ def infer_value(v, vtype=None):
   if re.match(float_rx, v):
     return float(v)
 
-  m = re.match(r'"(.*)"$', v) or re.match(r"'(.*)'$", v)
-  if m:
-    return m.group(1)
+  uv = sp.unquote(v)
+  if uv is not v:
+    if v[0] in '\'"':
+      return uv
+    elif v[0] in '[(':
+      values = []
+      for part in comma_split(uv):
+        values.append(infer_value(part.strip()))
 
-  m = re.match(r'\[(.*)\]$', v) or re.match(r'\((.*)\)$', v)
-  if m:
-    values = []
-    for part in comma_split(m.group(1)):
-      values.append(infer_value(part.strip()))
-
-    return tuple(values) if v.startswith('(') else values
+      return tuple(values) if v[0] == '(' else values
 
   sv = _SPECIAL_VALUES.get(v, NONE)
 
