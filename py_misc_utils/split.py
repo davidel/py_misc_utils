@@ -7,7 +7,7 @@ def _build_skiprx(qmap):
   return re.compile(r'[\\' + ''.join([rf'\{c}' for c in stopvals]) + ']')
 
 
-def _split_forward(data, pos, split_rx, skip_rx, seq):
+def _split_forward(data, pos, split_rx, quote_rx, seq):
   pdata = data[pos:]
 
   xm = re.search(split_rx, pdata)
@@ -16,7 +16,7 @@ def _split_forward(data, pos, split_rx, skip_rx, seq):
   else:
     seq_pos, next_pos = 0, 0
 
-  km = re.search(skip_rx, pdata)
+  km = re.search(quote_rx, pdata)
   if km and km.start() < seq_pos:
     seq_pos = next_pos = km.start()
     xm = None
@@ -31,10 +31,12 @@ _QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
 _QUOTE_RX = _build_skiprx(_QUOTE_MAP)
 
 def split(data, split_rx, quote_map=None):
-  quote_map = _QUOTE_MAP if quote_map is None else quote_map
+  if quote_map is None:
+    quote_map, quote_rx = _QUOTE_MAP, _QUOTE_RX
+  else:
+    quote_rx = _build_skiprx(quote_map)
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
-  skip_rx = _QUOTE_RX if quote_map is _QUOTE_MAP else _build_skiprx(quote_map)
 
   seq, parts = [], []
   pos, oc, cc, count = 0, None, None, 0
@@ -44,7 +46,7 @@ def split(data, split_rx, quote_map=None):
       seq[-1] = c
       pos += 1
     elif count == 0:
-      kpos, is_split = _split_forward(data, pos, split_rx, skip_rx, seq)
+      kpos, is_split = _split_forward(data, pos, split_rx, quote_rx, seq)
       if is_split:
         if seq:
           parts.append(''.join(seq))
