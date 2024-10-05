@@ -1,3 +1,4 @@
+import array
 import collections
 import re
 
@@ -45,7 +46,7 @@ def _split_forward(data, pos, split_rx, skipper, seq):
     xm = None
 
   if seq_pos:
-    seq.extend(tuple(pdata[: seq_pos]))
+    seq.extend(pdata[: seq_pos])
 
   return pos + next_pos, xm is not None
 
@@ -62,7 +63,7 @@ def split(data, split_rx, quote_map=None):
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
   skipper = _Skipper(quote_rx)
 
-  pos, qstack, seq, parts = 0, [], [], []
+  pos, qstack, parts, seq = 0, [], [], [], array.array('u')
   while pos < len(data):
     c = data[pos]
     if seq and seq[-1] == '\\':
@@ -71,9 +72,9 @@ def split(data, split_rx, quote_map=None):
     elif not qstack:
       kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
       if is_split:
-        if seq:
+        if seq or parts:
           parts.append(''.join(seq))
-          seq = ['']
+          seq = array.array('u')
       elif kpos < len(data):
         c = data[kpos]
         if cc := quote_map.get(c):
@@ -91,7 +92,7 @@ def split(data, split_rx, quote_map=None):
       pos += 1
 
   tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: {qstack}')
-  if seq:
+  if seq or parts:
     parts.append(''.join(seq))
 
   return tuple(parts)
