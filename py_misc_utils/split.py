@@ -16,7 +16,7 @@ def _split_forward(data, pos, split_rx, skip_rx, seq):
   else:
     seq_pos, next_pos = 0, 0
 
-  km = re.match(skip_rx, pdata)
+  km = re.search(skip_rx, pdata)
   if km and km.start() < seq_pos:
     seq_pos = next_pos = km.start()
     xm = None
