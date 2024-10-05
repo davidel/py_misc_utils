@@ -24,7 +24,7 @@ def _split_forward(data, pos, split_rx, skip_rx, seq):
   if seq_pos:
     seq.extend(tuple(pdata[: seq_pos]))
 
-  return pos + next_pos, xm
+  return pos + next_pos, xm is not None
 
 
 _QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']'}
@@ -44,8 +44,8 @@ def split(data, split_rx, quote_map=None):
       seq[-1] = c
       pos += 1
     elif count == 0:
-      kpos, xm = _split_forward(data, pos, split_rx, skip_rx, seq)
-      if xm:
+      kpos, is_split = _split_forward(data, pos, split_rx, skip_rx, seq)
+      if is_split:
         if seq:
           parts.append(''.join(seq))
           seq = ['']
