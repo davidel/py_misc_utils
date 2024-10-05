@@ -61,8 +61,7 @@ def split(data, split_rx, quote_map=None):
       elif kpos < len(data):
         if kpos - 1 > pos:
           c = data[kpos - 1]
-        cc = quote_map.get(c)
-        if cc is not None:
+        if cc := quote_map.get(c):
           qstack.append(Quote(c if c != cc else None, cc))
         seq.append(c)
       pos = max(kpos, pos + 1)
@@ -74,6 +73,8 @@ def split(data, split_rx, quote_map=None):
           qstack.pop()
       elif c == tq.openc:
         tq.count += 1
+      elif cc := quote_map.get(c):
+        qstack.append(Quote(c if c != cc else None, cc))
       seq.append(c)
       pos += 1
 
