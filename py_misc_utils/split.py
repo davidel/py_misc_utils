@@ -1,6 +1,8 @@
 import collections
 import re
 
+from . import assert_checks as tas
+
 
 def _build_skiprx(qmap):
   stopvals = sorted(qmap.keys())
@@ -69,6 +71,7 @@ def split(data, split_rx, quote_map=None):
       seq.append(c)
       pos += 1
 
+  tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: {qstack}')
   if seq:
     parts.append(''.join(seq))
 
