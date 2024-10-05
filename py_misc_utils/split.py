@@ -63,7 +63,7 @@ def split(data, split_rx, quote_map=None):
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
   skipper = _Skipper(quote_rx)
 
-  pos, qstack, parts, seq = 0, [], [], [], array.array('u')
+  pos, qstack, parts, seq = 0, [], [], array.array('u')
   while pos < len(data):
     c = data[pos]
     if seq and seq[-1] == '\\':
