@@ -4,7 +4,7 @@ import re
 def _build_skiprx(qmap):
   stopvals = sorted(qmap.keys())
 
-  return re.compile('[\\\\' + ''.join([f'\\{c}' for c in stopvals]) + ']')
+  return re.compile(r'[\\' + ''.join([rf'\{c}' for c in stopvals]) + ']')
 
 
 def _split_forward(data, pos, split_rx, skip_rx, seq):
