@@ -73,7 +73,7 @@ def split(data, split_rx, quote_map=None):
       kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
       if is_split:
         if seq or parts:
-          parts.append(''.join(seq))
+          parts.append(seq.tounicode())
           seq = array.array('u')
       elif kpos < len(data):
         c = data[kpos]
@@ -93,7 +93,7 @@ def split(data, split_rx, quote_map=None):
 
   tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: {qstack}')
   if seq or parts:
-    parts.append(''.join(seq))
+    parts.append(seq.tounicode())
 
   return tuple(parts)
 
