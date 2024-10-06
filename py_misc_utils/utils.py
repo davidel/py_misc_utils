@@ -438,7 +438,7 @@ def assert_instance(msg, t, ta):
     else:
       parts.append(f'a {cname(ta)}')
 
-    fatal(''.join(parts))
+    alog.xraise(ValueError, ''.join(parts))
 
 
 def is_namedtuple(obj):
@@ -705,7 +705,7 @@ def squeeze(shape, keep_dims=0, sdir=MAJOR):
     while len(sshape) > keep_dims and sshape[-1] == 1:
       sshape = sshape[: -1]
   else:
-    fatal(f'Unknown squeeze direction: {sdir}')
+    alog.xraise(ValueError, f'Unknown squeeze direction: {sdir}')
 
   return type(shape)(sshape)
 
@@ -782,8 +782,7 @@ def seq_rewrite(seq, sd):
 
 def varint_encode(v, encbuf):
   if isinstance(v, (int, np.integer)):
-    if v < 0:
-      raise RuntimeError(f'Cannot encode negative values: {v}')
+    tas.check_ge(v, 0, msg=f'Cannot encode negative values: {v}')
 
     cv = v
     while (cv & ~0x7f) != 0:
@@ -795,7 +794,7 @@ def varint_encode(v, encbuf):
     for xv in v:
       varint_encode(xv, encbuf)
   else:
-    raise RuntimeError(f'Unsupported type: {v} ({type(v)})')
+    alog.xraise(RuntimeError, f'Unsupported type: {v} ({type(v)})')
 
 
 def _varint_decode(encbuf, pos):
@@ -808,8 +807,10 @@ def _varint_decode(encbuf, pos):
 
     if (b & 0x80) == 0:
       break
+    # If check+raise directly instead of assert_checks API to save cycles within
+    # tight loop.
     if cpos >= len(encbuf):
-      fatal(f'Invalid varint encode buffer content')
+      alog.xraise(ValueError, f'Invalid varint encode buffer content')
 
   return value, cpos
 
@@ -872,7 +873,7 @@ class _FnDict:
   def dict_lookup_fn(d):
     def fn(k, defval=None):
       v = d.get(k, defval)
-      if v is None: fatal(f'String template replace missing value for key: {k}')
+      tas.check_is_not_none(v, msg=f'String template replace missing value for key: {k}')
 
       return v
 
@@ -1208,7 +1209,7 @@ def is_newer_file(path, other):
   return os.stat(path).st_mtime > os.stat(other).st_mtime
 
 
-def link_or_copy(src_path, dest_path, copy_stat=True):
+def link_or_copy(src_path, dest_path):
   try:
     os.link(src_path, dest_path)
 
@@ -1226,8 +1227,7 @@ def link_or_copy(src_path, dest_path, copy_stat=True):
                f'Error was: {ex}')
 
   shutil.copyfile(src_path, dest_path)
-  if copy_stat:
-    shutil.copystat(src_path, dest_path)
+  shutil.copystat(src_path, dest_path)
 
   return dest_path
 
