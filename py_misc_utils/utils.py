@@ -807,19 +807,21 @@ def _varint_decode(encbuf, pos):
 
     if (b & 0x80) == 0:
       break
-    # If check+raise directly instead of assert_checks API to save cycles within
-    # tight loop.
-    if cpos >= len(encbuf):
-      alog.xraise(ValueError, f'Invalid varint encode buffer content')
 
   return value, cpos
 
 
 def varint_decode(encbuf):
   values, cpos = [], 0
-  while cpos < len(encbuf):
-    value, cpos = _varint_decode(encbuf, cpos)
-    values.append(value)
+  try:
+    while cpos < len(encbuf):
+      value, cpos = _varint_decode(encbuf, cpos)
+      values.append(value)
+  except IndexError:
+    # Handle out-of-range buffer access outside, to avoid checks within the inner loop.
+    enc_data = ','.join(f'0x{x:02x}' for x in encbuf[cpos: cpos + 10)
+    alog.xraise(ValueError,
+                f'Invalid varint encoded buffer content at offset {cpos}: {enc_data} ...')
 
   return values
 
@@ -1036,7 +1038,7 @@ def infer_value(v, vtype=None):
     elif v[0] in '[(':
       values = []
       for part in comma_split(uv):
-        values.append(infer_value(part.strip()))
+        values.append(infer_value(part))
 
       return tuple(values) if v[0] == '(' else values
 
@@ -1048,7 +1050,7 @@ def infer_value(v, vtype=None):
 def parse_dict(data, ktype=str, vtype=None, allow_args=False):
   ma_dict, ma_args = dict(), []
   for part in comma_split(data):
-    parts = [x.strip() for x in resplit(part, '=')]
+    parts = resplit(part, '=')
     if len(parts) == 2:
       name, value = parts
       ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
