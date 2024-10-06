@@ -819,7 +819,7 @@ def varint_decode(encbuf):
       values.append(value)
   except IndexError:
     # Handle out-of-range buffer access outside, to avoid checks within the inner loop.
-    enc_data = ','.join(f'0x{x:02x}' for x in encbuf[cpos: cpos + 10)
+    enc_data = ','.join(f'0x{x:02x}' for x in encbuf[cpos: cpos + 10])
     alog.xraise(ValueError,
                 f'Invalid varint encoded buffer content at offset {cpos}: {enc_data} ...')
 
