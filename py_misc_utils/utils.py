@@ -804,7 +804,6 @@ def _varint_decode(encbuf, pos):
     value |= (b & 0x7f) << nbits
     nbits += 7
     cpos += 1
-
     if (b & 0x80) == 0:
       break
 
