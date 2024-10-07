@@ -232,10 +232,6 @@ def mget(d, *args, as_dict=False):
     return tuple(d.get(f) for f in margs)
 
 
-def envs(*args, as_dict=False):
-  return mget(os.environ, *args, as_dict=as_dict)
-
-
 def get_property(obj, name, defval=None):
   p = getattr(obj, name, NONE)
   if p is NONE:
@@ -684,6 +680,18 @@ def getenv(name, dtype=None, defval=None):
 
 def env(name, defval, vtype=None):
   return getenv(name, dtype=vtype, defval=defval)
+
+
+def envs(*args, as_dict=False):
+  return mget(os.environ, *args, as_dict=as_dict)
+
+
+def import_env(dest, *args):
+  ivars = envs(*args, as_dict=True)
+  for k, v in ivars.items():
+    dest[k] = infer_value(v)
+
+  return dest
 
 
 def map_env(g, prefix=''):
