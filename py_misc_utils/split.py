@@ -38,7 +38,7 @@ def _split_forward(data, pos, split_rx, skipper, seq):
   if xm:
     seq_pos, next_pos = xm.start(), xm.end()
   else:
-    seq_pos, next_pos = 0, 0
+    seq_pos = next_pos = len(pdata)
 
   skip_pos = skipper.skip(pdata, pos)
   if skip_pos < seq_pos:
