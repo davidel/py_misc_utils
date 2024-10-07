@@ -1,3 +1,4 @@
+import os
 import shlex
 import signal
 import string
@@ -7,6 +8,7 @@ import sys
 from . import alog
 from . import inspect_utils as iu
 from . import signal as sgn
+from . import template_replace as tr
 
 
 def _handler(proc):
@@ -17,10 +19,21 @@ def _handler(proc):
   return sig_handler
 
 
-def run(cmd, outfd=None, tmpl_env=None, **kwargs):
+def _lookup_fn(tmpl_env, use_environ):
+  def lookup(key, defval=None):
+    value = tmpl_env.get(key)
+    if value is None and use_environ:
+      value = os.environ.get(key)
+
+  return lookup
+
+
+def run(cmd, outfd=None, tmpl_env=None, use_environ=None, **kwargs):
   if isinstance(cmd, str):
     tmpl_env = tmpl_env or iu.parent_globals()
-    cmd = shlex.split(string.Template(cmd).substitute(tmpl_env))
+    use_environ = False if use_environ is None else use_environ
+    cmd = shlex.split(tr.template_replace(cmd,
+                                          lookup_fn=_lookup_fn(tmpl_env, use_environ)))
 
   outfd = outfd or sys.stdout
 
