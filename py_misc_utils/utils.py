@@ -231,6 +231,10 @@ def mget(d, *args, as_dict=False):
     return tuple(d.get(f) for f in margs)
 
 
+def envs(*args, as_dict=False):
+  return mget(os.environ, *args, as_dict=as_dict)
+
+
 def get_property(obj, name, defval=None):
   p = getattr(obj, name, NONE)
   if p is NONE:
