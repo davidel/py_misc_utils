@@ -25,6 +25,8 @@ def _lookup_fn(tmpl_env, use_environ):
     if value is None and use_environ:
       value = os.environ.get(key)
 
+    return value
+
   return lookup
 
 
