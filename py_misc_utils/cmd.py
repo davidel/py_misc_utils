@@ -6,7 +6,6 @@ import subprocess
 import sys
 
 from . import alog
-from . import inspect_utils as iu
 from . import signal as sgn
 from . import template_replace as tr
 
@@ -19,23 +18,23 @@ def _handler(proc):
   return sig_handler
 
 
-def _lookup_fn(tmpl_env, use_environ):
+def _lookup_fn(tmpl_envs):
   def lookup(key, defval=None):
-    value = tmpl_env.get(key)
-    if value is None and use_environ:
-      value = os.environ.get(key)
+    for env in tmpl_envs:
+      value = env.get(key)
+      if value is not None:
+        return value
 
-    return value
+    alog.xraise(KeyError, f'Unable to lookup "{key}" while substituting command ' \
+                f'line arguments')
 
   return lookup
 
 
-def run(cmd, outfd=None, tmpl_env=None, use_environ=None, **kwargs):
+def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   if isinstance(cmd, str):
-    tmpl_env = tmpl_env or iu.parent_globals()
-    use_environ = False if use_environ is None else use_environ
-    cmd = shlex.split(tr.template_replace(cmd,
-                                          lookup_fn=_lookup_fn(tmpl_env, use_environ)))
+    tmpl_envs = tmpl_envs or (os.environ,)
+    cmd = shlex.split(tr.template_replace(cmd, lookup_fn=_lookup_fn(tmpl_envs)))
 
   outfd = outfd or sys.stdout
 
