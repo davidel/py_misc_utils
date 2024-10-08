@@ -46,8 +46,7 @@ def pickle_proto():
 
 
 def cache_dir(path=None):
-  if path is None:
-    return os.path.join(os.getenv('HOME', '.'), '.cache')
+  path = path or os.path.join(os.getenv('HOME', '.'), '.cache')
 
   return os.path.normpath(os.path.expanduser(path))
 
