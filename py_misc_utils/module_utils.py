@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
 import inspect
+import operator
 import os
 import sys
 
@@ -135,14 +136,14 @@ def import_module(name_or_path,
 
 def import_module_names(modname, names=None):
   if names is None:
-    npos = modname.rfind('.')
+    npos = modname.find('.')
     tas.check_gt(npos, 0)
     names = [modname[npos + 1:]]
     modname = modname[: npos]
 
-  mod = importlib.import_module(modname)
+  module = importlib.import_module(modname)
 
-  return tuple(getattr(mod, n) for n in names)
+  return tuple(operator.attrgetter(n)(module) for n in names)
 
 
 def module_file(module):
