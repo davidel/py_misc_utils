@@ -15,14 +15,15 @@ class _Skipper:
     self.next_pos = 0
 
   def skip(self, data, pos):
-    if pos >= self.next_pos:
+    next_pos = self.next_pos - pos
+    if next_pos <= 0:
       m = re.search(self.quote_rx, data)
       if m:
-        self.next_pos = pos + m.start()
+        self.next_pos, next_pos = pos + m.start(), m.start()
       else:
-        self.next_pos = pos + len(data)
+        self.next_pos, next_pos = pos + len(data), len(data)
 
-    return self.next_pos - pos
+    return next_pos
 
 
 def _build_skiprx(qmap):
