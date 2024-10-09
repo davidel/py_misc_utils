@@ -73,9 +73,8 @@ def split(data, split_rx, quote_map=None):
     elif not qstack:
       kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
       if is_split:
-        if seq or parts:
-          parts.append(seq.tounicode())
-          seq = array.array('u')
+        parts.append(seq.tounicode())
+        seq = array.array('u')
       elif kpos < len(data):
         c = data[kpos]
         if cc := quote_map.get(c):
