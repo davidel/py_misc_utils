@@ -479,6 +479,21 @@ class CtxManager:
     return self._outfn(*exc)
 
 
+class CtxManagerWrapper:
+
+  def __init__(self, wrap_ctx, wrap_obj=None):
+    self._wrap_ctx = wrap_ctx
+    self._wrap_obj = wrap_obj
+
+  def __enter__(self):
+    wres = self._wrap_ctx.__enter__()
+
+    return wres if self._wrap_obj is None else self._wrap_obj
+
+  def __exit__(self, *exc):
+    return self._wrap_ctx.__exit__(*exc)
+
+
 class StringTable:
 
   def __init__(self):
