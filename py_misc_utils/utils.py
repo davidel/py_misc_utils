@@ -174,7 +174,9 @@ def _stri(l, d, float_fmt):
   elif isinstance(l, dict):
     result = '{' + ', '.join(f'{k}={_stri(v, d, float_fmt)}' for k, v in l.items()) + '}'
   elif hasattr(l, '__dict__'):
-    result = _stri(l.__dict__, d, float_fmt)
+    # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
+    drepr = _stri(l.__dict__, d, float_fmt)
+    result = f'{cname(l)}({drepr[1: -1]})'
   else:
     result = str(l)
 
