@@ -1037,19 +1037,21 @@ def infer_value(v, vtype=None):
         values.append(infer_value(part))
 
       return tuple(values) if v[0] == '(' else values
+    elif v[0] == '{':
+      return parse_dict(uv)
 
   sv = _SPECIAL_VALUES.get(v, NONE)
 
   return v if sv is NONE else sv
 
 
-def parse_dict(data, ktype=str, vtype=None, allow_args=False):
+def parse_dict(data, vtype=None, allow_args=False):
   ma_dict, ma_args = dict(), []
   for part in comma_split(data):
     parts = resplit(part, '=')
     if len(parts) == 2:
       name, value = parts
-      ma_dict[infer_value(name, vtype=ktype)] = infer_value(value, vtype=vtype)
+      ma_dict[name] = infer_value(value, vtype=vtype)
     elif len(parts) == 1:
       if not allow_args:
         alog.xraise(ValueError, f'Arguments parsing disabled: {data}')
