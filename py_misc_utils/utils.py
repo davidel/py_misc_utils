@@ -654,6 +654,8 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
 
 def unpack_n(l, n, defval=None):
+  l = as_sequence(l)
+
   return tuple(l[:n] if len(l) >= n else l + [defval] * (n - len(l)))
 
 
