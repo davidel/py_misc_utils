@@ -81,7 +81,7 @@ def cname(obj):
   return cls.__name__ if cls is not None else None
 
 
-def qual_cname(obj):
+def qual_name(obj):
   if inspect.isclass(obj) or inspect.isfunction(obj):
     ref = obj
   else:
