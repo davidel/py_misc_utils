@@ -82,14 +82,17 @@ def cname(obj):
 
 
 def qual_cname(obj):
-  cls = classof(obj)
-  if cls is not None:
-    module = cls.__module__
-    name = cls.__qualname__
-    if module is not None and module != '__builtin__':
-      name = module + '.' + name
+  if inspect.isclass(obj) or inspect.isfunction(obj):
+    ref = obj
+  else:
+    ref = obj.__class__
 
-    return name
+  module = ref.__module__
+  name = ref.__qualname__
+  if module is not None and module != '__builtin__':
+    name = module + '.' + name
+
+  return name
 
 
 def func_name(func):
