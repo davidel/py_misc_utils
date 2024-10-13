@@ -140,6 +140,8 @@ def import_module_names(modname, names=None):
     tas.check_gt(npos, 0)
     names = [modname[npos + 1:]]
     modname = modname[: npos]
+  else:
+    names = ut.expand_strings(name)
 
   module = importlib.import_module(modname)
 
