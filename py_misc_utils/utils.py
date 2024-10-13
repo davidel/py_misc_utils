@@ -82,13 +82,17 @@ def cname(obj):
 
 
 def qual_name(obj):
-  if inspect.isclass(obj) or inspect.isfunction(obj):
+  if (inspect.isclass(obj) or inspect.isfunction(obj) or
+      inspect.ismethod(obj) or inspect.ismodule(obj)):
     ref = obj
   else:
     ref = obj.__class__
 
-  module = ref.__module__
-  name = ref.__qualname__
+  module = getattr(ref, '__module__', None)
+  name = getattr(ref, '__qualname__', None)
+  if name is None:
+    name = getattr(ref, '__name__', None)
+    tas.check_is_not_none(name, msg=f'Unable to reference name: {ref}')
   if module is not None and module != '__builtin__':
     name = module + '.' + name
 
