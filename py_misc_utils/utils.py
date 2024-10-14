@@ -287,9 +287,9 @@ def dict_setmissing(d, **kwargs):
 def pop_kwargs(kwargs, names, args_key=None):
   xargs = kwargs.pop(args_key or '_', None)
   if xargs is not None:
-    args = [xargs.get(name) for name in as_sequence(names)]
+    args = [xargs.get(name) for name in expand_strings(names)]
   else:
-    args = [kwargs.pop(name, None) for name in as_sequence(names)]
+    args = [kwargs.pop(name, None) for name in expand_strings(names)]
 
   return tuple(args)
 
