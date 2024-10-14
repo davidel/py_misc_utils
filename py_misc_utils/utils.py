@@ -508,6 +508,9 @@ class StringTable:
   def __init__(self):
     self._tbl = dict()
 
+  def __len__(self):
+    return len(self._tbl)
+
   def add(self, s):
     x = self._tbl.get(s)
     if x is None:
