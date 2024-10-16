@@ -317,11 +317,25 @@ def resplit(csstr, sep):
 
 
 def comma_split(csstr):
-  return resplit(csstr, ',')
+  return sp.split(csstr, r'\s*,\s*')
 
 
 def ws_split(data):
   return sp.split(data, r'\s+')
+
+
+def name_values(base_name, values, force_expand=False):
+  names = []
+  if isinstance(values, (list, tuple)) or force_expand:
+    if len(values) == 1:
+      names.append((base_name, values[0]))
+    else:
+      for i, v in enumerate(values):
+        names.append((f'{base_name}.{i}', v))
+  else:
+    names.append((base_name, values))
+
+  return tuple(names)
 
 
 def genhash(v):
