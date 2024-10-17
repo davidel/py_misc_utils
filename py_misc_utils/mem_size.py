@@ -13,13 +13,13 @@ def register(otype, sizefn):
     _TYPES_SIZE[otype] = sizefn
 
 
-def std_sizefn(obj):
-  return sys.getsizeof(obj)
-
-
 def _get_sizefn(otype):
   with _LOCK:
     return _TYPES_SIZE.get(otype)
+
+
+def std_sizefn(obj):
+  return sys.getsizeof(obj)
 
 
 _SIZE_AWARE = {
