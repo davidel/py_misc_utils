@@ -248,6 +248,10 @@ def mget(d, *args, as_dict=False):
     return tuple(d.get(f) for f in margs)
 
 
+def getvar(obj, name, defval=None):
+  return obj.get(name, defval) if isinstance(obj, dict) else getattr(obj, name, defval)
+
+
 def get_property(obj, name, defval=None):
   p = getattr(obj, name, NONE)
   if p is NONE:
