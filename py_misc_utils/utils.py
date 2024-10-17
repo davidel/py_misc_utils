@@ -205,7 +205,7 @@ def _get_size(obj, seen):
 
   size = sys.getsizeof(obj)
   if isinstance(obj, dict):
-    size += sum(_get_size(v, seen) + get_size(k, seen) for k, v in obj.items())
+    size += sum(_get_size(v, seen) + _get_size(k, seen) for k, v in obj.items())
   elif hasattr(obj, '__dict__'):
     size += _get_size(obj.__dict__, seen)
   elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
