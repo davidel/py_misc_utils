@@ -158,42 +158,64 @@ def get_fn_kwargs(args, fn, prefix=None, roffset=None):
   return fnargs
 
 
-def _stri(l, d, float_fmt):
-  s = d.get(id(l), NONE)
-  if s is None:
+def _stri(obj, seen, float_fmt):
+  oid = id(obj)
+  sres = seen.get(oid, NONE)
+  if sres is None:
     return '...'
-  elif s is not NONE:
-    return s
+  elif sres is not NONE:
+    return sres
 
-  d[id(l)] = None
-  if isinstance(l, str):
-    result = f'"{l}"'
-  elif isinstance(l, float):
-    result = f'{l:{float_fmt}}'
-  elif isinstance(l, bytes):
-    result = l.decode()
-  elif is_namedtuple(l):
-    result = str(l)
-  elif isinstance(l, (tuple, list, types.GeneratorType)):
-    sl = ', '.join(_stri(x, d, float_fmt) for x in l)
+  seen[oid] = None
+  if isinstance(obj, str):
+    result = f'"{obj}"'
+  elif isinstance(obj, float):
+    result = f'{obj:{float_fmt}}'
+  elif isinstance(obj, bytes):
+    result = obj.decode()
+  elif is_namedtuple(obj):
+    result = str(obj)
+  elif isinstance(obj, (tuple, list, types.GeneratorType)):
+    sl = ', '.join(_stri(x, seen, float_fmt) for x in obj)
 
     result = '[' + sl + ']' if isinstance(l, list) else '(' + sl + ')'
-  elif isinstance(l, dict):
-    result = '{' + ', '.join(f'{k}={_stri(v, d, float_fmt)}' for k, v in l.items()) + '}'
-  elif hasattr(l, '__dict__'):
+  elif isinstance(obj, dict):
+    result = '{' + ', '.join(f'{k}={_stri(v, seen, float_fmt)}' for k, v in obj.items()) + '}'
+  elif hasattr(obj, '__dict__'):
     # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
-    drepr = _stri(l.__dict__, d, float_fmt)
+    drepr = _stri(obj.__dict__, seen, float_fmt)
     result = f'{cname(l)}({drepr[1: -1]})'
   else:
-    result = str(l)
+    result = str(obj)
 
-  d[id(l)] = result
+  seen[oid] = result
 
   return result
 
 
 def stri(l, float_fmt=None):
   return _stri(l, dict(), float_fmt or '.3e')
+
+
+def _get_size(obj, seen):
+  oid = id(obj)
+  if oid in seen:
+    return 0
+  seen.add(oid)
+
+  size = sys.getsizeof(obj)
+  if isinstance(obj, dict):
+    size += sum(_get_size(v, seen) + get_size(k, seen) for k, v in obj.items())
+  elif hasattr(obj, '__dict__'):
+    size += _get_size(obj.__dict__, seen)
+  elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+    size += sum(_get_size(x, seen) for x in obj)
+
+  return size
+
+
+def get_size(obj):
+  return _get_size(obj, set())
 
 
 def norm_slice(start, stop, size):
