@@ -197,33 +197,6 @@ def stri(l, float_fmt=None):
   return _stri(l, dict(), float_fmt or '.3e')
 
 
-_SIZE_AWARE = (str, bytes, bytearray, array.array, np.ndarray)
-
-def _get_size(obj, seen):
-  oid = id(obj)
-  if oid in seen:
-    return 0
-  seen.add(oid)
-
-  size = sys.getsizeof(obj)
-  if not isinstance(obj, _SIZE_AWARE):
-    if isinstance(obj, dict):
-      size += sum(_get_size(v, seen) + _get_size(k, seen) for k, v in obj.items())
-    elif ustg := getattr(obj, 'untyped_storage', None):
-      # Handle PyTorch tensors.
-      size += sys.getsizeof(ustg())
-    elif hasattr(obj, '__dict__'):
-      size += _get_size(obj.__dict__, seen)
-    elif hasattr(obj, '__iter__'):
-      size += sum(_get_size(x, seen) for x in obj)
-
-  return size
-
-
-def get_size(obj):
-  return _get_size(obj, set())
-
-
 def norm_slice(start, stop, size):
   if start is None:
     start = 0
