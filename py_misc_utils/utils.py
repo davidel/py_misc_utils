@@ -211,7 +211,7 @@ def _get_size(obj, seen):
       size += sum(_get_size(v, seen) + _get_size(k, seen) for k, v in obj.items())
     elif ustg := getattr(obj, 'untyped_storage', None):
       # Handle PyTorch tensors.
-      size += ustg()
+      size += sys.getsizeof(ustg())
     elif hasattr(obj, '__dict__'):
       size += _get_size(obj.__dict__, seen)
     elif hasattr(obj, '__iter__'):
