@@ -1,6 +1,6 @@
 import sys
 
-from . import utils as ut
+from . import context_managers as cm
 
 
 _STD_FILES = {
@@ -12,5 +12,5 @@ _STD_FILES = {
 def gen_open(path, *args, **kwargs):
   sfd = _STD_FILES.get(path)
 
-  return ut.NoOpCtxManager(sfd) if sfd is not None else open(path, *args, **kwargs)
+  return cm.NoOpCtxManager(sfd) if sfd is not None else open(path, *args, **kwargs)
 
