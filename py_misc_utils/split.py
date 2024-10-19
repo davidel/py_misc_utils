@@ -64,11 +64,19 @@ def split(data, split_rx, quote_map=None):
 
   pos, qstack, parts, seq = 0, [], [], array.array('u')
   while pos < len(data):
-    c = data[pos]
-    if seq and seq[-1] == '\\':
-      seq[-1] = c
+    if qstack:
+      c = data[pos]
+      if seq and seq[-1] == '\\':
+        seq[-1] = c
+      else:
+        tq = qstack[-1]
+        if c == tq.closec:
+          qstack.pop()
+        elif tq.nest_ok and (cc := quote_map.get(c)):
+          qstack.append(_Quote(cc, c != cc))
+        seq.append(c)
       pos += 1
-    elif not qstack:
+    else:
       kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
       if is_split:
         parts.append(seq.tounicode())
@@ -80,14 +88,6 @@ def split(data, split_rx, quote_map=None):
         seq.append(c)
         kpos += 1
       pos = max(kpos, pos + 1)
-    else:
-      tq = qstack[-1]
-      if c == tq.closec:
-        qstack.pop()
-      elif tq.nest_ok and (cc := quote_map.get(c)):
-        qstack.append(_Quote(cc, c != cc))
-      seq.append(c)
-      pos += 1
 
   tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
   if seq or parts:
