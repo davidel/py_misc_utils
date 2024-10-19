@@ -89,7 +89,7 @@ def split(data, split_rx, quote_map=None):
       seq.append(c)
       pos += 1
 
-  tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: {qstack}')
+  tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
   if seq or parts:
     parts.append(seq.tounicode())
 
