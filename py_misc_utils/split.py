@@ -18,10 +18,8 @@ class _Skipper:
     next_pos = self.next_pos - pos
     if next_pos <= 0:
       m = re.search(self.quote_rx, data)
-      if m:
-        self.next_pos, next_pos = pos + m.start(), m.start()
-      else:
-        self.next_pos, next_pos = pos + len(data), len(data)
+      next_pos = m.start() if m else len(data)
+      self.next_pos = pos + next_pos
 
     return next_pos
 
