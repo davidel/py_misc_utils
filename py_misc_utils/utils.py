@@ -45,10 +45,14 @@ def pickle_proto():
   return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
 
 
+def normpath(path):
+  return os.path.normpath(os.path.expanduser(path))
+
+
 def cache_dir(path=None):
   path = path or os.path.join(os.getenv('HOME', '.'), '.cache')
 
-  return os.path.normpath(os.path.expanduser(path))
+  return normpath(path)
 
 
 def make_ntuple(ntc, args):
