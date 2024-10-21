@@ -448,11 +448,11 @@ def load_config(cfg_file=None, **kwargs):
 
 
 def parse_config(cfg, **kwargs):
-  if os.path.exists(cfg):
+  if cfg.startswith('{'):
+    cfgd = json.loads(cfg)
+  elif os.path.exists(cfg):
     with open(cfg, mode='r') as fp:
       cfgd = yaml.safe_load(fp)
-  elif cfg.startswith('{'):
-    cfgd = json.loads(cfg)
   else:
     cfgd = parse_dict(cfg)
 
