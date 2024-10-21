@@ -46,7 +46,13 @@ def pickle_proto():
 
 
 def normpath(path):
-  return os.path.normpath(os.path.expanduser(path))
+  # Norm everything!
+  path = os.path.expanduser(path)
+  path = os.path.expandvars(path)
+  path = os.path.normpath(path)
+  path = os.path.normcase(path)
+
+  return path
 
 
 def cache_dir(path=None):
