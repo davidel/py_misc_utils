@@ -49,7 +49,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   if readfn is None:
     readfn = getattr(proc.stdout, 'readline', None)
 
-  with sgn.Signals((signal.SIGINT, signal.SIGTERM), _handler(proc)):
+  with sgn.Signals('INT, TERM', _handler(proc)):
     while True:
       data = readfn()
       if data:

@@ -1,3 +1,4 @@
+import re
 import signal as sgn
 import threading
 
@@ -68,7 +69,9 @@ def unsignal(sig, uhandler):
 class Signals:
 
   def __init__(self, sig, handler, prio=None):
-    if not isinstance(sig, (list, tuple)):
+    if isinstance(sig, str):
+      sig = [getattr(sgn, f'SIG{s.strip().upper()}') for s in re.split(r'\s*,\s*', sig)]
+    elif not isinstance(sig, (list, tuple)):
       sig = [sig]
     if not isinstance(handler, (list, tuple)):
       handler = [handler] * len(sig)
