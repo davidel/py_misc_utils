@@ -664,6 +664,15 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
   return tuple(env[s] for s in as_sequence(syms))
 
 
+def run(path, fnname, *args, compile_args=None, **kwargs):
+  with open(path, mode='rt') as cfd:
+    code = cfd.read()
+
+  fn, = compile(code, fnname, **(compile_args or dict()))
+
+  return fn(*args, **kwargs)
+
+
 def unpack_n(l, n, defval=None):
   l = as_sequence(l)
 
