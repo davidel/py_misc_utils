@@ -664,9 +664,11 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
   return tuple(env[s] for s in expand_strings(syms))
 
 
-def run(path, fnname, *args, compile_args=None, **kwargs):
+def run(path, fnname, *args, **kwargs):
   with open(path, mode='rt') as cfd:
     code = cfd.read()
+
+  compile_args, = pop_kwargs(kwargs, 'compile_args')
 
   fn, = compile(code, fnname, **(compile_args or dict()))
 
