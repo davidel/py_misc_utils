@@ -661,7 +661,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
   exec(code, env)
 
-  return tuple(env[s] for s in as_sequence(syms))
+  return tuple(env[s] for s in expand_strings(syms))
 
 
 def run(path, fnname, *args, compile_args=None, **kwargs):
