@@ -30,19 +30,13 @@ def maybe_open(path, *args, **kwargs):
 
 class TempFile:
 
-  def __init__(self, dir=None, **kwargs):
-    print(f'DIR is {dir}')
+  def __init__(self, dir_path=None, **kwargs):
+    dir_path = dir_path or tempfile.gettempdir()
 
-    dir = dir or tempfile.gettempdir()
-
-    print(f'DIR is {dir}')
-
-    path = os.path.join(dir, str(uuid.uuid4()))
-
-    print(f'PATH is {path}')
+    path = os.path.join(dir_path, str(uuid.uuid4()))
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
-    self._dir, self._kwargs = dir, kwargs
+    self._dir_path, self._kwargs = dir_path, kwargs
     self._fd, self._delete = None, True
 
   def open(self):
@@ -70,7 +64,7 @@ class TempFile:
         os.replace(self._path, fpath)
       else:
         # File systems should really have replace() ...
-        tmp_path = os.path.join(self._dir, str(uuid.uuid4()))
+        tmp_path = os.path.join(self._dir_path, str(uuid.uuid4()))
         self._fs.mv(fpath, tmp_path)
         self._fs.mv(self._path, fpath)
         self._fs.rm(tmp_path)

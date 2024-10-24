@@ -11,7 +11,7 @@ class FileOverwrite:
     self._temp = None
 
   def __enter__(self):
-    self._temp = gfs.TempFile(dir=os.path.dirname(self._path), mode=self._mode)
+    self._temp = gfs.TempFile(dir_path=os.path.dirname(self._path), mode=self._mode)
 
     return self._temp.open()
 
