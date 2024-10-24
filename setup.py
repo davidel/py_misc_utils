@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='py_misc_utils',
-      version='0.1.21',
+      version='0.1.22',
       description='Miscellaneous Utility APIs',
       author='Davide Libenzi',
       packages=find_packages(),
@@ -18,6 +18,7 @@ setup(name='py_misc_utils',
           'pyyaml',
           'numpy',
           'pandas',
+          'fsspec',
       ],
       )
 
