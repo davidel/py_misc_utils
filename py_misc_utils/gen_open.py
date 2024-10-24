@@ -13,7 +13,7 @@ _STD_FILES = {
 
 def gen_open(path, *args, **kwargs):
   sfd = _STD_FILES.get(path)
-  if if sfd is not None:
+  if sfd is not None:
     return cm.NoOpCtxManager(sfd)
 
   return fsspec.open(path, *args, **kwargs)
