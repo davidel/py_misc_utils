@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import tempfile
 import uuid
@@ -28,6 +29,30 @@ def maybe_open(path, *args, **kwargs):
     return fs.open(fpath, *args, **kwargs)
 
 
+def replace(src_path, dest_path):
+  src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
+  dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
+
+  if src_fs is dest_fs and isinstance(src_fs, fsspec.implementations.local.LocalFileSystem):
+    os.replace(src_path, dest_path)
+  else:
+    tmp_path = os.path.join(os.path.dirname(dest_fpath), str(uuid.uuid4()))
+    dest_fs.mv(dest_fpath, tmp_path)
+
+    try:
+      if src_fs is dest_fs:
+        src_fs.mv(src_fpath, dest_fpath)
+      else:
+        with src_fs.open(src_fpath, mode='rb') as src_fd:
+          with dest_fs.open(dest_fpath, mode='wb') as dest_fd:
+            shutil.copyfileobj(src_fd, dest_fd)
+
+      dest_fs.rm(tmp_path)
+    except:
+      dest_fs.mv(tmp_path, dest_fpath)
+      raise
+
+
 class TempFile:
 
   def __init__(self, dir=None, **kwargs):
@@ -53,25 +78,13 @@ class TempFile:
       self._delete = False
 
   def replace(self, path):
-    fs, fpath = fsspec.core.url_to_fs(path)
-
     self._delete = False
     self.close()
 
-    tmp_path = None
     try:
-      if isinstance(fs, fsspec.implementations.local.LocalFileSystem):
-        os.replace(self._path, fpath)
-      else:
-        # File systems should really have replace() ...
-        tmp_path = os.path.join(self._dir, str(uuid.uuid4()))
-        self._fs.mv(fpath, tmp_path)
-        self._fs.mv(self._path, fpath)
-        self._fs.rm(tmp_path)
+      replace(self._path, path)
     except:
       self._delete = True
-      if tmp_path is not None:
-        self._fs.mv(tmp_path, fpath)
       raise
 
   def __enter__(self):
