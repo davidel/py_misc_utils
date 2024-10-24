@@ -28,7 +28,7 @@ import numpy as np
 from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
-from . import gen_open as gop
+from . import gen_fs as gfs
 from . import obj
 from . import split as sp
 from . import template_replace as tr
@@ -446,7 +446,7 @@ def get_context(name):
 
 def load_config(cfg_file=None, **kwargs):
   if cfg_file is not None:
-    with gop.open(cfg_file, mode='r') as cf:
+    with gfs.open(cfg_file, mode='r') as cf:
       cfg = yaml.safe_load(cf)
   else:
     cfg = dict()
@@ -462,7 +462,7 @@ def parse_config(cfg, **kwargs):
   if cfg.startswith('{'):
     cfgd = json.loads(cfg)
   elif os.path.exists(cfg):
-    with gop.open(cfg, mode='r') as fp:
+    with gfs.open(cfg, mode='r') as fp:
       cfgd = yaml.safe_load(fp)
   else:
     cfgd = parse_dict(cfg)
@@ -670,7 +670,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
 
 def run(path, fnname, *args, **kwargs):
-  with gop.open(path, mode='r') as cfd:
+  with gfs.open(path, mode='r') as cfd:
     code = cfd.read()
 
   compile_args, = pop_kwargs(kwargs, 'compile_args')
@@ -1148,7 +1148,7 @@ def add_bool_argument(parser, name, defval, help=None):
 
 
 def state_update(path, **kwargs):
-  if sfile := gop.maybe_open(path, mode='rb'):
+  if sfile := gfs.maybe_open(path, mode='rb'):
     with sfile as fd:
       state = pickle.load(fd)
   else:

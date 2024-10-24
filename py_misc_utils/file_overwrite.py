@@ -1,7 +1,6 @@
 import os
-import tempfile
 
-from . import gen_open as gop
+from . import gen_fs as gfs
 
 
 class FileOverwrite:
@@ -12,7 +11,7 @@ class FileOverwrite:
     self._temp = None
 
   def __enter__(self):
-    self._temp = gop.TempFile(dir=os.path.dirname(self._path), mode=self._mode)
+    self._temp = gfs.TempFile(dir=os.path.dirname(self._path), mode=self._mode)
 
     return self._temp.open()
 
