@@ -1,5 +1,7 @@
 import sys
 
+import fsspec
+
 from . import context_managers as cm
 
 
@@ -11,6 +13,8 @@ _STD_FILES = {
 
 def gen_open(path, *args, **kwargs):
   sfd = _STD_FILES.get(path)
+  if if sfd is not None:
+    return cm.NoOpCtxManager(sfd)
 
-  return cm.NoOpCtxManager(sfd) if sfd is not None else open(path, *args, **kwargs)
+  return fsspec.open(path, *args, **kwargs)
 
