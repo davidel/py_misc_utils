@@ -778,7 +778,8 @@ def squeeze(shape, keep_dims=0, sdir=MAJOR):
 
 
 def flat2shape(data, shape):
-  assert len(data) == np.prod(shape), f'Shape {shape} is unsuitable for a {len(data)} long array'
+  tas.check_eq(len(data), np.prod(shape),
+               msg=f'Shape {shape} is unsuitable for a {len(data)} long array')
 
   # For an Mx...xK input shape, return a M elements (nested) list.
   for n in reversed(shape[1:]):
@@ -789,15 +790,16 @@ def flat2shape(data, shape):
 
 def shape2flat(data, shape):
   for _ in range(len(shape) - 1):
-    assert isinstance(data, (list, tuple))
+    tas.check(hasattr(data, '__iter__'), msg=f'Wrong data type: {type(data)}')
     ndata = []
     for av in data:
-      assert isinstance(av, (list, tuple))
+      tas.check(hasattr(av, '__iter__'), msg=f'Wrong data type: {type(data)}')
       ndata.extend(av)
 
     data = ndata
 
-  assert len(data) == np.prod(shape)
+  tas.check_eq(len(data), np.prod(shape),
+               msg=f'Shape {shape} is unsuitable for a {len(data)} long array')
 
   return tuple(data)
 
