@@ -220,6 +220,10 @@ def norm_slice(start, stop, size):
   return start, stop
 
 
+def strip_nones(**kwargs):
+  return {k: v for k, v in kwargs.items() if v is not None}
+
+
 def dmerge(*args):
   mdict = dict()
   for d in args:
