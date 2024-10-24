@@ -1,28 +1,23 @@
 import os
 import tempfile
 
+from . import gen_open as gop
+
 
 class FileOverwrite:
 
   def __init__(self, path, mode='w'):
     self._path = path
     self._mode = mode
-    self._fd = None
+    self._temp = None
 
   def __enter__(self):
-    self._fd = tempfile.NamedTemporaryFile(mode=self._mode, dir=os.path.dirname(self._path),
-                                           delete=False)
+    self._temp = gop.TempFile(dir=os.path.dirname(self._path), mode=self._mode)
 
-    return self._fd
+    return self._temp.open()
 
   def __exit__(self, *exc):
-    self._fd.close()
-
-    try:
-      os.replace(self._fd.name, self._path)
-    except:
-      os.remove(self._fd.name)
-      raise
+    self._temp.replace(self._path)
 
     return False
 
