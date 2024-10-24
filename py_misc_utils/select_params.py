@@ -10,6 +10,7 @@ import subprocess
 import numpy as np
 
 from . import alog
+from . import gen_fs as gfs
 from . import np_utils as npu
 from . import utils as ut
 
@@ -263,12 +264,12 @@ class Selector:
       self.current_scores, self.processed_scores = [], 0
 
   def save_status(self, path):
-    with open(path, mode='wb') as sfd:
+    with gfs.open(path, mode='wb') as sfd:
       pickle.dump(self, sfd, protocol=ut.pickle_proto())
 
   @staticmethod
   def load_status(path):
-    with open(path, mode='rb') as sfd:
+    with gfs.open(path, mode='rb') as sfd:
       return pickle.load(sfd)
 
 
