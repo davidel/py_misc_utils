@@ -1,5 +1,7 @@
 import pickle
 
+from . import gen_fs as gfs
+
 
 _STATE_KEY = '__SB_STATE__'
 
@@ -34,12 +36,12 @@ class StateBase:
 def to_state(obj, path):
   # Needs a copy here, as the _get_state() call chains will modify the state.
   state = obj._get_state(obj.__dict__.copy())
-  with open(path, mode='wb') as sfd:
+  with gfs.open(path, mode='wb') as sfd:
     pickle.dump(state, sfd)
 
 
 def from_state(cls, path, **kwargs):
-  with open(path, mode='rb') as sfd:
+  with gfs.open(path, mode='rb') as sfd:
     state = pickle.load(sfd)
 
   state.update(kwargs)

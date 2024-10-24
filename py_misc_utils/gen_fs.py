@@ -31,9 +31,15 @@ def maybe_open(path, *args, **kwargs):
 class TempFile:
 
   def __init__(self, dir=None, **kwargs):
+    print(f'DIR is {dir}')
+
     dir = dir or tempfile.gettempdir()
 
+    print(f'DIR is {dir}')
+
     path = os.path.join(dir, str(uuid.uuid4()))
+
+    print(f'PATH is {path}')
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
     self._dir, self._kwargs = dir, kwargs
