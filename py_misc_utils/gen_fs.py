@@ -69,9 +69,9 @@ class TempFile:
         self._fs.mv(self._path, fpath)
         self._fs.rm(tmp_path)
     except:
+      self._delete = True
       if tmp_path is not None:
         self._fs.mv(tmp_path, fpath)
-      self._delete = True
       raise
 
   def __enter__(self):

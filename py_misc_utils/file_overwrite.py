@@ -17,6 +17,7 @@ class FileOverwrite:
 
   def __exit__(self, *exc):
     self._temp.replace(self._path)
+    self._temp.close()
 
     return False
 
