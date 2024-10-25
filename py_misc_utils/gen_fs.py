@@ -77,16 +77,20 @@ def core_open(path, **kwargs):
     if is_localfs(fs):
       return fs.open(fpath, **kwargs)
 
-    mode = kwargs.get('mode', 'rb')
-    cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
+    mode = kwargs.pop('mode', 'rb')
+    cache_storage = kwargs.pop('cache_storage', None)
+    if cache_storage is None:
+      cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
     if 'r' in mode:
       return fsspec.open(f'filecache::{path}',
                          mode=mode,
-                         cache_storage=cache_storage)
+                         cache_storage=cache_storage,
+                         **kwargs)
     else:
       return fsspec.open(f'simplecache::{path}',
                          mode=mode,
-                         cache_storage=cache_storage)
+                         cache_storage=cache_storage,
+                         **kwargs)
 
   return fsspec.open(path, **kwargs)
 
