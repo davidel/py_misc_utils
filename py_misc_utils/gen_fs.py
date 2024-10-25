@@ -82,7 +82,7 @@ def core_open(path, *args, **kwargs):
       return fs.open(fpath, *args, **kwargs)
 
     cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
-    path = fsspec.open_local(f'simplecache::{path}', cache_storage=cache_storage)
+    path = fsspec.open_local(f'filecache::{path}', cache_storage=cache_storage)
 
   return fsspec.open(path, *args, **kwargs)
 
