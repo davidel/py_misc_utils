@@ -83,7 +83,7 @@ def rand_name(n=10):
 
 
 def is_localfs(fs):
-  return isinstance(src_fs, fsspec.implementations.local.LocalFileSystem)
+  return isinstance(fs, fsspec.implementations.local.LocalFileSystem)
 
 
 def replace(src_path, dest_path):
