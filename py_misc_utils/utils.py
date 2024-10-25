@@ -1186,20 +1186,6 @@ def unique(data):
   return udata
 
 
-def enumerate_files(path, matcher, fullpath=False):
-  for fname in sorted(os.listdir(path)):
-    if matcher(fname):
-      yield fname if not fullpath else os.path.join(path, fname)
-
-
-def re_enumerate_files(path, rex, fullpath=False):
-  for fname in sorted(os.listdir(path)):
-    m = re.match(rex, fname)
-    if m:
-      mpath = fname if not fullpath else os.path.join(path, fname)
-      yield mpath, m
-
-
 def fgzip(src, dest):
   with open(src, mode='rb') as infd:
     with gzip.open(dest, mode='wb') as outfd:

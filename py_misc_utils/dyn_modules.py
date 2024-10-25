@@ -4,8 +4,8 @@ import os
 
 from . import alog
 from . import assert_checks as tas
+from . import gen_fs as gfs
 from . import module_utils as mu
-from . import utils as ut
 
 
 class DynLoader:
@@ -21,7 +21,7 @@ class DynLoader:
       mpath = path
 
     module_names = []
-    for fname, m in ut.re_enumerate_files(mpath, r'(.*)' + postfix + r'\.py$'):
+    for fname, m in gfs.re_enumerate_files(mpath, r'(.*)' + postfix + r'\.py$'):
       module_names.append((m.group(1), os.path.join(mpath, fname)))
 
     self._modules = collections.OrderedDict()

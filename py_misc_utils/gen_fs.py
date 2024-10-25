@@ -1,13 +1,59 @@
 import os
+import re
+import random
 import shutil
 import string
 import sys
 import tempfile
-import random
 
 import fsspec
 
 from . import context_managers as cm
+
+
+class TempFile:
+
+  def __init__(self, dir=None, ref_path=None, **kwargs):
+    if ref_path is not None:
+      path = f'{ref_fpath}.{rand_name()}'
+    else:
+      dir = tempfile.gettempdir() if dir is None else dir
+      path = os.path.join(dir, rand_name())
+
+    self._fs, self._path = fsspec.core.url_to_fs(path)
+    self._dir, self._kwargs = dir, kwargs
+    self._fd, self._delete = None, True
+
+  def open(self):
+    self._fd = self._fs.open(self._path, **self._kwargs)
+
+    return self._fd
+
+  def close(self):
+    if self._fd is not None:
+      self._fd.close()
+      self._fd = None
+    if self._delete:
+      self._fs.rm(self._path)
+      self._delete = False
+
+  def replace(self, path):
+    self._delete = False
+    self.close()
+
+    try:
+      replace(self._path, path)
+    except:
+      self._delete = True
+      raise
+
+  def __enter__(self):
+    return self.open()
+
+  def __exit__(self, *exc):
+    self.close()
+
+    return False
 
 
 _STD_FILES = {
@@ -60,47 +106,20 @@ def replace(src_path, dest_path):
       raise
 
 
-class TempFile:
+def enumerate_files(path, matcher, fullpath=False):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  for epath in fs.find(fpath, maxdepth=1, withdirs=True):
+    fname = os.path.basename(epath)
+    if matcher(fname):
+      yield epath if fullpath else fname
 
-  def __init__(self, dir=None, ref_path=None, **kwargs):
-    if ref_path is not None:
-      path = f'{ref_fpath}.{rand_name()}'
-    else:
-      dir = tempfile.gettempdir() if dir is None else dir
-      path = os.path.join(dir, rand_name())
 
-    self._fs, self._path = fsspec.core.url_to_fs(path)
-    self._dir, self._kwargs = dir, kwargs
-    self._fd, self._delete = None, True
-
-  def open(self):
-    self._fd = self._fs.open(self._path, **self._kwargs)
-
-    return self._fd
-
-  def close(self):
-    if self._fd is not None:
-      self._fd.close()
-      self._fd = None
-    if self._delete:
-      self._fs.rm(self._path)
-      self._delete = False
-
-  def replace(self, path):
-    self._delete = False
-    self.close()
-
-    try:
-      replace(self._path, path)
-    except:
-      self._delete = True
-      raise
-
-  def __enter__(self):
-    return self.open()
-
-  def __exit__(self, *exc):
-    self.close()
-
-    return False
+def re_enumerate_files(path, rex, fullpath=False):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  for epath in fs.find(fpath, maxdepth=1, withdirs=True):
+    fname = os.path.basename(epath)
+    m = re.match(rex, fname)
+    if m:
+      mpath = epath if fullpath else fname
+      yield mpath, m
 
