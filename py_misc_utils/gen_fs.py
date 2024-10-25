@@ -21,7 +21,7 @@ class TempFile:
       path = os.path.join(dir, rand_name())
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
-    self._dir, self._kwargs = dir, kwargs
+    self._kwargs = kwargs
     self._fd, self._delete = None, True
 
   def open(self):
