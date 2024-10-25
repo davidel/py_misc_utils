@@ -14,11 +14,7 @@ from . import context_managers as cm
 class TempFile:
 
   def __init__(self, dir=None, ref_path=None, **kwargs):
-    if ref_path is not None:
-      path = f'{ref_path}.{rand_name()}'
-    else:
-      dir = tempfile.gettempdir() if dir is None else dir
-      path = os.path.join(dir, rand_name())
+    path = temp_path(ref_path=ref_path, dir=dir)
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
     self._kwargs = kwargs
@@ -101,6 +97,15 @@ def rand_name(n=10):
   return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
 
 
+def temp_path(ref_path=None, dir=None):
+  if ref_path is not None:
+    return f'{ref_path}.{rand_name()}'
+
+  dir = tempfile.gettempdir() if dir is None else dir
+
+  return os.path.join(dir, rand_name())
+
+
 def is_file(path):
   fs, fpath = fsspec.core.url_to_fs(path)
 
@@ -117,7 +122,7 @@ def replace(src_path, dest_path):
 
   # If not on the same file system, copy over since cross-fs renames are not allowed.
   if src_fs is not dest_fs:
-    dsrc_path = f'{dest_fpath}.{rand_name()}'
+    dsrc_path = temp_path(ref_path=dest_fpath)
     with src_fs.open(src_fpath, mode='rb') as src_fd:
       with dest_fs.open(dsrc_path, mode='wb') as dest_fd:
         shutil.copyfileobj(src_fd, dest_fd)
@@ -130,7 +135,8 @@ def replace(src_path, dest_path):
     if is_localfs(src_fs):
       os.replace(src_path, dest_path)
     else:
-      tmp_path = f'{dest_fpath}.{rand_name()}'
+      tmp_path = temp_path(ref_path=dest_fpath)
+
       dest_fs.mv(dest_fpath, tmp_path)
       try:
         dest_fs.mv(src_fpath, dest_fpath)
