@@ -62,29 +62,31 @@ _STD_FILES = {
   'STDERR': sys.stderr,
 }
 
-def open(path, *args, **kwargs):
+def open(path, **kwargs):
   sfd = _STD_FILES.get(path)
   if sfd is not None:
     return cm.NoOpCtxManager(sfd)
 
-  return core_open(path, *args, **kwargs)
+  return core_open(path, **kwargs)
 
 
-def maybe_open(path, *args, **kwargs):
-  return core_open(path, *args, **kwargs) if is_file(path) else None
+def maybe_open(path, **kwargs):
+  return core_open(path, **kwargs) if is_file(path) else None
 
 
-def core_open(path, *args, **kwargs):
+def core_open(path, **kwargs):
   local_open = kwargs.pop('local_open', False)
   if local_open:
     fs, fpath = fsspec.core.url_to_fs(path)
     if is_localfs(fs):
-      return fs.open(fpath, *args, **kwargs)
+      return fs.open(fpath, **kwargs)
 
     cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
-    path = fsspec.open_local(f'filecache::{path}', cache_storage=cache_storage)
+    path = fsspec.open_local(f'filecache::{path}',
+                             mode=kwargs.get('mode', 'rb'),
+                             cache_storage=cache_storage)
 
-  return fsspec.open(path, *args, **kwargs)
+  return fsspec.open(path, **kwargs)
 
 
 def rand_name(n=10):
