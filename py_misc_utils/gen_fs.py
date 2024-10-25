@@ -90,34 +90,36 @@ def replace(src_path, dest_path):
   src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
   dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
 
-  if src_fs is dest_fs and is_localfs(src_fs):
-    os.replace(src_path, dest_path)
+  # If not on the same file system, copy over since cross-fs renames are not allowed.
+  if src_fs is not dest_fs:
+    dsrc_path = f'{dest_fpath}.{rand_name()}'
+    with src_fs.open(src_fpath, mode='rb') as src_fd:
+      with dest_fs.open(dsrc_path, mode='wb') as dest_fd:
+        shutil.copyfileobj(src_fd, dest_fd)
+
+    src_fs, src_fpath = dest_fs, dsrc_path
   else:
-    # If not on the same file system, copy over since cross-fs renames are not allowed.
-    if src_fs is not dest_fs:
-      dsrc_path = f'{dest_fpath}.{rand_name()}'
-      with src_fs.open(src_fpath, mode='rb') as src_fd:
-        with dest_fs.open(dsrc_path, mode='wb') as dest_fd:
-          shutil.copyfileobj(src_fd, dest_fd)
+    dsrc_path = None
 
-      src_fs, src_fpath = dest_fs, dsrc_path
+  try:
+    if is_localfs(src_fs):
+      os.replace(src_path, dest_path)
     else:
-      dsrc_path = None
+      tmp_path = f'{dest_fpath}.{rand_name()}'
+      dest_fs.mv(dest_fpath, tmp_path)
+      try:
+        dest_fs.mv(src_fpath, dest_fpath)
+      except:
+        dest_fs.mv(tmp_path, dest_fpath)
+        raise
+  except:
+    if dsrc_path is not None:
+      try:
+        dest_fs.rm(dsrc_path)
+      except:
+        pass
 
-    tmp_path = f'{dest_fpath}.{rand_name()}'
-    dest_fs.mv(dest_fpath, tmp_path)
-    try:
-      dest_fs.mv(src_fpath, dest_fpath)
-    except:
-      # Cleanup and put things back.
-      if dsrc_path is not None:
-        try:
-          dest_fs.rm(dsrc_path)
-        except:
-          pass
-
-      dest_fs.mv(tmp_path, dest_fpath)
-      raise
+    raise
 
 
 def enumerate_files(path, matcher, fullpath=False):
