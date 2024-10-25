@@ -82,11 +82,15 @@ def rand_name(n=10):
   return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
 
 
+def is_localfs(fs):
+  return isinstance(src_fs, fsspec.implementations.local.LocalFileSystem)
+
+
 def replace(src_path, dest_path):
   src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
   dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
 
-  if src_fs is dest_fs and isinstance(src_fs, fsspec.implementations.local.LocalFileSystem):
+  if src_fs is dest_fs and is_localfs(src_fs):
     os.replace(src_path, dest_path)
   else:
     tmp_path = f'{dest_fpath}.{rand_name()}'
@@ -122,4 +126,12 @@ def re_enumerate_files(path, rex, fullpath=False):
     if m:
       mpath = epath if fullpath else fname
       yield mpath, m
+
+
+def normpath(path):
+  path = os.path.expandvars(path)
+
+  _, fpath = fsspec.core.url_to_fs(path)
+
+  return fpath
 
