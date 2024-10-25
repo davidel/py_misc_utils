@@ -14,8 +14,10 @@ class FileOverwrite:
     return self._temp.open()
 
   def __exit__(self, *exc):
-    self._temp.replace(self._path)
-    self._temp.close()
+    try:
+      self._temp.replace(self._path)
+    finally:
+      self._temp.close()
 
     return False
 
