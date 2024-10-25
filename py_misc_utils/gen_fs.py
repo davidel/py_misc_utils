@@ -67,13 +67,21 @@ def open(path, *args, **kwargs):
   if sfd is not None:
     return cm.NoOpCtxManager(sfd)
 
-  return fsspec.open(path, *args, **kwargs)
+  return core_open(path, *args, **kwargs)
 
 
 def maybe_open(path, *args, **kwargs):
   fs, fpath = fsspec.core.url_to_fs(path)
   if fs.isfile(fpath):
-    return fs.open(fpath, *args, **kwargs)
+    return core_open(fpath, *args, **kwargs)
+
+
+def core_open(path, *args, **kwargs):
+  local_open = kwargs.pop('local_open', False)
+  if local_open:
+    path = fsspec.open_local(f'simplecache::{path}', cache_storage=cache_dir())
+
+  return fsspec.open(path, *args, **kwargs)
 
 
 def rand_name(n=10):
@@ -146,4 +154,13 @@ def normpath(path):
   _, fpath = fsspec.core.url_to_fs(path)
 
   return fpath
+
+
+def cache_dir(path=None):
+  if path is None:
+    path = os.getenv('CACHE_DIR', None)
+    if path is None:
+      path = os.path.join(os.getenv('HOME', '.'), '.cache')
+
+  return normpath(path)
 
