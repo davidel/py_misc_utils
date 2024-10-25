@@ -1,8 +1,9 @@
 import os
 import shutil
+import string
 import sys
 import tempfile
-import uuid
+import random
 
 import fsspec
 
@@ -29,6 +30,12 @@ def maybe_open(path, *args, **kwargs):
     return fs.open(fpath, *args, **kwargs)
 
 
+def rand_name(n=10):
+  rng = random.SystemRandom()
+
+  return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
+
+
 def replace(src_path, dest_path):
   src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
   dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
@@ -36,7 +43,7 @@ def replace(src_path, dest_path):
   if src_fs is dest_fs and isinstance(src_fs, fsspec.implementations.local.LocalFileSystem):
     os.replace(src_path, dest_path)
   else:
-    tmp_path = os.path.join(os.path.dirname(dest_fpath), str(uuid.uuid4()))
+    tmp_path = f'{dest_fpath}.{rand_name()}'
     dest_fs.mv(dest_fpath, tmp_path)
 
     try:
@@ -55,10 +62,12 @@ def replace(src_path, dest_path):
 
 class TempFile:
 
-  def __init__(self, dir=None, **kwargs):
-    dir = tempfile.gettempdir() if dir is None else dir
-
-    path = os.path.join(dir, str(uuid.uuid4()))
+  def __init__(self, dir=None, ref_path=None, **kwargs):
+    if ref_path is not None:
+      path = f'{ref_fpath}.{rand_name()}'
+    else:
+      dir = tempfile.gettempdir() if dir is None else dir
+      path = os.path.join(dir, rand_name())
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
     self._dir, self._kwargs = dir, kwargs
