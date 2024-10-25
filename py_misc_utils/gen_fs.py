@@ -15,7 +15,7 @@ class TempFile:
 
   def __init__(self, dir=None, ref_path=None, **kwargs):
     if ref_path is not None:
-      path = f'{ref_fpath}.{rand_name()}'
+      path = f'{ref_path}.{rand_name()}'
     else:
       dir = tempfile.gettempdir() if dir is None else dir
       path = os.path.join(dir, rand_name())
