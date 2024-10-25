@@ -71,9 +71,7 @@ def open(path, *args, **kwargs):
 
 
 def maybe_open(path, *args, **kwargs):
-  fs, fpath = fsspec.core.url_to_fs(path)
-  if fs.isfile(fpath):
-    return core_open(path, *args, **kwargs)
+  return core_open(path, *args, **kwargs) if is_file(path) else None
 
 
 def core_open(path, *args, **kwargs):
@@ -88,6 +86,12 @@ def rand_name(n=10):
   rng = random.SystemRandom()
 
   return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
+
+
+def is_file(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+
+  return fs.isfile(fpath)
 
 
 def is_localfs(fs):
