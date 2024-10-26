@@ -154,16 +154,14 @@ def replace(src_path, dest_path):
       if dest_fs.exists(dest_fpath):
         tmp_path = temp_path(ref_path=dest_fpath)
         dest_fs.mv(dest_fpath, tmp_path)
-      else:
-        tmp_path = None
-      try:
-        dest_fs.mv(src_fpath, dest_fpath)
-        if tmp_path is not None:
+        try:
+          dest_fs.mv(src_fpath, dest_fpath)
           dest_fs.rm(tmp_path)
-      except:
-        if tmp_path is not None:
+        except:
           dest_fs.mv(tmp_path, dest_fpath)
-        raise
+          raise
+      else:
+        dest_fs.mv(src_fpath, dest_fpath)
   except:
     if dsrc_path is not None:
       nex.no_except(dest_fs.rm, dsrc_path)
