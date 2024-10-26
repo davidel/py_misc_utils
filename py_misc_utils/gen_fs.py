@@ -70,29 +70,31 @@ def maybe_open(path, **kwargs):
   return core_open(path, **kwargs) if is_file(path) else None
 
 
+def open_local(path, **kwargs):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  if is_localfs(fs):
+    return fs.open(fpath, **kwargs)
+
+  mode = kwargs.pop('mode', 'r')
+  cache_storage = kwargs.pop('cache_storage', None)
+  if cache_storage is None:
+    cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
+  if 'r' in mode:
+    return fsspec.open(f'filecache::{path}',
+                       mode=mode,
+                       cache_storage=cache_storage,
+                       **kwargs)
+  else:
+    return fsspec.open(f'simplecache::{path}',
+                       mode=mode,
+                       cache_storage=cache_storage,
+                       **kwargs)
+
+
 def core_open(path, **kwargs):
   local_open = kwargs.pop('local_open', False)
-  if local_open:
-    fs, fpath = fsspec.core.url_to_fs(path)
-    if is_localfs(fs):
-      return fs.open(fpath, **kwargs)
 
-    mode = kwargs.pop('mode', 'rb')
-    cache_storage = kwargs.pop('cache_storage', None)
-    if cache_storage is None:
-      cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
-    if 'r' in mode:
-      return fsspec.open(f'filecache::{path}',
-                         mode=mode,
-                         cache_storage=cache_storage,
-                         **kwargs)
-    else:
-      return fsspec.open(f'simplecache::{path}',
-                         mode=mode,
-                         cache_storage=cache_storage,
-                         **kwargs)
-
-  return fsspec.open(path, **kwargs)
+  return open_local(path, **kwargs) if local_open else fsspec.open(path, **kwargs)
 
 
 def rand_name(n=10):
