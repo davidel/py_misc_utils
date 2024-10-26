@@ -184,9 +184,9 @@ def re_enumerate_files(path, rex, fullpath=False):
 def normpath(path):
   path = os.path.expandvars(path)
 
-  _, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.core.url_to_fs(path)
 
-  return fpath
+  return fpath if is_localfs(fs) else fs.unstrip_protocol(fpath)
 
 
 def cache_dir(path=None):
