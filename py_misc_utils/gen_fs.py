@@ -120,7 +120,9 @@ def exists(path):
 
 
 def is_localfs(fs):
-  return isinstance(fs, fsspec.implementations.local.LocalFileSystem)
+  fsproto = fs.protocol if isinstance(fs.protocol, (list, tuple)) else (fs.protocol,)
+
+  return 'local' in fsproto or 'file' in fsproto
 
 
 def copy(src_path, dest_path, src_fs=None, dest_fs=None):
