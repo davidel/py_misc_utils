@@ -1158,21 +1158,27 @@ def unique(data):
 
 
 def fgzip(src, dest):
-  with open(src, mode='rb') as infd:
-    with gzip.open(dest, mode='wb') as outfd:
-      shutil.copyfileobj(infd, outfd)
+  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
+    with gzip.open(outfd, mode='wb') as zfd:
+      shutil.copyfileobj(infd, zfd)
 
 
 def fgunzip(src, dest):
-  with gzip.open(src, mode='rb') as infd:
-    with open(dest, mode='wb') as outfd:
-      shutil.copyfileobj(infd, outfd)
+  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
+    with gzip.open(infd, mode='rb') as zfd:
+      shutil.copyfileobj(zfd, outfd)
+
+
+def fbzip2(src, dest):
+  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
+    with bz2.open(outfd, mode='wb') as zfd:
+      shutil.copyfileobj(infd, zfd)
 
 
 def fbunzip2(src, dest):
-  with bz2.open(src, mode='rb') as infd:
-    with open(dest, mode='wb') as outfd:
-      shutil.copyfileobj(infd, outfd)
+  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
+    with bz2.open(infd, mode='rb') as zfd:
+      shutil.copyfileobj(zfd, outfd)
 
 
 def drop_ext(path, exts):
