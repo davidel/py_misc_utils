@@ -169,6 +169,16 @@ def replace(src_path, dest_path):
     raise
 
 
+def mkdir(path, create_parents=False):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  fs.mkdir(fpath, create_parents=create_parents)
+
+
+def rmdir(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  fs.rmdir(fpath)
+
+
 def enumerate_files(path, matcher, fullpath=False):
   fs, fpath = fsspec.core.url_to_fs(path)
   for epath in fs.find(fpath, maxdepth=1, withdirs=True):
