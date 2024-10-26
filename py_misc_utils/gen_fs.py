@@ -1,6 +1,5 @@
 import os
 import re
-import random
 import shutil
 import string
 import sys
@@ -10,6 +9,7 @@ import fsspec
 
 from . import context_managers as cm
 from . import no_except as nex
+from . import rnd_utils as rngu
 
 
 class TempFile:
@@ -98,19 +98,13 @@ def core_open(path, **kwargs):
   return open_local(path, **kwargs) if local_open else fsspec.open(path, **kwargs)
 
 
-def rand_name(n=10):
-  rng = random.SystemRandom()
-
-  return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
-
-
-def temp_path(ref_path=None, dir=None):
+def temp_path(ref_path=None, dir=None, rng_len=10):
   if ref_path is not None:
-    return f'{ref_path}.{rand_name()}'
+    return f'{ref_path}.{rngu.rand_string(rng_len)}'
 
   dir = tempfile.gettempdir() if dir is None else dir
 
-  return os.path.join(dir, rand_name())
+  return os.path.join(dir, rngu.rand_string(rng_len))
 
 
 def is_file(path):

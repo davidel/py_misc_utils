@@ -1,4 +1,5 @@
 import random
+import string
 import threading
 
 import numpy as np
@@ -65,4 +66,10 @@ def numpy_gen():
 
 def choices(weights, n):
   return random.choices(range(len(weights)), weights=weights, k=n)
+
+
+def rand_string(n):
+  rng = random.SystemRandom()
+
+  return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
 
