@@ -8,6 +8,8 @@ def no_except(fn, *args, **kwargs):
   try:
     return fn(*args, **kwargs)
   except Exception as ex:
+    # The logging.exception() API does emit in DEBUG level, and here we want something
+    # a bit more higher level.
     tb = traceback.format_exc()
     logging.warning(f'Exception while running function: {ex}\n{tb}')
 
