@@ -1,3 +1,5 @@
+# Using logging module directly here to avoid import the alog module, since this
+# is supposed to be a lower level module with minimal/no local dependencies.
 import logging
 import traceback
 
