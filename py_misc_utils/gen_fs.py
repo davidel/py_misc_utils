@@ -9,6 +9,7 @@ import tempfile
 import fsspec
 
 from . import context_managers as cm
+from . import no_except as nex
 
 
 class TempFile:
@@ -151,10 +152,7 @@ def replace(src_path, dest_path):
         raise
   except:
     if dsrc_path is not None:
-      try:
-        dest_fs.rm(dsrc_path)
-      except:
-        pass
+      nex.no_except(dest_fs.rm, dsrc_path)
 
     raise
 
