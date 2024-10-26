@@ -104,7 +104,7 @@ def temp_path(ref_path=None, dir=None, rng_len=10):
 
   dir = tempfile.gettempdir() if dir is None else dir
 
-  return os.path.join(dir, rngu.rand_string(rng_len))
+  return os.path.join(dir, f'{rngu.rand_string(rng_len)}.tmp')
 
 
 def is_file(path):
