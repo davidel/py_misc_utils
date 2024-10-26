@@ -173,13 +173,13 @@ def _stri(obj, seen, float_fmt):
   elif isinstance(obj, (tuple, list, types.GeneratorType)):
     sl = ', '.join(_stri(x, seen, float_fmt) for x in obj)
 
-    result = '[' + sl + ']' if isinstance(l, list) else '(' + sl + ')'
+    result = '[' + sl + ']' if isinstance(obj, list) else '(' + sl + ')'
   elif isinstance(obj, dict):
     result = '{' + ', '.join(f'{k}={_stri(v, seen, float_fmt)}' for k, v in obj.items()) + '}'
   elif hasattr(obj, '__dict__'):
     # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
     drepr = _stri(obj.__dict__, seen, float_fmt)
-    result = f'{cname(l)}({drepr[1: -1]})'
+    result = f'{cname(obj)}({drepr[1: -1]})'
   else:
     result = str(obj)
 
