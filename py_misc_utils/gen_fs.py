@@ -113,6 +113,12 @@ def is_file(path):
   return fs.isfile(fpath)
 
 
+def exists(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+
+  return fs.exists(fpath)
+
+
 def is_localfs(fs):
   return isinstance(fs, fsspec.implementations.local.LocalFileSystem)
 
