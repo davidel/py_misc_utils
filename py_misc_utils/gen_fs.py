@@ -123,20 +123,27 @@ def is_localfs(fs):
   return isinstance(fs, fsspec.implementations.local.LocalFileSystem)
 
 
+def copy(src_path, dest_path, src_fs=None, dest_fs=None):
+  if src_fs is None:
+    src_fs, src_path = fsspec.core.url_to_fs(src_path)
+  if dest_fs is None:
+    dest_fs, dest_path = fsspec.core.url_to_fs(dest_path)
+
+  with src_fs.open(src_path, mode='rb') as src_fd:
+    with dest_fs.open(dest_path, mode='wb') as dest_fd:
+      shutil.copyfileobj(src_fd, dest_fd)
+
+
 def replace(src_path, dest_path):
   src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
   dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
 
   # If not on the same file system, copy over since cross-fs renames are not allowed.
+  dsrc_path = None
   if src_fs is not dest_fs:
     dsrc_path = temp_path(ref_path=dest_fpath)
-    with src_fs.open(src_fpath, mode='rb') as src_fd:
-      with dest_fs.open(dsrc_path, mode='wb') as dest_fd:
-        shutil.copyfileobj(src_fd, dest_fd)
-
+    copy(src_fpath, dsrc_path, src_fs=src_fs, dest_fs=dest_fs)
     src_fs, src_fpath = dest_fs, dsrc_path
-  else:
-    dsrc_path = None
 
   try:
     if is_localfs(src_fs):
