@@ -149,13 +149,20 @@ def replace(src_path, dest_path):
     if is_localfs(src_fs):
       os.replace(src_path, dest_path)
     else:
-      tmp_path = temp_path(ref_path=dest_fpath)
-
-      dest_fs.mv(dest_fpath, tmp_path)
+      # This is not atomic, sigh! File systems should really have a replace-like
+      # atomic operation.
+      if dest_fs.exists(dest_fpath):
+        tmp_path = temp_path(ref_path=dest_fpath)
+        dest_fs.mv(dest_fpath, tmp_path)
+      else:
+        tmp_path = None
       try:
         dest_fs.mv(src_fpath, dest_fpath)
+        if tmp_path is not None:
+          dest_fs.rm(tmp_path)
       except:
-        dest_fs.mv(tmp_path, dest_fpath)
+        if tmp_path is not None:
+          dest_fs.mv(tmp_path, dest_fpath)
         raise
   except:
     if dsrc_path is not None:
