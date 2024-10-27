@@ -56,7 +56,7 @@ class Formatter(logging.Formatter):
     tstr = self.formatTime(r)
     lid = _SHORT_LEV.get(r.levelno, r.levelname[:2])
 
-    return f'{lid}{tstr};{os.getpid()};{r.module}'
+    return f'{lid}{tstr};{os.getpid()};{r.name}'
 
 
 _DEFAULT_ARGS = dict(
