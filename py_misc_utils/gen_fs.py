@@ -192,8 +192,10 @@ def rmdir(path):
 class StatResult:
   pass
 
-STAT_FIELDS = ('st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid',
-               'st_size', 'st_atime', 'st_mtime', 'st_ctime')
+STAT_FIELDS = {
+  'st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid', 'st_size',
+  'st_atime', 'st_mtime', 'st_ctime',
+}
 
 def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
@@ -201,18 +203,23 @@ def stat(path):
 
   sinfo = obj.from_class(StatResult, **{k: None for k in STAT_FIELDS})
   for k, v in info.items():
-    if k.startswith('st_'):
-      setattr(sinfo, k, v)
+    sfield = f'st_{k}'
+    if sfield in STAT_FIELDS:
+      setattr(sinfo, sfield, v)
 
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
-    if info['type'] == 'file':
-      sinfo.st_mode |= st.S_IFREG
-    elif info['type'] == 'directory':
-      sinfo.st_mode |= st.S_IFDIR
+  if info['type'] == 'file':
+    sinfo.st_mode |= st.S_IFREG
+  elif info['type'] == 'directory':
+    sinfo.st_mode |= st.S_IFDIR
 
   if sinfo.st_size is None:
     sinfo.st_size = info.get('size')
+  if sinfo.st_ctime is None:
+    sinfo.st_ctime = info.get('created')
+
+  sinfo.islink = info.get('islink')
 
   return sinfo
 
