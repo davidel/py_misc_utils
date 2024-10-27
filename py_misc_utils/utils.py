@@ -461,7 +461,7 @@ def write_config(cfg, path, **kwargs):
   default_flow_style = kwargs.get('default_flow_style', False)
 
   with fow.FileOverwrite(path, mode='wt') as df:
-    yaml.dump(cfg, df, default_flow_style=default_flow_style)
+    yaml.dump(cfg, df, default_flow_style=default_flow_style, **kwargs)
 
 
 def fatal(msg, exc=RuntimeError):
