@@ -152,7 +152,7 @@ def replace(src_path, dest_path):
       os.replace(src_path, dest_path)
     else:
       # This is not atomic, sigh! File systems should really have a replace-like
-      # atomic operation.
+      # atomic operation, since the move operations fail if the target exists.
       if dest_fs.exists(dest_fpath):
         tmp_path = temp_path(ref_path=dest_fpath)
         dest_fs.mv(dest_fpath, tmp_path)
@@ -171,14 +171,33 @@ def replace(src_path, dest_path):
     raise
 
 
-def mkdir(path, create_parents=False):
+def mkdir(path, **kwargs):
   fs, fpath = fsspec.core.url_to_fs(path)
-  fs.mkdir(fpath, create_parents=create_parents)
+  fs.mkdir(fpath, **kwargs)
+
+
+def makedirs(path, **kwargs):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  fs.makedirs(fpath, **kwargs)
 
 
 def rmdir(path):
   fs, fpath = fsspec.core.url_to_fs(path)
   fs.rmdir(fpath)
+
+
+class StatInfo:
+  pass
+
+def stat(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+  info = fs.info(fpath)
+
+  sinfo = StatInfo()
+  for k, v in info.items():
+    setattr(sinfo, k, v)
+
+  return sinfo
 
 
 def enumerate_files(path, matcher, fullpath=False):
