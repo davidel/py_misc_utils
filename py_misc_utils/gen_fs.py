@@ -245,7 +245,7 @@ def normpath(path):
 
 CACHE_DIR = os.getenv(
   'CACHE_DIR',
-  os.path.join(os.getenv('HOME', '.'), '.cache')
+  os.path.join(os.getenv('HOME', os.getcwd()), '.cache')
 )
 
 def cache_dir(path=None):
