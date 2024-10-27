@@ -2,7 +2,7 @@ import contextlib
 import os
 import re
 import shutil
-import stat
+import stat as st
 import string
 import sys
 import tempfile
@@ -207,9 +207,9 @@ def stat(path):
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
     if info['type'] == 'file':
-      sinfo.st_mode |= stat.S_IFREG
+      sinfo.st_mode |= st.S_IFREG
     elif info['type'] == 'directory':
-      sinfo.st_mode |= stat.S_IFDIR
+      sinfo.st_mode |= st.S_IFDIR
 
   if sinfo.st_size is None:
     sinfo.st_size = info.get('size')
