@@ -226,11 +226,11 @@ def normpath(path):
   return fpath if is_localfs(fs) else fs.unstrip_protocol(fpath)
 
 
-def cache_dir(path=None):
-  if path is None:
-    path = os.getenv('CACHE_DIR', None)
-    if path is None:
-      path = os.path.join(os.getenv('HOME', '.'), '.cache')
+CACHE_DIR = os.getenv(
+  'CACHE_DIR',
+  os.path.join(os.getenv('HOME', '.'), '.cache')
+)
 
-  return normpath(path)
+def cache_dir(path=None):
+  return normpath(path) if path is not None else CACHE_DIR
 
