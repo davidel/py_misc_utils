@@ -567,15 +567,6 @@ def idx_expand(data, idx, filler=None):
   return data
 
 
-def expand_args(args):
-  # Allows APIs to be called both with expanded arguments, and with a single
-  # argument which is a {list, tuple, generator}.
-  if len(args) == 1 and isinstance(args[0], (list, tuple, types.GeneratorType)):
-    return tuple(args[0])
-
-  return xargs
-
-
 def as_sequence(v, t=tuple):
   if isinstance(t, (list, tuple)):
     for st in t:
