@@ -38,6 +38,10 @@ _SHORT_LEV = {
 
 class Formatter(logging.Formatter):
 
+  def __init__(self, emit_extra=None):
+    super().__init__()
+    self.emit_extra = emit_extra
+
   def format(self, r):
     hdr = self.make_header(r)
     msg = (r.msg % r.args) if r.args else r.msg
@@ -55,14 +59,19 @@ class Formatter(logging.Formatter):
   def make_header(self, r):
     tstr = self.formatTime(r)
     lid = _SHORT_LEV.get(r.levelno, r.levelname[:2])
+    hdr = f'{lid}{tstr};{os.getpid()};{r.module}'
+    if self.emit_extra:
+      extras = [str(getattr(r, name, None)) for name in self.emit_extra]
+      hdr = f'{hdr};{";".join(extras)}'
 
-    return f'{lid}{tstr};{os.getpid()};{r.name}'
+    return hdr
 
 
 _DEFAULT_ARGS = dict(
   log_level=os.getenv('LOG_LEVEL', 'INFO'),
   log_file=os.getenv('LOG_FILE', 'STDERR'),
   log_mod_levels=[],
+  log_emit_extra=[],
 )
 
 def add_logging_options(parser):
@@ -75,6 +84,8 @@ def add_logging_options(parser):
                       f'are also recognized)')
   parser.add_argument('--log_mod_levels', nargs='*',
                       help='Comma separated list of LOGGER_NAME,LEVEL to set the log level at')
+  parser.add_argument('--log_emit_extra', nargs='*',
+                      help='Which other logging record fields should be emitted')
 
 
 @ro.run_once
@@ -121,7 +132,7 @@ def setup_logging(args):
         handler = logging.StreamHandler(open(fname, mode='a'))
 
       handler.setLevel(numeric_level)
-      handler.setFormatter(Formatter())
+      handler.setFormatter(Formatter(emit_extra=args.log_emit_extra))
       handlers.append(handler)
 
   logging.basicConfig(level=numeric_level, handlers=handlers)
