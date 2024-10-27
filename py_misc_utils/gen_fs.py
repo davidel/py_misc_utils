@@ -2,6 +2,7 @@ import contextlib
 import os
 import re
 import shutil
+import stat
 import string
 import sys
 import tempfile
@@ -10,7 +11,6 @@ import fsspec
 
 from . import context_managers as cm
 from . import no_except as nex
-from . import obj
 from . import rnd_utils as rngu
 
 
@@ -188,14 +188,26 @@ def rmdir(path):
   fs.rmdir(fpath)
 
 
-class StatInfo:
-  pass
-
 def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
   info = fs.info(fpath)
 
-  return obj.from_class(StatInfo, **info)
+  sinfo = os.stat_result([None for _ in range(os.stat_result.n_sequence_fields)])
+  for k, v in info.items():
+    if k.startswith('st_'):
+      setattr(sinfo, k, v)
+
+  if sinfo.st_mode is None:
+    sinfo.st_mode = 0
+    if info['type'] == 'file':
+      sinfo.st_mode |= stat.S_IFREG
+    elif info['type'] == 'directory':
+      sinfo.st_mode |= stat.S_IFDIR
+
+  if sinfo.st_size is None:
+    sinfo.st_size = info.get('size')
+
+  return sinfo
 
 
 def enumerate_files(path, matcher, fullpath=False):
