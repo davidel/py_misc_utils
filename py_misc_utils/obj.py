@@ -1,8 +1,3 @@
-from . import lazy_import as lyi
-
-# Prevent cross imports. The obj.py code has been moved out of utils.py but
-# there are users still accessing the API via utils.py.
-pyu = lyi.lazy_import('utils', package='.')
 
 
 class Obj:
@@ -11,8 +6,7 @@ class Obj:
     self.update(**kwargs)
 
   def update(self, **kwargs):
-    for k, v in kwargs.items():
-      setattr(self, k, v)
+    self.__dict__.update(kwargs)
 
   def as_dict(self):
     ad = dict()
@@ -41,7 +35,14 @@ class Obj:
     return ad
 
   def __repr__(self):
-    dstr = pyu.stri(self.__dict__)
+    values = ', '.join(f'{k} = {v}' for k, v in self.__dict__.items())
 
-    return f'{__class__.__name__}({dstr[1: -1]})'
+    return f'{__class__.__name__}({values})'
+
+
+def from_class(cls, **kwargs):
+  obj = cls()
+  obj.__dict__.update(kwargs)
+
+  return obj
 

@@ -9,6 +9,7 @@ import fsspec
 
 from . import context_managers as cm
 from . import no_except as nex
+from . import obj
 from . import rnd_utils as rngu
 
 
@@ -193,11 +194,7 @@ def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
   info = fs.info(fpath)
 
-  sinfo = StatInfo()
-  for k, v in info.items():
-    setattr(sinfo, k, v)
-
-  return sinfo
+  return obj.from_class(StatInfo, **info)
 
 
 def enumerate_files(path, matcher, fullpath=False):
