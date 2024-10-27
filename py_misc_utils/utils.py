@@ -441,6 +441,19 @@ def load_config(cfg_file=None, **kwargs):
   return cfg
 
 
+def write_config(cfg, path, **kwargs):
+  default_flow_style = kwargs.get('default_flow_style', False)
+
+  with fow.FileOverwrite(path, mode='wt') as df:
+    yaml.dump(cfg, df, default_flow_style=default_flow_style, **kwargs)
+
+
+def config_to_string(cfg, **kwargs):
+  default_flow_style = kwargs.get('default_flow_style', False)
+
+  return yaml.dump(cfg, default_flow_style=default_flow_style, **kwargs)
+
+
 def parse_config(cfg, **kwargs):
   if cfg.startswith('{'):
     cfgd = json.loads(cfg)
@@ -455,13 +468,6 @@ def parse_config(cfg, **kwargs):
       cfgd[k] = v
 
   return cfgd
-
-
-def write_config(cfg, path, **kwargs):
-  default_flow_style = kwargs.get('default_flow_style', False)
-
-  with fow.FileOverwrite(path, mode='wt') as df:
-    yaml.dump(cfg, df, default_flow_style=default_flow_style, **kwargs)
 
 
 def fatal(msg, exc=RuntimeError):
