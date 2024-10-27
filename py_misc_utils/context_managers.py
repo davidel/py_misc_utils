@@ -1,3 +1,5 @@
+import contextlib
+
 
 class CtxManager:
 
@@ -26,14 +28,3 @@ class CtxManagerWrapper:
   def __exit__(self, *exc):
     return self._wrap_ctx.__exit__(*exc)
 
-
-class NoOpCtxManager:
-
-  def __init__(self, obj):
-    self._obj = obj
-
-  def __enter__(self):
-    return self._obj
-
-  def __exit__(self, *exc):
-    return False

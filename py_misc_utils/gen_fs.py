@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import shutil
@@ -63,7 +64,7 @@ _STD_FILES = {
 def open(path, **kwargs):
   sfd = _STD_FILES.get(path)
   if sfd is not None:
-    return cm.NoOpCtxManager(sfd)
+    return contextlib.nullcontext(sfd)
 
   return core_open(path, **kwargs)
 
