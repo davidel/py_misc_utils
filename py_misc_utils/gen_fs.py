@@ -11,6 +11,7 @@ import fsspec
 
 from . import context_managers as cm
 from . import no_except as nex
+from . import obj
 from . import rnd_utils as rngu
 
 
@@ -188,11 +189,17 @@ def rmdir(path):
   fs.rmdir(fpath)
 
 
+class StatResult:
+  pass
+
+STAT_FIELDS = ('st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid',
+               'st_size', 'st_atime', 'st_mtime', 'st_ctime')
+
 def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
   info = fs.info(fpath)
 
-  sinfo = os.stat_result([None for _ in range(os.stat_result.n_sequence_fields)])
+  sinfo = obj.from_class(StatResult, **{k: None for k in STAT_FIELDS})
   for k, v in info.items():
     if k.startswith('st_'):
       setattr(sinfo, k, v)
