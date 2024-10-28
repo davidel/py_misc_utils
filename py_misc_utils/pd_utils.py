@@ -54,13 +54,13 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
     if dtype is None:
       return pd.read_csv(fd, **args)
     if isinstance(dtype, dict):
-      numeric_cols = {c: np.dtype(t) for c, t in dtype.items()}
+      dtype = {c: np.dtype(t) for c, t in dtype.items()}
     else:
       df_test = pd.read_csv(fd, nrows=rows_sample, **args)
       fd.seek(0)
-      numeric_cols = {c: dtype for c in get_typed_columns(df_test, pyn.is_numeric)}
+      dtype = {c: dtype for c in get_typed_columns(df_test, pyn.is_numeric)}
 
-    return pd.read_csv(fd, dtype=numeric_cols, **args)
+    return pd.read_csv(fd, dtype=dtype, **args)
 
 
 def save_dataframe(df, path, **kwargs):

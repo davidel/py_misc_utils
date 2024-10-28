@@ -131,6 +131,12 @@ def is_localfs(fs):
   return fs.protocol in _LOCALFS_PROTOS
 
 
+def is_localpath(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+
+  return is_localfs(fs)
+
+
 def copy(src_path, dest_path, src_fs=None, dest_fs=None):
   if src_fs is None:
     src_fs, src_path = fsspec.core.url_to_fs(src_path)
@@ -155,7 +161,7 @@ def replace(src_path, dest_path):
 
   try:
     if is_localfs(dest_fs):
-      os.replace(src_path, dest_path)
+      os.replace(src_fpath, dest_fpath)
     else:
       # This is not atomic, sigh! File systems should really have a replace-like
       # atomic operation, since the move operations fail if the target exists.
