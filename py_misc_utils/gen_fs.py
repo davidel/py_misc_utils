@@ -17,8 +17,8 @@ from . import rnd_utils as rngu
 
 class TempFile:
 
-  def __init__(self, dir=None, ref_path=None, **kwargs):
-    path = temp_path(ref_path=ref_path, dir=dir)
+  def __init__(self, nsdir=None, nspath=None, **kwargs):
+    path = temp_path(nspath=nspath, nsdir=nsdir)
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
     self._kwargs = kwargs
@@ -74,6 +74,9 @@ def maybe_open(path, **kwargs):
   return core_open(path, **kwargs) if is_file(path) else None
 
 
+_LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
+_LOCAL_RWFS = os.getenv('LOCAL_RWFS', 'simplecache')
+
 def open_local(path, **kwargs):
   fs, fpath = fsspec.core.url_to_fs(path)
   if is_localfs(fs):
@@ -84,12 +87,12 @@ def open_local(path, **kwargs):
   if cache_storage is None:
     cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
   if 'r' in mode:
-    return fsspec.open(f'filecache::{path}',
+    return fsspec.open(f'{_LOCAL_ROFS}::{path}',
                        mode=mode,
                        cache_storage=cache_storage,
                        **kwargs)
   else:
-    return fsspec.open(f'simplecache::{path}',
+    return fsspec.open(f'{_LOCAL_RWFS}::{path}',
                        mode=mode,
                        cache_storage=cache_storage,
                        **kwargs)
@@ -101,13 +104,13 @@ def core_open(path, **kwargs):
   return open_local(path, **kwargs) if local_open else fsspec.open(path, **kwargs)
 
 
-def temp_path(ref_path=None, dir=None, rndsize=10):
-  if ref_path is not None:
-    return f'{ref_path}.{rngu.rand_string(rndsize)}'
+def temp_path(nspath=None, nsdir=None, rndsize=10):
+  if nspath is not None:
+    return f'{nspath}.{rngu.rand_string(rndsize)}'
 
-  dir = tempfile.gettempdir() if dir is None else dir
+  nsdir = tempfile.gettempdir() if nsdir is None else nsdir
 
-  return os.path.join(dir, f'{rngu.rand_string(rndsize)}.tmp')
+  return os.path.join(nsdir, f'{rngu.rand_string(rndsize)}.tmp')
 
 
 def is_file(path):
@@ -155,7 +158,7 @@ def replace(src_path, dest_path):
   # If not on the same file system, copy over since cross-fs renames are not allowed.
   dsrc_path = None
   if src_fs is not dest_fs:
-    dsrc_path = temp_path(ref_path=dest_fpath)
+    dsrc_path = temp_path(nspath=dest_fpath)
     copy(src_fpath, dsrc_path, src_fs=src_fs, dest_fs=dest_fs)
     src_fpath = dsrc_path
 
@@ -166,7 +169,7 @@ def replace(src_path, dest_path):
       # This is not atomic, sigh! File systems should really have a replace-like
       # atomic operation, since the move operations fail if the target exists.
       if dest_fs.exists(dest_fpath):
-        tmp_path = temp_path(ref_path=dest_fpath)
+        tmp_path = temp_path(nspath=dest_fpath)
         dest_fs.mv(dest_fpath, tmp_path)
         try:
           dest_fs.mv(src_fpath, dest_fpath)
@@ -220,13 +223,13 @@ def stat(path):
     sinfo.st_mode |= st.S_IFREG
   elif info['type'] == 'directory':
     sinfo.st_mode |= st.S_IFDIR
+  elif info['type'] == 'link' or info.get('islink', False):
+    sinfo.st_mode |= st.S_IFLNK
 
   if sinfo.st_size is None:
     sinfo.st_size = info.get('size')
   if sinfo.st_ctime is None:
     sinfo.st_ctime = info.get('created')
-
-  sinfo.islink = info.get('islink')
 
   return sinfo
 
@@ -257,11 +260,11 @@ def normpath(path):
   return fpath if is_localfs(fs) else fs.unstrip_protocol(fpath)
 
 
-CACHE_DIR = os.getenv(
+_CACHE_DIR = os.getenv(
   'CACHE_DIR',
   os.path.join(os.getenv('HOME', os.getcwd()), '.cache')
 )
 
 def cache_dir(path=None):
-  return normpath(path) if path is not None else CACHE_DIR
+  return normpath(path) if path is not None else _CACHE_DIR
 
