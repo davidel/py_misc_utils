@@ -35,7 +35,7 @@ class Obj:
     return ad
 
   def __repr__(self):
-    values = ', '.join(f'{k} = {v}' for k, v in self.__dict__.items())
+    values = ', '.join(f'{k}={v}' for k, v in self.__dict__.items())
 
     return f'{type(self).__name__}({values})'
 
