@@ -192,7 +192,7 @@ def rmdir(path):
   fs.rmdir(fpath)
 
 
-class StatResult:
+class StatResult(obj.Obj):
   pass
 
 STAT_FIELDS = {
@@ -204,7 +204,7 @@ def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
   info = fs.info(fpath)
 
-  sinfo = obj.from_class(StatResult, **{k: None for k in STAT_FIELDS})
+  sinfo = StatResult(**{k: None for k in STAT_FIELDS})
   for k, v in info.items():
     sfield = f'st_{k}'
     if sfield in STAT_FIELDS:

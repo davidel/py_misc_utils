@@ -39,10 +39,3 @@ class Obj:
 
     return f'{__class__.__name__}({values})'
 
-
-def from_class(cls, **kwargs):
-  obj = cls()
-  obj.__dict__.update(kwargs)
-
-  return obj
-
