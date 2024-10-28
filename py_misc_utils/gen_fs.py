@@ -214,17 +214,18 @@ def stat(path):
 
   sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
   for k, v in info.items():
-    sfield = f'st_{k}'
+    sfield = k if k.startswith('st_') else f'st_{k}'
     if hasattr(sinfo, sfield):
       setattr(sinfo, sfield, v)
 
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
-  if info['type'] == 'file':
+  itype = info.get('type')
+  if itype == 'file':
     sinfo.st_mode |= st.S_IFREG
-  elif info['type'] == 'directory':
+  elif itype == 'directory':
     sinfo.st_mode |= st.S_IFDIR
-  elif info['type'] == 'link' or info.get('islink', False):
+  elif itype == 'link' or info.get('islink', False):
     sinfo.st_mode |= st.S_IFLNK
 
   if sinfo.st_size is None:
