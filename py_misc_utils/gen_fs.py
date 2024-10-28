@@ -101,13 +101,13 @@ def core_open(path, **kwargs):
   return open_local(path, **kwargs) if local_open else fsspec.open(path, **kwargs)
 
 
-def temp_path(ref_path=None, dir=None, rng_len=10):
+def temp_path(ref_path=None, dir=None, rndsize=10):
   if ref_path is not None:
-    return f'{ref_path}.{rngu.rand_string(rng_len)}'
+    return f'{ref_path}.{rngu.rand_string(rndsize)}'
 
   dir = tempfile.gettempdir() if dir is None else dir
 
-  return os.path.join(dir, f'{rngu.rand_string(rng_len)}.tmp')
+  return os.path.join(dir, f'{rngu.rand_string(rndsize)}.tmp')
 
 
 def is_file(path):
@@ -122,10 +122,13 @@ def exists(path):
   return fs.exists(fpath)
 
 
-def is_localfs(fs):
-  fsproto = fs.protocol if isinstance(fs.protocol, (list, tuple)) else (fs.protocol,)
+_LOCALFS_PROTOS = ('local', 'file')
 
-  return 'local' in fsproto or 'file' in fsproto
+def is_localfs(fs):
+  if isinstance(fs.protocol, (list, tuple)):
+    return any(p in _LOCALFS_PROTOS for p in fs.protocol)
+
+  return fs.protocol in _LOCALFS_PROTOS
 
 
 def copy(src_path, dest_path, src_fs=None, dest_fs=None):
@@ -148,10 +151,10 @@ def replace(src_path, dest_path):
   if src_fs is not dest_fs:
     dsrc_path = temp_path(ref_path=dest_fpath)
     copy(src_fpath, dsrc_path, src_fs=src_fs, dest_fs=dest_fs)
-    src_fs, src_fpath = dest_fs, dsrc_path
+    src_fpath = dsrc_path
 
   try:
-    if is_localfs(src_fs):
+    if is_localfs(dest_fs):
       os.replace(src_path, dest_path)
     else:
       # This is not atomic, sigh! File systems should really have a replace-like
