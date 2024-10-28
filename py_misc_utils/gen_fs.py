@@ -122,7 +122,7 @@ def exists(path):
   return fs.exists(fpath)
 
 
-_LOCALFS_PROTOS = ('local', 'file')
+_LOCALFS_PROTOS = ('file', 'local')
 
 def is_localfs(fs):
   if isinstance(fs.protocol, (list, tuple)):
