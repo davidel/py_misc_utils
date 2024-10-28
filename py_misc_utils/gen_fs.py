@@ -210,14 +210,7 @@ class StatResult(obj.Obj):
 
 def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
-
-  print(fsspec)
-  print(fs)
-  print(fpath)
-
   info = fs.info(fpath)
-
-  print(f'FS info: {info}')
 
   sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
   for k, v in info.items():
@@ -230,9 +223,7 @@ def stat(path):
   if info['type'] == 'file':
     sinfo.st_mode |= st.S_IFREG
   elif info['type'] == 'directory':
-    print(f'ISDIR: mode={sinfo.st_mode:b}')
     sinfo.st_mode |= st.S_IFDIR
-    print(f'ISDIR: mode={sinfo.st_mode:b}')
   elif info['type'] == 'link' or info.get('islink', False):
     sinfo.st_mode |= st.S_IFLNK
 
