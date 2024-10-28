@@ -23,6 +23,8 @@ def std_sizefn(obj):
 
 
 _SIZE_AWARE = {
+  float,
+  int,
   str,
   bytes,
   bytearray,
