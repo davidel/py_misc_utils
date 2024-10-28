@@ -193,21 +193,19 @@ def rmdir(path):
 
 
 class StatResult(obj.Obj):
-  pass
-
-STAT_FIELDS = {
-  'st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid', 'st_size',
-  'st_atime', 'st_mtime', 'st_ctime',
-}
+  FIELDS = (
+    'st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid', 'st_size',
+    'st_atime', 'st_mtime', 'st_ctime',
+  )
 
 def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
   info = fs.info(fpath)
 
-  sinfo = StatResult(**{k: None for k in STAT_FIELDS})
+  sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
   for k, v in info.items():
     sfield = f'st_{k}'
-    if sfield in STAT_FIELDS:
+    if hasattr(sinfo, sfield):
       setattr(sinfo, sfield, v)
 
   if sinfo.st_mode is None:
