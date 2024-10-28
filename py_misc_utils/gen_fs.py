@@ -210,6 +210,10 @@ class StatResult(obj.Obj):
 
 def stat(path):
   fs, fpath = fsspec.core.url_to_fs(path)
+
+  print(fs)
+  print(fpath)
+
   info = fs.info(fpath)
 
   print(f'FS info: {info}')
