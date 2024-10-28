@@ -165,7 +165,10 @@ def replace(src_path, dest_path):
 
   try:
     if is_localfs(dest_fs):
-      os.replace(src_fpath, dest_fpath)
+      if localfs_mount(src_fpath) == localfs_mount(dest_fpath):
+        os.replace(src_fpath, dest_fpath)
+      else:
+        shutil.move(src_fpath, dest_fpath)
     else:
       # This is not atomic, sigh! File systems should really have a replace-like
       # atomic operation, since the move operations fail if the target exists.
@@ -277,13 +280,16 @@ def cache_dir(path=None):
   return normpath(path) if path is not None else _CACHE_DIR
 
 
+def localfs_mount(path):
+  while True:
+    parent_path = os.path.dirname(path)
+    if path == parent_path or os.path.ismount(path):
+      return path
+    path = parent_path
+
+
 def find_mount(path):
   fs, fpath = fsspec.core.url_to_fs(path)
 
-  if is_localfs(fs):
-    while True:
-      parent_path = os.path.dirname(fpath)
-      if fpath == parent_path or os.path.ismount(fpath):
-        return fpath
-      fpath = parent_path
+  return localfs_mount(fpath) if is_localfs(fs) else None
 
