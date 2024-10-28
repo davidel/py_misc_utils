@@ -9,6 +9,7 @@ import pandas as pd
 
 from . import alog
 from . import assert_checks as tas
+from . import gen_fs as gfs
 from . import np_utils as pyn
 from . import utils as pyu
 
@@ -40,24 +41,26 @@ def re_select_columns(df, re_cols):
 
 
 def read_csv(path, rows_sample=100, dtype=None, args=None):
-  args = dict() if args is None else args
-  if args.get('index_col') is None:
-    args = args.copy()
-    with open(path, mode='r') as f:
-      fields = f.readline().rstrip().split(',')
-    # If 'index_col' is not specified, we use column 0 if its name is empty, otherwise
-    # we disable it setting it to False.
-    args['index_col'] = False if fields[0] else 0
+  with gfs.open(path, mode='r') as fd:
+    args = dict() if args is None else args
+    if args.get('index_col') is None:
+      args = args.copy()
+      fields = pyu.comma_split(fd.readline())
+      fd.seek(0)
+      # If 'index_col' is not specified, we use column 0 if its name is empty, otherwise
+      # we disable it setting it to False.
+      args['index_col'] = False if fields[0] else 0
 
-  if dtype is None:
-    return pd.read_csv(path, **args)
-  if isinstance(dtype, dict):
-    numeric_cols = {c: np.dtype(t) for c, t in dtype.items()}
-  else:
-    df_test = pd.read_csv(path, nrows=rows_sample, **args)
-    numeric_cols = {c: dtype for c in get_typed_columns(df_test, pyn.is_numeric)}
+    if dtype is None:
+      return pd.read_csv(fd, **args)
+    if isinstance(dtype, dict):
+      numeric_cols = {c: np.dtype(t) for c, t in dtype.items()}
+    else:
+      df_test = pd.read_csv(fd, nrows=rows_sample, **args)
+      fd.seek(0)
+      numeric_cols = {c: dtype for c in get_typed_columns(df_test, pyn.is_numeric)}
 
-  return pd.read_csv(path, dtype=numeric_cols, **args)
+    return pd.read_csv(fd, dtype=numeric_cols, **args)
 
 
 def save_dataframe(df, path, **kwargs):
@@ -66,7 +69,8 @@ def save_dataframe(df, path, **kwargs):
     args = pyu.dict_subset(kwargs, ('compression', 'protocol', 'storage_options'))
     if 'protocol' not in args:
       args['protocol'] = pyu.pickle_proto()
-    df.to_pickle(path, **args)
+    with gfs.open(path, mode='wb') as fd:
+      df.to_pickle(fd, **args)
   elif ext == '.csv':
     args = pyu.dict_subset(kwargs, ('float_format', 'columns', 'header', 'index',
                                     'index_label', 'mode', 'encoding', 'quoting',
@@ -79,7 +83,8 @@ def save_dataframe(df, path, **kwargs):
     if not df.index.name:
       args = pyu.dict_setmissing(args, index=None)
 
-    df.to_csv(path, **args)
+    with gfs.open(path, mode='w') as fd:
+      df.to_csv(fd, **args)
   else:
     alog.xraise(RuntimeError, f'Unknown extension: {ext}')
 
@@ -87,7 +92,8 @@ def save_dataframe(df, path, **kwargs):
 def load_dataframe(path, **kwargs):
   _, ext = os.path.splitext(os.path.basename(path))
   if ext == '.pkl':
-    return pd.read_pickle(path)
+    with gfs.open(path, mode='rb') as fd:
+      return pd.read_pickle(fd)
   elif ext == '.csv':
     rows_sample = kwargs.pop('rows_sample', 100)
     dtype = kwargs.pop('dtype', None)
