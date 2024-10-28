@@ -32,7 +32,7 @@ class $CLASS:
   def __str__(self):
     args = {k: getattr(self, k) for k in dir(self) if not k.startswith('__')}
 
-    return f'$KEY=[{$KEY}] : {args}'
+    return f'$KEY=[{self.$KEY}] : {args}'
 '''
 
 
