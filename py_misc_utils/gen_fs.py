@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import os
 import re
 import shutil
@@ -230,6 +231,12 @@ def stat(path):
     sinfo.st_size = info.get('size')
   if sinfo.st_ctime is None:
     sinfo.st_ctime = info.get('created')
+  # Some FS populates datetime.datetime for time fields, while Python stat()
+  # standard requires timestamps (EPOCH seconds).
+  for k in ('st_atime', 'st_mtime', 'st_ctime'):
+    v = getattr(sinfo, k, None)
+    if isinstance(v, datetime.datetime):
+      setattr(sinfo, k, v.timestamp())
 
   return sinfo
 
