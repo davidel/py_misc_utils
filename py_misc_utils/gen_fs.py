@@ -276,3 +276,14 @@ _CACHE_DIR = os.getenv(
 def cache_dir(path=None):
   return normpath(path) if path is not None else _CACHE_DIR
 
+
+def find_mount(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+
+  if is_localfs(fs):
+    while True:
+      parent_path = os.path.dirname(fpath)
+      if fpath == parent_path or os.path.ismount(fpath):
+        return fpath
+      fpath = parent_path
+
