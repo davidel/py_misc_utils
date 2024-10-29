@@ -121,6 +121,12 @@ def is_file(path):
   return fs.isfile(fpath)
 
 
+def is_dir(path):
+  fs, fpath = fsspec.core.url_to_fs(path)
+
+  return fs.isdir(fpath)
+
+
 def exists(path):
   fs, fpath = fsspec.core.url_to_fs(path)
 
