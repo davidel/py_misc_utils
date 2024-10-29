@@ -30,7 +30,8 @@ class $CLASS:
     return hash(self.$KEY)
 
   def __str__(self):
-    args = {k: getattr(self, k) for k in dir(self) if not k.startswith('__')}
+    args = self.__dict__.copy()
+    args.pop('$KEY', None)
 
     return f'$KEY=[{self.$KEY}] : {args}'
 '''
@@ -39,7 +40,7 @@ class $CLASS:
 def key_wrap(cname, key_name):
   replaces = dict(CLASS=cname, KEY=key_name)
 
-  results = ut.compile(_KW_TEMPLATE, (cname,), vals=replaces)
+  results, = ut.compile(_KW_TEMPLATE, cname, vals=replaces)
 
-  return results[0]
+  return results
 
