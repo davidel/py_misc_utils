@@ -133,13 +133,20 @@ def exists(path):
   return fs.exists(fpath)
 
 
+def fs_proto(fs):
+  proto = getattr(fs, 'protocol', None)
+
+  return getattr(fs, 'fsid', None) if proto is None else proto
+
+
 _LOCALFS_PROTOS = ('file', 'local')
 
 def is_localfs(fs):
-  if isinstance(fs.protocol, (list, tuple)):
-    return any(p in _LOCALFS_PROTOS for p in fs.protocol)
+  proto = fs_proto(fs)
+  if isinstance(proto, (list, tuple)):
+    return any(p in _LOCALFS_PROTOS for p in proto)
 
-  return fs.protocol in _LOCALFS_PROTOS
+  return proto in _LOCALFS_PROTOS
 
 
 def is_localpath(path):
