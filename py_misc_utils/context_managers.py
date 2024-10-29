@@ -14,17 +14,20 @@ class CtxManager:
     return self._outfn(*exc)
 
 
-class CtxManagerWrapper:
+class CtxManagerWrapper(contextlib.ExitStack):
 
-  def __init__(self, wrap_ctx, wrap_obj=None):
-    self._wrap_ctx = wrap_ctx
+  def __init__(self, *wrap_ctxs, wrap_obj=None, wrap_idx=None):
+    self._wrap_ctxs = wrap_ctxs
     self._wrap_obj = wrap_obj
+    self._wrap_idx = wrap_idx
 
   def __enter__(self):
-    wres = self._wrap_ctx.__enter__()
+    super().__enter__()
 
-    return wres if self._wrap_obj is None else self._wrap_obj
+    wres = [self.enter_context(ctx) for ctx in self._wrap_ctxs]
 
-  def __exit__(self, *exc):
-    return self._wrap_ctx.__exit__(*exc)
+    if self._wrap_obj is not None:
+      return self._wrap_obj
+
+    return wres[-1] if self._wrap_idx is None else wres[self._wrap_idx]
 
