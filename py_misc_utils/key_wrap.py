@@ -29,7 +29,7 @@ class $CLASS:
   def __hash__(self):
     return hash(self.$KEY)
 
-  def __str__(self):
+  def __repr__(self):
     args = self.__dict__.copy()
     args.pop('$KEY', None)
 
