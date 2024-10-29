@@ -23,10 +23,11 @@ class TempFile:
 
     self._fs, self._path = fsspec.core.url_to_fs(path)
     self._kwargs = kwargs
-    self._fd, self._delete = None, True
+    self._fd, self._delete = None, False
 
   def open(self):
     self._fd = self._fs.open(self._path, **self._kwargs)
+    self._delete = True
 
     return self._fd
 
@@ -147,9 +148,17 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
   if dest_fs is None:
     dest_fs, dest_path = fsspec.core.url_to_fs(dest_path)
 
-  with src_fs.open(src_path, mode='rb') as src_fd:
-    with dest_fs.open(dest_path, mode='wb') as dest_fd:
-      shutil.copyfileobj(src_fd, dest_fd)
+  try:
+    with src_fs.open(src_path, mode='rb') as src_fd:
+      with dest_fs.open(dest_path, mode='wb') as dest_fd:
+        shutil.copyfileobj(src_fd, dest_fd)
+  except NotImplementedError:
+    tmp_path = temp_path()
+    src_fs.get_file(src_path, tmp_path)
+    try:
+      dest_fs.put_file(tmp_path, dest_path)
+    finally:
+      os.remove(tmp_path)
 
 
 def replace(src_path, dest_path):
