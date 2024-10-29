@@ -153,12 +153,14 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
       with dest_fs.open(dest_path, mode='wb') as dest_fd:
         shutil.copyfileobj(src_fd, dest_fd)
   except NotImplementedError:
+    # Slow path. Likely the destination file system do not support files opened
+    # in write mode, so we use the more widely available get_file+put_file APIs.
     tmp_path = temp_path()
-    src_fs.get_file(src_path, tmp_path)
     try:
+      src_fs.get_file(src_path, tmp_path)
       dest_fs.put_file(tmp_path, dest_path)
     finally:
-      os.remove(tmp_path)
+      nex.no_except(os.remove, tmp_path)
 
 
 def replace(src_path, dest_path):
