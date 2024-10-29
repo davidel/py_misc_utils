@@ -17,6 +17,7 @@ class CtxManager:
 class CtxManagerWrapper(contextlib.ExitStack):
 
   def __init__(self, *wrap_ctxs, wrap_obj=None, wrap_idx=None):
+    super().__init__()
     self._wrap_ctxs = wrap_ctxs
     self._wrap_obj = wrap_obj
     self._wrap_idx = wrap_idx
