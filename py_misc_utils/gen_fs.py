@@ -19,9 +19,13 @@ from . import rnd_utils as rngu
 class TempFile:
 
   def __init__(self, nsdir=None, nspath=None, **kwargs):
-    path = temp_path(nspath=nspath, nsdir=nsdir)
+    tmp_path = temp_path(nspath=nspath, nsdir=nsdir)
 
-    self._fs, self._path = fsspec.core.url_to_fs(path)
+    fs, tmp_path = fsspec.core.url_to_fs(tmp_path)
+    if not is_localfs(fs):
+      fs, tmp_path = fsspec.core.url_to_fs(temp_path())
+
+    self._fs, self._path = fs, tmp_path
     self._kwargs = kwargs
     self._fd, self._delete = None, False
 
@@ -139,6 +143,12 @@ def fs_proto(fs):
   return getattr(fs, 'fsid', None) if proto is None else proto
 
 
+def is_same_fs(*args):
+  protos = [fs_proto(fs) for fs in args]
+
+  return all(p is not None and protos[0] == p for p in protos)
+
+
 _LOCALFS_PROTOS = ('file', 'local')
 
 def is_localfs(fs):
@@ -168,50 +178,50 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
   except NotImplementedError:
     # Slow path. Likely the destination file system do not support files opened
     # in write mode, so we use the more widely available get_file+put_file APIs.
-    tmp_path = temp_path()
     try:
-      src_fs.get_file(src_path, tmp_path)
-      dest_fs.put_file(tmp_path, dest_path)
+      if is_localfs(src_fs):
+        local_path = src_path
+      else:
+        local_path = temp_path()
+        src_fs.get_file(src_path, local_path)
+
+      dest_fs.put_file(local_path, dest_path)
     finally:
-      nex.no_except(os.remove, tmp_path)
+      if local_path != src_path:
+        nex.no_except(os.remove, local_path)
 
 
 def replace(src_path, dest_path):
   src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
   dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
 
-  # If not on the same file system, copy over since cross-fs renames are not allowed.
-  dsrc_path = None
-  if src_fs is not dest_fs:
-    dsrc_path = temp_path(nspath=dest_fpath)
-    copy(src_fpath, dsrc_path, src_fs=src_fs, dest_fs=dest_fs)
-    src_fpath = dsrc_path
-
-  try:
+  if is_localfs(src_fs):
     if is_localfs(dest_fs):
       if localfs_mount(src_fpath) == localfs_mount(dest_fpath):
         os.replace(src_fpath, dest_fpath)
       else:
         shutil.move(src_fpath, dest_fpath)
     else:
-      # This is not atomic, sigh! File systems should really have a replace-like
-      # atomic operation, since the move operations fail if the target exists.
-      if dest_fs.exists(dest_fpath):
-        tmp_path = temp_path(nspath=dest_fpath)
-        dest_fs.mv(dest_fpath, tmp_path)
-        try:
-          dest_fs.mv(src_fpath, dest_fpath)
-          dest_fs.rm(tmp_path)
-        except:
-          dest_fs.mv(tmp_path, dest_fpath)
-          raise
-      else:
+      dest_fs.put_file(src_fpath, dest_fpath)
+      src_fs.rm(src_fpath)
+  else:
+    # Quite a few file systems do not support move operations, so we try that before,
+    # and if that fails, we use the more widely available get_file+put_file APIs.
+    replaced = False
+    try:
+      if is_same_fs(src_fs, dest_fs):
         dest_fs.mv(src_fpath, dest_fpath)
-  except:
-    if dsrc_path is not None:
-      nex.no_except(dest_fs.rm, dsrc_path)
+        replaced = True
+    except NotImplementedError:
+      pass
 
-    raise
+    if not replaced:
+      local_path = temp_path()
+      try:
+        src_fs.get_file(src_fpath, local_path)
+        dest_fs.put_file(local_path, dest_fpath)
+      finally:
+        nex.no_except(os.remove, local_path)
 
 
 def mkdir(path, **kwargs):
