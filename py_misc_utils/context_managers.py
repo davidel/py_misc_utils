@@ -25,7 +25,11 @@ class CtxManagerWrapper(contextlib.ExitStack):
   def __enter__(self):
     super().__enter__()
 
-    wres = [self.enter_context(ctx) for ctx in self._wrap_ctxs]
+    try:
+      wres = [self.enter_context(ctx) for ctx in self._wrap_ctxs]
+    except:
+      self.close()
+      raise
 
     if self._wrap_obj is not None:
       return self._wrap_obj
