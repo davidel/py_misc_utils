@@ -48,7 +48,8 @@ class TempFile:
     self.close()
 
     try:
-      replace(self._path, path)
+      fs, path = fsspec.core.url_to_fs(path)
+      replace(self._path, path, src_fs=self._fs, dest_fs=fs)
     except:
       self._delete = True
       raise
@@ -191,37 +192,23 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
         nex.no_except(os.remove, local_path)
 
 
-def replace(src_path, dest_path):
-  src_fs, src_fpath = fsspec.core.url_to_fs(src_path)
-  dest_fs, dest_fpath = fsspec.core.url_to_fs(dest_path)
+def replace(src_path, dest_path, src_fs=None, dest_fs=None):
+  if src_fs is None:
+    src_fs, src_path = fsspec.core.url_to_fs(src_path)
+  if dest_fs is None:
+    dest_fs, dest_path = fsspec.core.url_to_fs(dest_path)
 
-  if is_localfs(src_fs):
-    if is_localfs(dest_fs):
-      if localfs_mount(src_fpath) == localfs_mount(dest_fpath):
-        os.replace(src_fpath, dest_fpath)
-      else:
-        shutil.move(src_fpath, dest_fpath)
-    else:
-      dest_fs.put_file(src_fpath, dest_fpath)
-      src_fs.rm(src_fpath)
-  else:
-    # Quite a few file systems do not support move operations, so we try that before,
-    # and if that fails, we use the more widely available get_file+put_file APIs.
-    replaced = False
-    try:
-      if is_same_fs(src_fs, dest_fs):
-        dest_fs.mv(src_fpath, dest_fpath)
-        replaced = True
-    except NotImplementedError:
-      pass
+  replaced = False
+  try:
+    if is_same_fs(src_fs, dest_fs):
+      dest_fs.mv(src_path, dest_path)
+      replaced = True
+  except NotImplementedError:
+    pass
 
-    if not replaced:
-      local_path = temp_path()
-      try:
-        src_fs.get_file(src_fpath, local_path)
-        dest_fs.put_file(local_path, dest_fpath)
-      finally:
-        nex.no_except(os.remove, local_path)
+  if not replaced:
+    copy(src_path, dest_path, src_fs=src_fs, dest_fs=dest_fs)
+    src_fs.rm(src_path)
 
 
 def mkdir(path, **kwargs):
