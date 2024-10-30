@@ -171,14 +171,9 @@ def is_local_path(path):
 
 
 def get_proto(path):
-  m = re.match(r'(\w+)::', path)
-  if m:
-    return m.group(1).lower()
-  m = re.match(r'(\w+)://', path)
-  if m:
-    return m.group(1).lower()
+  m = re.match(r'(\w+):(:|//)', path)
 
-  return _DEFAULT_LOCAL_PROTO
+  return m.group(1).lower() if m else _DEFAULT_LOCAL_PROTO
 
 
 def copy(src_path, dest_path, src_fs=None, dest_fs=None):
