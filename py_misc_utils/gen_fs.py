@@ -102,7 +102,11 @@ def open_local(path, **kwargs):
                      **kwargs)
 
 
-def temp_path(nspath=None, nsdir=None, rndsize=10):
+_TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
+
+def temp_path(nspath=None, nsdir=None, rndsize=None):
+  rndsize = rndsize or _TMPFN_RNDSIZE
+
   if nspath is not None:
     return f'{nspath}.{rngu.rand_string(rndsize)}'
 
