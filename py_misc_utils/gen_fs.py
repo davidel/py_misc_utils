@@ -19,11 +19,12 @@ from . import rnd_utils as rngu
 class TempFile:
 
   def __init__(self, nsdir=None, nspath=None, **kwargs):
-    tmp_path = temp_path(nspath=nspath, nsdir=nsdir)
-
-    fs, tmp_path = fsspec.core.url_to_fs(tmp_path)
-    if not is_localfs(fs):
-      fs, tmp_path = fsspec.core.url_to_fs(temp_path())
+    is_local = ((nsdir is None or is_local_path(nsdir)) and
+                (nspath is None or is_local_path(nspath)))
+    if is_local:
+      fs, tmp_path = fsspec.url_to_fs(temp_path(nspath=nspath, nsdir=nsdir))
+    else:
+      fs, tmp_path = fsspec.url_to_fs(temp_path())
 
     self._fs, self._path = fs, tmp_path
     self._kwargs = kwargs
@@ -48,7 +49,7 @@ class TempFile:
     self.close()
 
     try:
-      fs, path = fsspec.core.url_to_fs(path)
+      fs, path = fsspec.url_to_fs(path)
       replace(self._path, path, src_fs=self._fs, dest_fs=fs)
     except:
       self._delete = True
@@ -85,8 +86,8 @@ _LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
 _LOCAL_RWFS = os.getenv('LOCAL_RWFS', 'simplecache')
 
 def open_local(path, **kwargs):
-  fs, fpath = fsspec.core.url_to_fs(path)
-  if is_localfs(fs):
+  fs, fpath = fsspec.url_to_fs(path)
+  if is_local_fs(fs):
     return fs.open(fpath, **kwargs)
 
   mode = kwargs.pop('mode', 'r')
@@ -121,19 +122,19 @@ def temp_path(nspath=None, nsdir=None, rndsize=10):
 
 
 def is_file(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
 
   return fs.isfile(fpath)
 
 
 def is_dir(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
 
   return fs.isdir(fpath)
 
 
 def exists(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
 
   return fs.exists(fpath)
 
@@ -141,36 +142,50 @@ def exists(path):
 def fs_proto(fs):
   proto = getattr(fs, 'protocol', None)
 
-  return getattr(fs, 'fsid', None) if proto is None else proto
+  return getattr(fs, 'fsid') if proto is None else proto
 
 
 def is_same_fs(*args):
   protos = [fs_proto(fs) for fs in args]
 
-  return all(p is not None and protos[0] == p for p in protos)
+  return all(protos[0] == p for p in protos)
 
 
-_LOCALFS_PROTOS = ('file', 'local')
+_LOCAL_PROTOS = {'file', 'local'}
+_DEFAULT_LOCAL_PROTO = 'file'
 
-def is_localfs(fs):
+def is_local_proto(proto):
+  return proto in _LOCAL_PROTOS
+
+
+def is_local_fs(fs):
   proto = fs_proto(fs)
   if isinstance(proto, (list, tuple)):
-    return any(p in _LOCALFS_PROTOS for p in proto)
+    return any(is_local_proto(p) for p in proto)
 
-  return proto in _LOCALFS_PROTOS
+  return is_local_proto(proto)
 
 
-def is_localpath(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+def is_local_path(path):
+  return is_local_proto(get_proto(path))
 
-  return is_localfs(fs)
+
+def get_proto(path):
+  m = re.match(r'(\w+)::', path)
+  if m:
+    return m.group(1).lower()
+  m = re.match(r'(\w+)://', path)
+  if m:
+    return m.group(1).lower()
+
+  return _DEFAULT_LOCAL_PROTO
 
 
 def copy(src_path, dest_path, src_fs=None, dest_fs=None):
   if src_fs is None:
-    src_fs, src_path = fsspec.core.url_to_fs(src_path)
+    src_fs, src_path = fsspec.url_to_fs(src_path)
   if dest_fs is None:
-    dest_fs, dest_path = fsspec.core.url_to_fs(dest_path)
+    dest_fs, dest_path = fsspec.url_to_fs(dest_path)
 
   try:
     with src_fs.open(src_path, mode='rb') as src_fd:
@@ -180,7 +195,7 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
     # Slow path. Likely the destination file system do not support files opened
     # in write mode, so we use the more widely available get_file+put_file APIs.
     try:
-      if is_localfs(src_fs):
+      if is_local_fs(src_fs):
         local_path = src_path
       else:
         local_path = temp_path()
@@ -194,9 +209,9 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
 
 def replace(src_path, dest_path, src_fs=None, dest_fs=None):
   if src_fs is None:
-    src_fs, src_path = fsspec.core.url_to_fs(src_path)
+    src_fs, src_path = fsspec.url_to_fs(src_path)
   if dest_fs is None:
-    dest_fs, dest_path = fsspec.core.url_to_fs(dest_path)
+    dest_fs, dest_path = fsspec.url_to_fs(dest_path)
 
   replaced = False
   try:
@@ -212,17 +227,17 @@ def replace(src_path, dest_path, src_fs=None, dest_fs=None):
 
 
 def mkdir(path, **kwargs):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
   fs.mkdir(fpath, **kwargs)
 
 
 def makedirs(path, **kwargs):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
   fs.makedirs(fpath, **kwargs)
 
 
 def rmdir(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
   fs.rmdir(fpath)
 
 
@@ -233,7 +248,7 @@ class StatResult(obj.Obj):
   )
 
 def stat(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
   info = fs.info(fpath)
 
   sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
@@ -267,7 +282,7 @@ def stat(path):
 
 
 def enumerate_files(path, matcher, fullpath=False):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
   for epath in fs.find(fpath, maxdepth=1, withdirs=True):
     fname = os.path.basename(epath)
     if matcher(fname):
@@ -275,7 +290,7 @@ def enumerate_files(path, matcher, fullpath=False):
 
 
 def re_enumerate_files(path, rex, fullpath=False):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
   for epath in fs.find(fpath, maxdepth=1, withdirs=True):
     fname = os.path.basename(epath)
     m = re.match(rex, fname)
@@ -287,9 +302,9 @@ def re_enumerate_files(path, rex, fullpath=False):
 def normpath(path):
   path = os.path.expandvars(path)
 
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
 
-  return fpath if is_localfs(fs) else fs.unstrip_protocol(fpath)
+  return fpath if is_local_fs(fs) else fs.unstrip_protocol(fpath)
 
 
 _CACHE_DIR = os.getenv(
@@ -310,7 +325,7 @@ def localfs_mount(path):
 
 
 def find_mount(path):
-  fs, fpath = fsspec.core.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path)
 
-  return localfs_mount(fpath) if is_localfs(fs) else None
+  return localfs_mount(fpath) if is_local_fs(fs) else None
 
