@@ -136,7 +136,7 @@ def exists(path):
 def fs_proto(fs):
   proto = getattr(fs, 'protocol', None)
 
-  return getattr(fs, 'fsid') if proto is None else proto
+  return fs.fsid if proto is None else proto
 
 
 def is_same_fs(*args):
