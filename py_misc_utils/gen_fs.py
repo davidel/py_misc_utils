@@ -74,11 +74,13 @@ def open(path, **kwargs):
   if sfd is not None:
     return contextlib.nullcontext(sfd)
 
-  return core_open(path, **kwargs)
+  return fsspec.open(path, **kwargs)
 
 
 def maybe_open(path, **kwargs):
-  return core_open(path, **kwargs) if is_file(path) else None
+  fs, fpath = fsspec.url_to_fs(path)
+
+  return fs.open(fpath, **kwargs) if fs.isfile(fpath) else None
 
 
 _LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
@@ -90,25 +92,14 @@ def open_local(path, **kwargs):
     return fs.open(fpath, **kwargs)
 
   mode = kwargs.pop('mode', 'r')
-  cache_storage = kwargs.pop('cache_storage', None)
-  if cache_storage is None:
-    cache_storage = os.path.join(cache_dir(), 'py_misc_utils', 'gfs_cache')
-  if 'r' in mode:
-    return fsspec.open(f'{_LOCAL_ROFS}::{path}',
-                       mode=mode,
-                       cache_storage=cache_storage,
-                       **kwargs)
-  else:
-    return fsspec.open(f'{_LOCAL_RWFS}::{path}',
-                       mode=mode,
-                       cache_storage=cache_storage,
-                       **kwargs)
+  proxy_fs = _LOCAL_ROFS if 'r' in mode else _LOCAL_RWFS
+  cache_storage = kwargs.pop('cache_storage', cache_dir())
+  cache_storage = os.path.join(cache_storage, 'py_misc_utils', 'gfs', proxy_fs)
 
-
-def core_open(path, **kwargs):
-  local_open = kwargs.pop('local_open', False)
-
-  return open_local(path, **kwargs) if local_open else fsspec.open(path, **kwargs)
+  return fsspec.open(f'{proxy_fs}::{path}',
+                     mode=mode,
+                     cache_storage=cache_storage,
+                     **kwargs)
 
 
 def temp_path(nspath=None, nsdir=None, rndsize=10):
