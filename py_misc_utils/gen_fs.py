@@ -266,11 +266,11 @@ def stat(path):
   return sinfo
 
 
-def enumerate_files(path, matcher, fullpath=False):
+def enumerate_files(path, matcher=None, fullpath=False):
   fs, fpath = fsspec.url_to_fs(path)
   for epath in fs.find(fpath, maxdepth=1, withdirs=True):
     fname = os.path.basename(epath)
-    if matcher(fname):
+    if matcher is None or matcher(fname):
       yield epath if fullpath else fname
 
 
@@ -280,8 +280,7 @@ def re_enumerate_files(path, rex, fullpath=False):
     fname = os.path.basename(epath)
     m = re.match(rex, fname)
     if m:
-      mpath = epath if fullpath else fname
-      yield mpath, m
+      yield epath if fullpath else fname, m
 
 
 def normpath(path):
