@@ -49,8 +49,7 @@ class TempFile:
     self.close()
 
     try:
-      fs, path = fsspec.url_to_fs(path)
-      replace(self._path, path, src_fs=self._fs, dest_fs=fs)
+      replace(self._path, path, src_fs=self._fs)
     except:
       self._delete = True
       raise
