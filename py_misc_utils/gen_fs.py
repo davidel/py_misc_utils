@@ -36,23 +36,21 @@ class TempFile:
 
     return self._fd
 
-  def close(self):
+  def close_fd(self):
     if self._fd is not None:
       self._fd.close()
       self._fd = None
+
+  def close(self):
+    self.close_fd()
     if self._delete:
       self._fs.rm(self._path)
       self._delete = False
 
   def replace(self, path):
+    self.close_fd()
+    replace(self._path, path, src_fs=self._fs)
     self._delete = False
-    self.close()
-
-    try:
-      replace(self._path, path, src_fs=self._fs)
-    except:
-      self._delete = True
-      raise
 
   def __enter__(self):
     return self.open()
