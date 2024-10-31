@@ -35,8 +35,10 @@ class Obj:
     return ad
 
   def __repr__(self):
-    vstr = '"' + v.replace('"', '\\"') + '"' if isinstance(v, str) else str(v)
-    values = ', '.join(f'{k}={vstr}' for k, v in self.__dict__.items())
+    values = ', '.join(f'{k}={str_value(v)}' for k, v in self.__dict__.items())
 
     return f'{type(self).__name__}({values})'
 
+
+def str_value(v):
+  return '"' + v.replace('"', '\\"') + '"' if isinstance(v, str) else str(v)

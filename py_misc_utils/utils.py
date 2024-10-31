@@ -162,7 +162,8 @@ def _stri(obj, seen, float_fmt):
 
   seen[oid] = None
   if isinstance(obj, str):
-    result = f'"{obj}"'
+    obj_str = obj.replace('"', '\\"')
+    result = f'"{obj_str}"'
   elif isinstance(obj, float):
     result = f'{obj:{float_fmt}}'
   elif isinstance(obj, bytes):
