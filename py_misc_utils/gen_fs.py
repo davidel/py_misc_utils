@@ -253,8 +253,6 @@ def info_stat(info):
   elif itype == 'link' or info.get('islink', False):
     sinfo.st_mode |= st.S_IFLNK
 
-  if sinfo.st_size is None:
-    sinfo.st_size = info.get('size')
   if sinfo.st_ctime is None:
     sinfo.st_ctime = info.get('created')
   # Some FS populates datetime.datetime for time fields, while Python stat()
