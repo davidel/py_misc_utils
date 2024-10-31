@@ -236,10 +236,7 @@ class StatResult(obj.Obj):
     'st_atime', 'st_mtime', 'st_ctime',
   )
 
-def stat(path):
-  fs, fpath = fsspec.url_to_fs(path)
-  info = fs.info(fpath)
-
+def info_stat(info):
   sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
   for k, v in info.items():
     sfield = k if k.startswith('st_') else f'st_{k}'
@@ -267,24 +264,46 @@ def stat(path):
     if isinstance(v, datetime.datetime):
       setattr(sinfo, k, v.timestamp())
 
+  sinfo.name = os.path.basename(info['name'])
+
   return sinfo
 
 
-def enumerate_files(path, matcher=None, fullpath=False):
+def stat(path):
   fs, fpath = fsspec.url_to_fs(path)
-  for epath in fs.find(fpath, maxdepth=1, withdirs=True):
-    fname = os.path.basename(epath)
-    if matcher is None or matcher(fname):
-      yield epath if fullpath else fname
+  info = fs.info(fpath)
+
+  return info_stat(info)
 
 
-def re_enumerate_files(path, rex, fullpath=False):
+def enumerate_files(path, matcher=None, return_stats=False):
   fs, fpath = fsspec.url_to_fs(path)
-  for epath in fs.find(fpath, maxdepth=1, withdirs=True):
-    fname = os.path.basename(epath)
-    m = re.match(rex, fname)
-    if m:
-      yield epath if fullpath else fname, m
+  if return_stats:
+    for info in fs.ls(fpath, detail=True):
+      fname = os.path.basename(info['name'])
+      if matcher is None or matcher(fname):
+        yield info_stat(info)
+  else:
+    for lspath in fs.ls(fpath, detail=False):
+      fname = os.path.basename(lspath)
+      if matcher is None or matcher(fname):
+        yield fname
+
+
+def re_enumerate_files(path, rex, return_stats=False):
+  fs, fpath = fsspec.url_to_fs(path)
+  if return_stats:
+    for info in fs.ls(fpath, detail=True):
+      fname = os.path.basename(info['name'])
+      m = re.match(rex, fname)
+      if m:
+        yield info_stat(info), m
+  else:
+    for lspath in fs.ls(fpath, detail=False):
+      fname = os.path.basename(lspath)
+      m = re.match(rex, fname)
+      if m:
+        yield fname, m
 
 
 def normpath(path):
