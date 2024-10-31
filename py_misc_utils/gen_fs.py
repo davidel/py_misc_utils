@@ -28,18 +28,18 @@ class TempFile:
 
     self._fs, self._path = fs, tmp_path
     self._kwargs = kwargs
-    self._fd, self._delete = None, False
+    self.fd, self._delete = None, False
 
   def open(self):
-    self._fd = self._fs.open(self._path, **self._kwargs)
+    self.fd = self._fs.open(self._path, **self._kwargs)
     self._delete = True
 
-    return self._fd
+    return self.fd
 
   def close_fd(self):
-    if self._fd is not None:
-      self._fd.close()
-      self._fd = None
+    if self.fd is not None:
+      self.fd.close()
+      self.fd = None
 
   def close(self):
     self.close_fd()
@@ -53,7 +53,9 @@ class TempFile:
     self._delete = False
 
   def __enter__(self):
-    return self.open()
+    self.open()
+
+    return self
 
   def __exit__(self, *exc):
     self.close()
