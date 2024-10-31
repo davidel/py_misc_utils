@@ -271,9 +271,8 @@ def info_stat(info):
 
 def stat(path):
   fs, fpath = fsspec.url_to_fs(path)
-  info = fs.info(fpath)
 
-  return info_stat(info)
+  return info_stat(fs.info(fpath))
 
 
 def enumerate_files(path, matcher=None, return_stats=False):
