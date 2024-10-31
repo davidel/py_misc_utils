@@ -243,6 +243,8 @@ def info_stat(info):
     if hasattr(sinfo, sfield):
       setattr(sinfo, sfield, v)
 
+  sinfo.st_name = os.path.basename(info['name'])
+
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
   itype = info.get('type')
@@ -263,8 +265,6 @@ def info_stat(info):
     v = getattr(sinfo, k, None)
     if isinstance(v, datetime.datetime):
       setattr(sinfo, k, v.timestamp())
-
-  sinfo.name = os.path.basename(info['name'])
 
   return sinfo
 
