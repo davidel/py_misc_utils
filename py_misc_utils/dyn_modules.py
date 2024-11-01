@@ -20,9 +20,9 @@ class DynLoader:
       tas.check_is_not_none(path, msg=f'Path must be specified if "modname" is missing')
       mpath = path
 
-    module_names = []
-    for fname, m in gfs.re_enumerate_files(mpath, r'(.*)' + postfix + r'\.py$'):
-      module_names.append((m.group(1), os.path.join(mpath, fname)))
+    module_names, matcher = [], gfs.RegexMatcher(r'(.*)' + postfix + r'\.py$')
+    for fname in gfs.enumerate_files(mpath, matcher=matcher):
+      module_names.append((matcher.match.group(1), os.path.join(mpath, fname)))
 
     self._modules = collections.OrderedDict()
     for (imod_name, imod_path) in sorted(module_names):

@@ -271,6 +271,18 @@ def stat(path):
   return info_stat(fs.info(fpath))
 
 
+class RegexMatcher:
+
+  def __init__(self, rex):
+    self._rex = re.compile(rex)
+    self.match = None
+
+  def __call__(self, value):
+    self.match = re.match(self._rex, value)
+
+    return self.match is not None
+
+
 def enumerate_files(path, matcher=None, return_stats=False):
   fs, fpath = fsspec.url_to_fs(path)
   if return_stats:
@@ -283,22 +295,6 @@ def enumerate_files(path, matcher=None, return_stats=False):
       fname = os.path.basename(lspath)
       if matcher is None or matcher(fname):
         yield fname
-
-
-def re_enumerate_files(path, rex, return_stats=False):
-  fs, fpath = fsspec.url_to_fs(path)
-  if return_stats:
-    for info in fs.ls(fpath, detail=True):
-      fname = os.path.basename(info['name'])
-      m = re.match(rex, fname)
-      if m:
-        yield fname, m, info_stat(info)
-  else:
-    for lspath in fs.ls(fpath, detail=False):
-      fname = os.path.basename(lspath)
-      m = re.match(rex, fname)
-      if m:
-        yield fname, m
 
 
 def normpath(path):
