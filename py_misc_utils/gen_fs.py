@@ -69,11 +69,15 @@ _STD_FILES = {
   'STDERR': sys.stderr,
 }
 
-def open(path, **kwargs):
+def std_open(path, **kwargs):
   sfd = _STD_FILES.get(path)
   if sfd is not None:
     return contextlib.nullcontext(sfd)
 
+  return open(path, **kwargs)
+
+
+def open(path, **kwargs):
   return fsspec.open(path, **kwargs)
 
 
