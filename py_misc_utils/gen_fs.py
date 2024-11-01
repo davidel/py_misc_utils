@@ -243,8 +243,6 @@ def info_stat(info):
     if hasattr(sinfo, sfield):
       setattr(sinfo, sfield, v)
 
-  sinfo.st_name = os.path.basename(info['name'])
-
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
   itype = info.get('type')
@@ -279,7 +277,7 @@ def enumerate_files(path, matcher=None, return_stats=False):
     for info in fs.ls(fpath, detail=True):
       fname = os.path.basename(info['name'])
       if matcher is None or matcher(fname):
-        yield info_stat(info)
+        yield fname, info_stat(info)
   else:
     for lspath in fs.ls(fpath, detail=False):
       fname = os.path.basename(lspath)
@@ -294,7 +292,7 @@ def re_enumerate_files(path, rex, return_stats=False):
       fname = os.path.basename(info['name'])
       m = re.match(rex, fname)
       if m:
-        yield info_stat(info), m
+        yield fname, m, info_stat(info)
   else:
     for lspath in fs.ls(fpath, detail=False):
       fname = os.path.basename(lspath)
