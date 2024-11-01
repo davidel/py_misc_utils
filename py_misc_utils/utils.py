@@ -458,8 +458,8 @@ def config_to_string(cfg, **kwargs):
 def parse_config(cfg, **kwargs):
   if cfg.startswith('{'):
     cfgd = json.loads(cfg)
-  elif os.path.exists(cfg):
-    with gfs.open(cfg, mode='r') as fp:
+  elif fdctx := gfs.maybe_open(cfg, mode='r'):
+    with fdctx as fp:
       cfgd = yaml.safe_load(fp)
   else:
     cfgd = parse_dict(cfg)
