@@ -893,7 +893,8 @@ def enum_set(l, s, present):
 
 class RevGen:
 
-  def __init__(self):
+  def __init__(self, fmt=None):
+    self._fmt = value_or(fmt, '{name}_{ver}')
     self._revdb = dict()
 
   def getver(self, name, defval=None):
@@ -908,7 +909,7 @@ class RevGen:
   def newname(self, name, shortzero=False):
     ver = self.newver(name)
 
-    return f'{name}_{ver}' if ver != 0 or not shortzero else name
+    return self._fmt.format(name=name, ver=ver) if ver != 0 or not shortzero else name
 
 
 def compute_shape(data):
