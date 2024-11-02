@@ -81,6 +81,13 @@ def open(path, **kwargs):
   return fsspec.open(path, **kwargs)
 
 
+def open_source(source, **kwargs):
+  if isinstance(source, (str, os.PathLike)):
+    return open(os.fspath(source), **kwargs)
+
+  return contextlib.nullcontext(source)
+
+
 def maybe_open(path, **kwargs):
   fs, fpath = fsspec.url_to_fs(path)
 
