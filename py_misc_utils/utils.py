@@ -430,7 +430,7 @@ def get_context(name):
 
 def load_config(cfg_file=None, **kwargs):
   if cfg_file is not None:
-    with gfs.open(cfg_file, mode='r') as cf:
+    with gfs.open_source(cfg_file, mode='r') as cf:
       cfg = yaml.safe_load(cf)
   else:
     cfg = dict()
@@ -442,10 +442,10 @@ def load_config(cfg_file=None, **kwargs):
   return cfg
 
 
-def write_config(cfg, path, **kwargs):
+def write_config(cfg, dest, **kwargs):
   default_flow_style = kwargs.get('default_flow_style', False)
 
-  with fow.FileOverwrite(path, mode='wt') as df:
+  with fow.FileOverwrite(dest, mode='wt') as df:
     yaml.dump(cfg, df, default_flow_style=default_flow_style, **kwargs)
 
 
