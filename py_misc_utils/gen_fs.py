@@ -82,14 +82,14 @@ def open(path, **kwargs):
 
 
 def open_source(source, **kwargs):
-  if is_path_like(source):
-    return open(os.fspath(source), **kwargs)
+  if path := path_of(source):
+    return open(path, **kwargs)
 
   return contextlib.nullcontext(source)
 
 
-def is_path_like(path):
-  return isinstance(path, (str, os.PathLike))
+def path_of(path):
+  return os.fspath(path) if isinstance(path, (str, os.PathLike)) else None
 
 
 def maybe_open(path, **kwargs):

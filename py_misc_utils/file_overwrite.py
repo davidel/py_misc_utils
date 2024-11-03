@@ -5,24 +5,25 @@ class FileOverwrite:
 
   def __init__(self, dest, mode='w', **kwargs):
     self._dest = dest
+    self._path = gfs.path_of(dest)
     self._mode = mode
     self._kwargs = kwargs
-    self._temp = None
+    self._tmpfile = None
 
   def __enter__(self):
-    if gfs.is_path_like(self._dest):
-      self._temp = gfs.TempFile(nspath=self._dest, mode=self._mode, **self._kwargs)
+    if self._path is not None:
+      self._tmpfile = gfs.TempFile(nspath=self._path, mode=self._mode, **self._kwargs)
 
-      return self._temp.open()
+      return self._tmpfile.open()
     else:
       return self._dest
 
   def __exit__(self, *exc):
-    if self._temp is not None:
+    if self._tmpfile is not None:
       try:
-        self._temp.replace(self._dest)
+        self._tmpfile.replace(self._path)
       finally:
-        self._temp.close()
+        self._tmpfile.close()
 
     return False
 
