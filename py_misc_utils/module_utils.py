@@ -1,7 +1,6 @@
 import importlib
 import importlib.util
 import inspect
-import operator
 import os
 import sys
 
@@ -134,6 +133,20 @@ def import_module(name_or_path,
   return module
 
 
+def module_getter(dot_path):
+
+  def getter(module):
+    for name in dot_path.split('.'):
+      try:
+        module = getattr(module, name)
+      except AttributeError:
+        module = importlib.import_module(module.__name__ + '.' + name)
+
+    return module
+
+  return getter
+
+
 def import_module_names(modname, names=None):
   if names is None:
     npos = modname.find('.')
@@ -145,7 +158,7 @@ def import_module_names(modname, names=None):
 
   module = importlib.import_module(modname)
 
-  return tuple(operator.attrgetter(n)(module) for n in names)
+  return tuple(module_getter(name)(module) for name in names)
 
 
 def module_file(module):
