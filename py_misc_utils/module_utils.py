@@ -135,14 +135,17 @@ def import_module(name_or_path,
 
 def module_getter(dot_path):
 
-  def getter(module):
+  def getter(obj):
     for name in dot_path.split('.'):
       try:
-        module = getattr(module, name)
+        obj = getattr(obj, name)
       except AttributeError:
-        module = importlib.import_module(module.__name__ + '.' + name)
+        if inspect.ismodule(obj):
+          obj = importlib.import_module(obj.__name__ + '.' + name)
+        else:
+          raise
 
-    return module
+    return obj
 
   return getter
 
