@@ -50,7 +50,15 @@ def _split_forward(data, pos, split_rx, skipper, seq):
   return pos + next_pos, xm is not None
 
 
-_QUOTE_MAP = {'"': '"', "'": "'", '(': ')', '{': '}', '[': ']', '<': '>'}
+_QUOTE_MAP = {
+  '"': '"',
+  "'": "'",
+  '`': '`',
+  '(': ')',
+  '{': '}',
+  '[': ']',
+  '<': '>',
+}
 _QUOTE_RX = _build_skiprx(_QUOTE_MAP)
 
 def split(data, split_rx, quote_map=None):

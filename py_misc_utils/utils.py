@@ -1065,6 +1065,8 @@ def infer_value(v, vtype=None):
       return tuple(values) if v[0] == '(' else values
     elif v[0] == '{':
       return parse_dict(uv)
+    elif v[0] == '`':
+      return eval(uv)
 
   sv = _SPECIAL_VALUES.get(v, NONE)
 
