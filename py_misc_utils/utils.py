@@ -535,6 +535,12 @@ def make_object_recursive(**kwargs):
   return make_object(**kwargs)
 
 
+def locals_capture(locs, exclude=None):
+  exclude = set(expand_strings(value_or(exclude, 'self')))
+
+  return make_object(**{k: v for k, v in locs.items() if k not in exclude})
+
+
 def sreplace(rex, data, mapfn, nmapfn=None, join=True):
   nmapfn = nmapfn if nmapfn is not None else lambda x: x
 
