@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import datetime
 import os
@@ -14,6 +15,9 @@ from . import context_managers as cm
 from . import no_except as nex
 from . import obj
 from . import rnd_utils as rngu
+
+
+FsPath = collections.namedtuple('FsPath', 'fs, path')
 
 
 class TempFile:
@@ -185,49 +189,55 @@ def get_proto(path):
   return m.group(1).lower() if m else _DEFAULT_LOCAL_PROTO
 
 
-def copy(src_path, dest_path, src_fs=None, dest_fs=None):
-  if src_fs is None:
-    src_fs, src_path = fsspec.url_to_fs(src_path)
-  if dest_fs is None:
-    dest_fs, dest_path = fsspec.url_to_fs(dest_path)
+def resolve_paths(*paths):
+  resolved = []
+  for path_arg in paths:
+    if isinstance(path_arg, (list, tuple)):
+      fs, path = path_arg
+    else:
+      fs, path = None, path_arg
+    if fs is None:
+      fs, path = fsspec.url_to_fs(path)
+    resolved.append(FsPath(fs, path))
 
+  return tuple(resolved)
+
+
+def copy(src_path, dest_path, src_fs=None, dest_fs=None):
+  src, dest = resolve_paths((src_fs, src_path), (dest_fs, dest_path))
   try:
-    with src_fs.open(src_path, mode='rb') as src_fd:
-      with dest_fs.open(dest_path, mode='wb') as dest_fd:
+    with src.fs.open(src.path, mode='rb') as src_fd:
+      with dest.fs.open(dest.path, mode='wb') as dest_fd:
         shutil.copyfileobj(src_fd, dest_fd)
   except NotImplementedError:
     # Slow path. Likely the destination file system do not support files opened
     # in write mode, so we use the more widely available get_file+put_file APIs.
     try:
-      if is_local_fs(src_fs):
-        local_path = src_path
+      if is_local_fs(src.fs):
+        local_path = src.path
       else:
         local_path = temp_path()
-        src_fs.get_file(src_path, local_path)
+        src.fs.get_file(src.path, local_path)
 
-      dest_fs.put_file(local_path, dest_path)
+      dest.fs.put_file(local_path, dest.path)
     finally:
-      if local_path != src_path:
+      if local_path != src.path:
         nex.no_except(os.remove, local_path)
 
 
 def replace(src_path, dest_path, src_fs=None, dest_fs=None):
-  if src_fs is None:
-    src_fs, src_path = fsspec.url_to_fs(src_path)
-  if dest_fs is None:
-    dest_fs, dest_path = fsspec.url_to_fs(dest_path)
-
+  src, dest = resolve_paths((src_fs, src_path), (dest_fs, dest_path))
   replaced = False
   try:
-    if is_same_fs(src_fs, dest_fs):
-      dest_fs.mv(src_path, dest_path)
+    if is_same_fs(src.fs, dest.fs):
+      dest.fs.mv(src.path, dest.path)
       replaced = True
   except NotImplementedError:
     pass
 
   if not replaced:
-    copy(src_path, dest_path, src_fs=src_fs, dest_fs=dest_fs)
-    src_fs.rm(src_path)
+    copy(src.path, dest.path, src_fs=src.fs, dest_fs=dest.fs)
+    src.fs.rm(src.path)
 
 
 def mkdir(path, **kwargs):
