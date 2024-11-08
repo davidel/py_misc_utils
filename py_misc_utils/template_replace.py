@@ -1,13 +1,13 @@
 import re
 import string
 
-from . import assert_checks as tas
+from . import alog
 
 
 class _FnDict:
 
-  def __init__(self, fn):
-    self._fn = fn
+  def __init__(self, lookup_fn):
+    self._lookup_fn = lookup_fn
 
   def __getitem__(self, key):
     m = re.match(r'([^:]+):(.*)', key)
@@ -16,29 +16,36 @@ class _FnDict:
     else:
       lkey, defval = key, None
 
-    return self._fn(lkey, defval=defval)
-
-  @staticmethod
-  def dict_lookup_fn(d):
-    def fn(k, defval=None):
-      v = d.get(k, defval)
-      tas.check_is_not_none(v, msg=f'String template replace missing value for key: {k}')
-
-      return v
-
-    return fn
+    return self._lookup_fn(lkey, defval=defval)
 
 
-def template_replace(st, vals=None, lookup_fn=None, delim=None):
+def _dict_lookup_fn(vals, delim, misses_ok):
 
-  class _Template(string.Template):
+  def lookup_fn(key, defval=None):
+    value = vals.get(key, defval)
+    if value is None:
+      if not misses_ok:
+        alog.xraise(KeyError, f'String template replace missing value for key: {key}')
+      else:
+        value = f'{delim}{key}'
+
+    return value
+
+  return lookup_fn
+
+
+def template_replace(st, vals=None, lookup_fn=None, delim=None, misses_ok=None):
+  delim = delim or '$'
+  misses_ok = False if misses_ok is None else misses_ok
+
+  class Template(string.Template):
 
     # Allow for brace ID with the format ${ID:DEFAULT_VALUE}.
     braceidpattern = r'((?a:[_a-z][_a-z0-9]*)(:[^}]*)?)'
-    delimiter = delim or '$'
+    delimiter = delim
 
   if lookup_fn is None:
-    lookup_fn = _FnDict.dict_lookup_fn(vals)
+    lookup_fn = _dict_lookup_fn(vals, delim, misses_ok)
 
-  return _Template(st).substitute(_FnDict(lookup_fn))
+  return Template(st).substitute(_FnDict(lookup_fn))
 
