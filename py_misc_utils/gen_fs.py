@@ -264,9 +264,12 @@ class StatResult(obj.Obj):
 def info_stat(info):
   sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
   for k, v in info.items():
-    sfield = k if k.startswith('st_') else f'st_{k}'
-    if hasattr(sinfo, sfield):
-      setattr(sinfo, sfield, v)
+    if k.startswith('st_'):
+      setattr(sinfo, k, v)
+    else:
+      sfield = f'st_{k}'
+      if hasattr(sinfo, sfield):
+        setattr(sinfo, sfield, v)
 
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
@@ -282,9 +285,8 @@ def info_stat(info):
     sinfo.st_ctime = info.get('created')
   # Some FS populates datetime.datetime for time fields, while Python stat()
   # standard requires timestamps (EPOCH seconds).
-  for k in ('st_atime', 'st_mtime', 'st_ctime'):
-    v = getattr(sinfo, k, None)
-    if isinstance(v, datetime.datetime):
+  for k, v in vars(sinfo).items():
+    if k.endswith('time') and isinstance(v, datetime.datetime):
       setattr(sinfo, k, v.timestamp())
 
   return sinfo
