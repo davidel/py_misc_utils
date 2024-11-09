@@ -264,12 +264,9 @@ class StatResult(obj.Obj):
 def info_stat(info):
   sinfo = StatResult(**{k: None for k in StatResult.FIELDS})
   for k, v in info.items():
-    if k.startswith('st_'):
-      setattr(sinfo, k, v)
-    else:
-      sfield = f'st_{k}'
-      if hasattr(sinfo, sfield):
-        setattr(sinfo, sfield, v)
+    sfield = k if k.startswith('st_') else f'st_{k}'
+    if k == sfield or hasattr(sinfo, sfield):
+      setattr(sinfo, sfield, v)
 
   if sinfo.st_mode is None:
     sinfo.st_mode = 0
