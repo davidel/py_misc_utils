@@ -111,6 +111,10 @@ def classof(obj):
   return obj if inspect.isclass(obj) else getattr(obj, '__class__', None)
 
 
+def moduleof(obj):
+  return getattr(classof(obj), '__module__', None)
+
+
 def infer_str(v):
   return infer_value(v) if isinstance(v, str) else v
 
