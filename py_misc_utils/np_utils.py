@@ -100,6 +100,10 @@ def is_numeric(dtype):
   return np.issubdtype(dtype, np.number)
 
 
+def is_integer(dtype):
+  return np.issubdtype(dtype, np.integer)
+
+
 def is_numpy(v):
   return type(v).__module__ == np.__name__
 
