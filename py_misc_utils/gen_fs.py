@@ -255,6 +255,11 @@ def rmdir(path):
   fs.rmdir(fpath)
 
 
+def rmtree(path):
+  fs, fpath = fsspec.url_to_fs(path)
+  fs.rm(fpath, recursive=True)
+
+
 class StatResult(obj.Obj):
   FIELDS = (
     'st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid', 'st_size',
