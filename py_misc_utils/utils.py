@@ -657,7 +657,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
   exec(code, env)
 
-  return tuple(env[s] for s in expand_strings(syms))
+  return tuple(env.get(s) for s in expand_strings(syms))
 
 
 def run(path, fnname, *args, **kwargs):
