@@ -1068,7 +1068,13 @@ def infer_value(v, vtype=None):
 
       return tuple(values) if v[0] == '(' else values
     elif v[0] == '{':
-      return parse_dict(uv)
+      pdict, pargs = parse_dict(uv, allow_args=True)
+      if not pdict:
+        return set(pargs)
+      if pargs:
+        alog.xraise(ValueError, f'Cannot return both arguments and dictionary: {pargs} {pdict}')
+
+      return pdict
     elif v[0] == '`':
       return eval(uv)
 
