@@ -97,9 +97,12 @@ def path_of(path):
 
 
 def maybe_open(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path)
+  try:
+    fs, fpath = fsspec.url_to_fs(path)
 
-  return fs.open(fpath, **kwargs) if fs.isfile(fpath) else None
+    return fs.open(fpath, **kwargs)
+  except:
+    pass
 
 
 _LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
