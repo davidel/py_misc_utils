@@ -115,6 +115,11 @@ def moduleof(obj):
   return getattr(classof(obj), '__module__', None)
 
 
+def refcount(obj):
+  # Discard 2 frame references (our own, and the sys.getrefcount() one).
+  return sys.getrefcount(obj) - 2
+
+
 def infer_str(v):
   return infer_value(v) if isinstance(v, str) else v
 
