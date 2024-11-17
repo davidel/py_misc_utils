@@ -8,7 +8,7 @@ from . import assert_checks as tas
 
 class StreamUrl:
 
-  def __init__(self, url, headers=None, auth=None, chunk_size=1024 * 128, **kwargs):
+  def __init__(self, url, headers=None, auth=None, chunk_size=1024 * 256, **kwargs):
     req_headers = headers.copy() if headers else dict()
     if auth:
       req_headers['Authorization'] = auth
