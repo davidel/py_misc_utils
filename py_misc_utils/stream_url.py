@@ -33,14 +33,14 @@ class StreamUrl:
 
     self._buffer = self._next_chunk()
 
-  def _next_chunk(self):
+  def _next_chunk(self, size_hint=0):
     if self._resp_iter is not None:
       try:
         return memoryview(next(self._resp_iter))
       except StopIteration:
         pass
     else:
-      size = min(self._chunk_size, self._length - self._offset)
+      size = min(self._chunk_size + size_hint, self._length - self._offset)
       if size > 0:
         req_headers = self._headers.copy()
         req_headers['Range'] = f'bytes={self._offset}-{self._offset + size - 1}'
@@ -65,7 +65,7 @@ class StreamUrl:
       if size >= len(self._buffer):
         iobuf.write(self._buffer)
         size -= len(self._buffer)
-        self._buffer = self._next_chunk()
+        self._buffer = self._next_chunk(size_hint=size)
       else:
         iobuf.write(self._buffer[: size])
         self._buffer = self._buffer[size:]
