@@ -4,6 +4,7 @@ import sys
 
 from . import alog
 from . import assert_checks as tas
+from . import utils as ut
 
 
 class StreamUrl:
@@ -40,7 +41,7 @@ class StreamUrl:
       except StopIteration:
         pass
     else:
-      size = min(self._chunk_size + size_hint, self._length - self._offset)
+      size = min(max(self._chunk_size, size_hint), self._length - self._offset)
       if size > 0:
         req_headers = self._headers.copy()
         req_headers['Range'] = f'bytes={self._offset}-{self._offset + size - 1}'
@@ -59,17 +60,17 @@ class StreamUrl:
         return memoryview(data)
 
   def read(self, size=-1):
-    size = size if size >= 0 else sys.maxsize - self._chunk_size
-    iobuf = io.BytesIO()
+    size = size if size >= 0 else sys.maxsize
+    data = []
     while self._buffer is not None and size > 0:
       if size >= len(self._buffer):
-        iobuf.write(self._buffer)
+        data.append(self._buffer)
         size -= len(self._buffer)
         self._buffer = self._next_chunk(size_hint=size)
       else:
-        iobuf.write(self._buffer[: size])
+        data.append(self._buffer[: size])
         self._buffer = self._buffer[size:]
         break
 
-    return iobuf.getvalue()
+    return ut.join_byte_views(data)
 
