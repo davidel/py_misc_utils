@@ -25,7 +25,7 @@ class StreamUrl:
 
     if (hu.support_ranges(resp.headers) and
         (length := hu.content_length(resp.headers)) is not None):
-      self._length = int(length)
+      self._length = length
       self._offset = 0
       self._etag = resp.headers.get(hu.ETAG)
       self._resp_iter = None
