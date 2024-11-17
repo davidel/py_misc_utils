@@ -8,7 +8,7 @@ import urllib.parse as uparse
 from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
-from . import http_headers as hh
+from . import http_utils as hu
 from . import utils as ut
 
 
@@ -54,10 +54,10 @@ def download(url, path, chunk_size=None):
 
 STAMP_HEADERS = set(h.lower() for h in
                     (
-                      hh.LAST_MODIFIED,
-                      hh.ETAG,
-                      hh.CONTENT_LENGTH,
-                      hh.CONTENT_TYPE,
+                      hu.LAST_MODIFIED,
+                      hu.ETAG,
+                      hu.CONTENT_LENGTH,
+                      hu.CONTENT_TYPE,
                     ))
 
 def parse_headers(headers):
