@@ -24,7 +24,7 @@ class StreamUrl:
     self._chunk_size = chunk_size
 
     if (hu.support_ranges(resp.headers) and
-        (length := resp.headers.get(hu.CONTENT_LENGTH)) is not None):
+        (length := hu.content_length(resp.headers)) is not None):
       self._length = int(length)
       self._offset = 0
       self._etag = resp.headers.get(hu.ETAG)
