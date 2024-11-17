@@ -14,7 +14,7 @@ def support_ranges(headers):
 
 def content_length(headers):
   if (length := headers.get(CONTENT_LENGTH)) is not None:
-    return return int(length)
+    return int(length)
 
 
 def add_range(headers, start, stop):
