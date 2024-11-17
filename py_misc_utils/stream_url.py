@@ -25,6 +25,7 @@ class StreamUrl:
         (length := resp.headers.get('Content-Length')) is not None):
       self._length = int(length)
       self._offset = 0
+      self._etag = resp.headers.get('ETag')
       self._resp_iter = None
     else:
       self._resp_iter = resp.iter_content(chunk_size=chunk_size)
@@ -45,6 +46,9 @@ class StreamUrl:
 
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
+
+        if self._etag != resp.headers.get('ETag'):
+          alog.xraise(RuntimeError. f'Expired content at "{self._url}"')
 
         self._offset += size
 
