@@ -3,6 +3,7 @@ import requests
 import sys
 
 from . import alog
+from . import assert_checks as tas
 
 
 class StreamUrl:
@@ -46,13 +47,16 @@ class StreamUrl:
 
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
+        data = resp.content
 
-        if self._etag != resp.headers.get('ETag'):
-          alog.xraise(RuntimeError. f'Expired content at "{self._url}"')
+        tas.check_eq(self._etag, resp.headers.get('ETag'),
+                     msg=f'Expired content at "{self._url}"')
+        tas.check_eq(len(data), size,
+                     msg=f'Invalid read size ({len(data)} vs. {size}) at "{self._url}"')
 
-        self._offset += size
+        self._offset += len(data)
 
-        return memoryview(resp.content)
+        return memoryview(data)
 
   def read(self, size=-1):
     size = size if size >= 0 else sys.maxsize
