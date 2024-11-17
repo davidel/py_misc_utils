@@ -14,20 +14,19 @@ class StreamUrl:
 
     alog.debug(f'Opening "{url}" with {req_headers}')
 
-    head = requests.head(url, headers=req_headers)
+    resp = requests.get(url, headers=req_headers, stream=True)
+    resp.raise_for_status()
 
     self._url = url
     self._headers = req_headers
     self._chunk_size = chunk_size
 
-    if ('bytes' in head.headers.get('Accept-Ranges', '') and
-        (length := head.headers.get('Content-Length')) is not None):
+    if ('bytes' in resp.headers.get('Accept-Ranges', '') and
+        (length := resp.headers.get('Content-Length')) is not None):
       self._length = int(length)
       self._offset = 0
       self._resp_iter = None
     else:
-      resp = requests.get(url, headers=req_headers, stream=True)
-      resp.raise_for_status()
       self._resp_iter = resp.iter_content(chunk_size=chunk_size)
 
     self._buffer = self._next_chunk()
@@ -46,8 +45,6 @@ class StreamUrl:
 
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
-
-        alog.debug0(f'RESP: {resp.headers}')
 
         self._offset += size
 
