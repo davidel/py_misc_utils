@@ -17,8 +17,6 @@ class StreamUrl:
     resp = requests.get(url, headers=req_headers, stream=True)
     resp.raise_for_status()
 
-    alog.debug0(f'RESPC: {resp.headers}')
-
     self._url = url
     self._headers = req_headers
     self._chunk_size = chunk_size
@@ -43,12 +41,10 @@ class StreamUrl:
       size = min(self._chunk_size, self._length - self._offset)
       if size > 0:
         req_headers = self._headers.copy()
-        req_headers['Range'] = f'bytes={self._offset}-{self._offset + size}'
+        req_headers['Range'] = f'bytes={self._offset}-{self._offset + size - 1}'
 
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
-
-        alog.debug0(f'RESPB: {resp.headers}')
 
         self._offset += size
 
