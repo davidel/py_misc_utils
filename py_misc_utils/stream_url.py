@@ -47,6 +47,8 @@ class StreamUrl:
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
 
+        alog.debug0(f'RESP: {resp.headers}')
+
         self._offset += size
 
         return memoryview(resp.content)
