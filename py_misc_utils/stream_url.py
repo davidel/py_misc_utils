@@ -59,7 +59,7 @@ class StreamUrl:
         return memoryview(data)
 
   def read(self, size=-1):
-    size = size if size >= 0 else sys.maxsize
+    size = size if size >= 0 else sys.maxsize - self._chunk_size
     iobuf = io.BytesIO()
     while self._buffer is not None and size > 0:
       if size >= len(self._buffer):
