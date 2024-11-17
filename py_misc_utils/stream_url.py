@@ -44,7 +44,7 @@ class StreamUrl:
         req_headers = self._headers.copy()
         req_headers['Range'] = f'bytes={self._offset}-{self._offset + size}'
 
-        resp = requests.get(url, headers=req_headers)
+        resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
 
         self._offset += size
