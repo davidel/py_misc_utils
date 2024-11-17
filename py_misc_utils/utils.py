@@ -976,16 +976,6 @@ def array_code(size):
               f'Size {size} too big to fit inside any array integer types')
 
 
-def join_bytes(views):
-  size = sum(len(v) for v in views)
-  data, offset = bytearray(size), 0
-  for v in views:
-    data[offset: offset + len(v)] = v
-    offset += len(v)
-
-  return data
-
-
 def checked_remove(l, o):
   try:
     l.remove(o)

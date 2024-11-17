@@ -70,5 +70,5 @@ class StreamUrl:
         self._buffer = self._buffer[size:]
         break
 
-    return ut.join_bytes(data)
+    return b''.join(data)
 
