@@ -1,4 +1,3 @@
-import io
 import requests
 import sys
 
@@ -60,8 +59,7 @@ class StreamUrl:
         return memoryview(data)
 
   def read(self, size=-1):
-    size = size if size >= 0 else sys.maxsize
-    data = []
+    size, data = size if size >= 0 else sys.maxsize, []
     while self._buffer is not None and size > 0:
       if size >= len(self._buffer):
         data.append(self._buffer)
@@ -72,5 +70,5 @@ class StreamUrl:
         self._buffer = self._buffer[size:]
         break
 
-    return ut.join_byte_views(data)
+    return ut.join_bytes(data)
 
