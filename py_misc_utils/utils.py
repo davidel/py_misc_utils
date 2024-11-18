@@ -544,8 +544,8 @@ def make_object_recursive(**kwargs):
   return make_object(**kwargs)
 
 
-def locals_capture(locs, exclude=None):
-  exclude = set(expand_strings(value_or(exclude, 'self')))
+def locals_capture(locs, exclude='self'):
+  exclude = set(expand_strings(exclude))
 
   return make_object(**{k: v for k, v in locs.items() if k not in exclude})
 
@@ -908,8 +908,8 @@ def enum_set(l, s, present):
 
 class RevGen:
 
-  def __init__(self, fmt=None):
-    self._fmt = value_or(fmt, '{name}_{ver}')
+  def __init__(self, fmt='{name}_{ver}'):
+    self._fmt = fmt
     self._revdb = dict()
 
   def getver(self, name, defval=None):
