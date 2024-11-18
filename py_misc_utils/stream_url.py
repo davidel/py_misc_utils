@@ -9,7 +9,9 @@ from . import utils as ut
 
 class StreamUrl:
 
-  def __init__(self, url, headers=None, auth=None, chunk_size=1024 * 256, **kwargs):
+  def __init__(self, url, headers=None, auth=None, chunk_size=None, **kwargs):
+    chunk_size = ut.value_or(chunk_size, 1024 * 1024)
+
     req_headers = headers.copy() if headers else dict()
     if auth:
       req_headers[hu.AUTHORIZATION] = auth
