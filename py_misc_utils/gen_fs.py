@@ -1,6 +1,7 @@
 import collections
 import contextlib
 import datetime
+import hashlib
 import os
 import re
 import shutil
@@ -67,6 +68,18 @@ class TempFile:
     return False
 
 
+class CacheMapper(cache_mapper.AbstractCacheMapper):
+
+  def __init__(self, hash_size=32):
+    self._hash_size = hash_size
+
+  def __call__(self, path):
+    fname = os.path.basename(path)
+    phash = hashlib.sha256(path.encode()).hexdigest()[: self._hash_size]
+
+    return os.path.join(phash, fname)
+
+
 _STD_FILES = {
   'STDIN': sys.stdin,
   'STDOUT': sys.stdout,
@@ -108,20 +121,37 @@ def maybe_open(path, **kwargs):
 _LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
 _LOCAL_RWFS = os.getenv('LOCAL_RWFS', 'simplecache')
 
+def _local_args(**kwargs):
+  mode = kwargs.pop('mode', 'rb')
+  proxy_fs = _LOCAL_ROFS if 'r' in mode else _LOCAL_RWFS
+  cache_storage = kwargs.pop('cache_storage', cache_dir())
+  cache_storage = os.path.join(cache_storage, 'gfs', proxy_fs)
+
+  kwargs['mode'] = mode
+  kwargs['cache_storage'] = cache_storage
+
+  return proxy_fs, kwargs
+
 def open_local(path, **kwargs):
   fs, fpath = fsspec.url_to_fs(path)
   if is_local_fs(fs):
     return fs.open(fpath, **kwargs)
 
-  mode = kwargs.pop('mode', 'r')
-  proxy_fs = _LOCAL_ROFS if 'r' in mode else _LOCAL_RWFS
-  cache_storage = kwargs.pop('cache_storage', cache_dir())
-  cache_storage = os.path.join(cache_storage, 'py_misc_utils', 'gfs', proxy_fs)
+  proxy_fs, lkwargs = _local_args(**kwargs)
 
-  return fsspec.open(f'{proxy_fs}::{path}',
-                     mode=mode,
-                     cache_storage=cache_storage,
-                     **kwargs)
+  return fsspec.open(f'{proxy_fs}::{path}', **lkwargs)
+
+
+def as_local(path, **kwargs):
+  fs, fpath = fsspec.url_to_fs(path)
+  if is_local_fs(fs):
+    return fpath
+
+  proxy_fs, lkwargs = _local_args(**kwargs)
+
+  return fsspec.open_local(f'{proxy_fs}::{path}',
+                           **lkwargs,
+                           cache_mapper=CacheMapper())
 
 
 _TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
