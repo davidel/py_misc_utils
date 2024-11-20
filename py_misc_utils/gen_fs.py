@@ -129,6 +129,7 @@ def _local_args(**kwargs):
 
   kwargs['mode'] = mode
   kwargs['cache_storage'] = cache_storage
+  kwargs['cache_mapper'] = CacheMapper()
 
   return proxy_fs, kwargs
 
@@ -149,9 +150,7 @@ def as_local(path, **kwargs):
 
   proxy_fs, lkwargs = _local_args(**kwargs)
 
-  return fsspec.open_local(f'{proxy_fs}::{path}',
-                           **lkwargs,
-                           cache_mapper=CacheMapper())
+  return fsspec.open_local(f'{proxy_fs}::{path}', **lkwargs)
 
 
 _TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
