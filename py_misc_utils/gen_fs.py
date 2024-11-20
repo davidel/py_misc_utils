@@ -11,6 +11,7 @@ import sys
 import tempfile
 
 import fsspec
+import fsspec.implementations.cache_mapper as cache_mapper
 
 from . import context_managers as cm
 from . import no_except as nex
