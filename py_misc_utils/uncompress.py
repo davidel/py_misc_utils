@@ -13,10 +13,9 @@ class Uncompress:
     self._tempdir = None
 
   def __enter__(self):
-    self._tempdir = tempfile.mkdtemp()
-
     bpath, ext = os.path.splitext(self._path)
     if ext in {'.gz', '.bz2', '.bzip'}:
+      self._tempdir = tempfile.mkdtemp()
       rpath = os.path.join(self._tempdir, os.path.basename(bpath))
 
       alog.debug(f'Uncompressing "{self._path}" to "{rpath}"')
