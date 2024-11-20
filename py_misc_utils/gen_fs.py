@@ -132,8 +132,6 @@ def _local_args(**kwargs):
 
   is_write_mode = any(s in mode for s in ('w', '+', 'a', 'x'))
   proxy_fs = _LOCAL_RWFS if is_write_mode else _LOCAL_ROFS
-
-  proxy_fs = _LOCAL_ROFS if 'r' in mode else _LOCAL_RWFS
   cache_storage = kwargs.pop('cache_storage', cache_dir())
   cache_storage = os.path.join(cache_storage, 'gfs', proxy_fs)
 
@@ -145,7 +143,7 @@ def _local_args(**kwargs):
 
 def open_local(path, **kwargs):
   fs, fpath = fsspec.url_to_fs(path)
-  if is_local_fs(fs):
+  if False and is_local_fs(fs):
     return fs.open(fpath, **kwargs)
 
   proxy_fs, lkwargs = _local_args(**kwargs)
