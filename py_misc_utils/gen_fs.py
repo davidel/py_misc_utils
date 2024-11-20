@@ -71,18 +71,19 @@ class TempFile:
 
 class CacheMapper(cache_mapper.AbstractCacheMapper):
 
-  def __init__(self, storage_path=None, hash_size=32):
+  def __init__(self, storage_path, hash_size=32):
     self._storage_path = storage_path
     self._hash_size = hash_size
 
   def __call__(self, path):
     fname = os.path.basename(path)
     phash = hashlib.sha256(path.encode()).hexdigest()[: self._hash_size]
-    if self._storage_path is not None:
-      hpath = os.path.join(self._storage_path, phash)
-      os.makedirs(hpath, exist_ok=True)
 
-    return os.path.join(phash, fname)
+    mpath = os.path.join(self._storage_path, phash, fname)
+
+    os.makedirs(os.path.dirname(mpath), exist_ok=True)
+
+    return mpath
 
 
 _STD_FILES = {
@@ -134,7 +135,7 @@ def _local_args(**kwargs):
 
   kwargs['mode'] = mode
   kwargs['cache_storage'] = cache_storage
-  kwargs['cache_mapper'] = CacheMapper(storage_path=cache_storage)
+  kwargs['cache_mapper'] = CacheMapper(cache_storage)
 
   return proxy_fs, kwargs
 
