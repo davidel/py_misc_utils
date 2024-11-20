@@ -129,6 +129,10 @@ _LOCAL_RWFS = os.getenv('LOCAL_RWFS', 'simplecache')
 
 def _local_args(**kwargs):
   mode = kwargs.pop('mode', 'rb')
+
+  is_write_mode = any(s in mode for s in ('w', '+', 'a', 'x'))
+  proxy_fs = _LOCAL_RWFS if is_write_mode else _LOCAL_ROFS
+
   proxy_fs = _LOCAL_ROFS if 'r' in mode else _LOCAL_RWFS
   cache_storage = kwargs.pop('cache_storage', cache_dir())
   cache_storage = os.path.join(cache_storage, 'gfs', proxy_fs)
