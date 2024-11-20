@@ -6,6 +6,12 @@ from . import alog
 from . import utils as ut
 
 
+_DECOMPRESSORS = {
+  '.bz2': ut.fbunzip2,
+  '.bzip': ut.fbunzip2,
+  '.gz': ut.fgunzip,
+}
+
 class Uncompress:
 
   def __init__(self, path):
@@ -14,17 +20,13 @@ class Uncompress:
 
   def __enter__(self):
     bpath, ext = os.path.splitext(self._path)
-    if ext in {'.gz', '.bz2', '.bzip'}:
+
+    decomp = _DECOMPRESSORS.get(ext)
+    if decomp is not None:
       self._tempdir = tempfile.mkdtemp()
       rpath = os.path.join(self._tempdir, os.path.basename(bpath))
 
-      alog.debug(f'Uncompressing "{self._path}" to "{rpath}"')
-
-      if ext == '.gz':
-        ut.fgunzip(self._path, rpath)
-      else:
-        ut.fbunzip2(self._path, rpath)
-
+      decomp(self._path, rpath)
       shutil.copystat(self._path, rpath)
     else:
       rpath = self._path
