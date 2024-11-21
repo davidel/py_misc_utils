@@ -1,10 +1,73 @@
 import requests
 import sys
+import tempfile
+import threading
 
 from . import alog
 from . import assert_checks as tas
+from . import fin_wrap as fw
 from . import http_utils as hu
 from . import utils as ut
+
+
+class Streamer:
+
+  def __init__(self, resp):
+    self._resp = resp
+    self._lock = threading.Lock()
+    self._cond = threading.Condition(lock=self._lock)
+    self._tempfile = tempfile.TemporaryFile()
+    self._offset = 0
+    self._written = 0
+    self._completed = False
+    self._closed = False
+    self._thread = threading.Thread(target=self._stream)
+    self._thread.start()
+
+  def _stream(self):
+    for data in self._resp:
+      with self._lock:
+        self._tempfile.seek(self._written)
+        self._tempfile.write(data)
+        self._written += len(data)
+        self._cond.notify_all()
+        if self._closed:
+          break
+
+    with self._lock:
+      self._completed = True
+      self._cond.notify_all()
+
+  def close(self):
+    with self._lock:
+      self._closed = True
+      while not self._completed:
+        self._cond.wait()
+
+    self._thread.join()
+
+    with self._lock:
+      if self._tempfile is not None:
+        self._tempfile.close()
+        self._tempfile = None
+
+  def read(self, size=-1):
+    with self._lock:
+      while not (self._completed or self._closed or
+                 (size >= 0 and self._written >= self._offset + size)):
+        self._cond.wait()
+
+      if not self._closed:
+        available = self._written - self._offset
+        to_read = min(size, available) if size >= 0 else available
+
+        self._tempfile.seek(self._written)
+        data = self._tempfile.read(to_read)
+        self._offset += len(data)
+      else:
+        data = b''
+
+      return data
 
 
 class StreamUrl:
@@ -30,18 +93,18 @@ class StreamUrl:
       self._length = length
       self._offset = 0
       self._etag = resp.headers.get(hu.ETAG)
-      self._resp_iter = None
+      self._streamer = None
     else:
-      self._resp_iter = resp.iter_content(chunk_size=chunk_size)
+      streamer = Streamer(resp.iter_content(chunk_size=chunk_size))
+      fw.fin_wrap(self, '_streamer', streamer, finfn=streamer.close)
 
     self._buffer = self._next_chunk()
 
   def _next_chunk(self, size_hint=0):
-    if self._resp_iter is not None:
-      try:
-        return memoryview(next(self._resp_iter))
-      except StopIteration:
-        pass
+    if self._streamer is not None:
+      data = self._streamer.read(size=max(size_hint, self._chunk_size))
+
+      return memoryview(data) if data else None
     else:
       size = min(max(self._chunk_size, size_hint), self._length - self._offset)
       if size > 0:
