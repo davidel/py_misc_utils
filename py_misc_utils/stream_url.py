@@ -73,7 +73,7 @@ class Streamer:
 class StreamUrl:
 
   def __init__(self, url, headers=None, auth=None, chunk_size=None, **kwargs):
-    chunk_size = ut.value_or(chunk_size, 1024 * 1024)
+    chunk_size = ut.value_or(chunk_size, 16 * 1024**2)
 
     req_headers = headers.copy() if headers else dict()
     if auth:
