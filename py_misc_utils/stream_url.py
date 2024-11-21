@@ -61,7 +61,7 @@ class Streamer:
         available = self._written - self._offset
         to_read = min(size, available) if size >= 0 else available
 
-        self._tempfile.seek(self._written)
+        self._tempfile.seek(self._offset)
         data = self._tempfile.read(to_read)
         self._offset += len(data)
       else:
