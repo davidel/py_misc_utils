@@ -1,3 +1,5 @@
+from . import assert_checks as tas
+
 
 class Pipeline:
 
@@ -14,10 +16,16 @@ class Pipeline:
     return iter(self._elems)
 
   def add(self, elem):
+    tas.check(callable(elem), msg=f'Pipeline elements must be callable: {type(elem)}')
     self._elems.append(elem)
+
+    return len(self._elems) - 1
 
   def pop(self, i=None):
     return self._elems.pop(i) if i is not None else self._elems.pop()
+
+  def elems(self):
+    return tuple(self._elems)
 
   def __call__(self, x):
     for elem in self._elems:
