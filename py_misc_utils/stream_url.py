@@ -71,8 +71,10 @@ class Streamer:
 
 class StreamUrl:
 
-  def __init__(self, url, headers=None, auth=None, chunk_size=None, **kwargs):
+  def __init__(self, url, headers=None, auth=None, chunk_size=None, allow_ranges=None,
+               **kwargs):
     chunk_size = ut.value_or(chunk_size, 16 * 1024**2)
+    allow_ranges = ut.value_or(allow_ranges, True)
 
     req_headers = headers.copy() if headers else dict()
     if auth:
@@ -87,7 +89,7 @@ class StreamUrl:
     self._headers = req_headers
     self._chunk_size = chunk_size
 
-    if (hu.support_ranges(resp.headers) and
+    if (allow_ranges and hu.support_ranges(resp.headers) and
         (length := hu.content_length(resp.headers)) is not None):
       self._length = length
       self._offset = 0
