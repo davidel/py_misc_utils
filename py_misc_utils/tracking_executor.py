@@ -28,7 +28,7 @@ class TrackingExecutor:
     self._lock = threading.Lock()
     self._task_id = 0
     self._pending = set()
-    self._pending_cv = threading.Condition(self._lock)
+    self._pending_cv = threading.Condition(lock=self._lock)
 
   def _report_done(self, tid):
     with self._lock:
