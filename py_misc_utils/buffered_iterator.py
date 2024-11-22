@@ -1,7 +1,7 @@
 import collections
 
 
-IterData = collections.namedtuple('IterData', 'n, last, data')
+IterData = collections.namedtuple('IterData', 'n, left, data')
 
 
 class BufferedIterator:
@@ -18,13 +18,13 @@ class BufferedIterator:
       else:
         cdata = queue.popleft()
         queue.append(data)
-        yield IterData(n=n, last=False, data=cdata)
+        yield IterData(n=n, left=len(queue), data=cdata)
 
       n += 1
 
     while queue:
       cdata = queue.popleft()
-      yield IterData(n=n, last=len(queue) == 0, data=cdata)
+      yield IterData(n=n, left=len(queue), data=cdata)
       n += 1
 
   def __iter__(self):
