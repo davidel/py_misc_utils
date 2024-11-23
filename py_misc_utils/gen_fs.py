@@ -76,10 +76,8 @@ class CacheMapper(cache_mapper.AbstractCacheMapper):
     self._hash_size = hash_size
 
   def __call__(self, path):
-    fname = os.path.basename(path)
     phash = hashlib.sha256(path.encode()).hexdigest()[: self._hash_size]
-
-    mpath = os.path.join(self._storage_path, phash, fname)
+    mpath = os.path.join(self._storage_path, phash, os.path.basename(path))
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
 
