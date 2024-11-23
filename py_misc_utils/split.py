@@ -24,7 +24,7 @@ class _Skipper:
     return next_pos
 
 
-def _build_skiprx(qmap):
+def _keys_regex(qmap):
   stopvals = sorted(qmap.keys())
 
   return re.compile(r'[\\' + ''.join([rf'\{c}' for c in stopvals]) + ']')
@@ -59,13 +59,13 @@ _QUOTE_MAP = {
   '[': ']',
   '<': '>',
 }
-_QUOTE_RX = _build_skiprx(_QUOTE_MAP)
+_QUOTE_RX = _keys_regex(_QUOTE_MAP)
 
 def split(data, split_rx, quote_map=None):
   if quote_map is None:
     quote_map, quote_rx = _QUOTE_MAP, _QUOTE_RX
   else:
-    quote_rx = _build_skiprx(quote_map)
+    quote_rx = _keys_regex(quote_map)
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
   skipper = _Skipper(quote_rx)
