@@ -214,7 +214,7 @@ def norm_slice(start, stop, size):
   return start, stop
 
 
-def strip_nones(**kwargs):
+def denone(**kwargs):
   return {k: v for k, v in kwargs.items() if v is not None}
 
 
