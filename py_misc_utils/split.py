@@ -5,7 +5,7 @@ import re
 from . import assert_checks as tas
 
 
-_Quote = collections.namedtuple('Quote', 'closec, nest_ok')
+_Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
 
 
 class _Skipper:
@@ -81,7 +81,7 @@ def split(data, split_rx, quote_map=None):
         if c == tq.closec:
           qstack.pop()
         elif tq.nest_ok and (cc := quote_map.get(c)):
-          qstack.append(_Quote(cc, c != cc))
+          qstack.append(_Quote(cc, pos, c != cc))
         seq.append(c)
       pos += 1
     else:
@@ -92,7 +92,7 @@ def split(data, split_rx, quote_map=None):
       elif kpos < len(data):
         c = data[kpos]
         if cc := quote_map.get(c):
-          qstack.append(_Quote(cc, c != cc))
+          qstack.append(_Quote(cc, kpos, c != cc))
         seq.append(c)
         kpos += 1
       pos = max(kpos, pos + 1)
