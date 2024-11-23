@@ -3,8 +3,8 @@ from . import assert_checks as tas
 
 class Pipeline:
 
-  def __init__(self, init=None):
-    self._elems = list(init) if init else []
+  def __init__(self, *elems):
+    self._elems = list(elems)
 
   def __len__(self):
     return len(self._elems)
