@@ -2,34 +2,26 @@ import collections
 
 import numpy as np
 
-from . import utils as ut
+from . import np_utils as ut
+from . import utils as npu
 
 
 class TransformArray(collections.abc.Sequence):
 
-  def __init__(self, data, transforms):
+  def __init__(self, data, pipeline):
     super().__init__()
     self.data = data
-    self._transforms = tuple(transforms)
+    self._pipeline = pipeline
     self.shape = ut.compute_shape(data)
 
-  def __getitem__(self, i):
-    if isinstance(i, slice):
-      start, end, step = i.indices(len(self))
-      slices = []
-      for j in range(start, end, step):
-        item = self.data[j]
-        for trs in self._transforms:
-          item = trs(item)
-        slices.append(item)
+  def __getitem__(self, idx):
+    if isinstance(idx, slice):
+      start, end, step = idx.indices(len(self))
+      slices = [self.data[i] for i in range(start, end, step)]
 
-      return ut.maybe_stack_np_slices(slices)
+      return __class__(npu.maybe_stack_slices(slices), self._pipeline)
 
-    item = self.data[i]
-    for trs in self._transforms:
-      item = trs(item)
-
-    return item
+    return self._pipeline(self.data[idx])
 
   def __len__(self):
     return len(self.data)

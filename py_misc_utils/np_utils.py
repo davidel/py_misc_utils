@@ -77,7 +77,7 @@ def infer_np_dtype(dtypes):
   return dtype if dtype is not None else np.float32
 
 
-def maybe_stack_np_slices(slices, axis=0):
+def maybe_stack_slices(slices, axis=0):
   if slices and isinstance(slices[0], np.ndarray):
     return np.stack(slices, axis=axis)
 
