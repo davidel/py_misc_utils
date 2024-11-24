@@ -130,7 +130,7 @@ def _local_args(**kwargs):
 
   is_write_mode = any(s in mode for s in ('w', '+', 'a', 'x'))
   proxy_fs = _LOCAL_RWFS if is_write_mode else _LOCAL_ROFS
-  cache_storage = kwargs.pop('cache_storage', cache_dir())
+  cache_storage = kwargs.pop('cache_storage', None) or cache_dir()
   cache_storage = os.path.join(cache_storage, 'gfs', proxy_fs)
 
   kwargs['mode'] = mode
