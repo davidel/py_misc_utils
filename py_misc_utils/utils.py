@@ -1,10 +1,8 @@
 import array
 import binascii
-import bz2
 import collections
 import copy
 import datetime
-import gzip
 import inspect
 import json
 import logging
@@ -1177,30 +1175,6 @@ def unique(data):
     udata[v].append(i)
 
   return udata
-
-
-def fgzip(src, dest):
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with gzip.open(outfd, mode='wb') as zfd:
-      shutil.copyfileobj(infd, zfd)
-
-
-def fgunzip(src, dest):
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with gzip.open(infd, mode='rb') as zfd:
-      shutil.copyfileobj(zfd, outfd)
-
-
-def fbzip2(src, dest):
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with bz2.open(outfd, mode='wb') as zfd:
-      shutil.copyfileobj(infd, zfd)
-
-
-def fbunzip2(src, dest):
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with bz2.open(infd, mode='rb') as zfd:
-      shutil.copyfileobj(zfd, outfd)
 
 
 def drop_ext(path, exts):

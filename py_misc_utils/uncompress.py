@@ -3,13 +3,14 @@ import shutil
 import tempfile
 
 from . import alog
-from . import utils as ut
+from . import compression as comp
 
 
 _DECOMPRESSORS = {
-  '.bz2': ut.fbunzip2,
-  '.bzip': ut.fbunzip2,
-  '.gz': ut.fgunzip,
+  '.bz2': comp.fbunzip2,
+  '.bzip': comp.fbunzip2,
+  '.gz': comp.fgunzip,
+  '.xz': comp.flunzip,
 }
 
 class Uncompress:
