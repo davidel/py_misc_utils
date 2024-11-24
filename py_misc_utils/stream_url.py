@@ -1,3 +1,4 @@
+import os
 import requests
 import sys
 import tempfile
@@ -18,7 +19,7 @@ class Streamer:
     self._cond = threading.Condition(lock=self._lock)
     self._tempfile = tempfile.TemporaryFile()
     self._offset = 0
-    self._written = 0
+    self._size = 0
     self._completed = False
     self._closed = False
     self._thread = threading.Thread(target=self._stream)
@@ -27,9 +28,9 @@ class Streamer:
   def _stream(self):
     for data in self._resp:
       with self._lock:
-        self._tempfile.seek(self._written)
+        self._tempfile.seek(self._size)
         self._tempfile.write(data)
-        self._written += len(data)
+        self._size += len(data)
         self._cond.notify_all()
         if self._closed:
           break
@@ -54,10 +55,10 @@ class Streamer:
   def read(self, size=-1):
     with self._lock:
       while not (self._completed or self._closed or
-                 (size >= 0 and self._written >= self._offset + size)):
+                 (size >= 0 and self._size >= self._offset + size)):
         self._cond.wait()
 
-      available = self._written - self._offset
+      available = self._size - self._offset
       to_read = min(size, available) if size >= 0 else available
       if not self._closed and to_read > 0:
         self._tempfile.seek(self._offset)
