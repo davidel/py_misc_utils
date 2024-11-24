@@ -6,13 +6,6 @@ from . import alog
 from . import compression as comp
 
 
-_DECOMPRESSORS = {
-  '.bz2': comp.fbunzip2,
-  '.bzip': comp.fbunzip2,
-  '.gz': comp.fgunzip,
-  '.xz': comp.flunzip,
-}
-
 class Uncompress:
 
   def __init__(self, path):
@@ -22,7 +15,7 @@ class Uncompress:
   def __enter__(self):
     bpath, ext = os.path.splitext(self._path)
 
-    decomp = _DECOMPRESSORS.get(ext)
+    decomp = comp.decompressor(ext)
     if decomp is not None:
       self._tempdir = tempfile.mkdtemp()
       rpath = os.path.join(self._tempdir, os.path.basename(bpath))
