@@ -43,26 +43,26 @@ def fxunzip(src, dest):
       shutil.copyfileobj(zfd, outfd)
 
 
-COMPRESSORS = {
+_COMPRESSORS = {
   '.bz2': fbzip2,
   '.bzip': fbzip2,
   '.gz': fgzip,
   '.xz': fxzip,
 }
 
-DECOMPRESSORS = {
+def compressor(ext):
+  return _COMPRESSORS.get(ext)
+
+
+_DECOMPRESSORS = {
   '.bz2': fbunzip2,
   '.bzip': fbunzip2,
   '.gz': fgunzip,
   '.xz': fxunzip,
 }
 
-def compressor(ext):
-  return COMPRESSORS.get(ext)
-
-
 def decompressor(ext):
-  return DECOMPRESSORS.get(ext)
+  return _DECOMPRESSORS.get(ext)
 
 
 def compress(src, dest):
