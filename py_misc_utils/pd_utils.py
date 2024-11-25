@@ -181,7 +181,7 @@ def get_dataframe_groups(df, cols, cols_transforms=None):
   # Row numbers must be strictly ascending within each group, do NOT change that!
   groups = collections.defaultdict(lambda: array.array('L'))
   if cols_transforms:
-    tcols = [(df[c], cols_transforms.get(c, lambda x: x)) for c in cols]
+    tcols = [(df[c], cols_transforms.get(c, pyu.ident)) for c in cols]
     for i in range(len(df)):
       k = tuple([f(d[i]) for d, f in tcols])
       groups[k].append(i)
