@@ -6,7 +6,6 @@ import zipfile
 from . import alog as alog
 from . import assert_checks as tas
 from . import gen_fs as gfs
-from . import stream_url as ustream
 
 
 ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_path')
@@ -38,6 +37,8 @@ class ArchiveStreamer:
   def generate(self):
     specs = parse_specs(self._url)
     if specs.kind == 'zip':
+      # The ZIP format requires random access (specifically, the file list is at EOF)
+      # so it is better to cache the file locally before opening.
       with gfs.open_local(self._url, mode='rb', **self._kwargs) as stream:
         zfile = zipfile.ZipFile(stream, mode='r')
         for zinfo in zfile.infolist():
@@ -45,11 +46,11 @@ class ArchiveStreamer:
             data = zfile.read(zinfo)
             yield ArchiveEntry(name=zinfo.filename, data=data)
     elif specs.kind == 'tar':
-      stream = ustream.StreamUrl(self._url, **self._kwargs)
-      tfile = tarfile.open(mode=f'r|{specs.compression or ""}', fileobj=stream)
-      for tinfo in tfile:
-        data = tfile.extractfile(tinfo).read()
-        yield ArchiveEntry(name=tinfo.name, data=data)
+      with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
+        tfile = tarfile.open(mode=f'r|{specs.compression or ""}', fileobj=stream)
+        for tinfo in tfile:
+          data = tfile.extractfile(tinfo).read()
+          yield ArchiveEntry(name=tinfo.name, data=data)
     else:
       alog.xraise(RuntimeError, f'Unknown archive type "{specs.kind}": {self._url}')
 
