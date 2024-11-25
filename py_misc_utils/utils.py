@@ -43,6 +43,10 @@ def pickle_proto():
   return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
 
 
+def ident(x):
+  return x
+
+
 def make_ntuple(ntc, args):
   targs = []
   for f in ntc._fields:
@@ -549,7 +553,7 @@ def locals_capture(locs, exclude=None):
 
 
 def sreplace(rex, data, mapfn, nmapfn=None, join=True):
-  nmapfn = nmapfn if nmapfn is not None else lambda x: x
+  nmapfn = nmapfn if nmapfn is not None else ident
 
   lastpos, parts = 0, []
   for m in re.finditer(rex, data):
