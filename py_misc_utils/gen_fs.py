@@ -99,7 +99,7 @@ def std_open(path, **kwargs):
 
 
 def open(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path, **kwargs)
+  fs, fpath = fsspec.url_to_fs(path)
 
   return fs.open(fpath, **kwargs)
 
