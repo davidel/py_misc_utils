@@ -99,7 +99,9 @@ def std_open(path, **kwargs):
 
 
 def open(path, **kwargs):
-  return fsspec.open(path, **kwargs)
+  fs, fpath = fsspec.url_to_fs(path, **kwargs)
+
+  return fs.open(fpath, **kwargs)
 
 
 def open_source(source, **kwargs):
@@ -115,9 +117,7 @@ def path_of(path):
 
 def maybe_open(path, **kwargs):
   try:
-    fs, fpath = fsspec.url_to_fs(path)
-
-    return fs.open(fpath, **kwargs)
+    return open(path, **kwargs)
   except:
     pass
 
@@ -140,7 +140,7 @@ def _local_args(**kwargs):
   return proxy_fs, kwargs
 
 def open_local(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path, **kwargs)
   if is_local_fs(fs):
     return fs.open(fpath, **kwargs)
 
@@ -150,7 +150,7 @@ def open_local(path, **kwargs):
 
 
 def as_local(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path)
+  fs, fpath = fsspec.url_to_fs(path, **kwargs)
   if is_local_fs(fs):
     return fpath
 
