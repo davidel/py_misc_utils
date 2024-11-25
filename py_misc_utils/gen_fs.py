@@ -140,7 +140,7 @@ def _local_args(**kwargs):
   return proxy_fs, kwargs
 
 def open_local(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path, **kwargs)
+  fs, fpath = fsspec.url_to_fs(path)
   if is_local_fs(fs):
     return fs.open(fpath, **kwargs)
 
@@ -150,7 +150,7 @@ def open_local(path, **kwargs):
 
 
 def as_local(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path, **kwargs)
+  fs, fpath = fsspec.url_to_fs(path)
   if is_local_fs(fs):
     return fpath
 
