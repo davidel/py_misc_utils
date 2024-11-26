@@ -78,15 +78,16 @@ class LockFile:
 
   def release(self):
     meta = self._locking_meta()
-    if meta is None or (meta.pid == os.getpid() and meta.cmdline == _CMDLINE):
-      try:
-        os.remove(self._path)
-        return True
-      except OSError:
-        pass
-    else:
-      alog.warning(f'Trying to release lock on {self._path} by pid {os.getpid()} but ' \
-                   f'it was held by {meta.pid}')
+    if meta is not None:
+      if meta.pid == os.getpid() and meta.cmdline == _CMDLINE:
+        try:
+          os.remove(self._path)
+          return True
+        except OSError:
+          pass
+      else:
+        alog.warning(f'Trying to release lock on {self._path} by pid {os.getpid()} but ' \
+                     f'it was held by {meta.pid} ({meta.cmdline})')
 
     return False
 
