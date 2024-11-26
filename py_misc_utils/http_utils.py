@@ -12,9 +12,11 @@ def support_ranges(headers):
   return 'bytes' in headers.get(ACCEPT_RANGES, '')
 
 
-def content_length(headers):
+def content_length(headers, defval=None):
   if (length := headers.get(CONTENT_LENGTH)) is not None:
     return int(length)
+
+  return defval
 
 
 def add_range(headers, start, stop):
