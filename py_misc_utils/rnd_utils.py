@@ -1,5 +1,7 @@
+import os
 import random
 import string
+import tempfile
 import threading
 
 import numpy as np
@@ -72,4 +74,17 @@ def rand_string(n):
   rng = random.SystemRandom()
 
   return ''.join(rng.choices(string.ascii_lowercase + string.digits, k=n))
+
+
+_TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
+
+def temp_path(nspath=None, nsdir=None, rndsize=None):
+  rndsize = rndsize or _TMPFN_RNDSIZE
+
+  if nspath is not None:
+    return f'{nspath}.{rand_string(rndsize)}'
+
+  nsdir = tempfile.gettempdir() if nsdir is None else nsdir
+
+  return os.path.join(nsdir, f'{rand_string(rndsize)}.tmp')
 

@@ -6,9 +6,7 @@ import os
 import re
 import shutil
 import stat as st
-import string
 import sys
-import tempfile
 
 import fsspec
 import fsspec.implementations.cache_mapper as cache_mapper
@@ -28,9 +26,9 @@ class TempFile:
     is_local = ((nsdir is None or is_local_path(nsdir)) and
                 (nspath is None or is_local_path(nspath)))
     if is_local:
-      fs, tmp_path = fsspec.url_to_fs(temp_path(nspath=nspath, nsdir=nsdir))
+      fs, tmp_path = fsspec.url_to_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir))
     else:
-      fs, tmp_path = fsspec.url_to_fs(temp_path())
+      fs, tmp_path = fsspec.url_to_fs(rngu.temp_path())
 
     self._fs, self._path = fs, tmp_path
     self._kwargs = kwargs
@@ -159,19 +157,6 @@ def as_local(path, **kwargs):
   return fsspec.open_local(f'{proxy_fs}::{path}', **lkwargs)
 
 
-_TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
-
-def temp_path(nspath=None, nsdir=None, rndsize=None):
-  rndsize = rndsize or _TMPFN_RNDSIZE
-
-  if nspath is not None:
-    return f'{nspath}.{rngu.rand_string(rndsize)}'
-
-  nsdir = tempfile.gettempdir() if nsdir is None else nsdir
-
-  return os.path.join(nsdir, f'{rngu.rand_string(rndsize)}.tmp')
-
-
 def is_file(path):
   fs, fpath = fsspec.url_to_fs(path)
 
@@ -254,7 +239,7 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
       if is_local_fs(src.fs):
         local_path = src.path
       else:
-        local_path = temp_path()
+        local_path = rngu.temp_path()
         src.fs.get_file(src.path, local_path)
 
       dest.fs.put_file(local_path, dest.path)
