@@ -94,7 +94,7 @@ class StreamUrl:
         (length := hu.content_length(resp.headers)) is not None):
       self._length = length
       self._offset = 0
-      self._etag = resp.headers.get(hu.ETAG)
+      self._etag = hu.etag(resp.headers)
       self._streamer = None
     else:
       streamer = Streamer(resp.iter_content(chunk_size=chunk_size))
