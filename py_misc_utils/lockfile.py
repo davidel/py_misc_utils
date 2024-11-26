@@ -139,5 +139,6 @@ class LockFile:
 
   def __exit__(self, *exc):
     self.release()
+
     return False
 
