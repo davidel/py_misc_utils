@@ -37,6 +37,18 @@ class Obj:
 
     return ad
 
+  def __eq__(self, other):
+    missing = object()
+    for k, v in self.__dict__.items():
+      ov = getattr(other, k, missing)
+      if ov is missing or v != ov:
+        return False
+    for k in other.__dict__.keys():
+      if not hasattr(self, k):
+        return False
+
+    return True
+
   def __repr__(self):
     values = ', '.join(f'{k}={str_value(v)}' for k, v in self.__dict__.items())
 

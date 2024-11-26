@@ -91,9 +91,10 @@ class LockFile:
     return False
 
   def _try_force_lock(self, meta):
-    alog.warning(f'Trying to override gone process {meta.pid if meta else "??"} on {self._path}')
+    if meta is not None:
+      alog.warning(f'Trying to override gone process {meta.pid} on {self._path}')
 
-    upath = f'{self._path}.REMOVER'
+    upath = f'{self._path}.ENFORCER'
     created = result = False
     try:
       with osfd.OsFd(upath, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as fd:
