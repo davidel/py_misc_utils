@@ -16,10 +16,12 @@ class fin_wrap:
       tas.check_is_not_none(finfn, msg=f'Missing finalize function argument')
 
       setattr(parent, fname, self)
-      weakref.finalize(self, finfn)
+      self._finalizer = weakref.finalize(self, finfn)
     else:
-      if hasattr(parent, fname):
+      fwrap = getattr(parent, fname, None)
+      if fwrap is not None:
         delattr(parent, fname)
+        fwrap._finalizer.detach()
 
 
 class _Wrapper:
