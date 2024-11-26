@@ -104,7 +104,7 @@ class LockFile:
         data = os.read(fd, self.MAX_META_SIZE)
 
         lmeta = self._untag(data)
-        if lmeta is None or (meta is not None and lmeta.pid == meta.pid):
+        if lmeta is None or (meta is not None and lmeta == meta):
           os.lseek(fd, 0, os.SEEK_SET)
           os.truncate(fd, 0)
           os.write(fd, self._tag())
