@@ -1,7 +1,6 @@
 import os
 import psutil
 import random
-import socket
 import time
 import yaml
 
@@ -23,10 +22,7 @@ class LockFile:
     self._check_timeout = random.gauss(mu=check_timeout, sigma=0.2)
 
   def _tag(self):
-    tag = dict(pid=os.getpid(),
-               cmdline=_CMDLINE,
-               time=time.time(),
-               hostname=socket.gethostname())
+    tag = dict(pid=os.getpid(), cmdline=_CMDLINE, time=time.time())
     stag = yaml.dump(tag, default_flow_style=False)
 
     return stag.encode()
@@ -46,8 +42,7 @@ class LockFile:
         proc = psutil.Process(meta.pid)
         cmdline = list(proc.cmdline())
 
-        is_alive = (cmdline == meta.cmdline and proc.create_time() <= meta.time and
-                    socket.gethostname() == meta.hostname)
+        is_alive = cmdline == meta.cmdline and proc.create_time() <= meta.time
       except:
         is_alive = False
 
