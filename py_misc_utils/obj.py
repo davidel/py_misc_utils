@@ -8,6 +8,9 @@ class Obj:
   def update(self, **kwargs):
     self.__dict__.update(kwargs)
 
+  def update_from(self, obj):
+    self.__dict__.update(obj.__dict__)
+
   def as_dict(self):
     ad = dict()
     for k, v in self.__dict__.items():
