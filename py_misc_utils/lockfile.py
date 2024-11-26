@@ -11,12 +11,17 @@ from . import osfd
 
 
 _CMDLINE = list(psutil.Process().cmdline())
+_ACQUIRE_TIMEOUT = float(os.getenv('LOCKF_AQTIMEO', 0.5))
+_CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', 2.5))
 
 class LockFile:
 
   MAX_META_SIZE = 128 * 1024
 
-  def __init__(self, path, acquire_timeout=0.5, check_timeout=2.5):
+  def __init__(self, path, acquire_timeout=None, check_timeout=None):
+    acquire_timeout = _ACQUIRE_TIMEOUT if acquire_timeout is None else acquire_timeout
+    check_timeout = _CHECK_TIMEOUT if check_timeout is None else check_timeout
+
     self._path = path
     self._acquire_timeout = random.gauss(mu=acquire_timeout, sigma=0.2)
     self._check_timeout = random.gauss(mu=check_timeout, sigma=0.2)
