@@ -16,6 +16,13 @@ def no_except(fn, *args, **kwargs):
     return ex
 
 
+def qno_except(fn, *args, **kwargs):
+  try:
+    return fn(*args, **kwargs)
+  except Exception as ex:
+    return ex
+
+
 def xwrap_fn(fn, *args, **kwargs):
 
   def fwrap():
