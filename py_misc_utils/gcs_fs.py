@@ -80,7 +80,7 @@ class GcsFs:
       for data in source:
         fd.write(data)
 
-  def download(self, path, chunk_size=8 * 1024**2):
+  def download(self, path, chunk_size=32 * 1024**2):
     bucket = self._client.bucket(self._bucket)
     blob = bucket.blob(path)
 
