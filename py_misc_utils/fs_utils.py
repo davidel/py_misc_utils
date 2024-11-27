@@ -66,3 +66,12 @@ def drop_ext(path, exts):
 
   return xpath if ext in exts else path
 
+
+def enum_chunks(stream, chunk_size=16 * 1024**2):
+  while True:
+    data = stream.read(chunk_size)
+    if data:
+      yield data
+    if chunk_size > len(data):
+      break
+
