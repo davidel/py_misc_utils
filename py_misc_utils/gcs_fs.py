@@ -97,6 +97,12 @@ class GcsFs:
         if chunk_size > len(data):
           break
 
+  def pread(self, path, start, size):
+    bucket = self._client.bucket(self._bucket)
+    blob = bucket.blob(path)
+
+    return blob.download_as_bytes(start=start, end=start + size - 1, raw_download=True)
+
   def stat(self, path):
     bucket = self._client.bucket(self._bucket)
     blob = bucket.get_blob(path)
