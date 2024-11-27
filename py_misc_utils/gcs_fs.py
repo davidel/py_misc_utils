@@ -9,7 +9,7 @@ import google.cloud.storage as gcs
 # https://cloud.google.com/python/docs/reference/storage/1.44.0/client
 # https://cloud.google.com/python/docs/reference/storage/1.44.0/blobs#google.cloud.storage.blob.Blob
 
-DirEntry = collections.namedtuple('DirEntry', 'name, st_mode, st_size, st_ctime, st_mtime')
+DirEntry = collections.namedtuple('DirEntry', 'name, path, st_mode, st_size, st_ctime, st_mtime')
 
 class GcsFs:
 
@@ -31,14 +31,18 @@ class GcsFs:
       else:
         mode = st.S_IFREG
         size = blob.size
+
+      path = base_path + name
     else:
       spos = name.rfind('/')
       if spos >= 0:
         name = name[spos + 1:]
       mode = st.S_IFREG
       size = blob.size
+      path = blob.name
 
     return DirEntry(name=name,
+                    path=path,
                     st_mode=mode,
                     st_size=size,
                     st_ctime=blob.time_created.timestamp(),
