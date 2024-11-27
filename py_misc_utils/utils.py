@@ -10,9 +10,6 @@ import os
 import pickle
 import random
 import re
-import shutil
-import string
-import struct
 import sys
 import threading
 import time
