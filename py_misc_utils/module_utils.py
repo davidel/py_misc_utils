@@ -6,6 +6,7 @@ import sys
 
 from . import alog
 from . import assert_checks as tas
+from . import fs_utils as fsu
 from . import utils as ut
 
 
@@ -25,8 +26,8 @@ def add_sys_path(path):
 
 
 def find_module_parent(path):
-  parts = ut.path_split(path)
-  modname = ut.drop_ext(parts.pop(), '.py')
+  parts = fsu.path_split(path)
+  modname = fsu.drop_ext(parts.pop(), '.py')
 
   for i in range(len(parts)):
     ipath = os.path.join(*parts[: i + 1], _PYINIT)
@@ -91,7 +92,7 @@ def load_module(path, modname=None, install=None, add_syspath=None):
     pathdir = syspath = os.path.dirname(apath)
 
     if modname is None:
-      modname = ut.drop_ext(os.path.basename(apath), '.py')
+      modname = fsu.drop_ext(os.path.basename(apath), '.py')
       if modname == '__init__':
         syspath, modname = os.path.split(pathdir)
 
