@@ -1,4 +1,5 @@
 import collections
+import os
 import stat as st
 
 import google.cloud.storage as gcs
@@ -97,6 +98,22 @@ class GcsFs:
     blob = bucket.get_blob(path)
     if blob.exists():
       return self._blob_stat(blob)
+
+    ctime = mtime = None
+    for de in self.listdir(path):
+      if ctime is None or de.st_ctime < ctime:
+        ctime = de.st_ctime
+      if mtime is None or de.st_mtime > mtime:
+        mtime = de.st_mtime
+
+    if ctime is not None and mtime is not None:
+      name = os.path.basename(path[: -1] if path.endwith('/') else path)
+
+      return DirEntry(name=name,
+                      st_mode=st.S_IFDIR,
+                      st_size=0,
+                      st_ctime=ctime,
+                      st_mtime=mtime)
 
   def remove(self, path):
     bucket = self._client.bucket(self._bucket)
