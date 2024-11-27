@@ -111,9 +111,11 @@ class GcsFs:
         mtime = de.st_mtime
 
     if ctime is not None and mtime is not None:
-      name = os.path.basename(path[: -1] if path.endswith('/') else path)
+      bpath = path[: -1] if path.endswith('/') else path
+      name = os.path.basename(bpath)
 
       return DirEntry(name=name,
+                      path=bpath,
                       st_mode=st.S_IFDIR,
                       st_size=0,
                       st_ctime=ctime,
