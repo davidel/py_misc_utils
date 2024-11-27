@@ -96,7 +96,7 @@ class GcsFs:
   def stat(self, path):
     bucket = self._client.bucket(self._bucket)
     blob = bucket.get_blob(path)
-    if blob.exists():
+    if blob is not None and blob.exists():
       return self._blob_stat(blob)
 
     ctime = mtime = None
