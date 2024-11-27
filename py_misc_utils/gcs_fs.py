@@ -17,8 +17,11 @@ class GcsFs:
     self._client = gcs.Client()
 
   def _blob_stat(self, blob, base_path=''):
-    if not base_path or blob.name.startswith(base_path):
-      name = blob.name[len(base_path):]
+    name = blob.name
+    if base_path:
+      if not name.startswith(base_path):
+        return
+      name = name[len(base_path):]
       spos = name.find('/')
       if spos > 0:
         name = name[: spos]
@@ -27,12 +30,18 @@ class GcsFs:
       else:
         mode = st.S_IFREG
         size = blob.size
+    else:
+      spos = name.rfind('/')
+      if spos >= 0:
+        name = name[spos + 1:]
+      mode = st.S_IFREG
+      size = blob.size
 
-      return DirEntry(name=name,
-                      st_mode=mode,
-                      st_size=size,
-                      st_ctime=blob.time_created.timestamp(),
-                      st_mtime=blob.updated.timestamp())
+    return DirEntry(name=name,
+                    st_mode=mode,
+                    st_size=size,
+                    st_ctime=blob.time_created.timestamp(),
+                    st_mtime=blob.updated.timestamp())
 
   def listdir(self, path):
     if path:
