@@ -59,13 +59,13 @@ class GcsFs:
 
   def open(self, path, mode='rb'):
     bucket = self._client.bucket(self._bucket)
-    blob = bucket.get_blob(path)
+    blob = bucket.blob(path)
 
     return blob.open(mode)
 
   def upload(self, path, source):
     bucket = self._client.bucket(self._bucket)
-    blob = bucket.get_blob(path)
+    blob = bucket.blob(path)
 
     with blob.open('wb') as fd:
       for data in source:
@@ -73,7 +73,7 @@ class GcsFs:
 
   def download(self, path, chunk_size=8 * 1024**2):
     bucket = self._client.bucket(self._bucket)
-    blob = bucket.get_blob(path)
+    blob = bucket.blob(path)
 
     with blob.open('rb') as fd:
       while True:
@@ -91,6 +91,6 @@ class GcsFs:
 
   def remove(self, path):
     bucket = self._client.bucket(self._bucket)
-    blob = bucket.get_blob(path)
+    blob = bucket.blob(path)
     blob.delete()
 
