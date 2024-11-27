@@ -55,6 +55,8 @@ def manual_seed(seed):
 
   random.seed(cseed)
 
+  return cseed
+
 
 def torch_gen(device='cpu'):
   tls = _get_tls()
