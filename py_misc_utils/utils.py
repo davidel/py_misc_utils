@@ -1,5 +1,4 @@
 import array
-import binascii
 import collections
 import copy
 import datetime
@@ -682,25 +681,6 @@ def unpack_n(l, n, defval=None):
   l = as_sequence(l)
 
   return tuple(l[:n] if len(l) >= n else l + [defval] * (n - len(l)))
-
-
-def randseed(seed=None):
-  if seed is not None:
-    if isinstance(seed, int):
-      seed = binascii.crc32(struct.pack('=q', seed))
-    elif isinstance(seed, float):
-      seed = binascii.crc32(struct.pack('=d', seed))
-    elif isinstance(seed, bytes):
-      seed = binascii.crc32(seed)
-    elif isinstance(seed, str):
-      seed = binascii.crc32(seed.encode())
-    else:
-      seed = binascii.crc32(struct.pack('=Q', id(seed)))
-
-  random.seed(seed)
-  np.random.seed(seed)
-
-  return seed
 
 
 def shuffle(args):

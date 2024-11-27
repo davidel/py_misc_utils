@@ -1,6 +1,8 @@
+import binascii
 import os
 import random
 import string
+import struct
 import tempfile
 import threading
 
@@ -21,20 +23,37 @@ def _get_tls():
   return _TLS
 
 
+def compute_seed(seed):
+  if isinstance(seed, int):
+    seed = binascii.crc32(struct.pack('=q', seed))
+  elif isinstance(seed, float):
+    seed = binascii.crc32(struct.pack('=d', seed))
+  elif isinstance(seed, bytes):
+    seed = binascii.crc32(seed)
+  elif isinstance(seed, str):
+    seed = binascii.crc32(seed.encode())
+  else:
+    seed = binascii.crc32(struct.pack('=Q', hash(seed)))
+
+  return seed
+
+
 def manual_seed(seed):
   global _SEED
 
-  _SEED = seed
+  cseed = compute_seed(seed)
+
+  _SEED = cseed
   tls = _get_tls()
 
   for rndg in tls.torch_rnds.values():
-    rndg.manual_seed(seed)
-  torch.manual_seed(seed)
+    rndg.manual_seed(cseed)
+  torch.manual_seed(cseed)
 
-  tls.np_rdngen = np.random.default_rng(seed=seed)
-  np.random.seed(seed)
+  tls.np_rdngen = np.random.default_rng(seed=cseed)
+  np.random.seed(cseed)
 
-  random.seed(seed)
+  random.seed(cseed)
 
 
 def torch_gen(device='cpu'):
