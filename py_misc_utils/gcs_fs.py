@@ -16,9 +16,9 @@ class GcsFs:
     self._bucket = bucket
     self._client = gcs.Client()
 
-  def _blob_stat(self, blob, base_path=''):
+  def _blob_stat(self, blob, base_path=None):
     name = blob.name
-    if base_path:
+    if base_path is not None:
       if not name.startswith(base_path):
         return
       name = name[len(base_path):]
