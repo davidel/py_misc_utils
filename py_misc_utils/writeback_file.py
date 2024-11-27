@@ -38,16 +38,15 @@ def _writeback(stream, writeback_fn):
 class WritebackFile:
 
   def __init__(self, stream, writeback_fn):
-    self._writeback_fn = writeback_fn
-    fw.fin_wrap(self, '_stream', stream,
-                finfn=functools.partial(_writeback, stream, writeback_fn))
+    self._writeback_fn = functools.partial(_writeback, stream, writeback_fn)
+    fw.fin_wrap(self, '_stream', stream, finfn=self._writeback_fn)
 
   def close(self, run_writeback=True):
     stream = self._stream
     if stream is not None:
       fw.fin_wrap(self, '_stream', None)
       if run_writeback:
-        _writeback(stream, self._writeback_fn)
+        self._writeback_fn()
       else:
         stream.close()
 
