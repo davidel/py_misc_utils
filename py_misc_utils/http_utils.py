@@ -1,3 +1,5 @@
+import time
+
 
 ACCEPT_RANGES = 'Accept-Ranges'
 AUTHORIZATION = 'Authorization'
@@ -36,4 +38,10 @@ def add_range(headers, start, stop):
   headers[RANGE] = f'bytes={start}-{stop}'
 
   return headers
+
+
+def date_to_epoch(http_date):
+  htime = time.strptime(tt, '%a, %d %b %Y %I:%M:%S %Z')
+
+  return time.mktime(htime)
 
