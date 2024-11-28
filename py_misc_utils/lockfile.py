@@ -24,7 +24,12 @@ def _try_lockdir(path):
 
 
 def _find_lockdir():
+  path = os.getenv('LOCKSDIR', None)
+  if path is not None and (lockdir := _try_lockdir(path)) is not None:
+    return lockdir
+
   if os.name == 'posix':
+    # Try known tmpfs/ramfs places in case on Unix.
     for path in ('/dev/shm', '/run/lock'):
       if (lockdir := _try_lockdir(path)) is not None:
         return lockdir
@@ -37,10 +42,10 @@ def _find_lockdir():
 
 _LOCKDIR = _find_lockdir()
 
-def _lockfile(path):
-  phash = hashlib.sha1(path.encode()).hexdigest()
+def _lockfile(name):
+  lhash = hashlib.sha1(name.encode()).hexdigest()
 
-  return os.path.join(_LOCKDIR, phash)
+  return os.path.join(_LOCKDIR, lhash)
 
 
 _CMDLINE = list(psutil.Process().cmdline())
