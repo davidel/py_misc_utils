@@ -17,7 +17,10 @@ class Streamer:
     self._resp = resp
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
-    self._tempfile = tempfile.TemporaryFile()
+
+    tmpfile = tempfile.TemporaryFile()
+    fw.fin_wrap(self, '_tempfile', tmpfile, finfn=tmpfile.close)
+
     self._offset = 0
     self._size = 0
     self._completed = False
@@ -46,11 +49,6 @@ class Streamer:
         self._cond.wait()
 
     self._thread.join()
-
-    with self._lock:
-      if self._tempfile is not None:
-        self._tempfile.close()
-        self._tempfile = None
 
   def read(self, size=-1):
     with self._lock:
