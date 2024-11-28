@@ -1,3 +1,4 @@
+import hashlib
 import os
 import psutil
 import random
