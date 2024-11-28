@@ -1,6 +1,7 @@
 import os
 import psutil
 import random
+import tempfile
 import time
 import yaml
 
@@ -8,6 +9,37 @@ from . import alog
 from . import assert_checks as tas
 from . import obj
 from . import osfd
+
+
+def _try_lockdir(path):
+  if os.path.isdir(path):
+    lockdir = os.path.join(path, '.locks')
+    try:
+      os.makedirs(lockdir, exist_ok=True)
+
+      return lockdir
+    except:
+      pass
+
+
+def _find_lockdir():
+  if os.name == 'posix':
+    for path in ('/dev/shm', '/run/lock'):
+      if (lockdir := _try_lockdir(path)) is not None:
+        return lockdir
+
+  lockdir = os.path.join(tempfile.gettempdir(), '.locks')
+  os.makedirs(lockdir, exist_ok=True)
+
+  return lockdir
+
+
+_LOCKDIR = _find_lockdir()
+
+def _lockfile(path):
+  phash = hashlib.sha1(path.encode()).hexdigest()
+
+  return os.path.join(_LOCKDIR, phash)
 
 
 _CMDLINE = list(psutil.Process().cmdline())
@@ -18,11 +50,12 @@ class LockFile:
 
   MAX_META_SIZE = 128 * 1024
 
-  def __init__(self, path, acquire_timeout=None, check_timeout=None):
+  def __init__(self, name, acquire_timeout=None, check_timeout=None):
     acquire_timeout = _ACQUIRE_TIMEOUT if acquire_timeout is None else acquire_timeout
     check_timeout = _CHECK_TIMEOUT if check_timeout is None else check_timeout
 
-    self._path = path
+    self._name = name
+    self._lockfile = _lockfile(name)
     self._acquire_timeout = random.gauss(mu=acquire_timeout, sigma=0.2)
     self._check_timeout = random.gauss(mu=check_timeout, sigma=0.2)
 
@@ -53,7 +86,7 @@ class LockFile:
 
     if not is_alive:
       alog.warning(f'Process {meta.pid} ({meta.cmdline}) holding lock on ' \
-                   f'{self._path} seems vanished')
+                   f'{self._name} seems vanished')
 
     return is_alive
 
@@ -62,7 +95,7 @@ class LockFile:
     check_time = time.time() + self._check_timeout
     while True:
       try:
-        with osfd.OsFd(self._path, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as fd:
+        with osfd.OsFd(self._lockfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as fd:
           os.write(fd, self._tag())
 
         return True
@@ -78,7 +111,7 @@ class LockFile:
               return True
 
         if quit_time is not None and now >= quit_time:
-          alog.debug(f'Giving up on lock {self._path} after {timeout} seconds')
+          alog.debug(f'Giving up on lock {self._name} after {timeout} seconds')
           return False
 
   def release(self):
@@ -86,27 +119,27 @@ class LockFile:
     if meta is not None:
       if meta.pid == os.getpid() and meta.cmdline == _CMDLINE:
         try:
-          os.remove(self._path)
+          os.remove(self._lockfile)
           return True
         except OSError:
           pass
       else:
-        alog.warning(f'Trying to release lock on {self._path} by pid {os.getpid()} but ' \
+        alog.warning(f'Trying to release lock on {self._name} by pid {os.getpid()} but ' \
                      f'it was held by {meta.pid} ({meta.cmdline})')
 
     return False
 
   def _try_force_lock(self, meta):
     if meta is not None:
-      alog.warning(f'Trying to override gone process {meta.pid} on {self._path}')
+      alog.warning(f'Trying to override gone process {meta.pid} on {self._name}')
 
-    upath = f'{self._path}.ENFORCER'
+    upath = f'{self._lockfile}.ENFORCER'
     created = result = False
     try:
       with osfd.OsFd(upath, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as fd:
         created = True
 
-      with osfd.OsFd(self._path, os.O_RDWR) as fd:
+      with osfd.OsFd(self._lockfile, os.O_RDWR) as fd:
         data = os.read(fd, self.MAX_META_SIZE)
 
         lmeta = self._untag(data)
@@ -116,7 +149,7 @@ class LockFile:
           os.write(fd, self._tag())
           result = True
 
-          alog.info(f'Successfull override on {self._path}')
+          alog.info(f'Successfull override on {self._name}')
     except OSError:
       pass
     finally:
@@ -127,7 +160,7 @@ class LockFile:
 
   def _locking_meta(self):
     try:
-      with osfd.OsFd(self._path, os.O_RDONLY) as fd:
+      with osfd.OsFd(self._lockfile, os.O_RDONLY) as fd:
         data = os.read(fd, self.MAX_META_SIZE)
 
       return self._untag(data)
