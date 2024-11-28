@@ -11,7 +11,7 @@ from . import http_utils as hu
 from . import utils as ut
 
 
-class Streamer:
+class StreamedFile:
 
   def __init__(self, resp):
     self._resp = resp
@@ -42,6 +42,11 @@ class Streamer:
       self._completed = True
       self._cond.notify_all()
 
+  def _wait_completed(self):
+    with self._lock:
+      while not (self._completed or self._closed):
+        self._cond.wait()
+
   def close(self):
     with self._lock:
       self._closed = True
@@ -49,6 +54,23 @@ class Streamer:
         self._cond.wait()
 
     self._thread.join()
+
+  def seek(self, pos, whence=os.SEEK_SET):
+    if whence == os.SEEK_SET:
+      offset = pos
+    elif whence == os.SEEK_CUR:
+      offset = self._offset + pos
+    elif whence == os.SEEK_END:
+      self._wait_completed()
+      offset = self._size + pos
+    else:
+      alog.xraise(ValueError, f'Invalid seek mode: {whence}')
+
+    tas.check_ge(offset, 0, msg=f'Offset out of range')
+
+    self._offset = offset
+
+    return offset
 
   def read(self, size=-1):
     with self._lock:
@@ -66,6 +88,42 @@ class Streamer:
         data = b''
 
       return data
+
+  def read1(self, size=-1):
+    return self.read(size=size)
+
+  def pread(self, offset, size):
+    with self._lock:
+      while not (self._completed or self._closed or
+                 (self._size >= offset + size)):
+        self._cond.wait()
+
+      available = self._size - offset
+      to_read = min(size, available)
+      if not self._closed and to_read > 0:
+        self._tempfile.seek(offset)
+        data = self._tempfile.read(to_read)
+      else:
+        data = b''
+
+      return data
+
+  def readable(self):
+    return True
+
+  def seekable(self):
+    return True
+
+  def writable(self):
+    return False
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, *exc):
+    self.close()
+
+    return False
 
 
 class StreamUrl:
@@ -95,7 +153,7 @@ class StreamUrl:
       self._etag = hu.etag(resp.headers)
       self._streamer = None
     else:
-      streamer = Streamer(resp.iter_content(chunk_size=chunk_size))
+      streamer = StreamedFile(resp.iter_content(chunk_size=chunk_size))
       fw.fin_wrap(self, '_streamer', streamer, finfn=streamer.close)
 
     self._buffer = self._next_chunk()
