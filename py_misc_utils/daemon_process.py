@@ -39,8 +39,12 @@ class Daemon:
     self._pidfile = _get_pidfile(name)
 
   def _write_result(self, wpipe, **kwargs):
-    dres = _DaemonResult(**kwargs)
-    os.write(wpipe, pickle.dumps(dres))
+    try:
+      dres = _DaemonResult(**kwargs)
+      os.write(wpipe, pickle.dumps(dres))
+    except Exception as ex:
+      with open('/tmp/ZZCRASH', mode='w') as f:
+        f.write(f'Bad things: {ex}')
 
   def _read_result(self, rpipe):
     return pickle.loads(os.read(rpipe, 64 * 1024))
