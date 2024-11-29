@@ -129,7 +129,7 @@ class Daemon:
 
   def start(self, target, args=None, kwargs=None):
     if (pid := self.getpid()) is not None and self._runnning_pid(pid):
-      raise FileExistsError(f'Daemon "{self._name}" ({pid}) already exist. Already running?')
+      raise FileExistsError(f'Daemon "{self._name}" ({pid}) already exist')
 
     if (pid := self._daemonize()) == 0:
       target(*(args or ()), **(kwargs or dict()))
@@ -141,7 +141,7 @@ class Daemon:
     if (pid := self.getpid()) is not None:
       try:
         os.killpg(pid, signal.SIGTERM)
-        time.sleep(0.5)
+        time.sleep(1.0)
         os.killpg(pid, signal.SIGKILL)
       except ProcessLookupError:
         pass
