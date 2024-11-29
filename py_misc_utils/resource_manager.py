@@ -9,6 +9,7 @@ import tempfile
 import threading
 import time
 
+from . import alog
 from . import daemon_process as dp
 
 
@@ -16,7 +17,7 @@ _LOCK = threading.Lock()
 _RESOURCES = collections.defaultdict(dict)
 
 def get_resource(cls, ctor, name, *args, **kwargs):
-  logging.debug(f'Get resource {cls}.{name}')
+  alog.debug(f'Get resource {cls}.{name}')
   with _LOCK:
     cdict = _RESOURCES[cls]
     res = cdict.get(name)
@@ -28,7 +29,7 @@ def get_resource(cls, ctor, name, *args, **kwargs):
 
 
 def rm_resource(cls, name):
-  logging.debug(f'Remove resource {cls}.{name}')
+  alog.debug(f'Remove resource {cls}.{name}')
   with _LOCK:
     cdict = _RESOURCES[cls]
     cdict.pop(name, None)
@@ -81,39 +82,34 @@ def _get_logdir():
 
 
 def _server_runner(name, *args, **kwargs):
-  logging.basicConfig(level=os.getenv('LOGLEVEL', 'INFO'),
-                      filename=os.path.join(_get_logdir(), f'{name}.log'),
-                      format='%(asctime)s.%(msecs)03d;%(levelname)s;%(process)d: %(message)s',
-                      datefmt='%Y-%m-%d %H:%M:%S',
-                      encoding='utf-8',
-                      force=True)
+  alog.basic_setup(log_file=os.path.join(_get_logdir(), f'{name}.log'))
 
-  logging.info(f'[{name}] server starting')
+  alog.info(f'[{name}] server starting')
   manager = create_manager(*args, **kwargs)
 
   try:
     server = manager.get_server()
     server.serve_forever()
   except Exception as ex:
-    logging.error(f'[{name}] server start failed: {ex}')
+    alog.error(f'[{name}] server start failed: {ex}')
   finally:
-    logging.info(f'[{name}] server gone!')
+    alog.info(f'[{name}] server gone!')
 
 
 def get_manager(name, *args, **kwargs):
   daemon = dp.Daemon(name)
   if not daemon.is_running():
-    logging.info(f'[{name}] Starting server daemon')
+    alog.info(f'[{name}] Starting server daemon')
     daemon.start(_server_runner, args=(name,) + args, kwargs=kwargs)
     time.sleep(0.5)
 
-  logging.info(f'[{name}] Connecting to server')
+  alog.info(f'[{name}] Connecting to server')
 
   manager = create_manager(*args, **kwargs)
   while True:
     try:
       manager.connect()
-      logging.info(f'[{name}] Connected to the manager')
+      alog.info(f'[{name}] Connected to the manager')
       break
     except:
       time.sleep(0.5)

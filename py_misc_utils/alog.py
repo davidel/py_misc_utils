@@ -135,7 +135,7 @@ def setup_logging(args):
       handler.setFormatter(Formatter(emit_extra=args.log_emit_extra))
       handlers.append(handler)
 
-  logging.basicConfig(level=numeric_level, handlers=handlers)
+  logging.basicConfig(level=numeric_level, handlers=handlers, force=True)
 
   set_current_level(numeric_level, set_logger=False)
 
