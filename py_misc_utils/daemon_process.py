@@ -94,8 +94,9 @@ class Daemon:
 
       return 0
     except Exception as ex:
-      self._write_result(wpipe, pid=-1,
-                         exclass=ex.__class__.__name__,
+      self._write_result(wpipe,
+                         pid=-1,
+                         exclass=ex.__class__,
                          msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
