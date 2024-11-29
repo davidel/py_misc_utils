@@ -8,6 +8,8 @@ import sys
 import tempfile
 import time
 
+from . import osfd
+
 
 DaemonResult = collections.namedtuple(
   'DaemonResult',
@@ -80,9 +82,8 @@ class Daemon:
 
       # Use mode=0o660 to make sure only allowed users can access the PID file.
       pid = os.getpid()
-      fd = os.open(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o660)
-      os.write(fd, f'{pid}\n'.encode())
-      os.close(fd)
+      with osfd.OsFd(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o660) as fd:
+        os.write(fd, f'{pid}\n'.encode())
 
       # Register the signal handlers otherwise atexit callbacks will not get
       # called in case a signal terminates the daemon process.
