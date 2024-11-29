@@ -12,7 +12,7 @@ import time
 DaemonResult = collections.namedtuple(
   'DaemonResult',
   'pid, msg, exclass',
-  defaults=(None, None),
+  defaults=(-1, None, None),
 )
 
 def _get_pids_dir():
@@ -94,10 +94,7 @@ class Daemon:
 
       return 0
     except Exception as ex:
-      self._write_result(wpipe,
-                         pid=-1,
-                         exclass=ex.__class__,
-                         msg=f'Daemonize failed: {ex}')
+      self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
   def _delpid(self):
