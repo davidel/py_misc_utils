@@ -132,6 +132,9 @@ class LockFile:
       else:
         alog.warning(f'Trying to release lock on {self._name} by pid {os.getpid()} but ' \
                      f'it was held by {meta.pid} ({meta.cmdline})')
+    else:
+      alog.warning(f'Trying to release lock on {self._name} from pid {os.getpid()} but ' \
+                   f'no lock metadata was found')
 
     return False
 
