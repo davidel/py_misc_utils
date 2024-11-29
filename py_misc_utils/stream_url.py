@@ -55,6 +55,10 @@ class StreamedFile:
 
     self._thread.join()
 
+    if self._tempfile is not None:
+      fw.fin_wrap(self, '_tempfile', None)
+      self._tempfile.close()
+
   def seek(self, pos, whence=os.SEEK_SET):
     if whence == os.SEEK_SET:
       offset = pos
@@ -71,6 +75,9 @@ class StreamedFile:
     self._offset = offset
 
     return offset
+
+  def tell(self):
+    return self._offset
 
   def read(self, size=-1):
     with self._lock:
