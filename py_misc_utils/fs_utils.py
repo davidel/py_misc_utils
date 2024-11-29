@@ -1,3 +1,4 @@
+import functools
 import os
 import shutil
 
@@ -30,6 +31,10 @@ def link_or_copy(src_path, dest_path):
 
 def is_newer_file(path, other):
   return os.stat(path).st_mtime > os.stat(other).st_mtime
+
+
+def os_opener(*args, **kwargs):
+  return functools.partial(os.open, *args, **kwargs)
 
 
 def stat(path):
