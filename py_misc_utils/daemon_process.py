@@ -78,17 +78,17 @@ class Daemon:
       os.dup2(outfd, sys.stdout.fileno())
       os.dup2(errfd, sys.stderr.fileno())
 
-      # Register the signal handlers otherwise atexit callbacks will not get
-      # called in case a signal terminates the daemon process.
-      signal.signal(signal.SIGINT, _term_handler)
-      signal.signal(signal.SIGTERM, _term_handler)
-      atexit.register(self._delpid)
-
       # Use mode=0o660 to make sure only allowed users can access the PID file.
       pid = os.getpid()
       fd = os.open(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o660)
       os.write(fd, f'{pid}\n'.encode())
       os.close(fd)
+
+      # Register the signal handlers otherwise atexit callbacks will not get
+      # called in case a signal terminates the daemon process.
+      signal.signal(signal.SIGINT, _term_handler)
+      signal.signal(signal.SIGTERM, _term_handler)
+      atexit.register(self._delpid)
 
       self._write_result(wpipe, pid=pid)
 
