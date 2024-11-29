@@ -9,7 +9,7 @@ import tempfile
 import time
 
 
-_DaemonResult = collections.namedtuple(
+DaemonResult = collections.namedtuple(
   'DaemonResult',
   'pid, msg, exclass',
   defaults=(None, None),
@@ -39,12 +39,8 @@ class Daemon:
     self._pidfile = _get_pidfile(name)
 
   def _write_result(self, wpipe, **kwargs):
-    try:
-      dres = _DaemonResult(**kwargs)
-      os.write(wpipe, pickle.dumps(dres))
-    except Exception as ex:
-      with open('/tmp/ZZCRASH', mode='w') as f:
-        f.write(f'Bad things: {ex}')
+    dres = DaemonResult(**kwargs)
+    os.write(wpipe, pickle.dumps(dres))
 
   def _read_result(self, rpipe):
     return pickle.loads(os.read(rpipe, 64 * 1024))
