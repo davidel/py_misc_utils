@@ -141,7 +141,7 @@ class Daemon:
       try:
         while True:
           os.killpg(pid, signal.SIGTERM)
-          time.sleep(0.2)
+          time.sleep(0.25)
       except ProcessLookupError:
         pass
 
@@ -153,5 +153,6 @@ class Daemon:
 
   def restart(self):
     self.stop()
-    self.start()
+
+    return self.start()
 
