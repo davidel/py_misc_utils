@@ -26,11 +26,8 @@ def _term_handler(sig, frame):
 
 class Daemon:
 
-  def __init__(self, name, target, args=None, kwargs=None):
+  def __init__(self, name):
     self._name = name
-    self._target = target
-    self._args = tuple(args) if args else ()
-    self._kwargs = kwargs.copy() if kwargs else dict()
     self._pidfile = _get_pidfile(name)
 
   def _write_result(self, wpipe, pid, msg):
@@ -124,12 +121,12 @@ class Daemon:
 
     return False
 
-  def start(self):
+  def start(self, target, args=None, kwargs=None):
     if (pid := self.getpid()) is not None and self._runnning_pid(pid):
       raise RuntimeError(f'Daemon "{self._name}" ({pid}) already exist. Already running?')
 
     if (pid := self._daemonize()) == 0:
-      self._target(*self._args, **self._kwargs)
+      target(*(args or ()), **(kwargs or dict()))
       sys.exit(0)
 
     return pid
@@ -148,9 +145,4 @@ class Daemon:
       return True
 
     return False
-
-  def restart(self):
-    self.stop()
-
-    return self.start()
 
