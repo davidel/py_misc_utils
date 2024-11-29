@@ -1,11 +1,19 @@
 import atexit
+import collections
 import logging
 import os
+import pickle
 import signal
 import sys
 import tempfile
 import time
 
+
+_DaemonResult = collections.namedtuple(
+  'DaemonResult',
+  'pid, msg, exclass',
+  defaults=(None, None),
+)
 
 def _get_pids_dir():
   pidsdir = os.path.join(tempfile.gettempdir(), '.pids')
@@ -30,15 +38,12 @@ class Daemon:
     self._name = name
     self._pidfile = _get_pidfile(name)
 
-  def _write_result(self, wpipe, pid, msg):
-    result = f'{pid}\n{msg}\n'
-    os.write(wpipe, result.encode())
+  def _write_result(self, wpipe, **kwargs):
+    dres = _DaemonResult(**kwargs)
+    os.write(wpipe, pickle.dumps(dres))
 
   def _read_result(self, rpipe):
-    result = os.read(rpipe, 16 * 1024)
-    lines = result.decode().split('\n')
-
-    return int(lines[0]), '\n'.join(lines[1:])
+    return pickle.loads(os.read(rpipe, 64 * 1024))
 
   def _daemonize(self):
     rpipe, wpipe = os.pipe()
@@ -46,9 +51,9 @@ class Daemon:
 
     pid = os.fork()
     if pid > 0:
-      dpid, exmsg = self._read_result(rpipe)
-      if dpid < 0:
-        raise RuntimeError(exmsg)
+      dres = self._read_result(rpipe)
+      if dres.pid < 0:
+        raise dres.exclass(dres.msg)
 
       return dpid
 
@@ -85,11 +90,13 @@ class Daemon:
       os.write(fd, f'{pid}\n'.encode())
       os.close(fd)
 
-      self._write_result(wpipe, pid, f'OK')
+      self._write_result(wpipe, pid=pid)
 
       return 0
     except Exception as ex:
-      self._write_result(wpipe, -1, f'Daemonize failed: {ex}')
+      self._write_result(wpipe, pid=-1,
+                         exclass=ex.__class__.__name__,
+                         msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
   def _delpid(self):
