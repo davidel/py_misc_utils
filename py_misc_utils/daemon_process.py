@@ -140,9 +140,9 @@ class Daemon:
   def stop(self):
     if (pid := self.getpid()) is not None:
       try:
-        while True:
-          os.killpg(pid, signal.SIGTERM)
-          time.sleep(0.25)
+        os.killpg(pid, signal.SIGTERM)
+        time.sleep(0.5)
+        os.killpg(pid, signal.SIGKILL)
       except ProcessLookupError:
         pass
 
