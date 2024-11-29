@@ -123,7 +123,7 @@ class Daemon:
 
   def start(self, target, args=None, kwargs=None):
     if (pid := self.getpid()) is not None and self._runnning_pid(pid):
-      raise RuntimeError(f'Daemon "{self._name}" ({pid}) already exist. Already running?')
+      raise FileExistsError(f'Daemon "{self._name}" ({pid}) already exist. Already running?')
 
     if (pid := self._daemonize()) == 0:
       target(*(args or ()), **(kwargs or dict()))

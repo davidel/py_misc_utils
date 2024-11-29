@@ -98,9 +98,12 @@ def _server_runner(name, *args, **kwargs):
 
 def get_manager(name, *args, **kwargs):
   daemon = dp.Daemon(name)
-  if not daemon.is_running():
+  while not daemon.is_running():
     alog.info(f'[{name}] Starting server daemon')
-    daemon.start(_server_runner, args=(name,) + args, kwargs=kwargs)
+    try:
+      daemon.start(_server_runner, args=(name,) + args, kwargs=kwargs)
+    except FileExistsError:
+      pass
     time.sleep(0.5)
 
   alog.info(f'[{name}] Connecting to server')
