@@ -56,8 +56,6 @@ class Daemon:
       return dpid
 
     try:
-      os.set_inheritable(wpipe, True)
-
       os.chdir('/')
       os.setsid()
       os.umask(0)
