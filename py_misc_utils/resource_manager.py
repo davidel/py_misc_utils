@@ -103,7 +103,7 @@ def get_manager(name, *args, **kwargs):
     try:
       daemon.start(_server_runner, args=(name,) + args, kwargs=kwargs)
     except FileExistsError as ex:
-      alog.debug(f'[{name}] Starting server error: {ex}')
+      pass
     time.sleep(0.5)
 
   alog.info(f'[{name}] Connecting to server')

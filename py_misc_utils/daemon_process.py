@@ -55,7 +55,7 @@ class Daemon:
       if dres.pid < 0:
         raise dres.exclass(dres.msg)
 
-      return dpid
+      return dres.pid
 
     try:
       os.chdir('/')
