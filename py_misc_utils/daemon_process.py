@@ -70,13 +70,13 @@ class Daemon:
 
       sys.stdout.flush()
       sys.stderr.flush()
-      si = open(os.devnull, mode='r')
-      so = open(os.devnull, mode='a+')
-      se = open(os.devnull, mode='a+')
+      infd = os.open(os.devnull, os.O_RDONLY)
+      outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+      errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
 
-      os.dup2(si.fileno(), sys.stdin.fileno())
-      os.dup2(so.fileno(), sys.stdout.fileno())
-      os.dup2(se.fileno(), sys.stderr.fileno())
+      os.dup2(infd, sys.stdin.fileno())
+      os.dup2(outfd, sys.stdout.fileno())
+      os.dup2(errfd, sys.stderr.fileno())
 
       # Register the signal handlers otherwise atexit callbacks will not get
       # called in case a signal terminates the daemon process.
