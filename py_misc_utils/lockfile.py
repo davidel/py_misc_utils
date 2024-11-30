@@ -80,6 +80,7 @@ class LockFile:
         pass
 
   def _alive_pid(self, meta):
+    is_alive = False
     if psutil.pid_exists(meta.pid):
       try:
         proc = psutil.Process(meta.pid)
@@ -87,7 +88,7 @@ class LockFile:
 
         is_alive = cmdline == meta.cmdline and proc.create_time() <= meta.time
       except:
-        is_alive = False
+        pass
 
     if not is_alive:
       alog.warning(f'Process {meta.pid} ({meta.cmdline}) holding lock on ' \
