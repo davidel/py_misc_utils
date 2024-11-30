@@ -78,6 +78,12 @@ def create_manager(*args, register_fn=None, **kwargs):
   manager.register('rm_lifo',
                    functools.partial(rm_resource, 'LIFOS'))
 
+  manager.register('get_namespace',
+                   functools.partial(get_resource, 'NAMESPACES', mpmgr.Namespace),
+                   mpmgr.NamespaceProxy)
+  manager.register('rm_namespace',
+                   functools.partial(rm_resource, 'NAMESPACES'))
+
   if register_fn is not None:
     register_fn(manager)
 
