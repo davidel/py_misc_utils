@@ -137,7 +137,9 @@ class Daemon:
 
   def getpid(self):
     with self._lockfile():
-      return self._readpid()
+      pid = self._readpid()
+
+      return pid if pid is None or self._runnning_pid(pid) else None
 
   def _lockfile(self):
     return lockf.LockFile(self._pidfile)
@@ -150,15 +152,10 @@ class Daemon:
     except ProcessLookupError:
       return False
 
-  def is_running(self):
-    pid = self.getpid()
-
-    return pid is not None and self._runnning_pid(pid)
-
   def start(self, target):
     pid = self.getpid()
-    if pid is None or not self._runnning_pid(pid):
-      if (pid := self._daemonize()) == 0:
+    if pid is None:
+      if (dpid := self._daemonize()) == 0:
         target()
         sys.exit(0)
 

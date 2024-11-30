@@ -98,7 +98,7 @@ def _server_runner(name, *args, **kwargs):
 
 def get_manager(name, *args, **kwargs):
   daemon = dp.Daemon(name)
-  while not daemon.is_running():
+  while daemon.getpid() is None:
     alog.info(f'[{name}] Starting server daemon')
     try:
       daemon.start(functools.partial(_server_runner, name, *args, **kwargs))
