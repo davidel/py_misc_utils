@@ -101,7 +101,7 @@ def get_manager(name, *args, **kwargs):
   while not daemon.is_running():
     alog.info(f'[{name}] Starting server daemon')
     try:
-      daemon.start(_server_runner, args=(name,) + args, kwargs=kwargs)
+      daemon.start(functools.partial(_server_runner, name, *args, **kwargs))
     except FileExistsError as ex:
       pass
     time.sleep(0.5)

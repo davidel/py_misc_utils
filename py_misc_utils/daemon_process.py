@@ -1,5 +1,6 @@
 import atexit
 import collections
+import functools
 import logging
 import os
 import pickle
@@ -90,7 +91,7 @@ class Daemon:
       # called in case a signal terminates the daemon process.
       signal.signal(signal.SIGINT, _term_handler)
       signal.signal(signal.SIGTERM, _term_handler)
-      atexit.register(self._delpid)
+      atexit.register(functools.partial(self._delpid, pid=pid))
 
       self._write_result(wpipe, pid=pid)
 
@@ -99,12 +100,16 @@ class Daemon:
       self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
-  def _delpid(self):
-    try:
-      os.remove(self._pidfile)
+  def _delpid(self, pid=None):
+    with self._lockfile():
+      if pid is None or (xpid := self._readpid()) == pid:
+        try:
+          os.remove(self._pidfile)
 
-      return True
-    except OSError:
+          return True
+        except OSError:
+          pass
+
       return False
 
   def _writepid(self, pid):
@@ -147,11 +152,11 @@ class Daemon:
 
     return pid is not None and self._runnning_pid(pid)
 
-  def start(self, target, args=None, kwargs=None):
+  def start(self, target):
     pid = self.getpid()
     if pid is None or not self._runnning_pid(pid):
       if (pid := self._daemonize()) == 0:
-        target(*(args or ()), **(kwargs or dict()))
+        target()
         sys.exit(0)
 
     return pid
@@ -165,7 +170,7 @@ class Daemon:
       except ProcessLookupError:
         pass
 
-      self._delpid()
+      self._delpid(pid=pid)
 
       return True
 
