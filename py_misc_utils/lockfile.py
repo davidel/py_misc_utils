@@ -8,6 +8,7 @@ import yaml
 
 from . import alog
 from . import assert_checks as tas
+from . import fs_utils as fsu
 from . import obj
 from . import osfd
 
@@ -53,8 +54,6 @@ _ACQUIRE_TIMEOUT = float(os.getenv('LOCKF_AQTIMEO', 0.5))
 _CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', 2.5))
 
 class LockFile:
-
-  MAX_META_SIZE = 128 * 1024
 
   def __init__(self, name, acquire_timeout=None, check_timeout=None):
     acquire_timeout = _ACQUIRE_TIMEOUT if acquire_timeout is None else acquire_timeout
@@ -149,7 +148,7 @@ class LockFile:
         created = True
 
       with osfd.OsFd(self._lockfile, os.O_RDWR) as fd:
-        data = os.read(fd, self.MAX_META_SIZE)
+        data = fsu.readall(fd)
 
         lmeta = self._untag(data)
         if lmeta is None or (meta is not None and lmeta == meta):
@@ -170,7 +169,7 @@ class LockFile:
   def _locking_meta(self):
     try:
       with osfd.OsFd(self._lockfile, os.O_RDONLY) as fd:
-        data = os.read(fd, self.MAX_META_SIZE)
+        data = fsu.readall(fd)
 
       return self._untag(data)
     except OSError:

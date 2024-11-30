@@ -8,6 +8,8 @@ import sys
 import tempfile
 import time
 
+from . import fs_utils as fsu
+from . import lockfile as lockf
 from . import osfd
 
 
@@ -45,9 +47,9 @@ class Daemon:
     os.write(wpipe, pickle.dumps(dres))
 
   def _read_result(self, rpipe):
-    return pickle.loads(os.read(rpipe, 64 * 1024))
+    return pickle.loads(fsu.readall(rpipe))
 
-  def _daemonize(self):
+  def _daemonize(self, refpid=None):
     rpipe, wpipe = os.pipe()
     os.set_inheritable(wpipe, True)
 
@@ -80,10 +82,8 @@ class Daemon:
       os.dup2(outfd, sys.stdout.fileno())
       os.dup2(errfd, sys.stderr.fileno())
 
-      # Use mode=0o660 to make sure only allowed users can access the PID file.
       pid = os.getpid()
-      with osfd.OsFd(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o660) as fd:
-        os.write(fd, f'{pid}\n'.encode())
+      self._writepid(pid, refpid=refpid)
 
       # Register the signal handlers otherwise atexit callbacks will not get
       # called in case a signal terminates the daemon process.
@@ -106,12 +106,34 @@ class Daemon:
     except OSError:
       return False
 
-  def getpid(self):
+  def _writepid(self, pid, refpid=None):
+    with self._lockfile():
+      flags = os.O_WRONLY | os.O_CREAT
+      if refpid is not None:
+        pid = self._readpid()
+        if pid is not None and pid != refpid:
+          raise ProcessLookupError(f'Found existing {pid} PID different from ' \
+                                   f'reference PID {refpid}')
+      else:
+        flags |= os.O_EXCL
+
+      # Use mode=0o660 to make sure only allowed users can access the PID file.
+      with osfd.OsFd(self._pidfile, flags, mode=0o660) as fd:
+        os.write(fd, f'{pid}\n'.encode())
+
+  def _readpid(self):
     try:
-      with open(self._pidfile, mode='rb') as fd:
-        return int(fd.read().strip())
+      with osfd.OsFd(self._pidfile, os.O_RDONLY) as fd:
+        return int(fsu.readall(fd).strip())
     except IOError:
       pass
+
+  def getpid(self):
+    with self._lockfile():
+      return self._readpid()
+
+  def _lockfile(self):
+    return lockf.LockFile(self._pidfile)
 
   def _runnning_pid(self, pid):
     try:
@@ -122,26 +144,24 @@ class Daemon:
       return False
 
   def is_running(self):
-    if (pid := self.getpid()) is not None:
-      return self._runnning_pid(pid)
+    pid = self.getpid()
 
-    return False
+    return pid is not None and self._runnning_pid(pid)
 
   def start(self, target, args=None, kwargs=None):
-    if (pid := self.getpid()) is not None and self._runnning_pid(pid):
-      raise FileExistsError(f'Daemon "{self._name}" ({pid}) already exist')
-
-    if (pid := self._daemonize()) == 0:
-      target(*(args or ()), **(kwargs or dict()))
-      sys.exit(0)
+    pid = self.getpid()
+    if pid is None or not self._runnning_pid(pid):
+      if (pid := self._daemonize(refpid=pid)) == 0:
+        target(*(args or ()), **(kwargs or dict()))
+        sys.exit(0)
 
     return pid
 
-  def stop(self):
+  def stop(self, kill_timeout=None):
     if (pid := self.getpid()) is not None:
       try:
         os.killpg(pid, signal.SIGTERM)
-        time.sleep(1.0)
+        time.sleep(kill_timeout or 1.0)
         os.killpg(pid, signal.SIGKILL)
       except ProcessLookupError:
         pass

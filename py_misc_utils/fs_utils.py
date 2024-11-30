@@ -37,6 +37,12 @@ def os_opener(*args, **kwargs):
   return functools.partial(os.open, *args, **kwargs)
 
 
+def readall(fd):
+  sres = os.stat(fd)
+
+  return os.read(fd, sres.st_size)
+
+
 def stat(path):
   try:
     return os.stat(path)
