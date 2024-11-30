@@ -108,10 +108,10 @@ class Daemon:
 
   def _writepid(self, pid):
     with self._lockfile():
-      pid = self._readpid()
-      if pid is not None:
-        if self._runnning_pid(pid):
-          raise FileExistsError(f'Daemon already running with PID {pid}')
+      xpid = self._readpid()
+      if xpid is not None:
+        if self._runnning_pid(xpid):
+          raise FileExistsError(f'Daemon already running with PID {xpid}')
 
         os.remove(self._pidfile)
 
