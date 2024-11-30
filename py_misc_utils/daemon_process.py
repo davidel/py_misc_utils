@@ -47,7 +47,7 @@ class Daemon:
     os.write(wpipe, pickle.dumps(dres))
 
   def _read_result(self, rpipe):
-    return pickle.loads(fsu.readall(rpipe))
+    return pickle.loads(os.read(rpipe, sys.maxsize))
 
   def _daemonize(self):
     rpipe, wpipe = os.pipe()
