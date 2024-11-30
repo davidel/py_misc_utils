@@ -38,10 +38,13 @@ def os_opener(*args, **kwargs):
 
 
 def readall(fd):
-  sres = os.stat(fd)
-  os.lseek(fd, 0, os.SEEK_SET)
+  try:
+    sres = os.stat(fd)
+    os.lseek(fd, 0, os.SEEK_SET)
 
-  return os.read(fd, sres.st_size)
+    return os.read(fd, sres.st_size)
+  except Exception as ex:
+    alog.exception(ex)
 
 
 def stat(path):
