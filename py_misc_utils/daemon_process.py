@@ -11,6 +11,7 @@ import time
 from . import fs_utils as fsu
 from . import lockfile as lockf
 from . import osfd
+from . import packet as pkt
 
 
 DaemonResult = collections.namedtuple(
@@ -44,10 +45,10 @@ class Daemon:
 
   def _write_result(self, wpipe, **kwargs):
     dres = DaemonResult(**kwargs)
-    os.write(wpipe, pickle.dumps(dres))
+    pkt.write_packet(wpipe, pickle.dumps(dres))
 
   def _read_result(self, rpipe):
-    return pickle.loads(os.read(rpipe, 128 * 1024))
+    return pickle.loads(pkt.read_packet(rpipe))
 
   def _daemonize(self):
     rpipe, wpipe = os.pipe()
