@@ -152,6 +152,14 @@ class Daemon:
     except ProcessLookupError:
       return False
 
+  def _killpid(self, pid):
+    try:
+      os.killpg(pid, signal.SIGTERM)
+      time.sleep(kill_timeout or 1.0)
+      os.killpg(pid, signal.SIGKILL)
+    except ProcessLookupError:
+      pass
+
   def start(self, target):
     pid = self.getpid()
     if pid is None:
@@ -165,12 +173,7 @@ class Daemon:
     with self._lockfile():
       pid = self._readpid()
       if pid is not None:
-        try:
-          os.killpg(pid, signal.SIGTERM)
-          time.sleep(kill_timeout or 1.0)
-          os.killpg(pid, signal.SIGKILL)
-        except ProcessLookupError:
-          pass
+        self._killpid(pid)
 
     self._delpid(pid=pid)
 
