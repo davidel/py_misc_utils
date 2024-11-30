@@ -37,6 +37,7 @@ def rm_resource(cls, name):
 
 def create_manager(*args, register_fn=None, **kwargs):
   # https://github.com/python/cpython/blob/2f56c68dec97002fdd8563a0e4977b75eb191ab9/Lib/multiprocessing/managers.py#L1043
+  # https://github.com/python/cpython/blob/4cba0e66c29b46afbb1eee1d0428f5a2f5b891bb/Lib/multiprocessing/managers.py#L189
   manager = mpmgr.SyncManager(*args, **kwargs)
 
   manager.register('get_lock',
