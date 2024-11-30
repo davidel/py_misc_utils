@@ -49,6 +49,10 @@ def _lockfile(name):
   return os.path.join(_LOCKDIR, lhash)
 
 
+class Tag(obj.Obj):
+  pass
+
+
 _CMDLINE = list(psutil.Process().cmdline())
 _ACQUIRE_TIMEOUT = float(os.getenv('LOCKF_AQTIMEO', 0.5))
 _CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', 2.5))
@@ -75,7 +79,7 @@ class LockFile:
       try:
         tag = yaml.safe_load(data.decode())
 
-        return obj.Obj(**tag)
+        return Tag(**tag)
       except:
         pass
 
