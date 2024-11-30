@@ -92,7 +92,8 @@ def _get_logdir():
 
 
 def _server_runner(name, *args, **kwargs):
-  alog.basic_setup(log_file=os.path.join(_get_logdir(), f'{name}.log'))
+  alog.basic_setup(log_level=os.getenv('RESMGR_LOG_LEVEL', 'INFO'),
+                   log_file=os.path.join(_get_logdir(), f'{name}.log'))
 
   alog.info(f'[{name}] server starting')
   manager = create_manager(*args, **kwargs)
