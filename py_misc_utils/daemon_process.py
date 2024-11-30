@@ -72,10 +72,13 @@ class Daemon:
       if pid > 0:
         sys.exit(0)
 
+      # This 2nd os.setsid() makes the daemon a process group, so with can use os.killpg()
+      # to kill the whole group, if required.
       os.setsid()
 
       sys.stdout.flush()
       sys.stderr.flush()
+
       infd = os.open(os.devnull, os.O_RDONLY)
       outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
       errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
@@ -162,17 +165,17 @@ class Daemon:
     return pid
 
   def stop(self, kill_timeout=None):
-    if (pid := self.getpid()) is not None:
-      try:
-        os.killpg(pid, signal.SIGTERM)
-        time.sleep(kill_timeout or 1.0)
-        os.killpg(pid, signal.SIGKILL)
-      except ProcessLookupError:
-        pass
+    with self._lockfile():
+      pid = self._readpid()
+      if pid is not None:
+        try:
+          os.killpg(pid, signal.SIGTERM)
+          time.sleep(kill_timeout or 1.0)
+          os.killpg(pid, signal.SIGKILL)
+        except ProcessLookupError:
+          pass
 
-      self._delpid(pid=pid)
+    self._delpid(pid=pid)
 
-      return True
-
-    return False
+    return pid is not None
 
