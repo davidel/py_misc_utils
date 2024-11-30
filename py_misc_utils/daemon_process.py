@@ -49,7 +49,7 @@ class Daemon:
   def _read_result(self, rpipe):
     return pickle.loads(fsu.readall(rpipe))
 
-  def _daemonize(self, refpid=None):
+  def _daemonize(self):
     rpipe, wpipe = os.pipe()
     os.set_inheritable(wpipe, True)
 
@@ -83,7 +83,7 @@ class Daemon:
       os.dup2(errfd, sys.stderr.fileno())
 
       pid = os.getpid()
-      self._writepid(pid, refpid=refpid)
+      self._writepid(pid)
 
       # Register the signal handlers otherwise atexit callbacks will not get
       # called in case a signal terminates the daemon process.
@@ -106,19 +106,17 @@ class Daemon:
     except OSError:
       return False
 
-  def _writepid(self, pid, refpid=None):
+  def _writepid(self, pid):
     with self._lockfile():
-      flags = os.O_WRONLY | os.O_CREAT
-      if refpid is not None:
-        pid = self._readpid()
-        if pid is not None and pid != refpid:
-          raise ProcessLookupError(f'Found existing {pid} PID different from ' \
-                                   f'reference PID {refpid}')
-      else:
-        flags |= os.O_EXCL
+      pid = self._readpid()
+      if pid is not None:
+        if self._runnning_pid(pid):
+          raise FileExistsError(f'Daemon already running with PID {pid}')
+
+        os.remove(self._pidfile)
 
       # Use mode=0o660 to make sure only allowed users can access the PID file.
-      with osfd.OsFd(self._pidfile, flags, mode=0o660) as fd:
+      with osfd.OsFd(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o660) as fd:
         os.write(fd, f'{pid}\n'.encode())
 
   def _readpid(self):
@@ -151,7 +149,7 @@ class Daemon:
   def start(self, target, args=None, kwargs=None):
     pid = self.getpid()
     if pid is None or not self._runnning_pid(pid):
-      if (pid := self._daemonize(refpid=pid)) == 0:
+      if (pid := self._daemonize()) == 0:
         target(*(args or ()), **(kwargs or dict()))
         sys.exit(0)
 
