@@ -49,7 +49,7 @@ def _lockfile(name):
   return os.path.join(_LOCKDIR, lhash)
 
 
-class Tag(obj.Obj):
+class Meta(obj.Obj):
   pass
 
 
@@ -68,18 +68,18 @@ class LockFile:
     self._acquire_timeout = random.gauss(mu=acquire_timeout, sigma=0.2)
     self._check_timeout = random.gauss(mu=check_timeout, sigma=0.2)
 
-  def _tag(self):
+  def _mkmeta(self):
     tag = dict(pid=os.getpid(), cmdline=_CMDLINE, time=time.time())
     stag = yaml.dump(tag, default_flow_style=False)
 
     return stag.encode()
 
-  def _untag(self, data):
+  def _parse_meta(self, data):
     if data:
       try:
         tag = yaml.safe_load(data.decode())
 
-        return Tag(**tag)
+        return Meta(**tag)
       except:
         pass
 
@@ -106,7 +106,7 @@ class LockFile:
     while True:
       try:
         with osfd.OsFd(self._lockfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as fd:
-          os.write(fd, self._tag())
+          os.write(fd, self._mkmeta())
 
         return True
       except OSError:
@@ -155,11 +155,11 @@ class LockFile:
       with osfd.OsFd(self._lockfile, os.O_RDWR) as fd:
         data = fsu.readall(fd)
 
-        lmeta = self._untag(data)
+        lmeta = self._parse_meta(data)
         if lmeta is None or (meta is not None and lmeta == meta):
           os.lseek(fd, 0, os.SEEK_SET)
           os.truncate(fd, 0)
-          os.write(fd, self._tag())
+          os.write(fd, self._mkmeta())
           result = True
 
           alog.info(f'Successfull override on {self._name}')
@@ -176,7 +176,7 @@ class LockFile:
       with osfd.OsFd(self._lockfile, os.O_RDONLY) as fd:
         data = fsu.readall(fd)
 
-      return self._untag(data)
+      return self._parse_meta(data)
     except OSError:
       pass
 
