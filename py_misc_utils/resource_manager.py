@@ -68,6 +68,11 @@ def create_manager(*args, register_fn=None, **kwargs):
   manager.register('rm_queue',
                    functools.partial(rm_resource, 'QUEUES'))
 
+  manager.register('get_lifo',
+                   functools.partial(get_resource, 'LIFOS', queue.LifoQueue))
+  manager.register('rm_lifo',
+                   functools.partial(rm_resource, 'LIFOS'))
+
   if register_fn is not None:
     register_fn(manager)
 
