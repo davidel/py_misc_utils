@@ -8,6 +8,7 @@ import queue
 import tempfile
 import threading
 import time
+import weakref
 
 from . import alog
 from . import daemon_process as dp
@@ -21,9 +22,12 @@ def get_resource(cls, ctor, name, *args, **kwargs):
   with _LOCK:
     cdict = _RESOURCES[cls]
     res = cdict.get(name)
+    if res is not None:
+      res = res()
     if res is None:
+      alog.debug(f'Creating resource {cls}.{name}')
       res = ctor(*args, **kwargs)
-      cdict[name] = res
+      cdict[name] = weakref.ref(res)
 
     return res
 
