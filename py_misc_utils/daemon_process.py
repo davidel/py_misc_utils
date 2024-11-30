@@ -155,7 +155,7 @@ class Daemon:
   def start(self, target):
     pid = self.getpid()
     if pid is None:
-      if (dpid := self._daemonize()) == 0:
+      if (pid := self._daemonize()) == 0:
         target()
         sys.exit(0)
 
