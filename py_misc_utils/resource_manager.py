@@ -114,7 +114,8 @@ def get_manager(name, *args, **kwargs):
       manager.connect()
       alog.info(f'[{name}] Connected to the manager')
       break
-    except:
+    except Exception as ex:
+      alog.debug(f'[{name}] Connection failed, retrying ...: {ex}')
       time.sleep(0.5)
 
   return manager
