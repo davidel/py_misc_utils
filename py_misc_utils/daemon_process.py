@@ -112,6 +112,11 @@ class DaemonBase:
       pass
 
   def _setup_daemon(self, wpipe):
+    # This 2nd os.setsid() makes the daemon a process group, so with can kill the
+    # whole group, if required. We do this only on systems that supports it.
+    if os.name == 'posix':
+      os.setsid()
+
     sys.stdout.flush()
     sys.stderr.flush()
 
@@ -168,10 +173,6 @@ class DaemonPosix(DaemonBase):
       if pid > 0:
         sys.exit(0)
 
-      # This 2nd os.setsid() makes the daemon a process group, so with can kill the
-      # whole group, if required.
-      os.setsid()
-
       self._setup_daemon(wpipe)
 
       return 0
@@ -202,7 +203,6 @@ class DaemonCompat(DaemonBase):
     try:
       os.chdir('/')
       if os.name == 'posix':
-        os.setsid()
         os.umask(0)
 
       self._setup_daemon(wpipe)
