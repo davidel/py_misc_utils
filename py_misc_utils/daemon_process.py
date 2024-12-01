@@ -188,6 +188,13 @@ class DaemonPosix(DaemonBase):
 
 class DaemonCompat(DaemonBase):
 
+  def _write_result(self, wpipe, **kwargs):
+    dres = DaemonResult(**kwargs)
+    wpipe.send(pickle.dumps(dres))
+
+  def _read_result(self, rpipe):
+    return pickle.loads(rpipe.recv())
+
   def _boostrap(self, target, wpipe):
     try:
       infd = os.open(os.devnull, os.O_RDONLY)
