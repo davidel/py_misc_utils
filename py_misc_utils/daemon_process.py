@@ -122,7 +122,7 @@ class DaemonBase:
     return pid is not None
 
 
-class Daemon(DaemonBase):
+class DaemonPosix(DaemonBase):
 
   def _daemonize(self):
     rpipe, wpipe = os.pipe()
@@ -184,4 +184,70 @@ class Daemon(DaemonBase):
         sys.exit(0)
 
     return pid
+
+
+class DaemonCompat(DaemonBase):
+
+  def _boostrap(self, target, wpipe):
+    try:
+      infd = os.open(os.devnull, os.O_RDONLY)
+      outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+      errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+
+      os.dup2(infd, sys.stdin.fileno())
+      os.dup2(outfd, sys.stdout.fileno())
+      os.dup2(errfd, sys.stderr.fileno())
+
+      pid = os.getpid()
+
+      # Register the signal handlers otherwise atexit callbacks will not get
+      # called in case a signal terminates the daemon process.
+      signal.signal(signal.SIGINT, _term_handler)
+      signal.signal(signal.SIGTERM, _term_handler)
+      atexit.register(functools.partial(self._delpid, pid=pid))
+
+      self._write_result(wpipe, pid=pid)
+    except Exception as ex:
+      self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
+      sys.exit(1)
+
+    target()
+
+  def _start_daemon(self, target, context=None):
+    rpipe, wpipe = multiprocessing.Pipe()
+
+    mps = multiprocessing.get_context(method=context)
+    proc = mps.Process(target=self._boostrap, args=(target, wpipe))
+    proc.start()
+
+    dres = self._read_result(rpipe)
+    if dres.pid < 0:
+      raise dres.exclass(dres.msg)
+
+    assert dres.pid == proc.pid
+
+    # HACK!
+    multiprocessing.process._children.discard(proc)
+
+    return dres.pid
+
+  def start(self, target):
+    pid = self.getpid()
+    if pid is None:
+      if (pid := self._daemonize()) == 0:
+        target()
+        sys.exit(0)
+
+    return pid
+
+
+try:
+  HAS_MP_CHILDREN = isinstance(multiprocessing.process._children, set)
+except:
+  HAS_MP_CHILDREN = False
+
+if HAS_MP_CHILDREN:
+  Daemon = DaemonCompat
+else:
+  Daemon = DaemonPosix
 
