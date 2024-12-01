@@ -206,6 +206,7 @@ class DaemonCompat(DaemonBase):
       os.dup2(errfd, sys.stderr.fileno())
 
       pid = os.getpid()
+      self._writepid(pid)
 
       # Register the signal handlers otherwise atexit callbacks will not get
       # called in case a signal terminates the daemon process.
