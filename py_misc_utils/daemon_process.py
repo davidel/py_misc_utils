@@ -4,6 +4,7 @@ import functools
 import logging
 import os
 import pickle
+import psutil
 import signal
 import sys
 import tempfile
@@ -72,8 +73,8 @@ class Daemon:
       if pid > 0:
         sys.exit(0)
 
-      # This 2nd os.setsid() makes the daemon a process group, so with can use os.killpg()
-      # to kill the whole group, if required.
+      # This 2nd os.setsid() makes the daemon a process group, so with can kill the
+      # whole group, if required.
       os.setsid()
 
       sys.stdout.flush()
@@ -146,18 +147,19 @@ class Daemon:
 
   def _runnning_pid(self, pid):
     try:
-      os.killpg(pid, 0)
+      proc = psutil.Process(pid)
 
-      return True
-    except ProcessLookupError:
+      return proc.status() not in {psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE}
+    except psutil.NoSuchProcess:
       return False
 
   def _killpid(self, pid, kill_timeout=None):
     try:
-      os.killpg(pid, signal.SIGTERM)
+      proc = psutil.Process(pid)
+      proc.terminate()
       time.sleep(kill_timeout or 1.0)
-      os.killpg(pid, signal.SIGKILL)
-    except ProcessLookupError:
+      proc.kill()
+    except psutil.NoSuchProcess:
       pass
 
   def start(self, target):

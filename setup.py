@@ -19,6 +19,7 @@ setup(name='py_misc_utils',
           'numpy',
           'pandas',
           'fsspec',
+          'psutil',
       ],
       )
 
