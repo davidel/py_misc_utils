@@ -197,6 +197,8 @@ class DaemonCompat(DaemonBase):
 
   def _boostrap(self, target, wpipe):
     try:
+      os.chdir('/')
+
       infd = os.open(os.devnull, os.O_RDONLY)
       outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
       errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
