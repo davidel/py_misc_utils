@@ -60,6 +60,10 @@ class StreamedFile:
       fw.fin_wrap(self, '_tempfile', None)
       tempfile.close()
 
+  @property
+  def closed(self):
+    return self._tempfile is None
+
   def seek(self, pos, whence=os.SEEK_SET):
     if whence == os.SEEK_SET:
       offset = pos
