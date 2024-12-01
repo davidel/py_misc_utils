@@ -230,8 +230,8 @@ class DaemonCompat(DaemonBase):
     target()
     sys.exit(0)
 
-  def _start_daemon(self, target, context=None):
-    mps = multiprocessing.get_context(method=context)
+  def _start_daemon(self, target):
+    mps = multiprocessing.get_context(method=os.getenv('DAEMON_MP_CONTEXT'))
     rpipe, wpipe = mps.Pipe()
     proc = mps.Process(target=self._boostrap, args=(target, wpipe))
     proc.start()
