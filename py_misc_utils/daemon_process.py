@@ -2,6 +2,7 @@ import atexit
 import collections
 import functools
 import logging
+import multiprocessing
 import os
 import pickle
 import psutil
@@ -39,7 +40,7 @@ def _term_handler(sig, frame):
   sys.exit(sig)
 
 
-class Daemon:
+class DaemonBase:
 
   def __init__(self, name):
     self._name = name
@@ -51,58 +52,6 @@ class Daemon:
 
   def _read_result(self, rpipe):
     return pickle.loads(pkt.read_packet(rpipe))
-
-  def _daemonize(self):
-    rpipe, wpipe = os.pipe()
-    os.set_inheritable(wpipe, True)
-
-    pid = os.fork()
-    if pid > 0:
-      dres = self._read_result(rpipe)
-      if dres.pid < 0:
-        raise dres.exclass(dres.msg)
-
-      return dres.pid
-
-    try:
-      os.chdir('/')
-      os.setsid()
-      os.umask(0)
-
-      pid = os.fork()
-      if pid > 0:
-        sys.exit(0)
-
-      # This 2nd os.setsid() makes the daemon a process group, so with can kill the
-      # whole group, if required.
-      os.setsid()
-
-      sys.stdout.flush()
-      sys.stderr.flush()
-
-      infd = os.open(os.devnull, os.O_RDONLY)
-      outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
-      errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
-
-      os.dup2(infd, sys.stdin.fileno())
-      os.dup2(outfd, sys.stdout.fileno())
-      os.dup2(errfd, sys.stderr.fileno())
-
-      pid = os.getpid()
-      self._writepid(pid)
-
-      # Register the signal handlers otherwise atexit callbacks will not get
-      # called in case a signal terminates the daemon process.
-      signal.signal(signal.SIGINT, _term_handler)
-      signal.signal(signal.SIGTERM, _term_handler)
-      atexit.register(functools.partial(self._delpid, pid=pid))
-
-      self._write_result(wpipe, pid=pid)
-
-      return 0
-    except Exception as ex:
-      self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
-      sys.exit(1)
 
   def _delpid(self, pid=None):
     with self._lockfile():
@@ -162,15 +111,6 @@ class Daemon:
     except psutil.NoSuchProcess:
       pass
 
-  def start(self, target):
-    pid = self.getpid()
-    if pid is None:
-      if (pid := self._daemonize()) == 0:
-        target()
-        sys.exit(0)
-
-    return pid
-
   def stop(self, kill_timeout=None):
     with self._lockfile():
       pid = self._readpid()
@@ -180,4 +120,68 @@ class Daemon:
     self._delpid(pid=pid)
 
     return pid is not None
+
+
+class Daemon(DaemonBase):
+
+  def _daemonize(self):
+    rpipe, wpipe = os.pipe()
+    os.set_inheritable(wpipe, True)
+
+    pid = os.fork()
+    if pid > 0:
+      dres = self._read_result(rpipe)
+      if dres.pid < 0:
+        raise dres.exclass(dres.msg)
+
+      return dres.pid
+
+    try:
+      os.chdir('/')
+      os.setsid()
+      os.umask(0)
+
+      pid = os.fork()
+      if pid > 0:
+        sys.exit(0)
+
+      # This 2nd os.setsid() makes the daemon a process group, so with can kill the
+      # whole group, if required.
+      os.setsid()
+
+      sys.stdout.flush()
+      sys.stderr.flush()
+
+      infd = os.open(os.devnull, os.O_RDONLY)
+      outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+      errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+
+      os.dup2(infd, sys.stdin.fileno())
+      os.dup2(outfd, sys.stdout.fileno())
+      os.dup2(errfd, sys.stderr.fileno())
+
+      pid = os.getpid()
+      self._writepid(pid)
+
+      # Register the signal handlers otherwise atexit callbacks will not get
+      # called in case a signal terminates the daemon process.
+      signal.signal(signal.SIGINT, _term_handler)
+      signal.signal(signal.SIGTERM, _term_handler)
+      atexit.register(functools.partial(self._delpid, pid=pid))
+
+      self._write_result(wpipe, pid=pid)
+
+      return 0
+    except Exception as ex:
+      self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
+      sys.exit(1)
+
+  def start(self, target):
+    pid = self.getpid()
+    if pid is None:
+      if (pid := self._daemonize()) == 0:
+        target()
+        sys.exit(0)
+
+    return pid
 
