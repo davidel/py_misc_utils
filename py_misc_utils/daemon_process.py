@@ -198,6 +198,12 @@ class DaemonCompat(DaemonBase):
   def _boostrap(self, target, wpipe):
     try:
       os.chdir('/')
+      if os.name == 'posix':
+        os.setsid()
+        os.umask(0)
+
+      sys.stdout.flush()
+      sys.stderr.flush()
 
       infd = os.open(os.devnull, os.O_RDONLY)
       outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
