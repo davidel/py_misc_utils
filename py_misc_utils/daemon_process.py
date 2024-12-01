@@ -218,7 +218,11 @@ class DaemonCompat(DaemonBase):
       self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
-    target()
+    try:
+      target()
+    except Exception as ex:
+      with open(os.path.join(tempfile.gettempdir(), f'{self._name}.log'), mode='a') as fd:
+        fd.write(f'{ex}\n')
 
   def _start_daemon(self, target, context=None):
     mps = multiprocessing.get_context(method=context)
@@ -229,8 +233,6 @@ class DaemonCompat(DaemonBase):
     dres = self._read_result(rpipe)
     if dres.pid < 0:
       raise dres.exclass(dres.msg)
-
-    print(dres.pid, proc.pid)
 
     assert dres.pid == proc.pid
 
