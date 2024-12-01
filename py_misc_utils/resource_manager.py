@@ -47,7 +47,7 @@ def get_resource_manager():
   return _RESMGR
 
 
-def create_manager(*args, register_fn=None, **kwargs):
+def _create_manager(*args, register_fn=None, **kwargs):
   # https://github.com/python/cpython/blob/2f56c68dec97002fdd8563a0e4977b75eb191ab9/Lib/multiprocessing/managers.py#L1043
   # https://github.com/python/cpython/blob/4cba0e66c29b46afbb1eee1d0428f5a2f5b891bb/Lib/multiprocessing/managers.py#L189
   manager = mpmgr.SyncManager(*args, **kwargs)
@@ -112,7 +112,7 @@ def _server_runner(name, *args, **kwargs):
                    log_file=os.path.join(_get_logdir(), f'{name}.log'))
 
   alog.info(f'[{name}] server starting')
-  manager = create_manager(*args, **kwargs)
+  manager = _create_manager(*args, **kwargs)
 
   try:
     server = manager.get_server()
@@ -135,7 +135,7 @@ def get_manager(name, *args, **kwargs):
 
   alog.info(f'[{name}] Connecting to server')
 
-  manager = create_manager(*args, **kwargs)
+  manager = _create_manager(*args, **kwargs)
   while True:
     try:
       manager.connect()
