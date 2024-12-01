@@ -99,7 +99,8 @@ class DaemonBase:
       proc = psutil.Process(pid)
 
       return proc.status() not in {psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE}
-    except psutil.NoSuchProcess:
+    except psutil.NoSuchProcess as ex:
+      print(f'NSP {pid}: {ex}')
       return False
 
   def _killpid(self, pid, kill_timeout=None):
@@ -218,11 +219,8 @@ class DaemonCompat(DaemonBase):
       self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
-    try:
-      target()
-    except Exception as ex:
-      with open(os.path.join(tempfile.gettempdir(), f'{self._name}.log'), mode='a') as fd:
-        fd.write(f'{ex}\n')
+    target()
+    sys.exit(0)
 
   def _start_daemon(self, target, context=None):
     mps = multiprocessing.get_context(method=context)
