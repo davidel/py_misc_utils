@@ -55,7 +55,7 @@ class Meta(obj.Obj):
 
 _CMDLINE = list(psutil.Process().cmdline())
 _ACQUIRE_TIMEOUT = float(os.getenv('LOCKF_AQTIMEO', 0.5))
-_CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', 2.5))
+_CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', 5.0))
 
 class LockFile:
 
@@ -91,7 +91,7 @@ class LockFile:
         cmdline = list(proc.cmdline())
 
         is_alive = cmdline == meta.cmdline and proc.create_time() <= meta.time
-      except:
+      except psutil.NoSuchProcess:
         pass
 
     if not is_alive:
