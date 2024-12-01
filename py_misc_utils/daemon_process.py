@@ -254,7 +254,7 @@ try:
 except:
   HAS_MP_CHILDREN = False
 
-if HAS_MP_CHILDREN:
+if HAS_MP_CHILDREN and os.getenv('DAEMON_MODE') != 'posix':
   Daemon = DaemonCompat
 else:
   Daemon = DaemonPosix
