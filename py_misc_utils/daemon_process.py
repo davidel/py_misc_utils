@@ -234,9 +234,7 @@ class DaemonCompat(DaemonBase):
   def start(self, target):
     pid = self.getpid()
     if pid is None:
-      if (pid := self._daemonize()) == 0:
-        target()
-        sys.exit(0)
+      pid = self._start_daemon(target)
 
     return pid
 
