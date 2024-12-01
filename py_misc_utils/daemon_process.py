@@ -221,15 +221,16 @@ class DaemonCompat(DaemonBase):
     target()
 
   def _start_daemon(self, target, context=None):
-    rpipe, wpipe = multiprocessing.Pipe()
-
     mps = multiprocessing.get_context(method=context)
+    rpipe, wpipe = mps.Pipe()
     proc = mps.Process(target=self._boostrap, args=(target, wpipe))
     proc.start()
 
     dres = self._read_result(rpipe)
     if dres.pid < 0:
       raise dres.exclass(dres.msg)
+
+    print(dres.pid, proc.pid)
 
     assert dres.pid == proc.pid
 
