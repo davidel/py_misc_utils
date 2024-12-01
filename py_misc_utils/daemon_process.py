@@ -98,9 +98,10 @@ class DaemonBase:
     try:
       proc = psutil.Process(pid)
 
+      print(f'NSP {pid}: {proc.status()}')
+
       return proc.status() not in {psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE}
-    except psutil.NoSuchProcess as ex:
-      print(f'NSP {pid}: {ex}')
+    except psutil.NoSuchProcess:
       return False
 
   def _killpid(self, pid, kill_timeout=None):
