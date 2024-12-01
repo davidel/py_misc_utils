@@ -235,6 +235,8 @@ class DaemonCompat(DaemonBase):
     assert dres.pid == proc.pid
 
     # HACK!
+    # This removes the daemon process from the list of known child processes, preventing
+    # it to be forcibly killed at exit.
     multiprocessing.process._children.discard(proc)
 
     return dres.pid
