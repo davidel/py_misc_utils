@@ -55,9 +55,10 @@ class StreamedFile:
 
     self._thread.join()
 
-    if self._tempfile is not None:
+    tempfile = self._tempfile
+    if tempfile is not None:
       fw.fin_wrap(self, '_tempfile', None)
-      self._tempfile.close()
+      tempfile.close()
 
   def seek(self, pos, whence=os.SEEK_SET):
     if whence == os.SEEK_SET:
