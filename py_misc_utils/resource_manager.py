@@ -121,7 +121,7 @@ def get_manager(name, *args, **kwargs):
       daemon.start(functools.partial(_server_runner, name, *args, **kwargs))
     except FileExistsError as ex:
       pass
-    time.sleep(0.5)
+    time.sleep(2)
 
   alog.info(f'[{name}] Connecting to server')
 
