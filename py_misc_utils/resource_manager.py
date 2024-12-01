@@ -34,7 +34,7 @@ class ResourceManager:
 
       return res
 
-  def delete(cls, name):
+  def delete(self, cls, name):
     alog.debug(f'Remove resource {cls}.{name}')
     with self._lock:
       cdict = self._resources[cls]
@@ -43,53 +43,59 @@ class ResourceManager:
 
 _RESMGR = ResourceManager()
 
+def get_resource_manager():
+  return _RESMGR
+
+
 def create_manager(*args, register_fn=None, **kwargs):
   # https://github.com/python/cpython/blob/2f56c68dec97002fdd8563a0e4977b75eb191ab9/Lib/multiprocessing/managers.py#L1043
   # https://github.com/python/cpython/blob/4cba0e66c29b46afbb1eee1d0428f5a2f5b891bb/Lib/multiprocessing/managers.py#L189
   manager = mpmgr.SyncManager(*args, **kwargs)
 
+  resmgr = get_resource_manager()
+
   manager.register('get_lock',
-                   functools.partial(_RESMGR.get, 'LOCKS', threading.Lock),
+                   functools.partial(resmgr.get, 'LOCKS', threading.Lock),
                    mpmgr.AcquirerProxy)
   manager.register('rm_lock',
-                   functools.partial(_RESMGR.delete, 'LOCKS'))
+                   functools.partial(resmgr.delete, 'LOCKS'))
 
   manager.register('get_event',
-                   functools.partial(_RESMGR.get, 'EVENTS', threading.Event),
+                   functools.partial(resmgr.get, 'EVENTS', threading.Event),
                    mpmgr.EventProxy)
   manager.register('rm_event',
-                   functools.partial(_RESMGR.delete, 'EVENTS'))
+                   functools.partial(resmgr.delete, 'EVENTS'))
 
   manager.register('get_condition',
-                   functools.partial(_RESMGR.get, 'CONDITIONS', threading.Condition),
+                   functools.partial(resmgr.get, 'CONDITIONS', threading.Condition),
                    mpmgr.ConditionProxy)
   manager.register('rm_condition',
-                   functools.partial(_RESMGR.delete, 'CONDITIONS'))
+                   functools.partial(resmgr.delete, 'CONDITIONS'))
 
   manager.register('get_barrier',
-                   functools.partial(_RESMGR.get, 'BARRIERS', threading.Barrier),
+                   functools.partial(resmgr.get, 'BARRIERS', threading.Barrier),
                    mpmgr.BarrierProxy)
   manager.register('rm_barrier',
-                   functools.partial(_RESMGR.delete, 'BARRIERS'))
+                   functools.partial(resmgr.delete, 'BARRIERS'))
 
   manager.register('get_queue',
-                   functools.partial(_RESMGR.get, 'QUEUES', queue.Queue))
+                   functools.partial(resmgr.get, 'QUEUES', queue.Queue))
   manager.register('rm_queue',
-                   functools.partial(_RESMGR.delete, 'QUEUES'))
+                   functools.partial(resmgr.delete, 'QUEUES'))
 
   manager.register('get_lifo',
-                   functools.partial(_RESMGR.get, 'LIFOS', queue.LifoQueue))
+                   functools.partial(resmgr.get, 'LIFOS', queue.LifoQueue))
   manager.register('rm_lifo',
-                   functools.partial(_RESMGR.delete, 'LIFOS'))
+                   functools.partial(resmgr.delete, 'LIFOS'))
 
   manager.register('get_namespace',
-                   functools.partial(_RESMGR.get, 'NAMESPACES', mpmgr.Namespace),
+                   functools.partial(resmgr.get, 'NAMESPACES', mpmgr.Namespace),
                    mpmgr.NamespaceProxy)
   manager.register('rm_namespace',
-                   functools.partial(_RESMGR.delete, 'NAMESPACES'))
+                   functools.partial(resmgr.delete, 'NAMESPACES'))
 
   if register_fn is not None:
-    register_fn(manager)
+    register_fn(manager, resmgr)
 
   return manager
 
