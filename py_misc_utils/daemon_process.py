@@ -111,6 +111,29 @@ class DaemonBase:
     except psutil.NoSuchProcess:
       pass
 
+  def _setup_daemon(self, wpipe):
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    infd = os.open(os.devnull, os.O_RDONLY)
+    outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+    errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
+
+    os.dup2(infd, sys.stdin.fileno())
+    os.dup2(outfd, sys.stdout.fileno())
+    os.dup2(errfd, sys.stderr.fileno())
+
+    pid = os.getpid()
+    self._writepid(pid)
+
+    # Register the signal handlers otherwise atexit callbacks will not get
+    # called in case a signal terminates the daemon process.
+    signal.signal(signal.SIGINT, _term_handler)
+    signal.signal(signal.SIGTERM, _term_handler)
+    atexit.register(functools.partial(self._delpid, pid=pid))
+
+    self._write_result(wpipe, pid=pid)
+
   def stop(self, kill_timeout=None):
     with self._lockfile():
       pid = self._readpid()
@@ -149,27 +172,7 @@ class DaemonPosix(DaemonBase):
       # whole group, if required.
       os.setsid()
 
-      sys.stdout.flush()
-      sys.stderr.flush()
-
-      infd = os.open(os.devnull, os.O_RDONLY)
-      outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
-      errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
-
-      os.dup2(infd, sys.stdin.fileno())
-      os.dup2(outfd, sys.stdout.fileno())
-      os.dup2(errfd, sys.stderr.fileno())
-
-      pid = os.getpid()
-      self._writepid(pid)
-
-      # Register the signal handlers otherwise atexit callbacks will not get
-      # called in case a signal terminates the daemon process.
-      signal.signal(signal.SIGINT, _term_handler)
-      signal.signal(signal.SIGTERM, _term_handler)
-      atexit.register(functools.partial(self._delpid, pid=pid))
-
-      self._write_result(wpipe, pid=pid)
+      self._setup_daemon(wpipe)
 
       return 0
     except Exception as ex:
@@ -202,27 +205,7 @@ class DaemonCompat(DaemonBase):
         os.setsid()
         os.umask(0)
 
-      sys.stdout.flush()
-      sys.stderr.flush()
-
-      infd = os.open(os.devnull, os.O_RDONLY)
-      outfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
-      errfd = os.open(os.devnull, os.O_WRONLY | os.O_APPEND)
-
-      os.dup2(infd, sys.stdin.fileno())
-      os.dup2(outfd, sys.stdout.fileno())
-      os.dup2(errfd, sys.stderr.fileno())
-
-      pid = os.getpid()
-      self._writepid(pid)
-
-      # Register the signal handlers otherwise atexit callbacks will not get
-      # called in case a signal terminates the daemon process.
-      signal.signal(signal.SIGINT, _term_handler)
-      signal.signal(signal.SIGTERM, _term_handler)
-      atexit.register(functools.partial(self._delpid, pid=pid))
-
-      self._write_result(wpipe, pid=pid)
+      self._setup_daemon(wpipe)
     except Exception as ex:
       self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
