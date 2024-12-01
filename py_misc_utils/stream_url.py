@@ -120,6 +120,9 @@ class StreamedFile:
 
       return data
 
+  def flush(self):
+    pass
+
   def readable(self):
     return True
 
