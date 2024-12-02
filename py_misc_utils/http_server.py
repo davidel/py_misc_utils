@@ -42,7 +42,22 @@ def _read_stream(headers, stream, chunked_headers, chunk_size=None):
     raise RuntimeError(f'Unable to read data: {headers}')
 
 
+class HandlerException(Exception):
+
+  def __init__(self, code, message, explain):
+    super().__init__()
+    self.code = code
+    self.message = message
+    self.explain = explain
+
+
 class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
+
+  def _check_authorization(self, op, path):
+    hauth = self.headers['Authorization']
+    # Very crude auth!
+    if hauth != self._args.auth:
+      raise HandlerException(403, 'Forbidden', f'Action not allowed on "{self.path}"\n')
 
   def do_OPTIONS(self):
     self.send_response(200, 'OK')
@@ -58,11 +73,17 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
                       explain=f'Action not allowed on "{self.path}"\n')
     else:
       try:
+        self._check_authorization('DELETE', path)
+
         os.remove(path)
 
         self.send_response(200, 'OK')
         self.send_header('Content-Length', '0')
         self.end_headers()
+      except HandlerException as ex:
+        self.send_error(ex.code,
+                        message=ex.message,
+                        explain=ex.explain)
       except OSError as ex:
         self.send_error(500,
                         message='Internal Server Error',
@@ -76,6 +97,8 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
                       explain=f'Action not allowed on "{self.path}"\n')
     else:
       try:
+        self._check_authorization('PUT', path)
+
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
         chunked_headers = dict()
@@ -85,6 +108,10 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
         self.send_response(201, 'Created')
         self.end_headers()
+      except HandlerException as ex:
+        self.send_error(ex.code,
+                        message=ex.message,
+                        explain=ex.explain)
       except Exception as ex:
         self.send_error(500,
                         message='Internal Server Error',
@@ -99,6 +126,8 @@ if __name__ == '__main__':
                       help='Specify alternate port')
   parser.add_argument('--protocol', default='HTTP/1.1',
                       help='Conform to this HTTP version')
+  parser.add_argument('--auth',
+                      help='The authentication to be used when performing HTTP write operations')
 
   args = parser.parse_args()
 
