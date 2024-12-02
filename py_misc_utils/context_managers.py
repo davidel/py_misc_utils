@@ -14,6 +14,28 @@ class CtxManager:
     return self._outfn(*exc)
 
 
+class CtxManagerProxy:
+
+  def __init__(self, obj):
+    self._obj = obj
+    self.v = None
+
+  def __enter__(self):
+    self.v = self._obj.__enter__()
+
+    return self
+
+  def detach(self):
+    v = self.v
+    self._obj = None
+    self.v = None
+
+    return v
+
+  def __exit__(self, *exc):
+    return self._obj.__exit__(*exc) if self._obj is not None else False
+
+
 class CtxManagerWrapper(contextlib.ExitStack):
 
   def __init__(self, *wrap_ctxs, wrap_obj=None, wrap_idx=None):
