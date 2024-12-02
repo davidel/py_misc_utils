@@ -40,7 +40,7 @@ def choices(weights, n):
 
 def uniform(center, delta=None, pct=None):
   if pct is not None:
-    delta = center * pct
+    delta = abs(center * pct)
 
   tas.check_is_not_none(delta, msg=f'Either delta or pct must be provided')
 
