@@ -4,23 +4,8 @@ import random
 import string
 import struct
 import tempfile
-import threading
 
 import numpy as np
-import torch
-
-
-_SEED = 153934223
-_TLS = threading.local()
-
-
-def _get_tls():
-  if not getattr(_TLS, 'init', False):
-    _TLS.torch_rnds = dict()
-    _TLS.np_rdngen = None
-    _TLS.init = True
-
-  return _TLS
 
 
 def compute_seed(seed):
@@ -39,56 +24,20 @@ def compute_seed(seed):
 
 
 def manual_seed(seed):
-  global _SEED
-
   cseed = compute_seed(seed)
 
-  _SEED = cseed
-  tls = _get_tls()
-
-  for rndg in tls.torch_rnds.values():
-    rndg.manual_seed(cseed)
-  torch.manual_seed(cseed)
-
-  tls.np_rdngen = np.random.default_rng(seed=cseed)
   np.random.seed(cseed)
-
   random.seed(cseed)
 
   return cseed
 
 
-def torch_gen(device='cpu'):
-  tls = _get_tls()
-
-  tdevice = torch.device(device)
-  rndg = tls.torch_rnds.get(tdevice)
-  if rndg is None:
-    rndg = torch.Generator()
-    rndg.manual_seed(_SEED)
-    tls.torch_rnds[tdevice] = rndg
-
-  return rndg
-
-
-def torch_randn(*args, **kwargs):
-  device = kwargs.get('device', 'cpu')
-  kwargs.update(generator=torch_gen(device=device))
-
-  return torch.randn(*args, **kwargs)
-
-
-def numpy_gen():
-  tls = _get_tls()
-
-  if tls.np_rdngen is None:
-    tls.np_rdngen = np.random.default_rng(seed=_SEED)
-
-  return tls.np_rdngen
-
-
 def choices(weights, n):
   return random.choices(range(len(weights)), weights=weights, k=n)
+
+
+def uniform(center, delta):
+  return random.uniform(center - delta, center + delta)
 
 
 def rand_string(n):
