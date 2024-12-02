@@ -75,7 +75,7 @@ if __name__ == '__main__':
                       help='Specify alternate bind address')
   parser.add_argument('--port', type=int, default=8000,
                       help='Specify alternate port')
-  parser.add_argument('--protocol', default='HTTP/1.0',
+  parser.add_argument('--protocol', default='HTTP/1.1',
                       help='Conform to this HTTP version')
 
   args = parser.parse_args()
