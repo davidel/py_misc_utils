@@ -7,6 +7,8 @@ import tempfile
 
 import numpy as np
 
+from . import assert_checks as tas
+
 
 def compute_seed(seed):
   if isinstance(seed, int):
@@ -36,7 +38,12 @@ def choices(weights, n):
   return random.choices(range(len(weights)), weights=weights, k=n)
 
 
-def uniform(center, delta):
+def uniform(center, delta=None, pct=None):
+  if pct is not None:
+    delta = center * pct
+
+  tas.check_is_not_none(delta, msg=f'Either delta or pct must be provided')
+
   return random.uniform(center - delta, center + delta)
 
 

@@ -65,8 +65,8 @@ class LockFile:
 
     self._name = name
     self._lockfile = _lockfile(name)
-    self._acquire_timeout = rngu.uniform(acquire_timeout, acquire_timeout / 5)
-    self._check_timeout = rngu.uniform(check_timeout, check_timeout / 5)
+    self._acquire_timeout = rngu.uniform(acquire_timeout, pct=0.2)
+    self._check_timeout = rngu.uniform(check_timeout, pct=0.2)
 
   def _mkmeta(self):
     tag = dict(pid=os.getpid(), cmdline=_CMDLINE, time=time.time())
