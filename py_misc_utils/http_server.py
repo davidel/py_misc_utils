@@ -1,4 +1,5 @@
 import argparse
+import copy
 import http.server
 import os
 
@@ -101,7 +102,12 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  http.server.test(HandlerClass=HTTPRequestHandler,
+  # Make a copy of the class, to allow adding the args (and also because the
+  # http.server.test() API plants data inside the class global namespace.
+  req_handler = copy.copy(HTTPRequestHandler)
+  req_handler._args = args
+
+  http.server.test(HandlerClass=req_handler,
                    port=args.port,
                    bind=args.bind,
                    protocol=args.protocol)
