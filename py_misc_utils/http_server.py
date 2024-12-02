@@ -42,8 +42,6 @@ def _read_stream(headers, stream, chunked_headers, chunk_size=None):
     raise RuntimeError(f'Unable to read data: {headers}')
 
 
-_ARGS = None
-
 class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
   def do_PUT(self):
@@ -79,8 +77,6 @@ if __name__ == '__main__':
                       help='Conform to this HTTP version')
 
   args = parser.parse_args()
-
-  _ARGS = args
 
   http.server.test(HandlerClass=HTTPRequestHandler,
                    port=args.port,
