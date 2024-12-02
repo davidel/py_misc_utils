@@ -8,6 +8,32 @@ def _sanitize_path(path):
     return path.lstrip('/')
 
 
+def _read_stream(headers, stream, chunk_size=None):
+  chunk_size = chunk_size or 16 * 1024**2
+
+  length = headers['Content-Length']
+  encoding = headers['Transfer-Encoding']
+  if length is not None:
+    length = int(length)
+    while length > 0:
+      rsize = min(length, chunk_size)
+
+      yield stream.read(rsize)
+
+      length -= rsize
+
+  elif encoding == 'chunked':
+    while True:
+      size = int(stream.readline().strip(), 16)
+      if size == 0:
+        break
+
+      yield stream.read(size)
+
+  else:
+    raise RuntimeError(f'Unable to read data: {headers}')
+
+
 class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   def do_PUT(self):
@@ -20,12 +46,9 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
       try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        print(self.headers)
-        print(type(self.rfile))
-
-        length = int(self.headers['Content-Length'])
         with open(path, 'wb') as f:
-          f.write(self.rfile.read(length))
+          for data in _read_stream(self.headers, self.rfile):
+            f.write(data)
 
         self.send_response(201, 'Created')
         self.end_headers()
