@@ -1,7 +1,6 @@
 import hashlib
 import os
 import psutil
-import random
 import tempfile
 import time
 import yaml
@@ -11,6 +10,7 @@ from . import assert_checks as tas
 from . import fs_utils as fsu
 from . import obj
 from . import osfd
+from . import rnd_utils as rngu
 
 
 def _try_lockdir(path):
@@ -65,8 +65,8 @@ class LockFile:
 
     self._name = name
     self._lockfile = _lockfile(name)
-    self._acquire_timeout = random.gauss(mu=acquire_timeout, sigma=0.2)
-    self._check_timeout = random.gauss(mu=check_timeout, sigma=0.2)
+    self._acquire_timeout = rngu.uniform(acquire_timeout, acquire_timeout / 5)
+    self._check_timeout = rngu.uniform(check_timeout, check_timeout / 5)
 
   def _mkmeta(self):
     tag = dict(pid=os.getpid(), cmdline=_CMDLINE, time=time.time())
