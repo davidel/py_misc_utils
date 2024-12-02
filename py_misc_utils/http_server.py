@@ -3,15 +3,16 @@ import http.server
 import os
 
 
-def _valid_path(path):
-  return '..' not in path and not path.endswith('/')
+def _sanitize_path(path):
+  if '..' not in path and not path.endswith('/'):
+    return path.lstrip('/')
 
 
 class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   def do_PUT(self):
-    path = self.translate_path(self.path)
-    if not _valid_path(path):
+    path = _sanitize_path(self.translate_path(self.path))
+    if path is None:
       self.send_error(403,
                       message='Forbidden',
                       explain=f'PUT not allowed on "{self.path}"\n')
