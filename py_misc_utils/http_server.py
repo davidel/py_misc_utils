@@ -20,6 +20,9 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
       try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
+        print(self.headers)
+        print(type(self.rfile))
+
         length = int(self.headers['Content-Length'])
         with open(path, 'wb') as f:
           f.write(self.rfile.read(length))
@@ -30,8 +33,6 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_error(500,
                         message='Internal Server Error',
                         explain=f'Internal error: {ex}\n')
-
-        print(f'{path} : {ex}')
 
 
 if __name__ == '__main__':
