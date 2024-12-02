@@ -45,16 +45,34 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
   def do_OPTIONS(self):
     self.send_response(200, 'OK')
-    self.send_header('Allow', 'GET,POST,PUT,OPTIONS,HEAD')
+    self.send_header('Allow', 'GET,POST,PUT,OPTIONS,HEAD,DELETE')
     self.send_header('Content-Length', '0')
     self.end_headers()
+
+  def do_DELETE(self):
+    path = _sanitize_path(self.translate_path(self.path))
+    if path is None:
+      self.send_error(403,
+                      message='Forbidden',
+                      explain=f'Action not allowed on "{self.path}"\n')
+    else:
+      try:
+        os.remove(path)
+
+        self.send_response(200, 'OK')
+        self.send_header('Content-Length', '0')
+        self.end_headers()
+      except OSError as ex:
+        self.send_error(500,
+                        message='Internal Server Error',
+                        explain=f'Internal error: {ex}\n')
 
   def do_PUT(self):
     path = _sanitize_path(self.translate_path(self.path))
     if path is None:
       self.send_error(403,
                       message='Forbidden',
-                      explain=f'PUT not allowed on "{self.path}"\n')
+                      explain=f'Action not allowed on "{self.path}"\n')
     else:
       try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
