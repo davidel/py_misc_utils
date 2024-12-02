@@ -44,6 +44,11 @@ def _read_stream(headers, stream, chunked_headers, chunk_size=None):
 
 class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
+  def do_OPTIONS(self):
+    self.send_response(200, 'OK')
+    self.send_header('Allow', 'GET,POST,PUT,OPTIONS,HEAD')
+    self.end_headers()
+
   def do_PUT(self):
     path = _sanitize_path(self.translate_path(self.path))
     if path is None:
