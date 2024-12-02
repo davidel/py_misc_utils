@@ -57,6 +57,8 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         message='Internal Server Error',
                         explain=f'Internal error: {ex}\n')
 
+        print(ex)
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
