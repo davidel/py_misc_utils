@@ -1,3 +1,4 @@
+import copy
 
 
 class Obj:
@@ -10,6 +11,12 @@ class Obj:
 
   def update_from(self, obj):
     self.__dict__.update(obj.__dict__)
+
+  def clone(self, **kwargs):
+    nobj = copy.copy(self)
+    nobj.update(**kwargs)
+
+    return nobj
 
   def as_dict(self):
     ad = dict()
