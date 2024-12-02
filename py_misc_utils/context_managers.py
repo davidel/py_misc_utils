@@ -58,3 +58,7 @@ class CtxManagerWrapper(contextlib.ExitStack):
 
     return wres[-1] if self._wrap_idx is None else wres[self._wrap_idx]
 
+
+def detach(obj):
+  return obj.detach() if isinstance(obj, CtxManagerProxy) else obj
+
