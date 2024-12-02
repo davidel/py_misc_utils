@@ -31,6 +31,7 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         message='Internal Server Error',
                         explain=f'Internal error: {ex}\n')
 
+        print(f'{path} : {ex}')
 
 
 if __name__ == '__main__':
