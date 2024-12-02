@@ -14,29 +14,28 @@ class CtxManager:
     return self._outfn(*exc)
 
 
-class CtxManagerProxy:
+class Wrapper:
 
-  def __init__(self, obj):
-    self._obj = obj
-    self.v = None
+  def __init__(self, v, attr=None, finfn=None):
+    self.v = v
+    self._finfn = finfn or getattr(v, attr or 'close')
 
   def __enter__(self):
-    self.v = self._obj.__enter__()
-
     return self
 
   def detach(self):
-    v = self.v
-    self._obj = None
-    self.v = None
+    self._finfn = None
 
-    return v
+    return self.v
 
   def __exit__(self, *exc):
-    return self._obj.__exit__(*exc) if self._obj is not None else False
+    if self._finfn is not None:
+      self._finfn()
+
+    return False
 
 
-class Wrapper(contextlib.ExitStack):
+class Pack(contextlib.ExitStack):
 
   def __init__(self, *wrap_ctxs, wrap_obj=None, wrap_idx=None):
     super().__init__()
