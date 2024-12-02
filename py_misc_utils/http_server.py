@@ -80,7 +80,6 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  global _ARGS
   _ARGS = args
 
   http.server.test(HandlerClass=HTTPRequestHandler,
