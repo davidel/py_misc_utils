@@ -5,7 +5,7 @@ import os
 
 def _sanitize_path(path):
   if '..' not in path and not path.endswith('/'):
-    return path.lstrip('/')
+    return path
 
 
 def _read_stream(headers, stream, chunked_headers, chunk_size=None):
@@ -65,8 +65,6 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_error(500,
                         message='Internal Server Error',
                         explain=f'Internal error: {ex}\n')
-
-        print(ex)
 
 
 if __name__ == '__main__':
