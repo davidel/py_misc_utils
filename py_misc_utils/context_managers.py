@@ -36,7 +36,7 @@ class CtxManagerProxy:
     return self._obj.__exit__(*exc) if self._obj is not None else False
 
 
-class CtxManagerWrapper(contextlib.ExitStack):
+class Wrapper(contextlib.ExitStack):
 
   def __init__(self, *wrap_ctxs, wrap_obj=None, wrap_idx=None):
     super().__init__()
