@@ -47,6 +47,7 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
   def do_OPTIONS(self):
     self.send_response(200, 'OK')
     self.send_header('Allow', 'GET,POST,PUT,OPTIONS,HEAD')
+    self.send_header('Content-Length', '0')
     self.end_headers()
 
   def do_PUT(self):
