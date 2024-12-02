@@ -42,7 +42,9 @@ def _read_stream(headers, stream, chunked_headers, chunk_size=None):
     raise RuntimeError(f'Unable to read data: {headers}')
 
 
-class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+_ARGS = None
+
+class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
   def do_PUT(self):
     path = _sanitize_path(self.translate_path(self.path))
@@ -73,7 +75,16 @@ if __name__ == '__main__':
                       help='Specify alternate bind address')
   parser.add_argument('--port', type=int, default=8000,
                       help='Specify alternate port')
+  parser.add_argument('--protocol', default='HTTP/1.0',
+                      help='Conform to this HTTP version')
 
   args = parser.parse_args()
-  http.server.test(HandlerClass=HTTPRequestHandler, port=args.port, bind=args.bind)
+
+  global _ARGS
+  _ARGS = args
+
+  http.server.test(HandlerClass=HTTPRequestHandler,
+                   port=args.port,
+                   bind=args.bind,
+                   protocol=args.protocol)
 
