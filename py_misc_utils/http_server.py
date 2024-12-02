@@ -9,12 +9,11 @@ def _sanitize_path(path):
 
 
 def _read_stream(headers, stream, chunked_headers, chunk_size=None):
-  chunk_size = chunk_size or 16 * 1024**2
-
   length = headers['Content-Length']
   encoding = headers['Transfer-Encoding']
   if length is not None:
     length = int(length)
+    chunk_size = chunk_size or 16 * 1024**2
     while length > 0:
       rsize = min(length, chunk_size)
 
