@@ -28,9 +28,9 @@ def content_length(headers, defval=None):
 
 def etag(headers, defval=None):
   if (etag_value := headers.get(XLINKED_ETAG)) is not None:
-    return etag_value
+    return etag_value.strip('"')
   if (etag_value := headers.get(ETAG)) is not None:
-    return etag_value
+    return etag_value.strip('"')
 
   return defval
 
