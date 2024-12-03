@@ -1,4 +1,5 @@
 import argparse
+import base64
 import copy
 import http.server
 import os
@@ -55,9 +56,36 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
   def _check_authorization(self, op, path):
     hauth = self.headers['Authorization']
-    # Very crude auth!
-    if hauth != self._args.auth:
+    if hauth is None:
+      raise HandlerException(401, 'Unauthorized', f'Action not allowed on "{self.path}"\n')
+    if self._args.auth is None:
+      self.log_message(f'Client request needs authorization but server not configured ' \
+                       f'for it: {op} {self.path}')
       raise HandlerException(403, 'Forbidden', f'Action not allowed on "{self.path}"\n')
+
+    try:
+      auth_type, auth_config = [x.strip() for x in hauth.split(' ', maxsplit=1)]
+
+      auth_type = auth_type.lower()
+      if auth_type == 'bearer':
+        token = base64.b64decode(auth_config).decode()
+        if token != self._args.auth:
+          self.log_message(f'Client authorization invalid: {op} {self.path} {token}')
+          raise HandlerException(403, 'Forbidden', f'Action not allowed on "{self.path}"\n')
+      elif auth_type == 'basic':
+        creds = base64.b64decode(auth_config).decode()
+        user, passwd = creds.split(':', maxsplit=1)
+
+        # Very crude auth!
+        if passwd != self._args.auth:
+          self.log_message(f'Client authorization invalid: {op} {self.path} {user}:{passwd}')
+          raise HandlerException(403, 'Forbidden', f'Action not allowed on "{self.path}"\n')
+      else:
+        raise HandlerException(403, 'Forbidden', f'Authorization not supported: {hauth}\n')
+    except HandlerException:
+      raise
+    except Exception as ex:
+      raise HandlerException(500, 'Internal Server Error', f'Internal error: {ex}\n')
 
   def do_OPTIONS(self):
     self.send_response(200, 'OK')
@@ -119,7 +147,7 @@ class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(description='Simple HTTP Server For Testing')
   parser.add_argument('--bind', default='0.0.0.0',
                       help='Specify alternate bind address')
   parser.add_argument('--port', type=int, default=8000,
