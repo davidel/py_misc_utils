@@ -4,16 +4,12 @@ import stat as st
 
 import google.cloud.storage as gcs
 
+from . import fs_base as fsb
+
 
 # https://cloud.google.com/appengine/docs/legacy/standard/python/googlecloudstorageclient/read-write-to-cloud-storage
 # https://cloud.google.com/python/docs/reference/storage/1.44.0/client
 # https://cloud.google.com/python/docs/reference/storage/1.44.0/blobs#google.cloud.storage.blob.Blob
-
-DirEntry = collections.namedtuple(
-  'DirEntry',
-  'name, path, etag, st_mode, st_size, st_ctime, st_mtime'
-)
-
 
 class GcsFs:
 
@@ -45,13 +41,13 @@ class GcsFs:
       path = blob.name
       size, etag = blob.size, blob.etag
 
-    return DirEntry(name=name,
-                    path=path,
-                    etag=etag,
-                    st_mode=mode,
-                    st_size=size,
-                    st_ctime=blob.time_created.timestamp(),
-                    st_mtime=blob.updated.timestamp())
+    return fsb.DirEntry(name=name,
+                        path=path,
+                        etag=etag,
+                        st_mode=mode,
+                        st_size=size,
+                        st_ctime=blob.time_created.timestamp(),
+                        st_mtime=blob.updated.timestamp())
 
   def listdir(self, path):
     if path:
@@ -125,13 +121,13 @@ class GcsFs:
       bpath = path[: -1] if path.endswith('/') else path
       name = os.path.basename(bpath)
 
-      return DirEntry(name=name,
-                      path=bpath,
-                      etag=None,
-                      st_mode=st.S_IFDIR,
-                      st_size=0,
-                      st_ctime=ctime,
-                      st_mtime=mtime)
+      return fsb.DirEntry(name=name,
+                          path=bpath,
+                          etag=None,
+                          st_mode=st.S_IFDIR,
+                          st_size=0,
+                          st_ctime=ctime,
+                          st_mtime=mtime)
 
   def remove(self, path):
     bucket = self._client.bucket(self._bucket)
