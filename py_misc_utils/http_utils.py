@@ -35,6 +35,13 @@ def etag(headers, defval=None):
   return defval
 
 
+def last_modified(headers, defval=None):
+  if (mtime := headers.get(LAST_MODIFIED)) is not None:
+    return date_to_epoch(mtime)
+
+  return defval
+
+
 def add_range(headers, start, stop):
   headers[RANGE] = f'bytes={start}-{stop}'
 
