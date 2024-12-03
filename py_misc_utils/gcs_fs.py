@@ -123,7 +123,6 @@ class GcsFs:
 
       return fsb.DirEntry(name=name,
                           path=bpath,
-                          etag=None,
                           st_mode=st.S_IFDIR,
                           st_size=0,
                           st_ctime=ctime,
