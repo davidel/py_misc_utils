@@ -47,15 +47,9 @@ class GcsFs(fsb.FsBase):
   def __init__(self, cache_ctor=None, **kwargs):
     super().__init__()
     self._cache_ctor = cache_ctor
-    self._fs_cache = dict()
 
   def _get_fs(self, bucket):
-    fs = self._fs_cache.get(bucket)
-    if fs is None:
-      fs = gcs.GcsFs(bucket)
-      self._fs_cache[bucket] = fs
-
-    return fs
+    return gcs.GcsFs(bucket)
 
   def _parse_url(self, url):
     purl = uparse.urlparse(url)

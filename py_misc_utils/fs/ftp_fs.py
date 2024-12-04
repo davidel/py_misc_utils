@@ -59,26 +59,11 @@ class FtpFs(fsb.FsBase):
   def __init__(self, cache_ctor=None, **kwargs):
     super().__init__()
     self._cache_ctor = cache_ctor
-    self._conn_cache = dict()
 
   def _get_connection(self, host, port, user, passwd):
-    cid = (host, port, user)
-    conn = self._conn_cache.get(cid)
-    if conn is not None:
-      # We have a cached connection, but is it still alive?
-      try:
-        conn.keep_alive()
-      except:
-        nox.qno_except(conn.close)
-        conn = None
-
-    if conn is None:
-      conn = ftputil.FTPHost(host, user, passwd,
-                             port=port,
-                             session_factory=FtpSession)
-      self._conn_cache[cid] = conn
-
-    return conn
+    return ftputil.FTPHost(host, user, passwd,
+                           port=port,
+                           session_factory=FtpSession)
 
   def _netloc(self, purl):
     return (purl.hostname.lower(), purl.port or 21)
