@@ -1,22 +1,18 @@
 import collections
 import contextlib
-import datetime
 import functools
-import hashlib
 import importlib
 import os
 import pkgutil
 import re
 import shutil
-import stat as st
 import sys
+import urllib.parse as uparse
 
 from . import assert_checks as tas
 from . import cached_file as chf
 from . import context_managers as cm
 from . import fs_utils as fsu
-from . import no_except as nex
-from . import obj
 from . import rnd_utils as rngu
 from . import run_once as ro
 
@@ -158,14 +154,16 @@ def exists(path):
   return fs.exists(fpath)
 
 
-def fs_proto(fs):
-  return fs.ID
-
-
 def is_same_fs(*args):
-  protos = [fs_proto(fs) for fs in args]
+  specs = []
+  for fspath in args:
+    purl = uparse.urlparse(fspath.path)
+    if purl.scheme:
+      specs.append((purl.scheme, purl.netloc))
+    else:
+      specs.append((_DEFAULT_LOCAL_PROTO, fsu.localfs_mount(purl.path)))
 
-  return all(protos[0] == p for p in protos)
+  return all(specs[0] == s for s in specs[1:])
 
 
 _DEFAULT_LOCAL_PROTO = 'file'
@@ -175,7 +173,7 @@ def is_local_proto(proto):
 
 
 def is_local_fs(fs):
-  return is_local_proto(fs_proto(fs))
+  return is_local_proto(fs.ID)
 
 
 def is_local_path(path):
@@ -212,7 +210,7 @@ def copy(src_path, dest_path, src_fs=None, dest_fs=None):
 def replace(src_path, dest_path, src_fs=None, dest_fs=None):
   src, dest = resolve_paths((src_fs, src_path), (dest_fs, dest_path))
 
-  if is_same_fs(src.fs, dest.fs):
+  if is_same_fs(src, dest):
     dest.fs.replace(src.path, dest.path)
   else:
     copy(src.path, dest.path, src_fs=src.fs, dest_fs=dest.fs)
