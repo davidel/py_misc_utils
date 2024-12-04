@@ -47,7 +47,7 @@ class FileFs(fsb.FsBase):
     super().__init__()
 
   def norm_url(self, url):
-    return os.path.normcase(url)
+    return fsu.normpath(url)
 
   def _create_etag(self, sres):
     stag = f'size={sres.st_size},mtime={sres.st_mtime}'

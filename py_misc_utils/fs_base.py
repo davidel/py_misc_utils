@@ -1,5 +1,6 @@
 import abc
 import collections
+import stat as st
 
 
 DirEntry = collections.namedtuple(
@@ -33,6 +34,33 @@ class FsBase(abc.ABC):
 
   def norm_url(self, url):
     return url
+
+  def exists(self, url):
+    try:
+      self.stat(url)
+
+      return True
+    except:
+      return False
+
+  def isdir(self, url):
+    try:
+      de = self.stat(url)
+
+      return st.S_ISDIR(de.st_mode)
+    except:
+      return False
+
+  def isfile(self, url):
+    try:
+      de = self.stat(url)
+
+      return st.S_ISREG(de.st_mode)
+    except:
+      return False
+
+  def copyfile(self, url, dest_fs, dest_url):
+    dest_fs.put_file(dest_url, self.get_file(url))
 
   @abc.abstractmethod
   def stat(self, url):

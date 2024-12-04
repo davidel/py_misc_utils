@@ -87,6 +87,14 @@ def normpath(path):
   return os.path.normpath(path)
 
 
+def localfs_mount(path):
+  while True:
+    parent_path = os.path.dirname(path)
+    if path == parent_path or os.path.ismount(path):
+      return path
+    path = parent_path
+
+
 def enum_chunks(stream, chunk_size=16 * 1024**2):
   while True:
     data = stream.read(chunk_size)
