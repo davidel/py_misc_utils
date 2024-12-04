@@ -1,0 +1,297 @@
+import hashlib
+import os
+import re
+import shutil
+import time
+import yaml
+
+from . import alog as alog
+from . import assert_checks as tas
+from . import fs_utils as fsu
+from . import lockfile as lockf
+from . import no_except as nox
+from . import obj as obj
+from . import osfd as osfd
+from . import rnd_utils as rngu
+
+
+class Meta(obj.Obj):
+  pass
+
+
+class CachedBlockFile:
+
+  METAFILE = 'META'
+  BLOCKSDIR = 'blocks'
+  WHOLE_OFFSET = -1
+  CID_SIZE = 16
+
+  def __init__(self, path, reader):
+    self._path = path
+    self._reader = reader
+    self.meta = self.load_meta(path)
+
+  @classmethod
+  def default_meta(cls):
+    return Meta(size=None, block_size=32 * 1024**2)
+
+  @classmethod
+  def prepare_meta(cls, meta, **kwargs):
+    cmeta = cls.default_meta()
+    cmeta.update_from(meta)
+    cmeta.update(**kwargs)
+
+    cid = hashlib.sha1(cmeta.tag.encode()).hexdigest()[: cls.CID_SIZE]
+    cmeta.update(cid=cid)
+
+    return cmeta
+
+  @classmethod
+  def remove(cls, path):
+    tpath = rngu.temp_path(nspath=path)
+    try:
+      os.rename(path, tpath)
+      shutil.rmtree(tpath, ignore_errors=True)
+
+      return True
+    except:
+      return False
+
+  @classmethod
+  def create(cls, path, meta):
+    tpath = rngu.temp_path(nspath=path)
+    try:
+      os.makedirs(tpath, exist_ok=True)
+      os.mkdir(os.path.join(tpath, cls.BLOCKSDIR))
+
+      cls.save_meta(tpath, meta)
+
+      os.rename(tpath, path)
+    except:
+      shutil.rmtree(tpath, ignore_errors=True)
+      raise
+
+  def _block_file(self, offset):
+    return self.block_file(self._path, self.meta.cid, offset)
+
+  def _fetch_block(self, offset):
+    bpath = self._block_file(offset)
+    with lockf.LockFile(bpath):
+      if (sres := fsu.stat(bpath)) is None:
+        tpath = rngu.temp_path(nspath=bpath)
+        rsize = self._reader.read_block(tpath, offset, self.meta.block_size)
+
+        if rsize > 0:
+          os.replace(tpath, bpath)
+        else:
+          nox.qno_except(os.remove, tpath)
+      else:
+        rsize = sres.st_size
+
+    return rsize
+
+  def _try_block(self, boffset, offset):
+    bpath = self._block_file(boffset)
+    try:
+      with osfd.OsFd(bpath, os.O_RDONLY) as fd:
+        sres = os.stat(fd)
+        if sres.st_size >= offset:
+          os.lseek(fd, offset, os.SEEK_SET)
+          size = min(self.meta.block_size, sres.st_size - offset)
+
+          return os.read(fd, size)
+    except FileNotFoundError:
+      pass
+
+  def read_block(self, offset):
+    tas.check_eq(offset % self.meta.block_size, 0,
+                 msg=f'Block offset ({offset}) must be multiple of {self.meta.block_size}')
+
+    if not self._reader.support_blocks():
+      boffset = self.WHOLE_OFFSET
+    else:
+      boffset, offset = offset, 0
+
+    data = self._try_block(boffset, offset)
+    if data is None:
+      read_size = self._fetch_block(boffset)
+      if read_size > 0:
+        data = self._try_block(boffset, offset)
+
+    return data
+
+  def size(self):
+    size = self.meta.size
+    if size is None:
+      tas.check(not self._reader.support_blocks(),
+                msg=f'Readers supporting block reads must provide a proper size ' \
+                f'within the metadata')
+      size = self._fetch_block(self.WHOLE_OFFSET)
+      meta = self.meta.clone(size=size)
+      self.save_meta(self._path, meta)
+      self.meta = meta
+
+    return size
+
+  def locked(self):
+    return lockf.LockFile(self._path)
+
+  @classmethod
+  def blocks_dir(cls, path):
+    return os.path.join(path, cls.BLOCKSDIR)
+
+  @classmethod
+  def block_file(cls, path, cid, offset):
+    block_id = f'block-{cid}-{offset}' if offset >= 0 else f'block-{cid}'
+
+    return os.path.join(cls.blocks_dir(path), block_id)
+
+  @classmethod
+  def parse_block_file(cls, fname):
+    m = re.match(r'block\-([^\-]+)(\-(.*))?', fname)
+    if m:
+      offset = m.group(3)
+      offset = int(offset) if offset is not None else cls.WHOLE_OFFSET
+
+      return m.group(1), offset
+
+  @classmethod
+  def purge_blocks(cls, path, max_age=None):
+    meta = cls.load_meta(path)
+
+    bpath = cls.blocks_dir(path)
+    dropped = []
+    with os.scandir(bpath) as sdit:
+      for de in sdit:
+        if de.is_file():
+          pbf = cls.parse_block_file(de.name)
+          if pbf is not None:
+            cid, offset = pbf
+            if cid != meta.cid:
+              dropped.append(de.name)
+
+    for bfile in dropped:
+      blk_path = os.path.join(bpath, bfile)
+      try:
+        sres = os.stat(blk_path)
+        if max_age is None or (time.time() - sres.st_mtime) > max_age:
+          alog.info(f'Removing block file {de.name} from {path} ({meta})')
+          os.remove(blk_path)
+      except Exception as ex:
+        alog.warning(f'Unable to purge block file from {bfile} from {path}: {ex}')
+
+  @classmethod
+  def save_meta(cls, path, meta):
+    mpath = os.path.join(path, cls.METAFILE)
+    tpath = rngu.temp_path(nspath=mpath)
+    with open(tpath, mode='w') as fd:
+      yaml.dump(meta.as_dict(), fd, default_flow_style=False)
+
+    os.replace(tpath, mpath)
+
+  @classmethod
+  def load_meta(cls, path):
+    mpath = os.path.join(path, cls.METAFILE)
+    with open(mpath, mode='r') as fd:
+      meta = yaml.safe_load(fd)
+
+      return Meta(**meta)
+
+
+
+class CachedFile:
+
+  def __init__(self, cbf):
+    self._cbf = cbf
+    self._offset = 0
+    self._block_start = 0
+    self._block = None
+
+  def close(self):
+    self._cbf = None
+
+  @property
+  def closed(self):
+    return self._cbf is None
+
+  def seek(self, pos, whence=os.SEEK_SET):
+    if whence == os.SEEK_SET:
+      offset = pos
+    elif whence == os.SEEK_CUR:
+      offset = self._offset + pos
+    elif whence == os.SEEK_END:
+      offset = self._cbf.size() + pos
+    else:
+      alog.xraise(ValueError, f'Invalid seek mode: {whence}')
+
+    tas.check_le(offset, self._cbf.size(), msg=f'Offset out of range')
+    tas.check_ge(offset, 0, msg=f'Offset out of range')
+
+    self._offset = offset
+
+    return offset
+
+  def tell(self):
+    return self._offset
+
+  def _ensure_buffer(self, offset):
+    boffset = offset - self._block_start
+    if self._block is None or boffset < 0 or boffset >= len(self._block):
+      block_offset = (offset // self._cbf.meta.block_size) * self._cbf.meta.block_size
+
+      self._block = memoryview(self._cbf.read_block(block_offset))
+      self._block_start = block_offset
+      boffset = offset - block_offset
+
+    return boffset
+
+  def read(self, size=-1):
+    if size < 0:
+      rsize = self._cbf.size() - self._offset
+    else:
+      rsize = min(size, self._cbf.size() - self._offset)
+
+    parts = []
+    while rsize > 0:
+      boffset = self._ensure_buffer(self._offset)
+
+      csize = min(rsize, len(self._block) - boffset)
+      parts.append(self._block[boffset: boffset + csize])
+      self._offset += csize
+      rsize -= csize
+
+    return b''.join(parts)
+
+  def read1(self, size=-1):
+    return self.read(size=size)
+
+  def peek(self, size=0):
+    if size > 0:
+      boffset = self._ensure_buffer(self._offset)
+      csize = min(size, len(self._block) - boffset)
+
+      return self._block[boffset: boffset + csize].tobytes()
+
+    return b''
+
+  def flush(self):
+    pass
+
+  def readable(self):
+    return self._cbf is not None
+
+  def seekable(self):
+    return self._cbf is not None
+
+  def writable(self):
+    return False
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, *exc):
+    self.close()
+
+    return False
+
+
