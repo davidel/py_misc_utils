@@ -30,13 +30,20 @@ class GcsReader:
     return True
 
   def read_block(self, bpath, offset, size):
-    size = min(size, self._dentry.st_size - offset)
-    data = self._fs.pread(self._path, offset, size)
+    if offset != chf.CachedBlockFile.WHOLE_OFFSET:
+      size = min(size, self._dentry.st_size - offset)
+      data = self._fs.pread(self._path, offset, size)
 
-    with open(bpath, mode='wb') as wfd:
-      wfd.write(data)
+      with open(bpath, mode='wb') as wfd:
+        wfd.write(data)
 
-    return len(data)
+      return len(data)
+    else:
+      with open(bpath, mode='wb') as wfd:
+        for data in self._fs.download(self._path):
+          wfd.write(data)
+
+      return os.path.getsize(bpath)
 
 
 class GcsFs(fsb.FsBase):
