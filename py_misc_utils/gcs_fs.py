@@ -4,6 +4,7 @@ import stat as st
 
 import google.cloud.storage as gcs
 
+from . import alog
 from . import fs_base as fsb
 
 
@@ -49,17 +50,21 @@ class GcsFs:
                         st_ctime=blob.time_created.timestamp(),
                         st_mtime=blob.updated.timestamp())
 
-  def listdir(self, path):
+  def _norm_path(self, path):
     if path:
       if path == '/':
         path = ''
       else:
         path = path + '/' if not path.endswith('/') else path
 
-    dents = dict()
+    return path
 
-    for blob in self._client.list_blobs(self._bucket, prefix=path):
-      if (de := self._blob_stat(blob, base_path=path)) is not None:
+  def listdir(self, path):
+    npath = self._norm_path(path)
+
+    dents = dict()
+    for blob in self._client.list_blobs(self._bucket, prefix=npath):
+      if (de := self._blob_stat(blob, base_path=npath)) is not None:
         dde = dents.get(de.name)
         if dde is not None:
           de = de._replace(st_ctime=min(de.st_ctime, dde.st_ctime),
@@ -139,4 +144,15 @@ class GcsFs:
 
     bucket.copy_blob(src_blob, bucket, dest_path)
     bucket.delete_blob(src_path)
+
+  def rmtree(self, path, ignore_errors=None):
+    npath = self._norm_path(path)
+
+    for blob in self._client.list_blobs(self._bucket, prefix=npath):
+      try:
+        blob.delete()
+      except Exception as ex:
+        alog.debug(f'Failed to remove "{blob.name}" from "{self._bucket}": {ex}')
+        if ignore_errors in (None, False):
+          raise
 
