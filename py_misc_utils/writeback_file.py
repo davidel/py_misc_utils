@@ -31,7 +31,7 @@ def _writeback(stream, writeback_fn):
     'tell',
     'truncate',
     'write',
-    'writeable',
+    'writable',
     'writelines',
   ),
 )
