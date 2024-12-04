@@ -295,3 +295,40 @@ class CachedFile:
     return False
 
 
+def get_cache_path(cache_dir, url):
+  uhash = hashlib.sha1(url.encode()).hexdigest()
+
+  return os.path.join(cache_dir, uhash)
+
+
+def cleanup_cache(cache_dir, max_age=None):
+  with os.scandir(cache_dir) as sdit:
+    for de in sdit:
+      if de.is_dir():
+        cfpath = os.path.join(cache_dir, de.name)
+        with lockf.LockFile(cfpath):
+          try:
+            CachedBlockFile.purge_blocks(cfpath, max_age=max_age)
+          except Exception as ex:
+            alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
+
+
+_CACHE_DIR = os.getenv('GFS_CACHE_DIR',
+                       os.path.join(os.getenv('HOME', '.'), '.cache'))
+
+def create_cached_file(url, meta, reader, cache_dir=None):
+  cache_dir = cache_dir or _CACHE_DIR
+
+  cfpath = get_cache_path(cache_dir, url)
+  with lockf.LockFile(cfpath):
+    meta = CachedBlockFile.prepare_meta(meta, url=url)
+    if not os.path.isdir(cfpath):
+      CachedBlockFile.create(cfpath, meta)
+    else:
+      xmeta = CachedBlockFile.load_meta(cfpath)
+      if xmeta.cid != meta.cid:
+        alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
+        CachedBlockFile.save_meta(cfpath, meta)
+
+  return CachedFile(CachedBlockFile(cfpath, reader))
+
