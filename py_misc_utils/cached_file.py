@@ -325,11 +325,8 @@ def cleanup_cache(cache_dir, max_age=None):
             alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
 
 
-_CACHE_DIR = os.getenv('GFS_CACHE_DIR',
-                       os.path.join(os.getenv('HOME', '.'), '.cache'))
-
 def create_cached_file(url, meta, reader, cache_dir=None):
-  cache_dir = cache_dir or _CACHE_DIR
+  cache_dir = get_cache_dir(path=cache_dir)
 
   cfpath = get_cache_path(cache_dir, url)
   with lockf.LockFile(cfpath):
@@ -343,4 +340,11 @@ def create_cached_file(url, meta, reader, cache_dir=None):
         CachedBlockFile.save_meta(cfpath, meta)
 
   return CachedFile(CachedBlockFile(cfpath, reader))
+
+
+_CACHE_DIR = os.getenv('GFS_CACHE_DIR',
+                       os.path.join(os.getenv('HOME', '.'), '.cache', 'gfs'))
+
+def get_cache_dir(path=None):
+  return fsu.normpath(path or _CACHE_DIR)
 

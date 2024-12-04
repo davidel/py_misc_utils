@@ -79,6 +79,14 @@ def drop_ext(path, exts):
   return xpath if ext in exts else path
 
 
+def normpath(path):
+  path = os.path.expanduser(path)
+  path = os.path.expandvars(path)
+  path = os.path.abspath(path)
+
+  return os.path.normpath(path)
+
+
 def enum_chunks(stream, chunk_size=16 * 1024**2):
   while True:
     data = stream.read(chunk_size)
