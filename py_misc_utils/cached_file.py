@@ -164,7 +164,7 @@ class CachedBlockFile:
 
   @classmethod
   def parse_block_file(cls, fname):
-    m = re.match(r'block\-([^\-]+)(\-(.*))?', fname)
+    m = re.match(r'block\-([^\-]+)(\-(\d+))?$', fname)
     if m:
       offset = m.group(3)
       offset = int(offset) if offset is not None else cls.WHOLE_OFFSET
