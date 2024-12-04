@@ -88,7 +88,7 @@ class CachedBlockFile:
       else:
         rsize = sres.st_size
 
-    return rsize
+    return rsize, bpath
 
   def _try_block(self, boffset, offset):
     bpath = self._block_file(boffset)
@@ -118,6 +118,9 @@ class CachedBlockFile:
 
     return boffset, offset
 
+  def cacheall(self):
+    return self._fetch_block(self.WHOLE_OFFSET)
+
   def read_block(self, offset):
     tas.check_eq(offset % self.meta.block_size, 0,
                  msg=f'Block offset ({offset}) must be multiple of {self.meta.block_size}')
@@ -126,7 +129,7 @@ class CachedBlockFile:
 
     data = self._try_block(boffset, offset)
     if data is None:
-      read_size = self._fetch_block(boffset)
+      read_size, _ = self._fetch_block(boffset)
       if read_size > 0:
         data = self._try_block(boffset, offset)
 
@@ -138,7 +141,7 @@ class CachedBlockFile:
       tas.check(not self._reader.support_blocks(),
                 msg=f'Readers supporting block reads must provide a proper size ' \
                 f'within the metadata')
-      size = self._fetch_block(self.WHOLE_OFFSET)
+      size, _ = self._fetch_block(self.WHOLE_OFFSET)
       meta = self.meta.clone(size=size)
       self.save_meta(self._path, meta)
       self.meta = meta
