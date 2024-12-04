@@ -5,13 +5,13 @@ import shutil
 import time
 import yaml
 
-from . import alog as alog
+from . import alog
 from . import assert_checks as tas
 from . import fs_utils as fsu
 from . import lockfile as lockf
 from . import no_except as nox
-from . import obj as obj
-from . import osfd as osfd
+from . import obj
+from . import osfd
 from . import rnd_utils as rngu
 
 
@@ -210,7 +210,6 @@ class CachedBlockFile:
       return Meta(**meta)
 
 
-
 class CachedFile:
 
   def __init__(self, cbf):
@@ -307,28 +306,31 @@ class CachedFile:
     return False
 
 
-def get_cache_path(cache_dir, url):
+def _get_cache_path(cache_dir, url):
   uhash = hashlib.sha1(url.encode()).hexdigest()
 
   return os.path.join(cache_dir, uhash)
 
 
-def cleanup_cache(cache_dir, max_age=None):
-  with os.scandir(cache_dir) as sdit:
-    for de in sdit:
-      if de.is_dir():
-        cfpath = os.path.join(cache_dir, de.name)
-        with lockf.LockFile(cfpath):
-          try:
-            CachedBlockFile.purge_blocks(cfpath, max_age=max_age)
-          except Exception as ex:
-            alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
+def cleanup_cache(cache_dir=None, max_age=None):
+  cache_dir = get_cache_dir(path=cache_dir)
+
+  if os.path.isdir(cache_dir):
+    with os.scandir(cache_dir) as sdit:
+      for de in sdit:
+        if de.is_dir():
+          cfpath = os.path.join(cache_dir, de.name)
+          with lockf.LockFile(cfpath):
+            try:
+              CachedBlockFile.purge_blocks(cfpath, max_age=max_age)
+            except Exception as ex:
+              alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
 
 
 def create_cached_file(url, meta, reader, cache_dir=None):
   cache_dir = get_cache_dir(path=cache_dir)
 
-  cfpath = get_cache_path(cache_dir, url)
+  cfpath = _get_cache_path(cache_dir, url)
   with lockf.LockFile(cfpath):
     meta = CachedBlockFile.prepare_meta(meta, url=url)
     if not os.path.isdir(cfpath):
