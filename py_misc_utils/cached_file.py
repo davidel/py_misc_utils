@@ -103,14 +103,26 @@ class CachedBlockFile:
     except FileNotFoundError:
       pass
 
+  def _translate_offset(self, offset):
+    has_whole_content = False
+    if self._reader.support_blocks():
+      # Even if the reader supports blocks, we might have cached the whole content
+      # at once, so make sure we do not waste the cached whole content.
+      bpath = self._block_file(self.WHOLE_OFFSET)
+      has_whole_content = os.path.exists(bpath)
+
+    if has_whole_content:
+      boffset = self.WHOLE_OFFSET
+    else:
+      boffset, offset = offset, 0
+
+    return boffset, offset
+
   def read_block(self, offset):
     tas.check_eq(offset % self.meta.block_size, 0,
                  msg=f'Block offset ({offset}) must be multiple of {self.meta.block_size}')
 
-    if not self._reader.support_blocks():
-      boffset = self.WHOLE_OFFSET
-    else:
-      boffset, offset = offset, 0
+    boffset, offset = self._translate_offset(offset)
 
     data = self._try_block(boffset, offset)
     if data is None:
