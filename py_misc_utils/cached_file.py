@@ -26,10 +26,10 @@ class CachedBlockFile:
   WHOLE_OFFSET = -1
   CID_SIZE = 16
 
-  def __init__(self, path, reader):
+  def __init__(self, path, reader, meta=None):
     self._path = path
     self._reader = reader
-    self.meta = self.load_meta(path)
+    self.meta = self.load_meta(path) if meta is None else meta
 
   @classmethod
   def default_meta(cls):
@@ -341,7 +341,7 @@ def create_cached_file(url, meta, reader, cache_dir=None):
         alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
         CachedBlockFile.save_meta(cfpath, meta)
 
-  return CachedFile(CachedBlockFile(cfpath, reader))
+    return CachedFile(CachedBlockFile(cfpath, reader, meta=meta))
 
 
 _CACHE_DIR = os.getenv('GFS_CACHE_DIR',
