@@ -66,9 +66,9 @@ class GcsFs(fsb.FsBase):
     src_fs, src_purl = self._parse_url(src_url)
     dest_fs, dest_purl = self._parse_url(dest_url)
 
-    tas.check(src_fs is dest_fs,
-              msg=f'Source and destination URL must be on the same bucket: ' \
-              f'{src_purl} vs. {dest_purl}')
+    tas.check_eq(src_purl.hostname, dest_purl.hostname,
+                 msg=f'Source and destination URL must be on the same bucket: ' \
+                 f'{src_url} vs. {dest_url}')
 
     src_fs.rename(src_purl.path, dest_purl.path)
 
