@@ -104,7 +104,7 @@ class CachedBlockFile:
       pass
 
   def _translate_offset(self, offset):
-    has_whole_content = False
+    has_whole_content = True
     if self._reader.support_blocks():
       # Even if the reader supports blocks, we might have cached the whole content
       # at once, so make sure we do not waste the cached whole content.
