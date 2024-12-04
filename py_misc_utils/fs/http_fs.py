@@ -142,31 +142,6 @@ class HttpFs(fsb.FsBase):
 
     self.remove(src_url)
 
-  def _upload_file(self, url, stream):
-    ctype, cencoding = mimetypes.guess_type(url, strict=False)
-
-    headers = self._headers.copy()
-    if ctype is not None:
-      headers[hu.CONTENT_TYPE] = ctype
-    if cencoding is not None:
-      headers[hu.CONTENT_ENCODING] = cencoding
-
-    stream.seek(0)
-
-    requests.put(url, headers=headers, data=fsu.enum_chunks(stream))
-
-  def _download_file(self, url, chunk_size=None):
-    resp = requests.get(url, headers=self._headers, stream=True)
-    resp.raise_for_status()
-
-    with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
-      chunk_size = chunk_size or 16 * 1024**2
-
-      for data in resp.iter_content(chunk_size=chunk_size):
-        ftmp.v.write(data)
-
-      return ftmp.detach()
-
   def mkdir(self, url, mode=None):
     pass
 
@@ -195,6 +170,44 @@ class HttpFs(fsb.FsBase):
           yield de
         except Exception as ex:
           alog.debug(f'Unable to stat URL {lurl}: {ex}')
+
+  def _upload_data_gen(self, url, data_gen):
+    ctype, cencoding = mimetypes.guess_type(url, strict=False)
+
+    headers = self._headers.copy()
+    if ctype is not None:
+      headers[hu.CONTENT_TYPE] = ctype
+    if cencoding is not None:
+      headers[hu.CONTENT_ENCODING] = cencoding
+
+    requests.put(url, headers=headers, data=data_gen)
+
+  def _upload_file(self, url, stream):
+    stream.seek(0)
+    self._upload_data_gen(url, fsu.enum_chunks(stream))
+
+  def _iterate_chunks(self, url, chunk_size=None):
+    chunk_size = chunk_size or 16 * 1024**2
+
+    resp = requests.get(url, headers=self._headers, stream=True)
+    resp.raise_for_status()
+
+    for data in resp.iter_content(chunk_size=chunk_size):
+      yield data
+
+  def _download_file(self, url, chunk_size=None):
+    with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
+      for data in self._iterate_chunks(url, chunk_size=chunk_size):
+        ftmp.v.write(data)
+
+      return ftmp.detach()
+
+  def put_file(self, url, data_gen):
+    self._upload_data_gen(url, data_gen)
+
+  def get_file(self, url):
+    for data in self._iterate_chunks(url):
+      yield data
 
 
 FILE_SYSTEMS = (HttpFs,)

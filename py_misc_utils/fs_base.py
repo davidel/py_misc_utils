@@ -73,3 +73,11 @@ class FsBase(abc.ABC):
   def list(self, url):
     ...
 
+  @abc.abstractmethod
+  def put_file(self, url, data_gen):
+    ...
+
+  @abc.abstractmethod
+  def get_file(self, url):
+    ...
+

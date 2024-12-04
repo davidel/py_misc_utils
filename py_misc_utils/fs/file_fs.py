@@ -5,6 +5,7 @@ import shutil
 from .. import alog as alog
 from .. import assert_checks as tas
 from .. import fs_base as fsb
+from .. import fs_utils as fsu
 
 
 class FileFs(fsb.FsBase):
@@ -70,6 +71,16 @@ class FileFs(fsb.FsBase):
                            st_size=sres.st_size,
                            st_ctime=sres.st_ctime,
                            st_mtime=sres.st_mtime)
+
+  def put_file(self, url, data_gen):
+    with open(url, mode='wb') as fd:
+      for data in data_gen:
+        fd.write(data)
+
+  def get_file(self, url):
+    with open(url, mode='rb') as fd:
+      for data in fsu.enum_chunks(fd):
+        yield data
 
 
 FILE_SYSTEMS = (FileFs,)

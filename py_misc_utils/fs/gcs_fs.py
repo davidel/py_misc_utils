@@ -64,21 +64,6 @@ class GcsFs(fsb.FsBase):
 
     return fs, purl
 
-  def _upload_file(self, url, stream):
-    fs, purl = self._parse_url(url)
-
-    stream.seek(0)
-    fs.upload(purl.path, fsu.enum_chunks(stream))
-
-  def _download_file(self, url):
-    fs, purl = self._parse_url(url)
-
-    with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
-      for chunk in fs.download(purl.path):
-        ftmp.v.write(chunk)
-
-      return ftmp.detach()
-
   def remove(self, url):
     fs, purl = self._parse_url(url)
     fs.remove(purl.path)
@@ -142,6 +127,28 @@ class GcsFs(fsb.FsBase):
       wbfile = wbf.WritebackFile(url_file, writeback_fn)
 
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
+
+  def _upload_file(self, url, stream):
+    stream.seek(0)
+    self.put_file(url, fsu.enum_chunks(stream))
+
+  def _download_file(self, url):
+    with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
+      for data in self.get_file(url):
+        ftmp.v.write(data)
+
+      return ftmp.detach()
+
+  def put_file(self, url, data_gen):
+    fs, purl = self._parse_url(url)
+
+    fs.upload(purl.path, data_gen)
+
+  def get_file(self, url):
+    fs, purl = self._parse_url(url)
+
+    for data in fs.download(purl.path):
+      yield data
 
 
 FILE_SYSTEMS = (GcsFs,)

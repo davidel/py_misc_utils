@@ -11,6 +11,7 @@ from .. import alog as alog
 from .. import assert_checks as tas
 from .. import context_managers as cm
 from .. import fs_base as fsb
+from .. import fs_utils as fsu
 from .. import cached_file as chf
 from .. import no_except as nox
 from .. import writeback_file as wbf
@@ -92,22 +93,6 @@ class FtpFs(fsb.FsBase):
     conn = self._get_connection(host, port, user, passwd)
 
     return conn, purl
-
-  def _upload_file(self, url, stream):
-    conn, purl = self._parse_url(url)
-
-    stream.seek(0)
-    with conn.open(purl.path, mode='wb') as dest_fd:
-      conn.copyfileobj(stream, dest_fd)
-
-  def _download_file(self, url):
-    conn, purl = self._parse_url(url)
-
-    with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
-      with conn.open(purl.path, mode='rb') as src_fd:
-        conn.copyfileobj(src_fd, ftmp.v)
-
-      return ftmp.detach()
 
   def remove(self, url):
     conn, purl = self._parse_url(url)
@@ -193,6 +178,36 @@ class FtpFs(fsb.FsBase):
       wbfile = wbf.WritebackFile(url_file, writeback_fn)
 
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
+
+  def _upload_file(self, url, stream):
+    conn, purl = self._parse_url(url)
+
+    stream.seek(0)
+    with conn.open(purl.path, mode='wb') as dest_fd:
+      conn.copyfileobj(stream, dest_fd)
+
+  def _download_file(self, url):
+    conn, purl = self._parse_url(url)
+
+    with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
+      with conn.open(purl.path, mode='rb') as src_fd:
+        conn.copyfileobj(src_fd, ftmp.v)
+
+      return ftmp.detach()
+
+  def put_file(self, url, data_gen):
+    conn, purl = self._parse_url(url)
+
+    with conn.open(purl.path, mode='wb') as fd:
+      for data in data_gen:
+        fd.write(data)
+
+  def get_file(self, url):
+    conn, purl = self._parse_url(url)
+
+    with conn.open(purl.path, mode='rb') as fd:
+      for data in fsu.enum_chunks(fd):
+        yield data
 
 
 FILE_SYSTEMS = (FtpFs,)
