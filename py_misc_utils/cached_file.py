@@ -79,12 +79,13 @@ class CachedBlockFile:
     with lockf.LockFile(bpath):
       if (sres := fsu.stat(bpath)) is None:
         tpath = rngu.temp_path(nspath=bpath)
-        rsize = self._reader.read_block(tpath, offset, self.meta.block_size)
-
-        if rsize > 0:
-          os.replace(tpath, bpath)
-        else:
+        try:
+          rsize = self._reader.read_block(tpath, offset, self.meta.block_size)
+          if rsize > 0:
+            os.replace(tpath, bpath)
+        except:
           nox.qno_except(os.remove, tpath)
+          raise
       else:
         rsize = sres.st_size
 
