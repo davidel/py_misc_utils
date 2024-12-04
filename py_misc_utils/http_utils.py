@@ -49,7 +49,7 @@ def add_range(headers, start, stop):
 
 
 def date_to_epoch(http_date):
-  htime = time.strptime(tt, '%a, %d %b %Y %I:%M:%S %Z')
+  htime = time.strptime(http_date, '%a, %d %b %Y %I:%M:%S %Z')
 
   return time.mktime(htime)
 
