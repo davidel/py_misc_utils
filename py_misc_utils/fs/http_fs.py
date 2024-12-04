@@ -22,7 +22,7 @@ from .. import writeback_file as wbf
 
 class HttpReader:
 
-  def __init__(self, url, head=None, headers=None):
+  def __init__(self, url, head=None, headers=None, chunk_size=None):
     if head is None:
       head = requests.head(url, headers=headers)
       head.raise_for_status()
@@ -31,6 +31,7 @@ class HttpReader:
 
     self._url = url
     self._headers = headers.copy() if headers else dict()
+    self._chunk_size = chunk_size or 16 * 1024**2
     self._size = hu.content_length(head.headers)
     self._support_blocks = self._size is not None and allow_ranges
 
@@ -46,8 +47,8 @@ class HttpReader:
     return self._support_blocks
 
   def read_block(self, bpath, offset, size):
-    with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd:
-      if self._support_blocks:
+    if self._support_blocks and offset != chf.CachedBlockFile.WHOLE_OFFSET:
+      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd:
         size = min(size, self._size - offset)
 
         headers = self._headers.copy()
@@ -55,19 +56,19 @@ class HttpReader:
 
         resp = requests.get(self._url, headers=headers)
         resp.raise_for_status()
-        data = resp.content
-
-        os.write(wfd, data)
-      else:
-        tas.check_eq(offset, chf.CachedBlockFile.WHOLE_OFFSET,
-                     msg=f'Wrong offset for whole content read: {offset}')
-        resp = requests.get(self._url, headers=self._headers)
-        resp.raise_for_status()
-        data = resp.content
+        data = hu.range_data(offset, offset + size - 1, resp.headers, resp.content)
 
         os.write(wfd, data)
 
-      return len(data)
+        return len(data)
+    else:
+      resp = requests.get(self._url, headers=self._headers, stream=True)
+      resp.raise_for_status()
+      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd:
+        for data in resp.iter_content(chunk_size=self._chunk_size):
+          os.write(wfd, data)
+
+      return os.path.getsize(bpath)
 
 
 class HttpFs(fsb.FsBase):

@@ -186,7 +186,8 @@ class StreamUrl:
 
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()
-        data = resp.content
+        data = hu.range_data(self._offset, self._offset + size - 1,
+                             resp.headers, resp.content)
 
         tas.check_eq(self._etag, resp.headers.get(hu.ETAG),
                      msg=f'Expired content at "{self._url}"')

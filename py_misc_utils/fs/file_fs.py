@@ -4,6 +4,7 @@ import shutil
 
 from .. import alog
 from .. import assert_checks as tas
+from .. import cached_file as chf
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import osfd
@@ -22,13 +23,19 @@ class FileReader:
     return True
 
   def read_block(self, bpath, offset, size):
-    with (osfd.OsFd(self._path, os.O_RDONLY) as rfd,
-          osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd):
-      os.lseek(rfd, offset, os.SEEK_SET)
-      data = os.read(rfd, size)
-      os.write(wfd, data)
+    if offset == chf.CachedBlockFile.WHOLE_OFFSET:
+      with (open(self._path, mode='rb') as rfd, open(bpath, mode='wb') as wfd):
+        shutil.copyfileobj(rfd, wfd)
 
-      return len(data)
+      return os.path.getsize(bpath)
+    else:
+      with (osfd.OsFd(self._path, os.O_RDONLY) as rfd,
+            osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd):
+        os.lseek(rfd, offset, os.SEEK_SET)
+        data = os.read(rfd, size)
+        os.write(wfd, data)
+
+        return len(data)
 
 
 class FileFs(fsb.FsBase):
