@@ -109,6 +109,12 @@ class GcsFs:
 
     return blob.download_as_bytes(start=offset, end=offset + size - 1, raw_download=True)
 
+  def exists(self, path):
+    bucket = self._client.bucket(self._bucket)
+    blob = bucket.blob(path)
+
+    return blob.exists()
+
   def stat(self, path):
     bucket = self._client.bucket(self._bucket)
     blob = bucket.get_blob(path)
