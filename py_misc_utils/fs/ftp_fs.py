@@ -7,7 +7,7 @@ import os
 import tempfile
 import urllib.parse as uparse
 
-from .. import alog as alog
+from .. import alog
 from .. import assert_checks as tas
 from .. import context_managers as cm
 from .. import fs_base as fsb

@@ -2,10 +2,33 @@ import hashlib
 import os
 import shutil
 
-from .. import alog as alog
+from .. import alog
 from .. import assert_checks as tas
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
+from .. import osfd
+
+
+class FileReader:
+
+  def __init__(self, path):
+    self._path = path
+
+  @classmethod
+  def tag(cls, sres):
+    return f'size={sres.st_size},mtime={sres.st_mtime}'
+
+  def support_blocks(self):
+    return True
+
+  def read_block(self, bpath, offset, size):
+    with (osfd.OsFd(self._path, os.O_RDONLY) as rfd,
+          osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd):
+      os.lseek(rfd, offset, os.SEEK_SET)
+      data = os.read(rfd, size)
+      os.write(wfd, data)
+
+      return len(data)
 
 
 class FileFs(fsb.FsBase):
