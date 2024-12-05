@@ -87,6 +87,8 @@ class CachedBlockFile:
           rsize = self._reader.read_block(tpath, offset, self.meta.block_size)
           if rsize > 0:
             os.replace(tpath, bpath)
+            if offset == self.WHOLE_OFFSET:
+              self._make_link(bpath)
         except:
           nox.qno_except(os.remove, tpath)
           raise
@@ -94,6 +96,15 @@ class CachedBlockFile:
         rsize = sres.st_size
 
     return rsize, bpath
+
+  def _make_link(self, bpath):
+    lpath = self.link_file(self._path, self.meta.cid, self.meta.url)
+    if not os.path.exists(lpath):
+      try:
+        os.makedirs(os.path.dirname(lpath), exist_ok=True)
+        os.link(bpath, lpath)
+      except Exception as ex:
+        alog.warning(f'Unable to create link: {bpath} -> {lpath}')
 
   def _try_block(self, boffset, offset):
     bpath = self._block_file(boffset)
