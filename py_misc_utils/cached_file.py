@@ -76,11 +76,11 @@ class CachedBlockFile:
       shutil.rmtree(tpath, ignore_errors=True)
       raise
 
-  def _block_file(self, offset):
-    return self.block_file(self._path, self.meta.cid, offset)
+  def _fblock_path(self, offset):
+    return self.fblock_path(self._path, self.meta.cid, offset)
 
   def _fetch_block(self, offset):
-    bpath = self._block_file(offset)
+    bpath = self._fblock_path(offset)
     with lockf.LockFile(bpath):
       if (sres := fsu.stat(bpath)) is None:
         tpath = rngu.temp_path(nspath=bpath)
@@ -109,7 +109,7 @@ class CachedBlockFile:
         alog.warning(f'Unable to create link: {bpath} -> {lpath}')
 
   def _try_block(self, boffset, offset):
-    bpath = self._block_file(boffset)
+    bpath = self._fblock_path(boffset)
     try:
       with osfd.OsFd(bpath, os.O_RDONLY) as fd:
         sres = os.stat(fd)
@@ -126,7 +126,7 @@ class CachedBlockFile:
     if self._reader.support_blocks():
       # Even if the reader supports blocks, we might have cached the whole content
       # at once, so make sure we do not waste the cached whole content.
-      bpath = self._block_file(self.WHOLE_OFFSET)
+      bpath = self._fblock_path(self.WHOLE_OFFSET)
       has_whole_content = os.path.exists(bpath)
 
     if has_whole_content:
@@ -172,7 +172,7 @@ class CachedBlockFile:
     return lockf.LockFile(self._path)
 
   def local_link(self):
-    return self.link_file(self._path, self.meta.cid, self.meta.url)
+    return self.flink_path(self._path, self.meta.cid, self.meta.url)
 
   @classmethod
   def blocks_dir(cls, path):
@@ -183,7 +183,7 @@ class CachedBlockFile:
     return os.path.join(path, cls.LINKSDIR)
 
   @classmethod
-  def block_file(cls, path, cid, offset):
+  def fblock_path(cls, path, cid, offset):
     block_id = f'block-{cid}-{offset}' if offset >= 0 else f'block-{cid}'
 
     return os.path.join(cls.blocks_dir(path), block_id)
@@ -198,7 +198,7 @@ class CachedBlockFile:
       return m.group(1), offset
 
   @classmethod
-  def link_file(cls, path, cid, url):
+  def flink_path(cls, path, cid, url):
     lpath = os.path.join(cls.links_dir(path), cid)
 
     return os.path.join(lpath, os.path.basename(url))
@@ -230,12 +230,18 @@ class CachedBlockFile:
         except Exception as ex:
           alog.warning(f'Unable to purge block file from {dblock.name} from {path}: {ex}')
 
-        lpath = cls.link_file(path, dblock.cid, meta.url)
+        lpath = cls.flink_path(path, dblock.cid, meta.url)
         nox.qno_except(fsu.safe_rmtree, os.path.dirname(lpath), ignore_errors=True)
+
+    return meta
+
+  @classmethod
+  def fmeta_path(cls, path):
+    return os.path.join(path, cls.METAFILE)
 
   @classmethod
   def save_meta(cls, path, meta):
-    mpath = os.path.join(path, cls.METAFILE)
+    mpath = cls.fmeta_path(path)
     tpath = rngu.temp_path(nspath=mpath)
     with open(tpath, mode='w') as fd:
       yaml.dump(meta.as_dict(), fd, default_flow_style=False)
@@ -244,7 +250,7 @@ class CachedBlockFile:
 
   @classmethod
   def load_meta(cls, path):
-    mpath = os.path.join(path, cls.METAFILE)
+    mpath = cls.fmeta_path(path)
     with open(mpath, mode='r') as fd:
       meta = yaml.safe_load(fd)
 
@@ -378,19 +384,34 @@ def _get_cache_path(cache_dir, url):
   return os.path.join(cache_dir, uhash)
 
 
-def cleanup_cache(cache_dir=None, max_age=None):
+def cleanup_cache(cache_dir=None, max_age=None, max_size=None):
   cache_dir = get_cache_dir(path=cache_dir)
 
   if os.path.isdir(cache_dir):
+    cache_files = []
     with os.scandir(cache_dir) as sdit:
       for de in sdit:
         if de.is_dir():
           cfpath = os.path.join(cache_dir, de.name)
           with lockf.LockFile(cfpath):
             try:
-              CachedBlockFile.purge_blocks(cfpath, max_age=max_age)
+              meta = CachedBlockFile.purge_blocks(cfpath, max_age=max_age)
+
+              cfsize = fsu.du(cfpath)
+              sres = os.stat(CachedBlockFile.fmeta_path(cfpath))
+              cache_files.append((cfpath, sres.st_mtime, cfsize, meta))
             except Exception as ex:
               alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
+
+    cache_files = sorted(cache_files, key=lambda cf: cf[1], reverse=True)
+    max_size = max_size or int(os.getenv('GFS_CACHE_MAXSIZE', 16 * 1024**3))
+
+    cache_size = 0
+    for cfpath, mtime, cfsize, meta in cache_files:
+      cache_size += cfsize
+      if cache_size >= max_size:
+        alog.info(f'Dropping cache for {meta.url} stored at {cfpath}')
+        CachedBlockFile.remove(cfpath)
 
 
 def make_tag(**kwargs):
