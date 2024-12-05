@@ -99,31 +99,10 @@ def maybe_open(path, **kwargs):
     pass
 
 
-_LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
-_LOCAL_RWFS = os.getenv('LOCAL_RWFS', 'simplecache')
-
-def _local_args(**kwargs):
-  mode = kwargs.pop('mode', 'rb')
-
-  is_write_mode = any(s in mode for s in ('w', '+', 'a', 'x'))
-  proxy_fs = _LOCAL_RWFS if is_write_mode else _LOCAL_ROFS
-  cache_storage = kwargs.pop('cache_storage', None) or cache_dir()
-  cache_storage = os.path.join(cache_storage, 'gfs', proxy_fs)
-
-  kwargs['mode'] = mode
-  kwargs['cache_storage'] = cache_storage
-  kwargs['cache_mapper'] = CacheMapper(cache_storage)
-
-  return proxy_fs, kwargs
-
 def as_local(path, **kwargs):
-  fs, fpath = fsspec.url_to_fs(path)
-  if is_local_fs(fs):
-    return fpath
+  fs, fpath = resolve_fs(path)
 
-  proxy_fs, lkwargs = _local_args(**kwargs)
-
-  return fsspec.open_local(f'{proxy_fs}::{path}', **lkwargs)
+  return fs.as_local(fpath)
 
 
 def path_of(path):

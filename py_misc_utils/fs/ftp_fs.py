@@ -34,7 +34,8 @@ class FtpReader:
     tas.check_eq(offset, chf.CachedBlockFile.WHOLE_OFFSET,
                  msg=f'Wrong offset for whole content read: {offset}')
 
-    with open(bpath, mode='wb') as wfd:
+    bfd = os.open(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440)
+    with open(bfd, mode='wb') as wfd:
       with self._conn.open(self._path, mode='rb') as rfd:
         self._conn.copyfileobj(rfd, wfd)
 
@@ -77,6 +78,15 @@ class FtpFs(fsb.FsBase):
     conn = self._get_connection(host, port, user, passwd)
 
     return conn, purl
+
+  def _make_reader(self, conn, purl):
+    sres = self._stat(conn, purl.path)
+
+    tag = FtpReader.tag(sres)
+    meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
+    reader = FtpReader(conn, purl.path)
+
+    return reader, meta
 
   def remove(self, url):
     conn, purl = self._parse_url(url)
@@ -142,12 +152,7 @@ class FtpFs(fsb.FsBase):
     conn, purl = self._parse_url(url)
 
     if self.read_mode(mode):
-      sres = self._stat(conn, purl.path)
-
-      tag = FtpReader.tag(sres)
-      meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
-      reader = FtpReader(conn, purl.path)
-
+      reader, meta = self._make_reader(conn, purl)
       cfile = self._cache_iface.open(url, meta, reader)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
@@ -191,6 +196,12 @@ class FtpFs(fsb.FsBase):
     with conn.open(purl.path, mode='rb') as fd:
       for data in fsu.enum_chunks(fd):
         yield data
+
+  def as_local(self, url):
+    conn, purl = self._parse_url(url)
+    reader, meta = self._make_reader(conn, purl)
+
+    return self._cache_iface.as_local(url, meta, reader)
 
 
 FILE_SYSTEMS = (FtpFs,)

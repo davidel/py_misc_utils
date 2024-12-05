@@ -99,11 +99,12 @@ class CachedBlockFile:
     return rsize, bpath
 
   def _make_link(self, bpath):
-    lpath = self.link_file(self._path, self.meta.cid, self.meta.url)
+    lpath = self.local_link()
     if not os.path.exists(lpath):
       try:
         os.makedirs(os.path.dirname(lpath), exist_ok=True)
         os.link(bpath, lpath)
+        os.chmod(lpath, 0o444)
       except Exception as ex:
         alog.warning(f'Unable to create link: {bpath} -> {lpath}')
 
@@ -136,7 +137,9 @@ class CachedBlockFile:
     return boffset, offset
 
   def cacheall(self):
-    return self._fetch_block(self.WHOLE_OFFSET)
+    size, bpath = self._fetch_block(self.WHOLE_OFFSET)
+
+    return self.local_link() if size > 0 else None
 
   def read_block(self, offset):
     tas.check_eq(offset % self.meta.block_size, 0,
@@ -167,6 +170,9 @@ class CachedBlockFile:
 
   def locked(self):
     return lockf.LockFile(self._path)
+
+  def local_link(self):
+    return self.link_file(self._path, self.meta.cid, self.meta.url)
 
   @classmethod
   def blocks_dir(cls, path):
@@ -359,6 +365,11 @@ class CacheInterface:
           CachedBlockFile.save_meta(cfpath, meta)
 
       return CachedFile(CachedBlockFile(cfpath, reader, meta=meta))
+
+  def as_local(self, url, meta, reader):
+    cfile = self.open(url, meta, reader)
+
+    return cfile.cbf.cacheall()
 
 
 def _get_cache_path(cache_dir, url):

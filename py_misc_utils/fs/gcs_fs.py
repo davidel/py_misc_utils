@@ -12,6 +12,7 @@ from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import cached_file as chf
 from .. import gcs_fs as gcs
+from .. import osfd
 from .. import writeback_file as wbf
 
 
@@ -34,14 +35,14 @@ class GcsReader:
       size = min(size, self._sres.st_size - offset)
       data = self._fs.pread(self._path, offset, size)
 
-      with open(bpath, mode='wb') as wfd:
-        wfd.write(data)
+      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
+        os.write(wfd, data)
 
       return len(data)
     else:
-      with open(bpath, mode='wb') as wfd:
+      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
         for data in self._fs.download(self._path):
-          wfd.write(data)
+          os.write(wfd, data)
 
       return os.path.getsize(bpath)
 
@@ -63,6 +64,16 @@ class GcsFs(fsb.FsBase):
     fs = self._get_fs(purl.hostname)
 
     return fs, purl
+
+  def _make_reader(self, fs, purl):
+    sres = fs.stat(purl.path)
+    tas.check_is_not_none(sres, msg=f'File does not exist: {purl.geturl()}')
+
+    tag = GcsReader.tag(sres)
+    meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
+    reader = GcsReader(fs, purl.path, sres)
+
+    return reader, meta
 
   def remove(self, url):
     fs, purl = self._parse_url(url)
@@ -107,13 +118,7 @@ class GcsFs(fsb.FsBase):
     fs, purl = self._parse_url(url)
 
     if self.read_mode(mode):
-      sres = fs.stat(purl.path)
-      tas.check_is_not_none(sres, msg=f'File does not exist: {url}')
-
-      tag = GcsReader.tag(sres)
-      meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
-      reader = GcsReader(fs, purl.path, sres)
-
+      reader, meta = self._make_reader(fs, purl)
       cfile = self._cache_iface.open(url, meta, reader)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
@@ -149,6 +154,12 @@ class GcsFs(fsb.FsBase):
 
     for data in fs.download(purl.path):
       yield data
+
+  def as_local(self, url):
+    fs, purl = self._parse_url(url)
+    reader, meta = self._make_reader(fs, purl)
+
+    return self._cache_iface.as_local(url, meta, reader)
 
 
 FILE_SYSTEMS = (GcsFs,)

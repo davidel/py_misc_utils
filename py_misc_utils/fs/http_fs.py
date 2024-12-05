@@ -52,7 +52,7 @@ class HttpReader:
 
   def read_block(self, bpath, offset, size):
     if self._support_blocks and offset != chf.CachedBlockFile.WHOLE_OFFSET:
-      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd:
+      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
         size = min(size, self._size - offset)
 
         headers = self._headers.copy()
@@ -68,7 +68,7 @@ class HttpReader:
     else:
       resp = self._session.get(self._url, headers=self._headers, stream=True)
       resp.raise_for_status()
-      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd:
+      with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
         for data in resp.iter_content(chunk_size=self._chunk_size):
           os.write(wfd, data)
 
@@ -92,6 +92,18 @@ class HttpFs(fsb.FsBase):
 
     return head.status_code == 200
 
+  def _make_reader(self, url):
+    head = self._session.head(url, headers=self._headers)
+    head.raise_for_status()
+
+    tag = HttpReader.tag(head)
+    size = hu.content_length(head.headers)
+    mtime = hu.last_modified(head.headers)
+    meta = chf.Meta(size=size, mtime=mtime, tag=tag)
+    reader = HttpReader(url, session=self._session, head=head, headers=self._headers)
+
+    return reader, meta
+
   def stat(self, url):
     head = self._session.head(url, headers=self._headers)
     head.raise_for_status()
@@ -112,15 +124,7 @@ class HttpFs(fsb.FsBase):
 
   def open(self, url, mode, **kwargs):
     if self.read_mode(mode):
-      head = self._session.head(url, headers=self._headers)
-      head.raise_for_status()
-
-      tag = HttpReader.tag(head)
-      size = hu.content_length(head.headers)
-      mtime = hu.last_modified(head.headers)
-      meta = chf.Meta(size=size, mtime=mtime, tag=tag)
-      reader = HttpReader(url, session=self._session, head=head, headers=self._headers)
-
+      reader, meta = self._make_reader(url)
       cfile = self._cache_iface.open(url, meta, reader)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
@@ -211,6 +215,11 @@ class HttpFs(fsb.FsBase):
   def get_file(self, url):
     for data in self._iterate_chunks(url):
       yield data
+
+  def as_local(self, url):
+    reader, meta = self._make_reader(url)
+
+    return self._cache_iface.as_local(url, meta, reader)
 
 
 FILE_SYSTEMS = (HttpFs,)

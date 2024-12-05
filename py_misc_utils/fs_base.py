@@ -114,3 +114,7 @@ class FsBase(abc.ABC):
   def get_file(self, url):
     ...
 
+  @abc.abstractmethod
+  def as_local(self, url):
+    ...
+
