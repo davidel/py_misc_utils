@@ -264,12 +264,15 @@ def register_fs(cls):
     _FS_REGISTRY[fsid] = cls
 
 
-def register_fs_from_path(path):
+def register_fs_from_path(path, parent=None):
   for importer, modname, _ in pkgutil.iter_modules(path=path):
     if modname.endswith('_fs'):
-      spec = importer.find_spec(modname)
-      module = importlib.util.module_from_spec(spec)
-      spec.loader.exec_module(module)
+      if parent is None:
+        spec = importer.find_spec(modname)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+      else:
+        module = importlib.import_module(f'{parent}.{modname}')
 
       file_systems = getattr(module, 'FILE_SYSTEMS', ())
       for cls in file_systems:
@@ -280,7 +283,7 @@ def register_fs_from_path(path):
 def register_modules():
   import py_misc_utils.fs as pyfs
 
-  register_fs_from_path(pyfs.__path__)
+  register_fs_from_path(pyfs.__path__, parent='py_misc_utils.fs')
 
   gfs_path = os.getenv('GFS_PATH')
   if gfs_path:
