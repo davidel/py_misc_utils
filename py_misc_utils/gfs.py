@@ -259,6 +259,7 @@ _FS_REGISTRY = dict()
 
 def register_fs(cls):
   for fsid in cls.IDS:
+    alog.debug(f'Registering file system: {fsid}')
     _FS_REGISTRY[fsid] = cls
 
 
