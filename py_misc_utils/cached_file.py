@@ -30,6 +30,7 @@ class CachedBlockFile:
   LINKSDIR = 'links'
   WHOLE_OFFSET = -1
   CID_SIZE = 16
+  BLOCKSIZE = 32 * 1024**2
 
   def __init__(self, path, reader, meta=None):
     self._path = path
@@ -38,7 +39,7 @@ class CachedBlockFile:
 
   @classmethod
   def default_meta(cls):
-    return Meta(size=None, block_size=32 * 1024**2)
+    return Meta(url=None, size=None, block_size=cls.BLOCKSIZE)
 
   @classmethod
   def prepare_meta(cls, meta, **kwargs):
