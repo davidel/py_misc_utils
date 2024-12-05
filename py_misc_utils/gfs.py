@@ -74,28 +74,23 @@ _STD_FILES = {
 }
 
 def std_open(path, **kwargs):
-  sfd = _STD_FILES.get(path)
-  if sfd is not None:
+  if isinstance(path, str) and (sfd := _STD_FILES.get(path)) is not None:
     return contextlib.nullcontext(sfd)
 
   return open(path, **kwargs)
 
 
-def open(path, **kwargs):
-  fs, fpath = resolve_fs(path, **kwargs)
+def open(source, **kwargs):
+  if (path := path_of(source)) is not None:
+    fs, fpath = resolve_fs(path, **kwargs)
 
-  return fs.open(fpath, **kwargs)
-
-
-def open_source(source, **kwargs):
-  if path := path_of(source):
-    return open(path, **kwargs)
+    return fs.open(fpath, **kwargs)
 
   return contextlib.nullcontext(source)
 
 
-def path_of(path):
-  return os.fspath(path) if isinstance(path, (str, os.PathLike)) else None
+def open_local(path, **kwargs):
+  return open(path, **kwargs)
 
 
 def maybe_open(path, **kwargs):
@@ -103,10 +98,6 @@ def maybe_open(path, **kwargs):
     return open(path, **kwargs)
   except:
     pass
-
-
-def open_local(path, **kwargs):
-  return open(path, **kwargs)
 
 
 _LOCAL_ROFS = os.getenv('LOCAL_ROFS', 'filecache')
@@ -134,6 +125,10 @@ def as_local(path, **kwargs):
   proxy_fs, lkwargs = _local_args(**kwargs)
 
   return fsspec.open_local(f'{proxy_fs}::{path}', **lkwargs)
+
+
+def path_of(path):
+  return os.fspath(path) if isinstance(path, (str, os.PathLike)) else None
 
 
 def is_file(path):

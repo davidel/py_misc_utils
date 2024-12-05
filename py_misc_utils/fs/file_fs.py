@@ -87,7 +87,7 @@ class FileFs(fsb.FsBase):
     os.rmdir(url)
 
   def rmtree(self, url, ignore_errors=None):
-    shutil.rmtree(url, ignore_errors=ignore_errors or False)
+    fsu.safe_rmtree(url, ignore_errors=ignore_errors or False)
 
   def list(self, url):
     with os.scandir(url) as sdit:

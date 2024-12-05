@@ -1,3 +1,4 @@
+import collections
 import hashlib
 import os
 import re
@@ -15,6 +16,9 @@ from . import osfd
 from . import rnd_utils as rngu
 
 
+_DroppedBlock = collections.namedtuple('DroppedBlock', 'name, sres, cid, offset')
+
+
 class Meta(obj.Obj):
   pass
 
@@ -23,6 +27,7 @@ class CachedBlockFile:
 
   METAFILE = 'META'
   BLOCKSDIR = 'blocks'
+  LINKSDIR = 'links'
   WHOLE_OFFSET = -1
   CID_SIZE = 16
 
@@ -48,10 +53,8 @@ class CachedBlockFile:
 
   @classmethod
   def remove(cls, path):
-    tpath = rngu.temp_path(nspath=path)
     try:
-      os.rename(path, tpath)
-      shutil.rmtree(tpath, ignore_errors=True)
+      fsu.safe_rmtree(path)
 
       return True
     except:
@@ -62,7 +65,8 @@ class CachedBlockFile:
     tpath = rngu.temp_path(nspath=path)
     try:
       os.makedirs(tpath, exist_ok=True)
-      os.mkdir(os.path.join(tpath, cls.BLOCKSDIR))
+      os.mkdir(cls.blocks_dir(tpath))
+      os.mkdir(cls.links_dir(tpath))
 
       cls.save_meta(tpath, meta)
 
@@ -157,6 +161,10 @@ class CachedBlockFile:
     return os.path.join(path, cls.BLOCKSDIR)
 
   @classmethod
+  def links_dir(cls, path):
+    return os.path.join(path, cls.LINKSDIR)
+
+  @classmethod
   def block_file(cls, path, cid, offset):
     block_id = f'block-{cid}-{offset}' if offset >= 0 else f'block-{cid}'
 
@@ -172,6 +180,12 @@ class CachedBlockFile:
       return m.group(1), offset
 
   @classmethod
+  def link_file(cls, path, cid, url):
+    lpath = os.path.join(cls.links_dir(path), cid)
+
+    return os.path.join(lpath, os.path.basename(url))
+
+  @classmethod
   def purge_blocks(cls, path, max_age=None):
     meta = cls.load_meta(path)
 
@@ -184,17 +198,22 @@ class CachedBlockFile:
           if pbf is not None:
             cid, offset = pbf
             if cid != meta.cid:
-              dropped.append(de.name)
+              dropped.append(_DroppedBlock(name=de.name,
+                                           sres=de.stat(),
+                                           cid=cid,
+                                           offset=offset))
 
-    for bfile in dropped:
-      blk_path = os.path.join(bpath, bfile)
-      try:
-        sres = os.stat(blk_path)
-        if max_age is None or (time.time() - sres.st_mtime) > max_age:
-          alog.info(f'Removing block file {de.name} from {path} ({meta})')
-          os.remove(blk_path)
-      except Exception as ex:
-        alog.warning(f'Unable to purge block file from {bfile} from {path}: {ex}')
+    max_age = max_age or int(os.getenv('GFS_CACHE_MAXAGE', 120))
+    for dblock in dropped:
+      if (time.time() - dblock.sres.st_mtime) > max_age:
+        try:
+          alog.info(f'Removing block file {dblock.name} from {path} ({meta})')
+          os.remove(os.path.join(bpath, dblock.name))
+        except Exception as ex:
+          alog.warning(f'Unable to purge block file from {dblock.name} from {path}: {ex}')
+
+        lpath = cls.link_file(path, dblock.cid, meta.url)
+        nox.qno_except(fsu.safe_rmtree, os.path.dirname(lpath))
 
   @classmethod
   def save_meta(cls, path, meta):

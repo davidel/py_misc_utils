@@ -4,6 +4,7 @@ import shutil
 
 from . import alog
 from . import assert_checks as tas
+from . import rnd_utils as rngu
 
 
 def link_or_copy(src_path, dest_path):
@@ -35,6 +36,12 @@ def is_newer_file(path, other):
 
 def os_opener(*args, **kwargs):
   return functools.partial(os.open, *args, **kwargs)
+
+
+def safe_rmtree(path):
+  tpath = rngu.temp_path(nspath=path)
+  os.rename(path, tpath)
+  shutil.rmtree(tpath, ignore_errors=True)
 
 
 def readall(fd):
