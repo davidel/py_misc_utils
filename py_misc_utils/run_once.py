@@ -6,9 +6,9 @@ def run_once(fn):
   @functools.wraps(fn)
   def wrapper(*args, **kwargs):
     if not wrapper.has_run:
-      result = fn(*args, **kwargs)
       wrapper.has_run = True
-      return result
+
+      return fn(*args, **kwargs)
 
   wrapper.has_run = False
 

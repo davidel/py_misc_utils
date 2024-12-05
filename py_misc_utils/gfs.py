@@ -26,9 +26,9 @@ class TempFile:
     is_local = ((nsdir is None or is_local_path(nsdir)) and
                 (nspath is None or is_local_path(nspath)))
     if is_local:
-      fs, tmp_path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir))
+      fs, tmp_path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
     else:
-      fs, tmp_path = resolve_fs(rngu.temp_path())
+      fs, tmp_path = resolve_fs(rngu.temp_path(), **kwargs)
 
     self._fs, self._path = fs, tmp_path
     self._kwargs = kwargs
