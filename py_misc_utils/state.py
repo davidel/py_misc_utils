@@ -1,6 +1,6 @@
 import pickle
 
-from . import gen_fs as gfs
+from . import gfs
 
 
 _STATE_KEY = '__SB_STATE__'

@@ -4,7 +4,7 @@ import os
 
 from . import alog
 from . import assert_checks as tas
-from . import gen_fs as gfs
+from . import gfs
 from . import module_utils as mu
 
 

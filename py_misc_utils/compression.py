@@ -4,7 +4,7 @@ import lzma
 import os
 import shutil
 
-from . import gen_fs as gfs
+from . import gfs
 
 
 def fgzip(src, dest):

@@ -9,7 +9,7 @@ import pandas as pd
 
 from . import alog
 from . import assert_checks as tas
-from . import gen_fs as gfs
+from . import gfs
 from . import np_utils as pyn
 from . import utils as pyu
 

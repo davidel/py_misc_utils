@@ -21,7 +21,7 @@ import numpy as np
 from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
-from . import gen_fs as gfs
+from . import gfs
 from . import obj
 from . import split as sp
 from . import template_replace as tr

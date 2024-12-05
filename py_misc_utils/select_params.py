@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 
 from . import alog
-from . import gen_fs as gfs
+from . import gfs
 from . import np_utils as npu
 from . import utils as ut
 

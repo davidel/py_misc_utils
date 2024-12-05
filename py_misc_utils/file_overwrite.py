@@ -1,4 +1,4 @@
-from . import gen_fs as gfs
+from . import gfs
 
 
 class FileOverwrite:

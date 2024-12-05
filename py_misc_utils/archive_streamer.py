@@ -5,7 +5,7 @@ import zipfile
 
 from . import alog as alog
 from . import assert_checks as tas
-from . import gen_fs as gfs
+from . import gfs
 
 
 ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_path')
