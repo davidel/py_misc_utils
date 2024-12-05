@@ -411,7 +411,8 @@ def cleanup_cache(cache_dir=None, max_age=None, max_size=None):
       cache_size += cfsize
       if cache_size >= max_size:
         alog.info(f'Dropping cache for {meta.url} stored at {cfpath}')
-        CachedBlockFile.remove(cfpath)
+        with lockf.LockFile(cfpath):
+          CachedBlockFile.remove(cfpath)
 
 
 def make_tag(**kwargs):
