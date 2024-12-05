@@ -80,7 +80,7 @@ class GcsFs(fsb.FsBase):
     handler = CacheHandler(bucket)
     name = ('GCSFS', bucket)
 
-    return cache().get(name, handler)
+    return objc.cache().get(name, handler)
 
   def _parse_url(self, url):
     purl = uparse.urlparse(url)
