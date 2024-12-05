@@ -247,17 +247,17 @@ class CachedBlockFile:
 class CachedFile:
 
   def __init__(self, cbf):
-    self._cbf = cbf
+    self.cbf = cbf
     self._offset = 0
     self._block_start = 0
     self._block = None
 
   def close(self):
-    self._cbf = None
+    self.cbf = None
 
   @property
   def closed(self):
-    return self._cbf is None
+    return self.cbf is None
 
   def seek(self, pos, whence=os.SEEK_SET):
     if whence == os.SEEK_SET:
@@ -265,11 +265,11 @@ class CachedFile:
     elif whence == os.SEEK_CUR:
       offset = self._offset + pos
     elif whence == os.SEEK_END:
-      offset = self._cbf.size() + pos
+      offset = self.cbf.size() + pos
     else:
       alog.xraise(ValueError, f'Invalid seek mode: {whence}')
 
-    tas.check_le(offset, self._cbf.size(), msg=f'Offset out of range')
+    tas.check_le(offset, self.cbf.size(), msg=f'Offset out of range')
     tas.check_ge(offset, 0, msg=f'Offset out of range')
 
     self._offset = offset
@@ -282,9 +282,9 @@ class CachedFile:
   def _ensure_buffer(self, offset):
     boffset = offset - self._block_start
     if self._block is None or boffset < 0 or boffset >= len(self._block):
-      block_offset = (offset // self._cbf.meta.block_size) * self._cbf.meta.block_size
+      block_offset = (offset // self.cbf.meta.block_size) * self.cbf.meta.block_size
 
-      self._block = memoryview(self._cbf.read_block(block_offset))
+      self._block = memoryview(self.cbf.read_block(block_offset))
       self._block_start = block_offset
       boffset = offset - block_offset
 
@@ -292,9 +292,9 @@ class CachedFile:
 
   def read(self, size=-1):
     if size < 0:
-      rsize = self._cbf.size() - self._offset
+      rsize = self.cbf.size() - self._offset
     else:
-      rsize = min(size, self._cbf.size() - self._offset)
+      rsize = min(size, self.cbf.size() - self._offset)
 
     parts = []
     while rsize > 0:
@@ -323,10 +323,10 @@ class CachedFile:
     pass
 
   def readable(self):
-    return self._cbf is not None
+    return self.cbf is not None
 
   def seekable(self):
-    return self._cbf is not None
+    return self.cbf is not None
 
   def writable(self):
     return False
