@@ -17,7 +17,7 @@ class FileReader:
 
   @classmethod
   def tag(cls, sres):
-    return f'size={sres.st_size},mtime={sres.st_mtime}'
+    return chf.make_tag(size=sres.st_size, mtime=sres.st_mtime)
 
   def support_blocks(self):
     return True
@@ -49,17 +49,15 @@ class FileFs(fsb.FsBase):
   def norm_url(self, url):
     return fsu.normpath(url)
 
-  def _create_etag(self, sres):
-    stag = f'size={sres.st_size},mtime={sres.st_mtime}'
-
-    return hashlib.sha1(stag.encode()).hexdigest()
+  def _create_tag(self, sres):
+    return FileReader.tag(sres)
 
   def stat(self, url):
     sres = os.stat(url)
 
     return fsb.DirEntry(name=os.path.basename(url),
                         path=url,
-                        etag=self._create_etag(sres),
+                        etag=self._create_tag(sres),
                         st_mode=sres.st_mode,
                         st_size=sres.st_size,
                         st_ctime=sres.st_ctime,
@@ -96,7 +94,7 @@ class FileFs(fsb.FsBase):
 
         yield fsb.DirEntry(name=de.name,
                            path=os.path.join(url, de.name),
-                           etag=self._create_etag(sres),
+                           etag=self._create_tag(sres),
                            st_mode=sres.st_mode,
                            st_size=sres.st_size,
                            st_ctime=sres.st_ctime,

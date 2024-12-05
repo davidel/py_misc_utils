@@ -361,6 +361,12 @@ def cleanup_cache(cache_dir=None, max_age=None):
               alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
 
 
+def make_tag(**kwargs):
+  stag = ','.join(f'{k}={v}' for k, v in kwargs.items())
+
+  return hashlib.sha1(stag.encode()).hexdigest()
+
+
 def create_cached_file(url, meta, reader, cache_dir=None):
   cache_dir = get_cache_dir(path=cache_dir)
 

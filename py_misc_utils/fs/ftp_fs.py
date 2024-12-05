@@ -24,8 +24,8 @@ class FtpReader:
     self._path = path
 
   @classmethod
-  def tag(cls, dentry):
-    return f'size={dentry.st_size},mtime={dentry.st_mtime},etag={dentry.etag}'
+  def tag(cls, sres):
+    return chf.make_tag(size=sres.st_size, mtime=sres.st_mtime)
 
   def support_blocks(self):
     return False
@@ -115,12 +115,11 @@ class FtpFs(fsb.FsBase):
   def _stat(self, conn, path):
     sres = conn.stat(path)
 
-    stag = f'size={sres.st_size},mtime={sres.st_mtime}'
-    etag = hashlib.sha1(stag.encode()).hexdigest()
+    tag = FtpReader.tag(sres)
 
     return fsb.DirEntry(name=os.path.basename(path),
                         path=path,
-                        etag=etag,
+                        etag=tag,
                         st_mode=sres.st_mode,
                         st_size=sres.st_size,
                         st_ctime=sres.st_ctime or sres.st_mtime,
@@ -143,10 +142,10 @@ class FtpFs(fsb.FsBase):
     conn, purl = self._parse_url(url)
 
     if self.read_mode(mode):
-      de = self._stat(conn, purl.path)
+      sres = self._stat(conn, purl.path)
 
-      tag = FtpReader.tag(de)
-      meta = chf.Meta(size=de.st_size, tag=tag)
+      tag = FtpReader.tag(sres)
+      meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
       reader = FtpReader(conn, purl.path)
 
       cfile = self._cache_ctor(url, meta, reader)

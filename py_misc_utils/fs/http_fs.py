@@ -37,11 +37,13 @@ class HttpReader:
 
   @classmethod
   def tag(cls, head):
-    etag = hu.etag(head.headers)
-    mtime = hu.last_modified(head.headers)
-    size = hu.content_length(head.headers)
+    tag = hu.etag(head.headers)
+    if tag is None:
+      mtime = hu.last_modified(head.headers)
+      length = hu.content_length(head.headers)
+      tag = chf.make_tag(size=length, mtime=mtime)
 
-    return f'size={size},mtime={mtime},etag={etag}'
+    return tag
 
   def support_blocks(self):
     return self._support_blocks
@@ -93,16 +95,13 @@ class HttpFs(fsb.FsBase):
 
     length = hu.content_length(head.headers)
     mtime = hu.last_modified(head.headers)
-    etag = hu.etag(head.headers)
-    if etag is None:
-      stag = f'size={length},mtime={mtime}'
-      etag = hashlib.sha1(stag.encode()).hexdigest()
+    tag = hu.etag(head.headers) or chf.make_tag(size=length, mtime=mtime)
 
     # HTML pages have content, but can also be listed (for HREF linked from it).
     # hence the weird st.S_IFREG | st.S_IFDIR.
     return fsb.DirEntry(name=os.path.basename(url.rstrip('/')),
                         path=url,
-                        etag=etag,
+                        etag=tag,
                         st_mode=st.S_IFREG | st.S_IFDIR,
                         st_size=length,
                         st_ctime=mtime,
@@ -115,7 +114,8 @@ class HttpFs(fsb.FsBase):
 
       tag = HttpReader.tag(head)
       size = hu.content_length(head.headers)
-      meta = chf.Meta(size=size, tag=tag)
+      mtime = hu.last_modified(head.headers)
+      meta = chf.Meta(size=size, mtime=mtime, tag=tag)
       reader = HttpReader(url, head=head, headers=self._headers)
 
       cfile = self._cache_ctor(url, meta, reader)

@@ -17,21 +17,21 @@ from .. import writeback_file as wbf
 
 class GcsReader:
 
-  def __init__(self, fs, path, dentry):
+  def __init__(self, fs, path, sres):
     self._fs = fs
     self._path = path
-    self._dentry = dentry
+    self._sres = sres
 
   @classmethod
-  def tag(cls, dentry):
-    return f'size={dentry.st_size},mtime={dentry.st_mtime},etag={dentry.etag}'
+  def tag(cls, sres):
+    return chf.make_tag(size=sres.st_size, mtime=sres.st_mtime)
 
   def support_blocks(self):
     return True
 
   def read_block(self, bpath, offset, size):
     if offset != chf.CachedBlockFile.WHOLE_OFFSET:
-      size = min(size, self._dentry.st_size - offset)
+      size = min(size, self._sres.st_size - offset)
       data = self._fs.pread(self._path, offset, size)
 
       with open(bpath, mode='wb') as wfd:
@@ -107,12 +107,12 @@ class GcsFs(fsb.FsBase):
     fs, purl = self._parse_url(url)
 
     if self.read_mode(mode):
-      de = fs.stat(purl.path)
-      tas.check_is_not_none(de, msg=f'File does not exist: {url}')
+      sres = fs.stat(purl.path)
+      tas.check_is_not_none(sres, msg=f'File does not exist: {url}')
 
-      tag = GcsReader.tag(de)
-      meta = chf.Meta(size=de.st_size, tag=tag)
-      reader = GcsReader(fs, purl.path, de)
+      tag = GcsReader.tag(sres)
+      meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
+      reader = GcsReader(fs, purl.path, sres)
 
       cfile = self._cache_ctor(url, meta, reader)
 
