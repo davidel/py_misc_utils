@@ -38,10 +38,10 @@ def os_opener(*args, **kwargs):
   return functools.partial(os.open, *args, **kwargs)
 
 
-def safe_rmtree(path):
+def safe_rmtree(path, **kwargs):
   tpath = rngu.temp_path(nspath=path)
   os.rename(path, tpath)
-  shutil.rmtree(tpath, ignore_errors=True)
+  shutil.rmtree(tpath, **kwargs)
 
 
 def readall(fd):
