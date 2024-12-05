@@ -43,8 +43,8 @@ class FileFs(fsb.FsBase):
   ID = 'file'
   IDS = (ID,)
 
-  def __init__(self, **kwargs):
-    super().__init__()
+  def __init__(self, cache_ctor=None, **kwargs):
+    super().__init__(cache_ctor=cache_ctor, **kwargs)
 
   def norm_url(self, url):
     return fsu.normpath(url)

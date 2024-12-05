@@ -79,9 +79,8 @@ class HttpFs(fsb.FsBase):
   IDS = (ID, 'https')
 
   def __init__(self, headers=None, cache_ctor=None, **kwargs):
-    super().__init__()
+    super().__init__(cache_ctor=cache_ctor, **kwargs)
     self._headers = headers.copy() if headers else dict()
-    self._cache_ctor = cache_ctor
 
   def _exists(self, url):
     head = requests.head(url, headers=self._headers)

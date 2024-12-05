@@ -57,8 +57,7 @@ class FtpFs(fsb.FsBase):
   IDS = (ID,)
 
   def __init__(self, cache_ctor=None, **kwargs):
-    super().__init__()
-    self._cache_ctor = cache_ctor
+    super().__init__(cache_ctor=cache_ctor, **kwargs)
 
   def _get_connection(self, host, port, user, passwd):
     return ftputil.FTPHost(host, user, passwd,

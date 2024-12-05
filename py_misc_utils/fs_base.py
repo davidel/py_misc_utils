@@ -12,6 +12,11 @@ DirEntry = collections.namedtuple(
 
 class FsBase(abc.ABC):
 
+  def __init__(self, cache_ctor=None, **kwargs):
+    super().__init__()
+    self._cache_ctor = cache_ctor
+    self._kwargs = kwargs
+
   @classmethod
   def read_mode(cls, mode):
     return 'r' in mode and not '+' in mode
