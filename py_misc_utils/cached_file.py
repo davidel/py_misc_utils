@@ -54,7 +54,7 @@ class CachedBlockFile:
   @classmethod
   def remove(cls, path):
     try:
-      fsu.safe_rmtree(path)
+      fsu.safe_rmtree(path, ignore_errors=True)
 
       return True
     except:
@@ -224,7 +224,7 @@ class CachedBlockFile:
           alog.warning(f'Unable to purge block file from {dblock.name} from {path}: {ex}')
 
         lpath = cls.link_file(path, dblock.cid, meta.url)
-        nox.qno_except(fsu.safe_rmtree, os.path.dirname(lpath))
+        nox.qno_except(fsu.safe_rmtree, os.path.dirname(lpath), ignore_errors=True)
 
   @classmethod
   def save_meta(cls, path, meta):
