@@ -5,8 +5,8 @@ import os
 import threading
 import time
 
-import py_misc_utils.alog as alog
-import py_misc_utils.fin_wrap as fw
+from . import alog as alog
+from . import fin_wrap as fw
 
 
 Entry = collections.namedtuple('Entry', 'name, obj, handler, time')
