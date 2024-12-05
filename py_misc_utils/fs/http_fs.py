@@ -22,14 +22,16 @@ from .. import writeback_file as wbf
 
 class HttpReader:
 
-  def __init__(self, url, head=None, headers=None, chunk_size=None):
+  def __init__(self, url, session=None, head=None, headers=None, chunk_size=None):
+    session = session if session is not None else requests.Session()
     if head is None:
-      head = requests.head(url, headers=headers)
+      head = session.head(url, headers=headers)
       head.raise_for_status()
 
     allow_ranges = hu.support_ranges(head.headers)
 
     self._url = url
+    self._session = session
     self._headers = headers.copy() if headers else dict()
     self._chunk_size = chunk_size or 16 * 1024**2
     self._size = hu.content_length(head.headers)
@@ -56,7 +58,7 @@ class HttpReader:
         headers = self._headers.copy()
         hu.add_range(headers, offset, offset + size - 1)
 
-        resp = requests.get(self._url, headers=headers)
+        resp = self._session.get(self._url, headers=headers)
         resp.raise_for_status()
         data = hu.range_data(offset, offset + size - 1, resp.headers, resp.content)
 
@@ -64,7 +66,7 @@ class HttpReader:
 
         return len(data)
     else:
-      resp = requests.get(self._url, headers=self._headers, stream=True)
+      resp = self._session.get(self._url, headers=self._headers, stream=True)
       resp.raise_for_status()
       with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o660) as wfd:
         for data in resp.iter_content(chunk_size=self._chunk_size):
@@ -83,14 +85,15 @@ class HttpFs(fsb.FsBase):
   def __init__(self, headers=None, cache_ctor=None, **kwargs):
     super().__init__(cache_ctor=cache_ctor, **kwargs)
     self._headers = headers.copy() if headers else dict()
+    self._session = requests.Session()
 
   def _exists(self, url):
-    head = requests.head(url, headers=self._headers)
+    head = self._session.head(url, headers=self._headers)
 
     return head.status_code == 200
 
   def stat(self, url):
-    head = requests.head(url, headers=self._headers)
+    head = self._session.head(url, headers=self._headers)
     head.raise_for_status()
 
     length = hu.content_length(head.headers)
@@ -109,14 +112,14 @@ class HttpFs(fsb.FsBase):
 
   def open(self, url, mode, **kwargs):
     if self.read_mode(mode):
-      head = requests.head(url, headers=self._headers)
+      head = self._session.head(url, headers=self._headers)
       head.raise_for_status()
 
       tag = HttpReader.tag(head)
       size = hu.content_length(head.headers)
       mtime = hu.last_modified(head.headers)
       meta = chf.Meta(size=size, mtime=mtime, tag=tag)
-      reader = HttpReader(url, head=head, headers=self._headers)
+      reader = HttpReader(url, session=self._session, head=head, headers=self._headers)
 
       cfile = self._cache_ctor(url, meta, reader)
 
@@ -133,7 +136,7 @@ class HttpFs(fsb.FsBase):
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
 
   def remove(self, url):
-    requests.delete(url, headers=self._headers)
+    self._session.delete(url, headers=self._headers)
 
   def rename(self, src_url, dest_url):
     # There is no "rename" in HTTP ...
@@ -155,7 +158,7 @@ class HttpFs(fsb.FsBase):
     pass
 
   def list(self, url):
-    resp = requests.get(url, headers=self._headers)
+    resp = self._session.get(url, headers=self._headers)
     resp.raise_for_status()
 
     html_parser = bs4.BeautifulSoup(resp.text, 'html.parser')
@@ -180,7 +183,7 @@ class HttpFs(fsb.FsBase):
     if cencoding is not None:
       headers[hu.CONTENT_ENCODING] = cencoding
 
-    requests.put(url, headers=headers, data=data_gen)
+    self._session.put(url, headers=headers, data=data_gen)
 
   def _upload_file(self, url, stream):
     stream.seek(0)
@@ -189,7 +192,7 @@ class HttpFs(fsb.FsBase):
   def _iterate_chunks(self, url, chunk_size=None):
     chunk_size = chunk_size or 16 * 1024**2
 
-    resp = requests.get(url, headers=self._headers, stream=True)
+    resp = self._session.get(url, headers=self._headers, stream=True)
     resp.raise_for_status()
 
     for data in resp.iter_content(chunk_size=chunk_size):
