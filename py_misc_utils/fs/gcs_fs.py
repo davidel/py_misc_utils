@@ -12,8 +12,29 @@ from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import cached_file as chf
 from .. import gcs_fs as gcs
+from .. import object_cache as objc
 from .. import osfd
 from .. import writeback_file as wbf
+
+
+class CacheHandler(objc.Handler):
+
+  def __init__(self, bucket):
+    super().__init__()
+    self._bucket = bucket
+
+  def create(self):
+    return gcs.GcsFs(self._bucket)
+
+  def is_alive(self, obj):
+    return True
+
+  def close(self, obj):
+    pass
+
+  def max_age(self):
+    return 60
+
 
 
 class GcsReader:
@@ -56,7 +77,10 @@ class GcsFs(fsb.FsBase):
     super().__init__(cache_iface=cache_iface, **kwargs)
 
   def _get_fs(self, bucket):
-    return gcs.GcsFs(bucket)
+    handler = CacheHandler(bucket)
+    name = ('GCSFS', bucket)
+
+    return cache().get(name, handler)
 
   def _parse_url(self, url):
     purl = uparse.urlparse(url)
