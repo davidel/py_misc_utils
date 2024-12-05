@@ -82,8 +82,8 @@ class HttpFs(fsb.FsBase):
   ID = 'http'
   IDS = (ID, 'https')
 
-  def __init__(self, headers=None, cache_ctor=None, **kwargs):
-    super().__init__(cache_ctor=cache_ctor, **kwargs)
+  def __init__(self, headers=None, cache_iface=None, **kwargs):
+    super().__init__(cache_iface=cache_iface, **kwargs)
     self._headers = headers.copy() if headers else dict()
     self._session = requests.Session()
 
@@ -121,7 +121,7 @@ class HttpFs(fsb.FsBase):
       meta = chf.Meta(size=size, mtime=mtime, tag=tag)
       reader = HttpReader(url, session=self._session, head=head, headers=self._headers)
 
-      cfile = self._cache_ctor(url, meta, reader)
+      cfile = self._cache_iface.open(url, meta, reader)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
     else:

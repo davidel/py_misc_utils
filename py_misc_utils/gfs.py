@@ -1,6 +1,5 @@
 import collections
 import contextlib
-import functools
 import importlib
 import os
 import pkgutil
@@ -320,11 +319,11 @@ def resolve_fs(path, **kwargs):
   cachedir = kwargs.pop('cache_dir', None)
   if cachedir is None:
     cachedir = cache_dir()
-  cache_ctor = kwargs.pop('cache_ctor', None)
-  if cache_ctor is None:
-    cache_ctor = functools.partial(chf.create_cached_file, cache_dir=cachedir)
+  cache_iface = kwargs.pop('cache_iface', None)
+  if cache_iface is None:
+    cache_iface = chf.CacheInterface(cache_dir=cachedir)
 
-  fs = get_proto_fs(proto, cache_ctor=cache_ctor, cache_dir=cachedir, **kwargs)
+  fs = get_proto_fs(proto, cache_iface=cache_iface, cache_dir=cachedir, **kwargs)
 
   return fs, fs.norm_url(path)
 

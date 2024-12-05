@@ -12,9 +12,9 @@ DirEntry = collections.namedtuple(
 
 class FsBase(abc.ABC):
 
-  def __init__(self, cache_ctor=None, **kwargs):
+  def __init__(self, cache_iface=None, **kwargs):
     super().__init__()
-    self._cache_ctor = cache_ctor
+    self._cache_iface = cache_iface
     self._kwargs = kwargs
 
   @classmethod

@@ -51,8 +51,8 @@ class GcsFs(fsb.FsBase):
   ID = 'gcs'
   IDS = (ID,)
 
-  def __init__(self, cache_ctor=None, **kwargs):
-    super().__init__(cache_ctor=cache_ctor, **kwargs)
+  def __init__(self, cache_iface=None, **kwargs):
+    super().__init__(cache_iface=cache_iface, **kwargs)
 
   def _get_fs(self, bucket):
     return gcs.GcsFs(bucket)
@@ -114,7 +114,7 @@ class GcsFs(fsb.FsBase):
       meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
       reader = GcsReader(fs, purl.path, sres)
 
-      cfile = self._cache_ctor(url, meta, reader)
+      cfile = self._cache_iface.open(url, meta, reader)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
     else:

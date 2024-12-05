@@ -341,6 +341,26 @@ class CachedFile:
     return False
 
 
+class CacheInterface:
+
+  def __init__(self, cache_dir=None):
+    self._cache_dir = get_cache_dir(path=cache_dir)
+
+  def open(self, url, meta, reader):
+    cfpath = _get_cache_path(self._cache_dir, url)
+    with lockf.LockFile(cfpath):
+      meta = CachedBlockFile.prepare_meta(meta, url=url)
+      if not os.path.isdir(cfpath):
+        CachedBlockFile.create(cfpath, meta)
+      else:
+        xmeta = CachedBlockFile.load_meta(cfpath)
+        if xmeta.cid != meta.cid:
+          alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
+          CachedBlockFile.save_meta(cfpath, meta)
+
+      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta))
+
+
 def _get_cache_path(cache_dir, url):
   uhash = hashlib.sha1(url.encode()).hexdigest()
 
@@ -366,23 +386,6 @@ def make_tag(**kwargs):
   stag = ','.join(f'{k}={v}' for k, v in kwargs.items())
 
   return hashlib.sha1(stag.encode()).hexdigest()
-
-
-def create_cached_file(url, meta, reader, cache_dir=None):
-  cache_dir = get_cache_dir(path=cache_dir)
-
-  cfpath = _get_cache_path(cache_dir, url)
-  with lockf.LockFile(cfpath):
-    meta = CachedBlockFile.prepare_meta(meta, url=url)
-    if not os.path.isdir(cfpath):
-      CachedBlockFile.create(cfpath, meta)
-    else:
-      xmeta = CachedBlockFile.load_meta(cfpath)
-      if xmeta.cid != meta.cid:
-        alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
-        CachedBlockFile.save_meta(cfpath, meta)
-
-    return CachedFile(CachedBlockFile(cfpath, reader, meta=meta))
 
 
 _CACHE_DIR = os.getenv('GFS_CACHE_DIR',
