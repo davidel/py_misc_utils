@@ -277,7 +277,6 @@ def register_fs_from_path(path):
         register_fs(cls)
 
 
-@ro.run_once
 def register_modules():
   import py_misc_utils.fs as pyfs
 
