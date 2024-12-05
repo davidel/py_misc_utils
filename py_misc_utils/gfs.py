@@ -277,6 +277,7 @@ def register_fs_from_path(path):
         register_fs(cls)
 
 
+@ro.run_once
 def register_modules():
   import py_misc_utils.fs as pyfs
 
@@ -289,6 +290,8 @@ def register_modules():
 
 
 def get_proto_fs(proto, **kwargs):
+  register_modules()
+
   cls = _FS_REGISTRY.get(proto)
   tas.check_is_not_none(cls, msg=f'Protocol "{proto}" not registered')
 
@@ -308,7 +311,4 @@ def resolve_fs(path, **kwargs):
   fs = get_proto_fs(proto, cache_iface=cache_iface, cache_dir=cachedir, **kwargs)
 
   return fs, fs.norm_url(path)
-
-
-register_modules()
 
