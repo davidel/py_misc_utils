@@ -19,12 +19,13 @@ from .. import writeback_file as wbf
 
 class CacheHandler(objc.Handler):
 
-  def __init__(self, bucket):
+  def __init__(self, *args, **kwargs):
     super().__init__()
-    self._bucket = bucket
+    self._args = args
+    self._kwargs = kwargs
 
   def create(self):
-    return gcs.GcsFs(self._bucket)
+    return gcs.GcsFs(*self._args, **self._kwargs)
 
   def is_alive(self, obj):
     return True

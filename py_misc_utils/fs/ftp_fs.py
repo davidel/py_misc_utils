@@ -14,7 +14,33 @@ from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import cached_file as chf
 from .. import no_except as nox
+from .. import object_cache as objc
 from .. import writeback_file as wbf
+
+
+class CacheHandler(objc.Handler):
+
+  def __init__(self, *args, **kwargs):
+    super().__init__()
+    self._args = args
+    self._kwargs = kwargs
+
+  def create(self):
+    return ftputil.FTPHost(*self._args, **self._kwargs)
+
+  def is_alive(self, obj):
+    try:
+      obj.keep_alive()
+
+      return True
+    except:
+      return False
+
+  def close(self, obj):
+    obj.close()
+
+  def max_age(self):
+    return 60
 
 
 class FtpReader:
@@ -61,9 +87,12 @@ class FtpFs(fsb.FsBase):
     super().__init__(cache_iface=cache_iface, **kwargs)
 
   def _get_connection(self, host, port, user, passwd):
-    return ftputil.FTPHost(host, user, passwd,
+    handler = CacheHandler(host, user, passwd,
                            port=port,
                            session_factory=FtpSession)
+    name = ('FTPFS', host, port, user)
+
+    return objc.cache().get(name, handler)
 
   def _netloc(self, purl):
     return (purl.hostname.lower(), purl.port or 21)
