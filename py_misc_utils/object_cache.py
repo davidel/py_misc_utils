@@ -9,7 +9,7 @@ from . import alog as alog
 from . import fin_wrap as fw
 
 
-Entry = collections.namedtuple('Entry', 'name, obj, handler, time')
+_Entry = collections.namedtuple('Entry', 'name, obj, handler, time')
 
 
 class Handler(abc.ABC):
@@ -79,10 +79,10 @@ class Cache:
   def _release(self, name, handler, obj):
     alog.debug(f'Cache Release: name={name} obj={obj}')
     with self._lock:
-      self._cache[name].append(Entry(name=name,
-                                     obj=obj,
-                                     handler=handler,
-                                     time=time.time()))
+      self._cache[name].append(_Entry(name=name,
+                                      obj=obj,
+                                      handler=handler,
+                                      time=time.time()))
 
   def get(self, name, handler):
     with self._lock:
@@ -102,7 +102,6 @@ class Cache:
       finfn = functools.partial(self._release, name, handler, obj)
 
       return fw.FinWrapper(obj, finfn)
-
 
 
 _CACHE = Cache()
