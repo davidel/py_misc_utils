@@ -265,14 +265,13 @@ def register_fs(cls):
 
 
 def register_fs_from_path(path):
-  alog.debug(f'Registration looking at {path}')
   for importer, modname, _ in pkgutil.iter_modules(path=path):
-    alog.debug(f'Got module {modname}')
     if modname.endswith('_fs'):
       spec = importer.find_spec(modname)
       module = importlib.util.module_from_spec(spec)
 
       file_systems = getattr(module, 'FILE_SYSTEMS', ())
+      alog.debug(f'Got module {modname} with {file_systems}')
       for cls in file_systems:
         register_fs(cls)
 
