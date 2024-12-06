@@ -16,7 +16,8 @@ WARNING = logging.WARNING
 ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 
-SPAM = DEBUG - 1
+SPAM = DEBUG - 2
+VERBOSE = DEBUG - 1
 DEBUG0 = DEBUG + 1
 DEBUG1 = DEBUG + 2
 DEBUG2 = DEBUG + 3
@@ -24,6 +25,7 @@ DEBUG3 = DEBUG + 4
 
 _SHORT_LEV = {
   SPAM: 'SP',
+  VERBOSE: 'VB',
   DEBUG0: '0D',
   DEBUG1: '1D',
   DEBUG2: '2D',
@@ -76,8 +78,8 @@ _DEFAULT_ARGS = dict(
 
 def add_logging_options(parser):
   parser.add_argument('--log_level', type=str, default=_DEFAULT_ARGS.get('log_level'),
-                      choices={'SPAM', 'DEBUG', 'DEBUG0', 'DEBUG1', 'DEBUG2', 'DEBUG3', \
-                               'INFO', 'WARNING', 'ERROR', 'CRITICAL'},
+                      choices={'SPAM', 'VERBOSE', 'DEBUG', 'DEBUG0', 'DEBUG1', 'DEBUG2',
+                               'DEBUG3', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'},
                       help='The logging level')
   parser.add_argument('--log_file', type=str, default=_DEFAULT_ARGS.get('log_file'),
                       help='Comma separated list of target log files (STDOUT, STDERR ' \
@@ -91,6 +93,7 @@ def add_logging_options(parser):
 @ro.run_once
 def _add_levels():
   logging.addLevelName(SPAM, 'SPAM')
+  logging.addLevelName(VERBOSE, 'VERBOSE')
   logging.addLevelName(DEBUG0, 'DEBUG0')
   logging.addLevelName(DEBUG1, 'DEBUG1')
   logging.addLevelName(DEBUG2, 'DEBUG2')
@@ -196,6 +199,11 @@ def log(level, msg, *args, **kwargs):
 def spam(msg, *args, **kwargs):
   if SPAM >= _LEVEL:
     log(SPAM, msg, *args, **_nested_args(kwargs))
+
+
+def verbose(msg, *args, **kwargs):
+  if VERBOSE >= _LEVEL:
+    log(VERBOSE, msg, *args, **_nested_args(kwargs))
 
 
 def debug0(msg, *args, **kwargs):

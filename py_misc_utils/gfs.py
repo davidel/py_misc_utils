@@ -264,19 +264,28 @@ def register_fs(cls):
     _FS_REGISTRY[fsid] = cls
 
 
+def try_register(importer, modname, parent=None):
+  try:
+    if parent is None:
+      spec = importer.find_spec(modname)
+      module = importlib.util.module_from_spec(spec)
+      spec.loader.exec_module(module)
+    else:
+      module = importlib.import_module(f'{parent}.{modname}')
+
+    file_systems = getattr(module, 'FILE_SYSTEMS', ())
+    for cls in file_systems:
+      register_fs(cls)
+
+    return module
+  except ImportError as ex:
+    alog.verbose(f'Unable to import file system module "{modname}": {ex}')
+
+
 def register_fs_from_path(path, parent=None):
   for importer, modname, _ in pkgutil.iter_modules(path=path):
     if modname.endswith('_fs'):
-      if parent is None:
-        spec = importer.find_spec(modname)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-      else:
-        module = importlib.import_module(f'{parent}.{modname}')
-
-      file_systems = getattr(module, 'FILE_SYSTEMS', ())
-      for cls in file_systems:
-        register_fs(cls)
+      try_register(importer, modname, parent=parent)
 
 
 @ro.run_once
