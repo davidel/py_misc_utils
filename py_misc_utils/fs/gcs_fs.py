@@ -47,7 +47,7 @@ class GcsReader:
 
   @classmethod
   def tag(cls, sres):
-    return chf.make_tag(size=sres.st_size, mtime=sres.st_mtime)
+    return sres.etag or chf.make_tag(size=sres.st_size, mtime=sres.st_mtime)
 
   def support_blocks(self):
     return True
