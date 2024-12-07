@@ -210,14 +210,14 @@ class CachedBlockFile:
     bpath = cls.blocks_dir(path)
     dropped = []
     with os.scandir(bpath) as sdit:
-      for de in sdit:
-        if de.is_file():
-          pbf = cls.parse_block_file(de.name)
+      for dentry in sdit:
+        if dentry.is_file():
+          pbf = cls.parse_block_file(dentry.name)
           if pbf is not None:
             cid, offset = pbf
             if cid != meta.cid:
-              dropped.append(_DroppedBlock(name=de.name,
-                                           sres=de.stat(),
+              dropped.append(_DroppedBlock(name=dentry.name,
+                                           sres=dentry.stat(),
                                            cid=cid,
                                            offset=offset))
 
@@ -390,9 +390,9 @@ def cleanup_cache(cache_dir=None, max_age=None, max_size=None):
   if os.path.isdir(cache_dir):
     cache_files = []
     with os.scandir(cache_dir) as sdit:
-      for de in sdit:
-        if de.is_dir():
-          cfpath = os.path.join(cache_dir, de.name)
+      for dentry in sdit:
+        if dentry.is_dir():
+          cfpath = os.path.join(cache_dir, dentry.name)
           with lockf.LockFile(cfpath):
             try:
               meta = CachedBlockFile.purge_blocks(cfpath, max_age=max_age)
