@@ -71,8 +71,8 @@ class Cache:
       entry.handler.close(entry.obj)
 
   def shutdown(self):
-    if self._clean_event is not None:
-      with self._lock:
+    with self._lock:
+      if self._clean_event is not None:
         self._scheduler.cancel(self._clean_event)
         self._clean_event = None
 
