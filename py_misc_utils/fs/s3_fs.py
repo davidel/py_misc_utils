@@ -330,7 +330,7 @@ class S3Fs(fsb.FsBase):
       CopySource=dict(Bucket=src_purl.hostname, Key=src_purl.path),
       Key=dest_purl.path,
     )
-    client.delete_object(Bucket=src_purl.hostname, Key=src_purl.path)
+    src_client.delete_object(Bucket=src_purl.hostname, Key=src_purl.path)
 
   def mkdir(self, url, mode=None):
     pass
