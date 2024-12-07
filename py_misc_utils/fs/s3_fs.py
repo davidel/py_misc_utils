@@ -172,8 +172,8 @@ def _list(client, bucket, path):
   for dentry in _list_objects(client, bucket, path, flat=False):
     xdentry = dentries.get(dentry.name)
     if xdentry is not None:
-      dentry = de._replace(st_ctime=min(dentry.st_ctime, xdentry.st_ctime),
-                           st_mtime=max(dentry.st_mtime, xdentry.st_mtime))
+      dentry = dentry._replace(st_ctime=min(dentry.st_ctime, xdentry.st_ctime),
+                               st_mtime=max(dentry.st_mtime, xdentry.st_mtime))
 
     dentries[dentry.name] = dentry
 
