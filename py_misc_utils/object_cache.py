@@ -41,7 +41,8 @@ class Cache:
     self._cleaner = ptsk.PeriodicTask(
       'CacheCleaner',
       self._try_cleanup,
-      clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 2))
+      clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 2)),
+      stop_on_error=False,
     )
     self._cleaner.start()
 

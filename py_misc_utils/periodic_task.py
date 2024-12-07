@@ -20,6 +20,8 @@ class PeriodicTask:
       if self._event is None:
         self._event = self._scheduler.enter(self._period, self._runner)
 
+    return self
+
   def stop(self):
     with self._lock:
       if self._event is not None:
