@@ -136,7 +136,7 @@ class GcsFs(fsb.FsBase):
   def list(self, url):
     fs, purl = self._parse_url(url)
 
-    return fs.listdir(purl.path):
+    return fs.listdir(purl.path)
 
   def open(self, url, mode, **kwargs):
     fs, purl = self._parse_url(url)
@@ -176,7 +176,7 @@ class GcsFs(fsb.FsBase):
   def get_file(self, url):
     fs, purl = self._parse_url(url)
 
-    return fs.download(purl.path):
+    return fs.download(purl.path)
 
   def as_local(self, url):
     fs, purl = self._parse_url(url)
