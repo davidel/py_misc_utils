@@ -327,7 +327,7 @@ class S3Fs(fsb.FsBase):
 
     src_client.copy_object(
       Bucket=src_purl.hostname,
-      CopySource=src_purl.path,
+      CopySource=dict(Bucket=Bucket=src_purl.hostname, Key=src_purl.path),
       Key=dest_purl.path,
     )
     client.delete_object(Bucket=src_purl.hostname, Key=src_purl.path)
