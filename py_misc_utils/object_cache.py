@@ -7,6 +7,7 @@ import time
 
 from . import alog as alog
 from . import fin_wrap as fw
+from . import scheduler as sch
 
 
 _Entry = collections.namedtuple('Entry', 'name, obj, handler, time')
@@ -38,18 +39,18 @@ class Cache:
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
     self._cache = collections.defaultdict(collections.deque)
-    self._stopped = False
-    self._thread = threading.Thread(target=self._cleaner, daemon=True)
-    self._thread.start()
+    self._scheduler = scheduler or sch.common_scheduler()
+    self._clean_event = self._scheduler.enter(self._clean_timeo, self._cleaner)
 
   def _cleaner(self):
-    while True:
-      with self._lock:
-        if self._stopped:
-          break
-        self._cond.wait(timeout=self._clean_timeo)
-
+    try:
       self._try_cleanup()
+    except Exception as ex:
+      pass
+
+    with self._lock:
+      if self._clean_event is not None:
+        self._clean_event = self._scheduler.enter(self._clean_timeo, self._cleaner)
 
   def _try_cleanup(self):
     cleans = []
@@ -70,11 +71,10 @@ class Cache:
       entry.handler.close(entry.obj)
 
   def shutdown(self):
-    with self._lock:
-      self._stopped = True
-      self._cond.notify_all()
-
-    self._thread.join()
+    if self._clean_event is not None:
+      with self._lock:
+        self._scheduler.cancel(self._clean_event)
+        self._clean_event = None
 
   def _release(self, name, handler, obj):
     alog.debug(f'Cache Release: name={name} obj={obj}')
