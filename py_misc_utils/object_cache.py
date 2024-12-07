@@ -7,7 +7,7 @@ import time
 
 from . import alog as alog
 from . import fin_wrap as fw
-from . import scheduler as sch
+from . import periodic_task as ptsk
 
 
 _Entry = collections.namedtuple('Entry', 'name, obj, handler, time')
@@ -35,22 +35,15 @@ class Handler(abc.ABC):
 class Cache:
 
   def __init__(self, clean_timeo=None):
-    self._clean_timeo = clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 2))
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
     self._cache = collections.defaultdict(collections.deque)
-    self._scheduler = sch.common_scheduler()
-    self._clean_event = self._scheduler.enter(self._clean_timeo, self._cleaner)
-
-  def _cleaner(self):
-    try:
-      self._try_cleanup()
-    except Exception as ex:
-      pass
-
-    with self._lock:
-      if self._clean_event is not None:
-        self._clean_event = self._scheduler.enter(self._clean_timeo, self._cleaner)
+    self._cleaner = ptsk.PeriodicTask(
+      'CacheCleaner',
+      self._try_cleanup,
+      clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 2))
+    )
+    self._cleaner.start()
 
   def _try_cleanup(self):
     cleans = []
@@ -71,10 +64,7 @@ class Cache:
       entry.handler.close(entry.obj)
 
   def shutdown(self):
-    with self._lock:
-      if self._clean_event is not None:
-        self._scheduler.cancel(self._clean_event)
-        self._clean_event = None
+    self._cleaner.stop()
 
   def _release(self, name, handler, obj):
     alog.debug(f'Cache Release: name={name} obj={obj}')
