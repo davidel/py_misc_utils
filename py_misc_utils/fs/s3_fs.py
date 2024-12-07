@@ -357,7 +357,7 @@ class S3Fs(fsb.FsBase):
   def list(self, url):
     client, purl = self._parse_url(url)
 
-    return _list(client, purl.hostname, purl.path)
+    return _list(client, purl.hostname, purl.path or '')
 
   def open(self, url, mode, **kwargs):
     client, purl = self._parse_url(url)
