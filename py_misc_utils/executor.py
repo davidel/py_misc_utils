@@ -15,21 +15,21 @@ _ExceptionWrapper = collections.namedtuple('ExceptionWrapper', 'exception')
 
 class Task:
 
-  def __init__(self, fn, args, kwargs, aresult=None):
-    self.fn = fn
-    self.args = args
-    self.kwargs = kwargs
-    self.aresult = aresult
+  def __init__(self, fn, args=None, kwargs=None, aresult=None):
+    self._fn = fn
+    self._args = args or ()
+    self._kwargs = kwargs or dict()
+    self._aresult = aresult
 
-  def run(self):
+  def __call__(self):
     try:
-      fnres = self.fn(*self.args, **self.kwargs)
-    except Exception as e:
-      alog.exception(e, exmsg=f'Exception while running executor task')
-      fnres = _ExceptionWrapper(exception=e)
+      fnres = self._fn(*self._args, **self._kwargs)
+    except Exception as ex:
+      alog.exception(ex, exmsg=f'Exception while running task')
+      fnres = _ExceptionWrapper(exception=ex)
 
-    if self.aresult is not None:
-      self.aresult.set(fnres)
+    if self._aresult is not None:
+      self._aresult.set(fnres)
 
 
 class _Void:
@@ -40,63 +40,63 @@ VOID = _Void()
 class AsyncResult:
 
   def __init__(self):
-    self.cond = threading.Condition(lock=threading.Lock())
-    self.result = VOID
+    self._cond = threading.Condition(lock=threading.Lock())
+    self._result = VOID
 
   def set(self, result):
-    with self.cond:
-      self.result = result
-      self.cond.notify_all()
+    with self._cond:
+      self._result = result
+      self._cond.notify_all()
 
   def wait(self, timeout=None):
-    with self.cond:
+    with self._cond:
       # No need for a loop here, as the condition is signaled only when result
       # is set by the producer.
-      if self.result is VOID:
-        self.cond.wait(timeout=timeout)
+      if self._result is VOID:
+        self._cond.wait(timeout=timeout)
 
-      if isinstance(self.result, _ExceptionWrapper):
-        raise self.result.exception
+      if isinstance(self._result, _ExceptionWrapper):
+        raise self._result.exception
 
-      return self.result
+      return self._result
 
 
 class Queue:
 
   def __init__(self):
-    self.lock = threading.Lock()
-    self.cond = threading.Condition(lock=self.lock)
-    self.queue = collections.deque()
-    self.stopped = 0
+    self._lock = threading.Lock()
+    self._cond = threading.Condition(lock=self._lock)
+    self._queue = collections.deque()
+    self._stopped = 0
 
   def put(self, task):
-    with self.lock:
-      self.queue.append(task)
-      self.cond.notify()
+    with self._lock:
+      self._queue.append(task)
+      self._cond.notify()
 
-      return len(self.queue)
+      return len(self._queue)
 
   def get(self, timeout=None):
-    with self.lock:
+    with self._lock:
       while True:
         # Even in case of stopped queue, always return pending items if available.
-        if self.queue:
-          return self.queue.popleft()
-        if self.stopped > 0 or not self.cond.wait(timeout=timeout):
+        if self._queue:
+          return self._queue.popleft()
+        if self._stopped > 0 or not self._cond.wait(timeout=timeout):
           break
 
   def start(self):
-    with self.lock:
-      self.stopped -= 1
+    with self._lock:
+      self._stopped -= 1
 
   def stop(self):
-    with self.lock:
-      self.stopped += 1
-      self.cond.notify_all()
+    with self._lock:
+      self._stopped += 1
+      self._cond.notify_all()
 
   def __len__(self):
-    with self.lock:
-      return len(self.queue)
+    with self._lock:
+      return len(self._queue)
 
 
 class _Worker:
@@ -120,7 +120,7 @@ class _Worker:
       if task is None:
         break
 
-      task.run()
+      task()
       del task
 
     self._unregister()
@@ -188,12 +188,12 @@ class Executor:
       self._maybe_add_worker(queued)
 
   def submit(self, fn, *args, **kwargs):
-    self._submit_task(Task(fn, args, kwargs))
+    self._submit_task(Task(fn, args=args, kwargs=kwargs))
 
   def submit_result(self, fn, *args, **kwargs):
     aresult = AsyncResult()
 
-    self._submit_task(Task(fn, args, kwargs, aresult=aresult))
+    self._submit_task(Task(fn, args=args, kwargs=kwargs, aresult=aresult))
 
     return aresult
 
