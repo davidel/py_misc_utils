@@ -39,7 +39,7 @@ class Cache:
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
     self._cache = collections.defaultdict(collections.deque)
-    self._scheduler = scheduler or sch.common_scheduler()
+    self._scheduler = sch.common_scheduler()
     self._clean_event = self._scheduler.enter(self._clean_timeo, self._cleaner)
 
   def _cleaner(self):
