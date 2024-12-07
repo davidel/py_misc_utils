@@ -72,10 +72,7 @@ class GcsFs:
 
         dents[de.name] = de
 
-    sorted_dents = sorted(dents.items(), key=lambda x: (x[1].st_mode, x[0]))
-
-    for name, de in sorted_dents:
-      yield de
+    return sorted(dents.items(), key=lambda x: (x[1].st_mode, x[0]))
 
   def open(self, path, mode='rb'):
     bucket = self._client.bucket(self._bucket)
