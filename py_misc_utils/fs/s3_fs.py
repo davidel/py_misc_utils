@@ -168,25 +168,22 @@ def _list_objects(client, bucket, path, flat=True):
 
 
 def _list(client, bucket, path):
-  dentries = tuple(_list_objects(client, bucket, path, flat=False))
-
-  if not dentries:
-    alog.xraise(RuntimeError, f'Object not found: {bucket}:{path}')
-
-  dents = dict()
-  for dentry in dentries:
-    xdentry = dents.get(dentry.name)
+  dentries = dict()
+  for dentry in _list_objects(client, bucket, path, flat=False):
+    xdentry = dentries.get(dentry.name)
     if xdentry is not None:
       dentry = de._replace(st_ctime=min(dentry.st_ctime, xdentry.st_ctime),
                            st_mtime=max(dentry.st_mtime, xdentry.st_mtime))
 
-    dents[dentry.name] = dentry
+    dentries[dentry.name] = dentry
 
-  return sorted(dents.items(), key=lambda x: (x[1].st_mode, x[0]))
+  sorted_dentries = sorted(dentries.items(), key=lambda x: (x[1].st_mode, x[0]))
+  for name, dentry in sorted_dentries:
+    yield dentry
 
 
 def _stat(client, bucket, path):
-  dentries = _list(client, bucket, path)
+  dentries = tuple(_list(client, bucket, path))
 
   if dentries:
     if len(dentries) == 1:
@@ -357,7 +354,7 @@ class S3Fs(fsb.FsBase):
   def list(self, url):
     client, purl = self._parse_url(url)
 
-    return _list(client, purl.hostname, purl.path or '')
+    return _list(client, purl.hostname, purl.path)
 
   def open(self, url, mode, **kwargs):
     client, purl = self._parse_url(url)

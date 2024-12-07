@@ -62,17 +62,19 @@ class GcsFs:
   def listdir(self, path):
     npath = self._norm_path(path)
 
-    dents = dict()
+    dentries = dict()
     for blob in self._client.list_blobs(self._bucket, prefix=npath):
-      if (de := self._blob_stat(blob, base_path=npath)) is not None:
-        dde = dents.get(de.name)
-        if dde is not None:
-          de = de._replace(st_ctime=min(de.st_ctime, dde.st_ctime),
-                           st_mtime=max(de.st_mtime, dde.st_mtime))
+      if (dentry := self._blob_stat(blob, base_path=npath)) is not None:
+        xdentry = dentries.get(dentry.name)
+        if xdentry is not None:
+          dentry = dentry._replace(st_ctime=min(dentry.st_ctime, xdentry.st_ctime),
+                                   st_mtime=max(dentry.st_mtime, xdentry.st_mtime))
 
-        dents[de.name] = de
+        dentries[dentry.name] = dentry
 
-    return sorted(dents.items(), key=lambda x: (x[1].st_mode, x[0]))
+    sorted_dentries = sorted(dentries.items(), key=lambda x: (x[1].st_mode, x[0]))
+    for name, dentry in sorted_dentries:
+      yield dentry
 
   def open(self, path, mode='rb'):
     bucket = self._client.bucket(self._bucket)
