@@ -87,7 +87,7 @@ def _make_dentry(resp, path, base_path=None):
   if mtime is not None:
     mtime = mtime.timestamp()
 
-  if base_path and base_path != path:
+  if base_path is not None and base_path != path:
     if not base_path.endswith('/'):
       base_path = base_path + '/'
     if not path.startswith(base_path):
