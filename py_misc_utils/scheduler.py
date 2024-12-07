@@ -55,7 +55,7 @@ class Scheduler:
         self.executor.submit(self._run_event, event)
 
   def gen_unique_ref(self):
-    return uuid.uuid4()
+    return str(uuid.uuid4())
 
   def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
     with self._lock:
