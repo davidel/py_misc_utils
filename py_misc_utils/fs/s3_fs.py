@@ -368,6 +368,7 @@ class S3Fs(fsb.FsBase):
       writeback_fn = functools.partial(self._upload_file, url)
       if not self.truncate_mode(mode) and client.exists(purl.path):
         url_file = self._download_file(url)
+        self.seek_stream(mode, url_file)
       else:
         url_file = tempfile.TemporaryFile()
 
@@ -376,7 +377,7 @@ class S3Fs(fsb.FsBase):
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
 
   def _upload_file(self, url, stream):
-    stream.seek(0, os.SEEK_SET)
+    stream.seek(0)
     self.put_file(url, stream)
 
   def _download_file(self, url):

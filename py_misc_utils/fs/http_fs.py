@@ -132,6 +132,7 @@ class HttpFs(fsb.FsBase):
       writeback_fn = functools.partial(self._upload_file, url)
       if not self.truncate_mode(mode) and self._exists(url):
         url_file = self._download_file(url)
+        self.seek_stream(mode, url_file)
       else:
         url_file = tempfile.TemporaryFile()
 

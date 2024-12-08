@@ -1,5 +1,6 @@
 import abc
 import collections
+import os
 import stat as st
 
 
@@ -36,6 +37,10 @@ class FsBase(abc.ABC):
   @classmethod
   def text_mode(cls, mode):
     return 'b' not in mode
+
+  @classmethod
+  def seek_stream(cls, mode, stream):
+    stream.seek(0, os.SEEK_END if self.append_mode(mode) else os.SEEK_SET)
 
   def norm_url(self, url):
     return url
