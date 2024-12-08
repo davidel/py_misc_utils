@@ -4,7 +4,6 @@ import hashlib
 import os
 import re
 import shutil
-import tempfile
 import time
 import yaml
 
@@ -17,6 +16,7 @@ from . import no_except as nox
 from . import obj
 from . import osfd
 from . import rnd_utils as rngu
+from . import tempdir as tmpd
 
 
 _DroppedBlock = collections.namedtuple('DroppedBlock', 'name, sres, cid, offset')
@@ -392,7 +392,7 @@ class CacheInterface:
       return self._open_cached(url, meta, reader, **kwargs)
     else:
       meta = CachedBlockFile.prepare_meta(meta, url=url)
-      cfpath = tempfile.mkdtemp()
+      cfpath = tmpd.create()
       CachedBlockFile.create(cfpath, meta)
 
       close_fn = functools.partial(shutil.rmtree, cfpath, ignore_errors=True)
