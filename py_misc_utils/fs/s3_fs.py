@@ -217,6 +217,9 @@ def _rmtree(client, bucket, path, ignore_errors=None):
 
 
 def _write_object(client, bucket, path, body):
+  if isinstance(body, collections.abc.Iterator) and not hasattr(body, 'seek'):
+    body = b''.join(data for data in body)
+
   response = client.put_object(
     Bucket=bucket,
     Key=path,
