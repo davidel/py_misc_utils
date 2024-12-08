@@ -111,7 +111,7 @@ def info(url, headers=None, mod=None):
 
   if resp is None:
     resp = mod.head(url, headers=headers)
-    resp = raise_for_status()
+    resp = resp.raise_for_status()
 
   return resp
 
