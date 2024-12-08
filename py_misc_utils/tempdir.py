@@ -16,6 +16,12 @@ def _create_tempdir():
   cleanups.register(shutil.rmtree, _TEMPDIR, ignore_errors=True)
 
 
+def get_root():
+  _create_tempdir()
+
+  return _TEMPDIR
+
+
 def create():
   _create_tempdir()
 

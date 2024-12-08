@@ -394,7 +394,7 @@ class CacheInterface:
   def open(self, url, meta, reader, **kwargs):
     uncached = kwargs.pop('uncached', False)
     if uncached:
-      cfpath = tmpd.create()
+      cfpath = _get_cache_path(tmpd.get_root(), url)
       close_fn = functools.partial(fsu.safe_rmtree, cfpath, ignore_errors=True)
     else:
       cfpath = _get_cache_path(self._cache_dir, url)
