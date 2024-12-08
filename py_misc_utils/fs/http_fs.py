@@ -125,7 +125,7 @@ class HttpFs(fsb.FsBase):
   def open(self, url, mode, **kwargs):
     if self.read_mode(mode):
       reader, meta = self._make_reader(url)
-      cfile = self._cache_iface.open(url, meta, reader)
+      cfile = self._cache_iface.open(url, meta, reader, **kwargs)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
     else:
@@ -217,10 +217,10 @@ class HttpFs(fsb.FsBase):
     for data in self._iterate_chunks(url):
       yield data
 
-  def as_local(self, url):
+  def as_local(self, url, **kwargs):
     reader, meta = self._make_reader(url)
 
-    return self._cache_iface.as_local(url, meta, reader)
+    return self._cache_iface.as_local(url, meta, reader, **kwargs)
 
 
 FILE_SYSTEMS = (HttpFs,)

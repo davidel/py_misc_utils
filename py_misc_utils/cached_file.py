@@ -1,8 +1,10 @@
 import collections
+import functools
 import hashlib
 import os
 import re
 import shutil
+import tempfile
 import time
 import yaml
 
@@ -33,9 +35,10 @@ class CachedBlockFile:
   CID_SIZE = 16
   BLOCKSIZE = 32 * 1024**2
 
-  def __init__(self, path, reader, meta=None):
+  def __init__(self, path, reader, meta=None, close_fn=None):
     self._path = path
     self._reader = reader
+    self._close_fn = close_fn
     self.meta = self.load_meta(path) if meta is None else meta
 
   @classmethod
@@ -138,7 +141,9 @@ class CachedBlockFile:
     return boffset, offset
 
   def close(self):
-    pass
+    if self._close_fn is not None:
+      self._close_fn()
+      self._close_fn = None
 
   def cacheall(self):
     size, bpath = self._fetch_block(self.WHOLE_OFFSET)
@@ -366,7 +371,7 @@ class CacheInterface:
   def __init__(self, cache_dir=None):
     self._cache_dir = get_cache_dir(path=cache_dir)
 
-  def open(self, url, meta, reader):
+  def _open_cached(self, url, meta, reader, **kwargs):
     cfpath = _get_cache_path(self._cache_dir, url)
     with lockf.LockFile(cfpath):
       meta = CachedBlockFile.prepare_meta(meta, url=url)
@@ -381,8 +386,22 @@ class CacheInterface:
       return CachedFile(CachedBlockFile(cfpath, reader, meta=meta),
                         block_size=meta.block_size)
 
-  def as_local(self, url, meta, reader):
-    cfile = self.open(url, meta, reader)
+  def open(self, url, meta, reader, **kwargs):
+    cached = kwargs.pop('cached', True)
+    if cached:
+      return self._open_cached(url, meta, reader, **kwargs)
+    else:
+      meta = CachedBlockFile.prepare_meta(meta, url=url)
+      cfpath = tempfile.mkdtemp()
+      CachedBlockFile.create(cfpath, meta)
+
+      close_fn = functools.partial(shutil.rmtree, cfpath, ignore_errors=True)
+      cbf = CachedBlockFile(cfpath, reader, meta=meta, close_fn=close_fn)
+
+      return CachedFile(cbf, block_size=meta.block_size)
+
+  def as_local(self, url, meta, reader, **kwargs):
+    cfile = self.open(url, meta, reader, **kwargs)
 
     return cfile.cbf.cacheall()
 

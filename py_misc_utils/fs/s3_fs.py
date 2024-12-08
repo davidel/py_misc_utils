@@ -365,7 +365,7 @@ class S3Fs(fsb.FsBase):
 
     if self.read_mode(mode):
       reader, meta = self._make_reader(client, purl)
-      cfile = self._cache_iface.open(url, meta, reader)
+      cfile = self._cache_iface.open(url, meta, reader, **kwargs)
 
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
     else:
@@ -403,11 +403,11 @@ class S3Fs(fsb.FsBase):
     for data in stream.iter_chunks():
       yield data
 
-  def as_local(self, url):
+  def as_local(self, url, **kwargs):
     client, purl = self._parse_url(url)
     reader, meta = self._make_reader(client, purl)
 
-    return self._cache_iface.as_local(url, meta, reader)
+    return self._cache_iface.as_local(url, meta, reader, **kwargs)
 
 
 FILE_SYSTEMS = (S3Fs,)

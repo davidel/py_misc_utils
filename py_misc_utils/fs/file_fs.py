@@ -112,7 +112,7 @@ class FileFs(fsb.FsBase):
       for data in fsu.enum_chunks(fd):
         yield data
 
-  def as_local(self, url):
+  def as_local(self, url, **kwargs):
     return url
 
 

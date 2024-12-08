@@ -103,7 +103,7 @@ def maybe_open(path, **kwargs):
 def as_local(path, **kwargs):
   fs, fpath = resolve_fs(path, **kwargs)
 
-  return fs.as_local(fpath)
+  return fs.as_local(fpath, **kwargs)
 
 
 def path_of(path):
