@@ -99,14 +99,16 @@ def info(url, headers=None, mod=None):
 
   add_range(req_headers, 0, 1024)
 
-  resp = mod.get(url, headers=req_headers)
-  if resp.status_code == 200:
+  try:
+    resp = mod.get(url, headers=req_headers)
+    resp.raise_for_status()
+
     hrange = range(resp.headers)
     if hrange is not None and hrange.length is not None:
       resp.headers[CONTENT_LENGTH] = hrange.length
     else:
       resp = None
-  else:
+  except requests.exceptions.HTTPError:
     resp = None
 
   if resp is None:
