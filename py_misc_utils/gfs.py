@@ -48,7 +48,7 @@ class TempFile:
   def close(self):
     self.close_fd()
     if self._delete:
-      self._fs.rm(self._path)
+      self._fs.remove(self._path)
       self._delete = False
 
   def replace(self, path):
