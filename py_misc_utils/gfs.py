@@ -251,7 +251,7 @@ def cache_dir(path=None):
 
 
 def find_mount(path):
-  fs, fpath = fsspec.url_to_fs(path)
+  fs, fpath = resolve_fs(path)
 
   return fsu.localfs_mount(fpath) if is_local_fs(fs) else None
 
