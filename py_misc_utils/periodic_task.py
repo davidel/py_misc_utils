@@ -1,4 +1,5 @@
 import threading
+import weakref
 
 from . import alog as alog
 from . import scheduler as sch
@@ -40,10 +41,19 @@ class PeriodicTask:
     self._event = self._scheduler.enter(self._period, self._runner)
     self._completed_event = threading.Event()
 
+  def _get_periodic_fn(self):
+    if isinstance(self._periodic_fn, weakref.WeakMethod):
+      return self._periodic_fn()
+    else:
+      return self._periodic_fn
+
   def _runner(self):
     re_issue = True
     try:
-      self._periodic_fn()
+      if (periodic_fn := self._get_periodic_fn()) is not None:
+        periodic_fn()
+      else:
+        re_issue = False
     except Exception as ex:
       alog.exception(ex, exmsg=f'Exception while running periodic task "{self._name}"')
       re_issue = not self._stop_on_error
