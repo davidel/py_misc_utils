@@ -376,7 +376,7 @@ class S3Fs(fsb.FsBase):
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
 
   def _upload_file(self, url, stream):
-    stream.seek(0, whence=os.SEEK_SET)
+    stream.seek(0, os.SEEK_SET)
     self.put_file(url, stream)
 
   def _download_file(self, url):
