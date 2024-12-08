@@ -25,8 +25,7 @@ class HttpReader:
   def __init__(self, url, session=None, head=None, headers=None, chunk_size=None):
     session = session if session is not None else requests.Session()
     if head is None:
-      head = session.head(url, headers=headers)
-      head.raise_for_status()
+      head = hu.info(url, headers=headers, mod=session)
 
     allow_ranges = hu.support_ranges(head.headers)
 
@@ -56,7 +55,7 @@ class HttpReader:
         size = min(size, self._size - offset)
 
         headers = self._headers.copy()
-        hu.add_range(headers, offset, offset + size - 1)
+        hu.add_range(headers, offset, offset + size)
 
         resp = self._session.get(self._url, headers=headers)
         resp.raise_for_status()
@@ -88,13 +87,15 @@ class HttpFs(fsb.FsBase):
     self._session = requests.Session()
 
   def _exists(self, url):
-    head = self._session.head(url, headers=self._headers)
+    try:
+      hu.info(url, headers=self._headers, mod=self._session)
 
-    return head.status_code == 200
+      return True
+    except requests.exceptions.HTTPError:
+      return False
 
   def _make_reader(self, url):
-    head = self._session.head(url, headers=self._headers)
-    head.raise_for_status()
+    head = hu.info(url, headers=self._headers, mod=self._session)
 
     tag = HttpReader.tag(head)
     size = hu.content_length(head.headers)
@@ -105,8 +106,7 @@ class HttpFs(fsb.FsBase):
     return reader, meta
 
   def stat(self, url):
-    head = self._session.head(url, headers=self._headers)
-    head.raise_for_status()
+    head = hu.info(url, headers=self._headers, mod=self._session)
 
     length = hu.content_length(head.headers)
     mtime = hu.last_modified(head.headers)

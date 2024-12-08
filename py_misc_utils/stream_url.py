@@ -182,7 +182,7 @@ class StreamUrl:
       size = min(max(self._chunk_size, size_hint), self._length - self._offset)
       if size > 0:
         req_headers = self._headers.copy()
-        hu.add_range(req_headers, self._offset, self._offset + size - 1)
+        hu.add_range(req_headers, self._offset, self._offset + size)
 
         resp = requests.get(self._url, headers=req_headers)
         resp.raise_for_status()

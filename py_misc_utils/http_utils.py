@@ -1,5 +1,6 @@
 import collections
 import re
+import requests
 import time
 
 
@@ -45,8 +46,8 @@ def last_modified(headers, defval=None):
   return defval
 
 
-def add_range(headers, start, stop):
-  headers[RANGE] = f'bytes={start}-{stop}'
+def add_range(headers, start, end):
+  headers[RANGE] = f'bytes={start}-{end - 1}'
 
   return headers
 
@@ -90,4 +91,27 @@ def date_to_epoch(http_date):
 
 def epoch_to_date(epoch_time=None):
   return time.strftime(_HTTP_DATE_FMT, time.gmtime(epoch_time or time.time()))
+
+
+def info(url, headers=None, mod=None):
+  mod = mod or requests
+  req_headers = headers.copy() if headers else dict()
+
+  add_range(req_headers, 0, 1024)
+
+  resp = mod.get(url, headers=req_headers)
+  if resp.status_code == 200:
+    hrange = range(resp.headers)
+    if hrange is not None and hrange.length is not None:
+      resp.headers[CONTENT_LENGTH] = hrange.length
+    else:
+      resp = None
+  else:
+    resp = None
+
+  if resp is None:
+    resp = mod.head(url, headers=headers)
+    resp = raise_for_status()
+
+  return resp
 
