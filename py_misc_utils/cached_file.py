@@ -384,9 +384,7 @@ def _get_cache_path(cache_dir, url):
   return os.path.join(cache_dir, uhash)
 
 
-def cleanup_cache(cache_dir=None, max_age=None, max_size=None):
-  cache_dir = get_cache_dir(path=cache_dir)
-
+def cleanup_cache(cache_dir, max_age=None, max_size=None):
   if os.path.isdir(cache_dir):
     cache_files = []
     with os.scandir(cache_dir) as sdit:
@@ -431,7 +429,7 @@ def _cleanup_check(path):
 
   if do_cleanup:
     alog.debug(f'Triggering cache cleanup: {path}')
-    cleanup_cache(cache_dir=path)
+    cleanup_cache(path)
     with open(lpath, mode='w'):
       pass
 
