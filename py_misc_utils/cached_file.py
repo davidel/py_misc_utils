@@ -221,7 +221,7 @@ class CachedBlockFile:
                                            cid=cid,
                                            offset=offset))
 
-    max_age = max_age or int(os.getenv('GFS_CACHE_MAXAGE', 120))
+    max_age = max_age or int(os.getenv('GFS_CACHE_MAXAGE', 300))
     for dblock in dropped:
       if (time.time() - dblock.sres.st_mtime) > max_age:
         try:
@@ -421,9 +421,27 @@ def make_tag(**kwargs):
   return hashlib.sha1(stag.encode()).hexdigest()
 
 
+def _cleanup_check(path):
+  lpath = os.path.join(path, '.last_cleanup')
+  if (sres := fsu.stat(lpath)) is None:
+    do_cleanup = True
+  else:
+    cleanup_period = max_size or int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
+    do_cleanup = time.time() > sres.st_mtime + cleanup_period
+
+  if do_cleanup:
+    alog.debug(f'Triggering cache cleanup: {path}')
+    cleanup_cache(cache_dir=path)
+    with open(lpath, mode='w'):
+      pass
+
+
 _CACHE_DIR = os.getenv('GFS_CACHE_DIR',
                        os.path.join(os.getenv('HOME', '.'), '.cache', 'gfs'))
 
 def get_cache_dir(path=None):
-  return fsu.normpath(path or _CACHE_DIR)
+  cpath = fsu.normpath(path or _CACHE_DIR)
+  _cleanup_check(cpath)
+
+  return cpath
 
