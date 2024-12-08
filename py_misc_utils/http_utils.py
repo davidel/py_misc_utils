@@ -1,3 +1,4 @@
+import collections
 import re
 import time
 
@@ -50,24 +51,27 @@ def add_range(headers, start, stop):
   return headers
 
 
+Range = collections.namedtuple('Range', 'start, stop, length')
+
 def range(headers):
   hrange = headers.get(CONTENT_RANGE)
   if hrange is None:
     if (length := content_length(headers)) is not None:
-      return 0, length - 1
+      return Range(start=0, stop=length - 1, length=length)
   else:
-    m = re.match(r'bytes\s+(\d+)\-(\d+)', hrange)
+    m = re.match(r'bytes\s+(\d+)\-(\d+)(/(\d+))?', hrange)
     if m:
-      return int(m.group(1)), int(m.group(2))
+      hlength = m.group(4)
+      length = int(hlength) if hlength else None
+
+      return Range(start=int(m.group(1)), stop=int(m.group(2)), length=length)
 
 
 def range_data(start, stop, headers, data):
   hrange = range(headers)
   if hrange is not None:
-    rstart, rstop = hrange
-
-    dstart = start - rstart
-    size = min(stop - start, rstop - rstart) + 1
+    dstart = start - hrange.start
+    size = min(stop - start, hrange.stop - hrange.start) + 1
     dstop = dstart + size - 1
 
     if dstart != start or dstop != stop:
