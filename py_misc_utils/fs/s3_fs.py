@@ -12,6 +12,7 @@ from .. import alog as alog
 from .. import assert_checks as tas
 from .. import cached_file as chf
 from .. import fs_base as fsb
+from .. import iter_file as itf
 from .. import object_cache as objc
 from .. import osfd as osfd
 from .. import utils as ut
@@ -218,7 +219,7 @@ def _rmtree(client, bucket, path, ignore_errors=None):
 
 def _write_object(client, bucket, path, body):
   if isinstance(body, collections.abc.Iterator) and not hasattr(body, 'seek'):
-    body = b''.join(data for data in body)
+    body = itf.IterFile(body)
 
   response = client.put_object(
     Bucket=bucket,
