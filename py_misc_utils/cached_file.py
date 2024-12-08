@@ -371,8 +371,7 @@ class CacheInterface:
   def __init__(self, cache_dir=None):
     self._cache_dir = get_cache_dir(path=cache_dir)
 
-  def _open_cached(self, url, meta, reader, **kwargs):
-    cfpath = _get_cache_path(self._cache_dir, url)
+  def _open(self, cfpath, url, meta, reader, close_fn=None, **kwargs):
     with lockf.LockFile(cfpath):
       meta = CachedBlockFile.prepare_meta(meta, url=url)
       if not os.path.isdir(cfpath):
@@ -383,22 +382,19 @@ class CacheInterface:
           alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
           CachedBlockFile.save_meta(cfpath, meta)
 
-      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta),
+      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta, close_fn=close_fn),
                         block_size=meta.block_size)
 
   def open(self, url, meta, reader, **kwargs):
-    cached = kwargs.pop('cached', True)
-    if cached:
-      return self._open_cached(url, meta, reader, **kwargs)
-    else:
-      meta = CachedBlockFile.prepare_meta(meta, url=url)
+    uncached = kwargs.pop('uncached', False)
+    if uncached:
       cfpath = tmpd.create()
-      CachedBlockFile.create(cfpath, meta)
-
       close_fn = functools.partial(shutil.rmtree, cfpath, ignore_errors=True)
-      cbf = CachedBlockFile(cfpath, reader, meta=meta, close_fn=close_fn)
+    else:
+      cfpath = _get_cache_path(self._cache_dir, url)
+      close_fn = None
 
-      return CachedFile(cbf, block_size=meta.block_size)
+    return self._open(cfpath, url, meta, reader, close_fn=close_fn, **kwargs)
 
   def as_local(self, url, meta, reader, **kwargs):
     cfile = self.open(url, meta, reader, **kwargs)
