@@ -44,12 +44,13 @@ class Cache:
     self._cleaner = ptsk.PeriodicTask(
       'CacheCleaner',
       weakref.WeakMethod(self._try_cleanup),
-      clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 2)),
+      clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 8)),
       stop_on_error=False,
     )
     self._cleaner.start()
 
   def _try_cleanup(self):
+    alog.verbose(f'Object cache cleanup running')
     cleans = []
     with self._lock:
       new_cache = collections.defaultdict(collections.deque)
