@@ -265,6 +265,13 @@ class CachedBlockFile:
 
       return Meta(**meta)
 
+  @classmethod
+  def validate(cls, path):
+    try:
+      return cls.load_meta(path)
+    except:
+      pass
+
 
 class CachedFile:
 
@@ -374,10 +381,9 @@ class CacheInterface:
   def _open(self, cfpath, url, meta, reader, close_fn=None, **kwargs):
     with lockf.LockFile(cfpath):
       meta = CachedBlockFile.prepare_meta(meta, url=url)
-      if not os.path.isdir(cfpath):
+      if (xmeta := CachedBlockFile.validate(cfpath)) is None:
         CachedBlockFile.create(cfpath, meta)
       else:
-        xmeta = CachedBlockFile.load_meta(cfpath)
         if xmeta.cid != meta.cid:
           alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
           CachedBlockFile.save_meta(cfpath, meta)
