@@ -429,7 +429,7 @@ def make_tag(**kwargs):
 def _cleanup_check(path):
   lpath = os.path.join(path, '.last_cleanup')
   if (sres := fsu.stat(lpath)) is None:
-    do_cleanup = os.path.isdir(os.path.dirname(path))
+    do_cleanup = os.path.isdir(path)
   else:
     cleanup_period = int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
     do_cleanup = time.time() > sres.st_mtime + cleanup_period
