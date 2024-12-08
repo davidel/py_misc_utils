@@ -433,13 +433,14 @@ def _cleanup_check(path):
     with open(lpath, mode='w'):
       pass
 
+  return path
+
 
 _CACHE_DIR = os.getenv('GFS_CACHE_DIR',
                        os.path.join(os.getenv('HOME', '.'), '.cache', 'gfs'))
 
 def get_cache_dir(path=None):
   cpath = fsu.normpath(path or _CACHE_DIR)
-  _cleanup_check(cpath)
 
-  return cpath
+  return _cleanup_check(cpath)
 
