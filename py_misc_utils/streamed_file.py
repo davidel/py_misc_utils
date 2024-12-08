@@ -109,7 +109,9 @@ class StreamedFile:
 
   def peek(self, size=0):
     with self._lock:
-      return self._read(self._offset, size, False)
+      size = min(size, max(1, self._size - self._offset))
+
+      return self._read(self._offset, size, False) if size > 0 else b''
 
   def pread(self, offset, size):
     with self._lock:
