@@ -384,6 +384,10 @@ def _get_cache_path(cache_dir, url):
   return os.path.join(cache_dir, uhash)
 
 
+_CacheFileStats = collections.namedtuple(
+  'CacheFileStats', 'path, mtime, size, meta',
+)
+
 def cleanup_cache(cache_dir, max_age=None, max_size=None):
   if os.path.isdir(cache_dir):
     cache_files = []
@@ -397,20 +401,23 @@ def cleanup_cache(cache_dir, max_age=None, max_size=None):
 
               cfsize = fsu.du(cfpath)
               sres = os.stat(CachedBlockFile.fmeta_path(cfpath))
-              cache_files.append((cfpath, sres.st_mtime, cfsize, meta))
+              cache_files.append(_CacheFileStats(path=cfpath,
+                                                 mtime=sres.st_mtime,
+                                                 size=cfsize,
+                                                 meta=meta))
             except Exception as ex:
               alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
 
-    cache_files = sorted(cache_files, key=lambda cf: cf[1], reverse=True)
+    cache_files = sorted(cache_files, key=lambda cfs: cfs.mtime, reverse=True)
     max_size = max_size or int(os.getenv('GFS_CACHE_MAXSIZE', 16 * 1024**3))
 
     cache_size = 0
-    for cfpath, mtime, cfsize, meta in cache_files:
-      cache_size += cfsize
+    for cfs in cache_files:
+      cache_size += cfs.size
       if cache_size >= max_size:
-        alog.info(f'Dropping cache for {meta.url} stored at {cfpath}')
-        with lockf.LockFile(cfpath):
-          CachedBlockFile.remove(cfpath)
+        alog.info(f'Dropping cache for {cfs.meta.url} stored at {cfs.path}')
+        with lockf.LockFile(cfs.path):
+          CachedBlockFile.remove(cfs.path)
 
 
 def make_tag(**kwargs):
