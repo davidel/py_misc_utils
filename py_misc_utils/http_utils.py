@@ -76,8 +76,14 @@ def range_data(start, stop, headers, data):
   return data
 
 
+_HTTP_DATE_FMT ='%a, %d %b %Y %H:%M:%S %Z'
+
 def date_to_epoch(http_date):
-  htime = time.strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+  htime = time.strptime(http_date, _HTTP_DATE_FMT)
 
   return time.mktime(htime)
+
+
+def epoch_to_date(epoch_time=None):
+  return time.strftime(_HTTP_DATE_FMT, time.gmtime(epoch_time or time.time()))
 
