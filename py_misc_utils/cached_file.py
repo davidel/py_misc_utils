@@ -424,7 +424,7 @@ def _cleanup_check(path):
   if (sres := fsu.stat(lpath)) is None:
     do_cleanup = True
   else:
-    cleanup_period = max_size or int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
+    cleanup_period = int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
     do_cleanup = time.time() > sres.st_mtime + cleanup_period
 
   if do_cleanup:
