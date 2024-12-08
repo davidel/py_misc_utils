@@ -13,7 +13,7 @@ def _create_tempdir():
 
   _TEMPDIR = tempfile.mkdtemp()
 
-  cleanups.register(shutil.rmtree, cfpath, ignore_errors=True)
+  cleanups.register(shutil.rmtree, _TEMPDIR, ignore_errors=True)
 
 
 def create():
