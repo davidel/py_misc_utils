@@ -74,6 +74,11 @@ class StreamedFile:
     else:
       alog.xraise(ValueError, f'Invalid seek mode: {whence}')
 
+    if offset > 0:
+      if whence != os.SEEK_END:
+        self._wait_completed()
+      tas.check_le(offset, self._size, msg=f'Offset out of range')
+
     tas.check_ge(offset, 0, msg=f'Offset out of range')
 
     self._offset = offset
