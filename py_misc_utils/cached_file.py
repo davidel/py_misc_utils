@@ -8,6 +8,7 @@ import yaml
 
 from . import alog
 from . import assert_checks as tas
+from . import fin_wrap as fw
 from . import fs_utils as fsu
 from . import lockfile as lockf
 from . import no_except as nox
@@ -136,6 +137,9 @@ class CachedBlockFile:
 
     return boffset, offset
 
+  def close(self):
+    pass
+
   def cacheall(self):
     size, bpath = self._fetch_block(self.WHOLE_OFFSET)
 
@@ -259,14 +263,18 @@ class CachedBlockFile:
 
 class CachedFile:
 
-  def __init__(self, cbf):
-    self.cbf = cbf
+  def __init__(self, cbf, block_size=None):
+    fw.fin_wrap(self, 'cbf', cbf, finfn=cbf.close)
+    self._block_size = block_size or 16 * 1024**2
     self._offset = 0
     self._block_start = 0
     self._block = None
 
   def close(self):
-    self.cbf = None
+    cbf = self.cbf
+    if cbf is not None:
+      fw.fin_wrap(self, 'cbf', None)
+      cbf.close()
 
   @property
   def closed(self):
@@ -295,7 +303,7 @@ class CachedFile:
   def _ensure_buffer(self, offset):
     boffset = offset - self._block_start
     if self._block is None or boffset < 0 or boffset >= len(self._block):
-      block_offset = (offset // self.cbf.meta.block_size) * self.cbf.meta.block_size
+      block_offset = (offset // self._block_size) * self._block_size
 
       self._block = memoryview(self.cbf.read_block(block_offset))
       self._block_start = block_offset
@@ -336,10 +344,10 @@ class CachedFile:
     pass
 
   def readable(self):
-    return self.cbf is not None
+    return not self.closed
 
   def seekable(self):
-    return self.cbf is not None
+    return not self.closed
 
   def writable(self):
     return False
@@ -370,7 +378,8 @@ class CacheInterface:
           alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
           CachedBlockFile.save_meta(cfpath, meta)
 
-      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta))
+      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta),
+                        block_size=meta.block_size)
 
   def as_local(self, url, meta, reader):
     cfile = self.open(url, meta, reader)
