@@ -106,6 +106,7 @@ def info(url, headers=None, mod=None):
     hrange = range(resp.headers)
     if hrange is not None and hrange.length is not None:
       resp.headers[CONTENT_LENGTH] = hrange.length
+      resp.headers[ACCEPT_RANGES] = 'bytes'
     else:
       resp = None
   except requests.exceptions.HTTPError:
