@@ -128,7 +128,7 @@ def get(url, headers=None):
 
 
 def url_splitext(url):
-  purl = uparse.urlparse(data)
+  purl = uparse.urlparse(url)
 
   return *os.path.splitext(purl.path), purl
 
