@@ -62,7 +62,7 @@ class ArchiveStreamer:
     with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
       nrecs = 0
       pqfd = pq.ParquetFile(stream)
-      for rec in parquet_file.iter_batches(batch_size=16):
+      for rec in pqfd.iter_batches(batch_size=16):
         ddf = rec.to_pydict()
         for n in range(len(rec)):
           nrecs += 1
