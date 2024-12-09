@@ -9,6 +9,7 @@ import yaml
 
 from . import alog
 from . import assert_checks as tas
+from . import file_overwrite as fow
 from . import fin_wrap as fw
 from . import fs_utils as fsu
 from . import lockfile as lockf
@@ -251,11 +252,8 @@ class CachedBlockFile:
   @classmethod
   def save_meta(cls, path, meta):
     mpath = cls.fmeta_path(path)
-    tpath = rngu.temp_path(nspath=mpath)
-    with open(tpath, mode='w') as fd:
+    with fow.FileOverwrite(mpath) as fd:
       yaml.dump(meta.as_dict(), fd, default_flow_style=False)
-
-    os.replace(tpath, mpath)
 
   @classmethod
   def load_meta(cls, path):
