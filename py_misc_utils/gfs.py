@@ -23,27 +23,23 @@ FsPath = collections.namedtuple('FsPath', 'fs, path')
 class TempFile:
 
   def __init__(self, nsdir=None, nspath=None, **kwargs):
-    is_local = ((nsdir is None or is_local_path(nsdir)) and
-                (nspath is None or is_local_path(nspath)))
-    if is_local:
-      fs, tmp_path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
-    else:
-      fs, tmp_path = resolve_fs(rngu.temp_path(), **kwargs)
+    nsdir = nsdir if is_local_path(nsdir) else None
+    nspath = nspath if is_local_path(nspath) else None
 
-    self._fs, self._path = fs, tmp_path
+    self._fs, self._path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
     self._kwargs = kwargs
-    self.fd, self._delete = None, False
+    self._fd, self._delete = None, False
 
   def open(self):
-    self.fd = self._fs.open(self._path, **self._kwargs)
+    self._fd = self._fs.open(self._path, **self._kwargs)
     self._delete = True
 
-    return self.fd
+    return self._fd
 
   def close_fd(self):
-    if self.fd is not None:
-      self.fd.close()
-      self.fd = None
+    if self._fd is not None:
+      self._fd.close()
+      self._fd = None
 
   def close(self):
     self.close_fd()
@@ -189,6 +185,11 @@ def replace(src_path, dest_path, src_fs=None, dest_fs=None):
   else:
     copy(src.path, dest.path, src_fs=src.fs, dest_fs=dest.fs)
     src.fs.remove(src.path)
+
+
+def remove(path):
+  fs, fpath = resolve_fs(path)
+  fs.remove(fpath)
 
 
 def mkdir(path, **kwargs):
