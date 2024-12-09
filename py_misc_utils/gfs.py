@@ -29,20 +29,20 @@ class TempFile:
 
     self._fs, self._path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
     self._kwargs = kwargs
-    self._fd, self._delete, self._mirrored = None, False, None
+    self._fd, self._delete = None, False
 
   def open(self):
     self._fd = self._fs.open(self._path, **self._kwargs)
     self._delete = True
-    self._mirrored = mrf.mirror_all(self._fd, self)
+    mrf.mirror_all(self._fd, self, name='fd')
 
     return self._fd
 
   def _close_fd(self):
     if self._fd is not None:
       self._fd.close()
-      mrf.unmirror(self, self._mirrored)
-      self._fd = self._mirrored = None
+      mrf.unmirror(self, name='fd')
+      self._fd = None
 
   def close(self):
     self._close_fd()

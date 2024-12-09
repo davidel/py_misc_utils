@@ -38,7 +38,11 @@ def mirror_attributes(src, dest, attributes):
     setattr(dest, attr, getattr(src, attr))
 
 
-def mirror_all(src, dest, excludes=None):
+def _mirrored_field(name):
+  return f'_mirrored_{name}'
+
+
+def mirror_all(src, dest, excludes=None, name=None):
   excludes = set(excludes or [])
   for attr in dir(dest):
     if not attr.startswith('_'):
@@ -50,10 +54,18 @@ def mirror_all(src, dest, excludes=None):
       setattr(dest, attr, getattr(src, attr))
       mirrored.append(attr)
 
+  if name is not None:
+    setattr(dest, _mirrored_field(name), tuple(mirrored))
+
   return tuple(mirrored)
 
 
-def unmirror(dest, attributes):
-  for attr in attributes:
+def unmirror(dest, attributes=None, name=None):
+  if name is not None:
+    mfield = _mirrored_field(name)
+    attributes = getattr(dest, mfield, None)
+    delattr(dest, mfield)
+
+  for attr in attributes or ():
     delattr(dest, attr)
 
