@@ -161,3 +161,9 @@ class GcsFs:
         if ignore_errors in (None, False):
           raise
 
+  def copy(self, src_path, dest_path):
+    bucket = self._client.bucket(self._bucket)
+    src_blob = bucket.blob(src_path)
+
+    bucket.copy_blob(src_blob, bucket, dest_path)
+
