@@ -73,11 +73,11 @@ class ArchiveStreamer:
             yield ArchiveEntry(name=f'{ruid}.{col}', data=data)
 
             if col == 'url':
-              data = hu.get(data, headers=self._kwargs.get('headers'))
+              url_data = hu.get(data, headers=self._kwargs.get('headers'))
 
               ext = hu.url_splitext(data)[1]
 
-              yield ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=data)
+              yield ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=url_data)
 
   def generate(self):
     specs = parse_specs(self._url)
