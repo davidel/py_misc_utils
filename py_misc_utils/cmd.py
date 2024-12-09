@@ -1,3 +1,4 @@
+import functools
 import os
 import shlex
 import signal
@@ -10,31 +11,27 @@ from . import signal as sgn
 from . import template_replace as tr
 
 
-def _handler(proc):
-  def sig_handler(sig, frame):
-    proc.send_signal(sig)
-    return sgn.HANDLED
+def _sig_handler(proc, sig, frame):
+  proc.send_signal(sig)
 
-  return sig_handler
+  return sgn.HANDLED
 
 
-def _lookup_fn(tmpl_envs):
-  def lookup(key, defval=None):
-    for env in tmpl_envs:
-      value = env.get(key)
-      if value is not None:
-        return value
+def _lookup(tmpl_envs, key, defval=None):
+  for env in tmpl_envs:
+    value = env.get(key)
+    if value is not None:
+      return value
 
-    alog.xraise(KeyError, f'Unable to lookup "{key}" while substituting command ' \
-                f'line arguments')
-
-  return lookup
+  alog.xraise(KeyError, f'Unable to lookup "{key}" while substituting command ' \
+              f'line arguments')
 
 
 def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   if isinstance(cmd, str):
     tmpl_envs = tmpl_envs or (os.environ,)
-    cmd = shlex.split(tr.template_replace(cmd, lookup_fn=_lookup_fn(tmpl_envs)))
+    cmd = tr.template_replace(cmd, lookup_fn=functools.partial(_lookup, tmpl_envs))
+    cmd = shlex.split(cmd)
 
   outfd = outfd or sys.stdout
 
@@ -49,7 +46,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   if readfn is None:
     readfn = getattr(proc.stdout, 'readline', None)
 
-  with sgn.Signals('INT, TERM', _handler(proc)):
+  with sgn.Signals('INT, TERM', functools.partial(_sig_handler, proc)):
     while True:
       data = readfn()
       if data:
