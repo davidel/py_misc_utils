@@ -168,9 +168,6 @@ class CachedBlockFile:
   def size(self):
     size = self.meta.size
     if size is None:
-      tas.check(not self._reader.support_blocks(),
-                msg=f'Readers supporting block reads must provide a proper size ' \
-                f'within the metadata')
       size, _ = self._fetch_block(self.WHOLE_OFFSET)
       meta = self.meta.clone(size=size)
       self.save_meta(self._path, meta)

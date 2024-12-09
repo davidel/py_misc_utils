@@ -23,21 +23,22 @@ class FileReader:
     return True
 
   def read_block(self, bpath, offset, size):
-    if offset == chf.CachedBlockFile.WHOLE_OFFSET:
+    if offset != chf.CachedBlockFile.WHOLE_OFFSET:
+      with (osfd.OsFd(self._path, os.O_RDONLY) as rfd,
+            osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd):
+        if os.lseek(rfd, offset, os.SEEK_SET) != offset:
+          alog.xraise(RuntimeError, f'Unable to seek {self._path} at offset {offset}')
+        data = os.read(rfd, size)
+        os.write(wfd, data)
+
+        return len(data)
+    else:
       with open(self._path, mode='rb') as rfd:
         bfd = os.open(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440)
         with open(bfd, mode='wb') as wfd:
           shutil.copyfileobj(rfd, wfd)
 
       return os.path.getsize(bpath)
-    else:
-      with (osfd.OsFd(self._path, os.O_RDONLY) as rfd,
-            osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd):
-        os.lseek(rfd, offset, os.SEEK_SET)
-        data = os.read(rfd, size)
-        os.write(wfd, data)
-
-        return len(data)
 
 
 class FileFs(fsb.FsBase):
