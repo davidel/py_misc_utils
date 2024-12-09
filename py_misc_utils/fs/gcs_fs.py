@@ -27,16 +27,6 @@ class CacheHandler(objc.Handler):
   def create(self):
     return gcs.GcsFs(*self._args, **self._kwargs)
 
-  def is_alive(self, obj):
-    return True
-
-  def close(self, obj):
-    pass
-
-  def max_age(self):
-    return 60
-
-
 
 class GcsReader:
 

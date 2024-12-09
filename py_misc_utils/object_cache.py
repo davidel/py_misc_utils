@@ -19,17 +19,14 @@ class Handler(abc.ABC):
   def create(self):
     ...
 
-  @abc.abstractmethod
-  def is_alive(self, obj):
-    ...
-
-  @abc.abstractmethod
-  def close(self, obj):
-    ...
-
-  @abc.abstractmethod
   def max_age(self):
-    ...
+    return 60
+
+  def is_alive(self, obj):
+    return True
+
+  def close(self, obj):
+    pass
 
 
 class Cache:

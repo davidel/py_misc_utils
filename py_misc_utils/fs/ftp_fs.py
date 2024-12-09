@@ -39,9 +39,6 @@ class CacheHandler(objc.Handler):
   def close(self, obj):
     obj.close()
 
-  def max_age(self):
-    return 60
-
 
 class FtpReader:
 
