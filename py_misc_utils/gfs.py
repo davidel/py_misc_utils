@@ -23,8 +23,8 @@ FsPath = collections.namedtuple('FsPath', 'fs, path')
 class TempFile:
 
   def __init__(self, nsdir=None, nspath=None, **kwargs):
-    nsdir = nsdir if is_local_path(nsdir) else None
-    nspath = nspath if is_local_path(nspath) else None
+    nsdir = nsdir if nsdir is None or is_local_path(nsdir) else None
+    nspath = nspath if nspath is None or is_local_path(nspath) else None
 
     self._fs, self._path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
     self._kwargs = kwargs
