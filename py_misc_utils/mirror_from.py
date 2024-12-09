@@ -32,3 +32,28 @@ def mirror_from(origin_name, methods):
 
   return wrapper
 
+
+def mirror_attributes(src, dest, attributes):
+  for attr in attributes:
+    setattr(dest, attr, getattr(src, attr))
+
+
+def mirror_all(src, dest, excludes=None):
+  excludes = set(excludes or [])
+  for attr in dir(dest):
+    if not attr.startswith('_'):
+      excludes.add(attr)
+
+  mirrored = []
+  for attr in dir(src):
+    if not attr.startswith('_') and attr not in excludes:
+      setattr(dest, attr, getattr(src, attr))
+      mirrored.append(attr)
+
+  return tuple(mirrored)
+
+
+def unmirror(dest, attributes):
+  for attr in attributes:
+    delattr(dest, attr)
+

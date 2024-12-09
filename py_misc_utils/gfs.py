@@ -13,6 +13,7 @@ from . import assert_checks as tas
 from . import cached_file as chf
 from . import context_managers as cm
 from . import fs_utils as fsu
+from . import mirror_from as mrf
 from . import rnd_utils as rngu
 from . import run_once as ro
 
@@ -28,27 +29,29 @@ class TempFile:
 
     self._fs, self._path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
     self._kwargs = kwargs
-    self._fd, self._delete = None, False
+    self._fd, self._delete, self._mirrored = None, False, None
 
   def open(self):
     self._fd = self._fs.open(self._path, **self._kwargs)
     self._delete = True
+    self._mirrored = mrf.mirror_all(self._fd, self)
 
     return self._fd
 
-  def close_fd(self):
+  def _close_fd(self):
     if self._fd is not None:
       self._fd.close()
-      self._fd = None
+      mrf.unmirror(self, self._mirrored)
+      self._fd = self._mirrored = None
 
   def close(self):
-    self.close_fd()
+    self._close_fd()
     if self._delete:
       self._fs.remove(self._path)
       self._delete = False
 
   def replace(self, path):
-    self.close_fd()
+    self._close_fd()
     replace(self._path, path, src_fs=self._fs)
     self._delete = False
 
