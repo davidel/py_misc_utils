@@ -4,7 +4,6 @@ import functools
 import os
 import threading
 import time
-import weakref
 
 from . import alog as alog
 from . import fin_wrap as fw
@@ -39,11 +38,9 @@ class Cache:
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
     self._cache = collections.defaultdict(collections.deque)
-    # Use weakref.WeakMethod() to avoid circular dependency with PeriodicTask
-    # holding a reference to Cache and viceversa.
     self._cleaner = ptsk.PeriodicTask(
       'CacheCleaner',
-      weakref.WeakMethod(self._try_cleanup),
+      self._try_cleanup,
       clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 8)),
       stop_on_error=False,
     )

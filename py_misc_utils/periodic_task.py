@@ -3,13 +3,14 @@ import weakref
 
 from . import alog as alog
 from . import scheduler as sch
+from . import weak_method as wmeth
 
 
 class PeriodicTask:
 
   def __init__(self, name, periodic_fn, period, scheduler=None, stop_on_error=None):
     self._name = name
-    self._periodic_fn = periodic_fn
+    self._periodic_fn = wmeth.WeakMethod(periodic_fn)
     self._period = period
     self._scheduler = scheduler or sch.common_scheduler()
     self._stop_on_error = stop_on_error in (None, True)
@@ -41,16 +42,10 @@ class PeriodicTask:
     self._event = self._scheduler.enter(self._period, self._runner)
     self._completed_event = threading.Event()
 
-  def _get_periodic_fn(self):
-    if isinstance(self._periodic_fn, weakref.WeakMethod):
-      return self._periodic_fn()
-    else:
-      return self._periodic_fn
-
   def _runner(self):
     re_issue = True
     try:
-      if (periodic_fn := self._get_periodic_fn()) is not None:
+      if (periodic_fn := self._periodic_fn()) is not None:
         periodic_fn()
       else:
         re_issue = False
