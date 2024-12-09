@@ -2,7 +2,6 @@ import collections
 import hashlib
 import os
 import tarfile
-import urllib.parse as uparse
 import zipfile
 
 from . import alog as alog
@@ -16,9 +15,8 @@ ArchiveEntry = collections.namedtuple('ArchiveEntry', 'name, data')
 
 
 def parse_specs(url):
-  purl = uparse.urlparse(url)
+  ubase, ext, purl = hu.url_splitext(url)
 
-  ubase, ext = os.path.splitext(purl.path)
   if ext in {'.gz', '.xz', '.bz2'}:
     compression = ext[1:]
   elif ext == '.bzip2':
@@ -77,8 +75,7 @@ class ArchiveStreamer:
             if col == 'url':
               data = hu.get(data, headers=self._kwargs.get('headers'))
 
-              purl = uparse.urlparse(data)
-              _, ext = os.path.splitext(purl.path)
+              ext = hu.url_splitext(data)[1]
 
               yield ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=data)
 
