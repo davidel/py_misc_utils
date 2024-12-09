@@ -1,7 +1,8 @@
 import io
-import requests
 
 import PIL.Image as Image
+
+from . import http_utils as hu
 
 
 def from_bytes(data):
@@ -9,8 +10,5 @@ def from_bytes(data):
 
 
 def from_url(url, headers=None):
-  resp = requests.get(url, headers=headers)
-  resp.raise_for_status()
-
-  return from_bytes(resp.content)
+  return from_bytes(hu.get(url, headers=headers))
 
