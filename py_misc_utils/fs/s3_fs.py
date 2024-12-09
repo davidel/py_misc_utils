@@ -305,11 +305,7 @@ class S3Fs(fsb.FsBase):
 
     return reader, meta
 
-  def remove(self, url):
-    client, purl = self._parse_url(url)
-    client.delete_object(Bucket=purl.hostname, Key=purl.path)
-
-  def rename(self, src_url, dest_url):
+  def _copy(self, src_url, dest_url):
     src_client, src_purl = self._parse_url(src_url)
     dest_client, dest_purl = self._parse_url(dest_url)
 
@@ -322,6 +318,15 @@ class S3Fs(fsb.FsBase):
       CopySource=dict(Bucket=src_purl.hostname, Key=src_purl.path),
       Key=dest_purl.path,
     )
+
+  def remove(self, url):
+    client, purl = self._parse_url(url)
+    client.delete_object(Bucket=purl.hostname, Key=purl.path)
+
+  def rename(self, src_url, dest_url):
+    self._copy(src_url, dest_url)
+
+    src_client, src_purl = self._parse_url(src_url)
     src_client.delete_object(Bucket=src_purl.hostname, Key=src_purl.path)
 
   def mkdir(self, url, mode=None):
@@ -399,6 +404,12 @@ class S3Fs(fsb.FsBase):
     reader, meta = self._make_reader(client, purl)
 
     return self._cache_iface.as_local(url, meta, reader, **kwargs)
+
+  def link(self, src_url, dest_url):
+    self._copy(src_url, dest_url)
+
+  def symlink(self, src_url, dest_url):
+    self.link(src_url, dest_url)
 
 
 FILE_SYSTEMS = (S3Fs,)

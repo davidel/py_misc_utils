@@ -222,6 +222,13 @@ class HttpFs(fsb.FsBase):
 
     return self._cache_iface.as_local(url, meta, reader, **kwargs)
 
+  def link(self, src_url, dest_url):
+    # There is not link support in HTTP.
+    self.copyfile(src_url, dest_url)
+
+  def symlink(self, src_url, dest_url):
+    self.link(src_url, dest_url)
+
 
 FILE_SYSTEMS = (HttpFs,)
 

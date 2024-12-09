@@ -221,6 +221,24 @@ def stat(path):
   return fs.stat(fpath)
 
 
+def link(src_path, dest_path):
+  src, dest = resolve_paths(src_path, dest_path)
+
+  tas.check(is_same_fs(src, dest),
+            msg=f'Unable to link across file systems: {src_path} -> {dest_path}')
+
+  src.fs.link(src.path, dest.path)
+
+
+def symlink(src_path, dest_path):
+  src, dest = resolve_paths(src_path, dest_path)
+
+  tas.check(is_same_fs(src, dest),
+            msg=f'Unable to symlink across file systems: {src_path} -> {dest_path}')
+
+  src.fs.symlink(src.path, dest.path)
+
+
 class RegexMatcher:
 
   def __init__(self, rex):

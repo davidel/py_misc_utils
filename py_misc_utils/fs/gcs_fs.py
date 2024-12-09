@@ -90,17 +90,27 @@ class GcsFs(fsb.FsBase):
 
     return reader, meta
 
+  def _parse_samefs(self, src_url, dest_url):
+    src_fs, src_purl = self._parse_url(src_url)
+    dest_fs, dest_purl = self._parse_url(dest_url)
+
+    tas.check_eq(src_fs.bucket, dest_fs.bucket,
+                 msg=f'Source and destination URL must be on the same bucket: ' \
+                 f'{src_url} vs. {dest_url}')
+
+    return (src_fs, src_purl), (dest_fs, dest_purl)
+
+  def _copy(self, src_url, dest_url):
+    (src_fs, src_purl), (dest_fs, dest_purl) = self._parse_samefs(src_url, dest_url)
+
+    src_fs.copy(src_purl.path, dest_purl.path)
+
   def remove(self, url):
     fs, purl = self._parse_url(url)
     fs.remove(purl.path)
 
   def rename(self, src_url, dest_url):
-    src_fs, src_purl = self._parse_url(src_url)
-    dest_fs, dest_purl = self._parse_url(dest_url)
-
-    tas.check_eq(src_purl.hostname, dest_purl.hostname,
-                 msg=f'Source and destination URL must be on the same bucket: ' \
-                 f'{src_url} vs. {dest_url}')
+    (src_fs, src_purl), (dest_fs, dest_purl) = self._parse_samefs(src_url, dest_url)
 
     src_fs.rename(src_purl.path, dest_purl.path)
 
@@ -174,6 +184,12 @@ class GcsFs(fsb.FsBase):
     reader, meta = self._make_reader(fs, purl)
 
     return self._cache_iface.as_local(url, meta, reader, **kwargs)
+
+  def link(self, src_url, dest_url):
+    self._copy(src_url, dest_url)
+
+  def symlink(self, src_url, dest_url):
+    self.link(src_url, dest_url)
 
 
 FILE_SYSTEMS = (GcsFs,)

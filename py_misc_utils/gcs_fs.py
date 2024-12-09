@@ -15,7 +15,7 @@ from . import fs_base as fsb
 class GcsFs:
 
   def __init__(self, bucket):
-    self._bucket = bucket
+    self.bucket = bucket
     self._client = gcs.Client()
 
   def _blob_stat(self, blob, base_path=None):
@@ -63,7 +63,7 @@ class GcsFs:
     npath = self._norm_path(path)
 
     dentries = dict()
-    for blob in self._client.list_blobs(self._bucket, prefix=npath):
+    for blob in self._client.list_blobs(self.bucket, prefix=npath):
       if (dentry := self._blob_stat(blob, base_path=npath)) is not None:
         xdentry = dentries.get(dentry.name)
         if xdentry is not None:
@@ -77,13 +77,13 @@ class GcsFs:
       yield dentry
 
   def open(self, path, mode='rb'):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.blob(path)
 
     return blob.open(mode)
 
   def upload(self, path, source):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.blob(path)
 
     with blob.open('wb') as fd:
@@ -91,7 +91,7 @@ class GcsFs:
         fd.write(data)
 
   def download(self, path, chunk_size=32 * 1024**2):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.blob(path)
 
     with blob.open('rb') as fd:
@@ -103,19 +103,19 @@ class GcsFs:
           break
 
   def pread(self, path, offset, size):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.blob(path)
 
     return blob.download_as_bytes(start=offset, end=offset + size - 1, raw_download=True)
 
   def exists(self, path):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.blob(path)
 
     return blob.exists()
 
   def stat(self, path):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.get_blob(path)
     if blob is not None:
       return self._blob_stat(blob)
@@ -139,12 +139,12 @@ class GcsFs:
                           st_mtime=mtime)
 
   def remove(self, path):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     blob = bucket.blob(path)
     blob.delete()
 
   def rename(self, src_path, dest_path):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     src_blob = bucket.blob(src_path)
 
     bucket.copy_blob(src_blob, bucket, dest_path)
@@ -153,16 +153,16 @@ class GcsFs:
   def rmtree(self, path, ignore_errors=None):
     npath = self._norm_path(path)
 
-    for blob in self._client.list_blobs(self._bucket, prefix=npath):
+    for blob in self._client.list_blobs(self.bucket, prefix=npath):
       try:
         blob.delete()
       except Exception as ex:
-        alog.debug(f'Failed to remove "{blob.name}" from "{self._bucket}": {ex}')
+        alog.debug(f'Failed to remove "{blob.name}" from "{self.bucket}": {ex}')
         if ignore_errors in (None, False):
           raise
 
   def copy(self, src_path, dest_path):
-    bucket = self._client.bucket(self._bucket)
+    bucket = self._client.bucket(self.bucket)
     src_blob = bucket.blob(src_path)
 
     bucket.copy_blob(src_blob, bucket, dest_path)

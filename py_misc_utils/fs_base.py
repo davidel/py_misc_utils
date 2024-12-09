@@ -123,3 +123,11 @@ class FsBase(abc.ABC):
   def as_local(self, url):
     ...
 
+  @abc.abstractmethod
+  def link(self, src_url, dest_url):
+    ...
+
+  @abc.abstractmethod
+  def symlink(self, src_url, dest_url):
+    ...
+

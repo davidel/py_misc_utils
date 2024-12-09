@@ -116,6 +116,12 @@ class FileFs(fsb.FsBase):
   def as_local(self, url, **kwargs):
     return url
 
+  def link(self, src_url, dest_url):
+    os.link(src_url, dest_url)
+
+  def symlink(self, src_url, dest_url):
+    os.symlink(src_url, dest_url)
+
 
 FILE_SYSTEMS = (FileFs,)
 
