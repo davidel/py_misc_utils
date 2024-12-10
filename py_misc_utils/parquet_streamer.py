@@ -54,7 +54,7 @@ class ParquetStreamer:
               data = self._fetcher.wait(recd[key])
               recd[f'{key}.data'] = data
               if kind == 'img':
-                kdata = imgu.from_bytes(url_data)
+                kdata = imgu.from_bytes(data)
               else:
                 alog.xraise(ValueError, f'Unknown load column kind: {kind}')
 
