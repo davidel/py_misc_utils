@@ -22,16 +22,17 @@ from .. import writeback_file as wbf
 
 class HttpReader:
 
-  def __init__(self, url, session=None, head=None, headers=None, chunk_size=None):
+  def __init__(self, url, session=None, head=None, req_kwargs=None, chunk_size=None):
     session = session if session is not None else requests.Session()
+    req_kwargs = req_kwargs or dict()
     if head is None:
-      head = hu.info(url, headers=headers, mod=session)
+      head = hu.info(url, mod=session, **req_kwargs)
 
     allow_ranges = hu.support_ranges(head.headers)
 
     self._url = url
     self._session = session
-    self._headers = headers.copy() if headers else dict()
+    self._req_kwargs = req_kwargs
     self._chunk_size = chunk_size or 16 * 1024**2
     self._size = hu.content_length(head.headers)
     self._support_blocks = self._size is not None and allow_ranges
@@ -54,7 +55,7 @@ class HttpReader:
       with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
         size = min(size, self._size - offset)
 
-        headers = self._headers.copy()
+        headers = self._req_kwargs.get('headers', dict()).copy()
         hu.add_range(headers, offset, offset + size)
 
         resp = self._session.get(self._url, headers=headers)
@@ -65,7 +66,7 @@ class HttpReader:
 
         return len(data)
     else:
-      resp = self._session.get(self._url, headers=self._headers, stream=True)
+      resp = self._session.get(self._url, stream=True, **self._req_kwargs)
       resp.raise_for_status()
       with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
         for data in resp.iter_content(chunk_size=self._chunk_size):
@@ -81,32 +82,35 @@ class HttpFs(fsb.FsBase):
   ID = 'http'
   IDS = (ID, 'https')
 
-  def __init__(self, headers=None, cache_iface=None, **kwargs):
+  def __init__(self, cache_iface=None, **kwargs):
     super().__init__(cache_iface=cache_iface, **kwargs)
-    self._headers = headers.copy() if headers else dict()
+    self._req_kwargs = hu.filter_request_args(kwargs)
     self._session = requests.Session()
 
   def _exists(self, url):
     try:
-      hu.info(url, headers=self._headers, mod=self._session)
+      hu.info(url, mod=self._session, **self._req_kwargs)
 
       return True
     except requests.exceptions.HTTPError:
       return False
 
   def _make_reader(self, url):
-    head = hu.info(url, headers=self._headers, mod=self._session)
+    head = hu.info(url, mod=self._session, **self._req_kwargs)
 
     tag = HttpReader.tag(head)
     size = hu.content_length(head.headers)
     mtime = hu.last_modified(head.headers)
     meta = chf.Meta(size=size, mtime=mtime, tag=tag)
-    reader = HttpReader(url, session=self._session, head=head, headers=self._headers)
+    reader = HttpReader(url,
+                        session=self._session,
+                        head=head,
+                        req_kwargs=self._req_kwargs)
 
     return reader, meta
 
   def stat(self, url):
-    head = hu.info(url, headers=self._headers, mod=self._session)
+    head = hu.info(url, mod=self._session, **self._req_kwargs)
 
     length = hu.content_length(head.headers)
     mtime = hu.last_modified(head.headers)
@@ -141,7 +145,7 @@ class HttpFs(fsb.FsBase):
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
 
   def remove(self, url):
-    self._session.delete(url, headers=self._headers)
+    self._session.delete(url, **self._req_kwargs)
 
   def rename(self, src_url, dest_url):
     # There is no "rename" in HTTP ...
@@ -163,7 +167,7 @@ class HttpFs(fsb.FsBase):
     pass
 
   def list(self, url):
-    resp = self._session.get(url, headers=self._headers)
+    resp = self._session.get(url, **self._req_kwargs)
     resp.raise_for_status()
 
     html_parser = bs4.BeautifulSoup(resp.text, 'html.parser')
@@ -182,7 +186,7 @@ class HttpFs(fsb.FsBase):
   def _upload_data_gen(self, url, data_gen):
     ctype, cencoding = mimetypes.guess_type(url, strict=False)
 
-    headers = self._headers.copy()
+    headers = self._req_kwargs.get('headers', dict()).copy()
     if ctype is not None:
       headers[hu.CONTENT_TYPE] = ctype
     if cencoding is not None:
@@ -197,7 +201,7 @@ class HttpFs(fsb.FsBase):
   def _iterate_chunks(self, url, chunk_size=None):
     chunk_size = chunk_size or 16 * 1024**2
 
-    resp = self._session.get(url, headers=self._headers, stream=True)
+    resp = self._session.get(url, stream=True, **self._req_kwargs)
     resp.raise_for_status()
 
     for data in resp.iter_content(chunk_size=chunk_size):
