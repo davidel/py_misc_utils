@@ -54,7 +54,7 @@ class ParquetStreamer:
               data = self._fetcher.wait(recd[key])
               recd[f'{key}_data'] = data
               if kind == 'img':
-                kdata = imgu.from_bytes(data)
+                kdata = imgu.from_bytes(data, convert='RGB')
               else:
                 alog.xraise(ValueError, f'Unknown load column kind: {kind}')
 
