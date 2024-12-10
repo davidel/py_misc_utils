@@ -414,6 +414,8 @@ _CacheFileStats = collections.namedtuple(
 )
 
 def cleanup_cache(cache_dir, max_age=None, max_size=None):
+  alog.verbose(f'Cache cleanup running: {cache_dir}')
+
   if os.path.isdir(cache_dir):
     cache_files = []
     with os.scandir(cache_dir) as sdit:
