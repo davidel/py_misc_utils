@@ -1,6 +1,7 @@
 import collections
 import hashlib
 import os
+import requests
 import tarfile
 import zipfile
 
@@ -54,30 +55,41 @@ class ArchiveStreamer:
         data = tfile.extractfile(tinfo).read()
         yield ArchiveEntry(name=tinfo.name, data=data)
 
-  def _generate_parquet(self, specs):
+  def _create_parquet_entries(self, ddf, ruid, n, session):
+    entries = []
+    for col, values in ddf.items():
+      data = values[n]
+
+      entries.append(ArchiveEntry(name=f'{ruid}.{col}', data=data))
+      if col == 'url':
+        url_data = hu.get(data, headers=self._kwargs.get('headers'), mod=session)
+        ext = hu.url_splitext(data)[1]
+        entries.append(ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=url_data))
+
+    return entries
+
+  def _generate_parquet(self, specs, batch_size=16):
     # Keep the import dependency local, to make it required only if parquet is used.
     import pyarrow.parquet as pq
 
+    session = requests.Session()
     uid = hashlib.sha1(self._url.encode()).hexdigest()[: 16]
     with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
       nrecs = 0
       pqfd = pq.ParquetFile(stream)
-      for rec in pqfd.iter_batches(batch_size=16):
+      for rec in pqfd.iter_batches(batch_size=batch_size):
         ddf = rec.to_pydict()
         for n in range(len(rec)):
-          nrecs += 1
-          ruid = f'{uid}-{nrecs - 1}'
-          for col, values in ddf.items():
-            data = values[n]
+          ruid = f'{uid}_{nrecs}'
 
-            yield ArchiveEntry(name=f'{ruid}.{col}', data=data)
+          try:
+            entries = self._create_parquet_entries(ddf, ruid, n, session)
+            for aentry in entries:
+              yield aentry
 
-            if col == 'url':
-              url_data = hu.get(data, headers=self._kwargs.get('headers'))
-
-              ext = hu.url_splitext(data)[1]
-
-              yield ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=url_data)
+            nrecs += 1
+          except requests.exceptions.RequestException:
+            pass
 
   def generate(self):
     specs = parse_specs(self._url)

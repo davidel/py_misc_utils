@@ -121,8 +121,10 @@ def info(url, headers=None, mod=None):
   return resp
 
 
-def get(url, headers=None):
-  resp = requests.get(url, headers=headers)
+def get(url, headers=None, mod=None):
+  mod = mod or requests
+
+  resp = mod.get(url, headers=headers)
   resp.raise_for_status()
 
   return resp.content
