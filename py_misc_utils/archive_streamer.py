@@ -10,9 +10,10 @@ from . import assert_checks as tas
 from . import gfs
 from . import http_utils as hu
 from . import img_utils as imgu
+from . import utils as ut
 
 
-ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_path')
+ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_path, purl')
 ArchiveEntry = collections.namedtuple('ArchiveEntry', 'name, data')
 
 
@@ -30,7 +31,10 @@ def parse_specs(url):
 
   tas.check(ext, msg=f'Unable to infer archive type: {url}')
 
-  return ArchiveSpecs(kind=ext[1:], compression=compression, base_path=base_path)
+  return ArchiveSpecs(kind=ext[1:].lower(),
+                      compression=compression,
+                      base_path=base_path,
+                      purl=purl)
 
 
 class ArchiveStreamer:
@@ -56,27 +60,30 @@ class ArchiveStreamer:
         data = tfile.extractfile(tinfo).read()
         yield ArchiveEntry(name=tinfo.name, data=data)
 
-  def _create_dict_entries(self, ddf, ruid, n, session):
+  def _create_dict_entries(self, ddf, ruid, n, session, load_columns):
     entries = []
     for col, values in ddf.items():
       data = values[n]
 
       entries.append(ArchiveEntry(name=f'{ruid}.{col}', data=data))
-      if isinstance(data, str) and gfs.get_proto(data) in {'http', 'https'}:
+      ldcol = load_columns.get(col)
+      if ldcol is not None:
         url_data = hu.get(data,
                           mod=session,
                           headers=self._kwargs.get('headers'),
                           timeout=self._kwargs.get('timeout'))
         entries.append(ArchiveEntry(name=f'{ruid}.{col}.data', data=url_data))
-        if hu.url_splitext(data)[1].lower() in {'jpg', 'jpeg', 'png', 'tif', 'tiff'}:
+        if ldcol == 'img':
           img = imgu.pyimg.from_bytes(url_data)
-          entries.append(ArchiveEntry(name=f'{ruid}.img', data=img))
+          entries.append(ArchiveEntry(name=f'{ruid}.{ldcol}', data=img))
 
     return entries
 
   def _generate_parquet(self, specs, batch_size=16):
     # Keep the import dependency local, to make it required only if parquet is used.
     import pyarrow.parquet as pq
+
+    load_columns = self._kwargs.get('load_columns') or dict()
 
     session = requests.Session()
     uid = hashlib.sha1(self._url.encode()).hexdigest()[: 16]
@@ -89,7 +96,7 @@ class ArchiveStreamer:
           ruid = f'{uid}_{nrecs}'
 
           try:
-            entries = self._create_dict_entries(ddf, ruid, n, session)
+            entries = self._create_dict_entries(ddf, ruid, n, session, load_columns)
             for aentry in entries:
               yield aentry
 
