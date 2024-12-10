@@ -1,7 +1,6 @@
 import collections
 import hashlib
 import os
-import requests
 import tarfile
 import zipfile
 
@@ -60,46 +59,19 @@ class ArchiveStreamer:
         data = tfile.extractfile(tinfo).read()
         yield ArchiveEntry(name=tinfo.name, data=data)
 
-  def _create_dict_entries(self, recd, ruid, session, load_columns):
-    entries = []
-    for col, data in recd.items():
-      entries.append(ArchiveEntry(name=f'{ruid}.{col}', data=data))
-      ldcol = load_columns.get(col)
-      if ldcol is not None:
-        url_data = hu.get(data,
-                          mod=session,
-                          headers=self._kwargs.get('headers'),
-                          timeout=self._kwargs.get('timeout'))
-        entries.append(ArchiveEntry(name=f'{ruid}.{col}.data', data=url_data))
-        if ldcol == 'img':
-          img = imgu.pyimg.from_bytes(url_data)
-          entries.append(ArchiveEntry(name=f'{ruid}.{ldcol}', data=img))
-
-    return entries
-
   def _generate_parquet(self, specs, batch_size=16):
     # Keep the import dependency local, to make it required only if parquet is used.
-    import pyarrow.parquet as pq
+    from . import parquet_streamer as pqs
 
-    load_columns = self._kwargs.get('load_columns') or dict()
-
-    session = requests.Session()
     uid = hashlib.sha1(self._url.encode()).hexdigest()[: 16]
-    with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
-      nrecs = 0
-      pqfd = pq.ParquetFile(stream)
-      for rec in pqfd.iter_batches(batch_size=batch_size):
-        for recd in rec.to_pylist():
-          ruid = f'{uid}_{nrecs}'
+    nrecs = 0
 
-          try:
-            entries = self._create_dict_entries(recd, ruid, session, load_columns)
-            for aentry in entries:
-              yield aentry
-
-            nrecs += 1
-          except Exception as ex:
-            alog.spam(f'Unable to create parquet entry: {ex}')
+    pq_streamer = pqs.ParquetStreamer(self._url, **self._kwargs)
+    for recd in pq_streamer:
+      ruid = f'{uid}_{nrecs}'
+      for name, data in recd.items():
+        yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
+        nrecs += 1
 
   def generate(self):
     specs = parse_specs(self._url)

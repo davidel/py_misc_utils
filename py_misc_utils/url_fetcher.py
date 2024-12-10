@@ -72,11 +72,10 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
 class UrlFetcher:
 
   def __init__(self, path, num_workers=None, fs_kwargs=None):
-    fs_kwargs = fs_kwargs.copy() if fs_kwargs else dict()
-
+    fs_kwargs = fs_kwargs else dict()
     fs_kwargs = ut.dict_setmissing(
       fs_kwargs,
-      timeout=ut.getenv('FETCHER_TIMEO', dtype=float, defval=4.0),
+      timeout=ut.getenv('FETCHER_TIMEO', dtype=float, defval=10.0),
     )
 
     self._path = path
