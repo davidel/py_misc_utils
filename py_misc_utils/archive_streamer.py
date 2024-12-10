@@ -60,11 +60,9 @@ class ArchiveStreamer:
         data = tfile.extractfile(tinfo).read()
         yield ArchiveEntry(name=tinfo.name, data=data)
 
-  def _create_dict_entries(self, ddf, ruid, n, session, load_columns):
+  def _create_dict_entries(self, recd, ruid, session, load_columns):
     entries = []
-    for col, values in ddf.items():
-      data = values[n]
-
+    for col, data in recd.items():
       entries.append(ArchiveEntry(name=f'{ruid}.{col}', data=data))
       ldcol = load_columns.get(col)
       if ldcol is not None:
@@ -91,12 +89,11 @@ class ArchiveStreamer:
       nrecs = 0
       pqfd = pq.ParquetFile(stream)
       for rec in pqfd.iter_batches(batch_size=batch_size):
-        ddf = rec.to_pydict()
-        for n in range(len(rec)):
+        for recd in rec.to_pylist():
           ruid = f'{uid}_{nrecs}'
 
           try:
-            entries = self._create_dict_entries(ddf, ruid, n, session, load_columns)
+            entries = self._create_dict_entries(recd, ruid, session, load_columns)
             for aentry in entries:
               yield aentry
 

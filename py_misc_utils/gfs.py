@@ -36,7 +36,7 @@ class TempFile:
     self._delete = True
     mrf.mirror_all(self._fd, self, name='fd')
 
-    return self._fd
+    return self
 
   def _close_fd(self):
     if self._fd is not None:
