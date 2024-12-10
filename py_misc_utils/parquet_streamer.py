@@ -52,13 +52,13 @@ class ParquetStreamer:
           try:
             for key, kind in self._load_columns.items():
               data = self._fetcher.wait(recd[key])
-              recd[f'{key}.data'] = data
+              recd[f'{key}_data'] = data
               if kind == 'img':
                 kdata = imgu.from_bytes(data)
               else:
                 alog.xraise(ValueError, f'Unknown load column kind: {kind}')
 
-              recd[f'{key}.{kind}'] = kdata
+              recd[f'{key}_{kind}'] = kdata
 
             yield recd
           except Exception as ex:
