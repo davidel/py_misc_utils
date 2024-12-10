@@ -62,7 +62,7 @@ class ParquetStreamer:
 
             yield recd
           except Exception as ex:
-            alog.spam(f'Unable to create parquet entry ({recd}): {ex}')
+            alog.info(f'Unable to create parquet entry ({recd}): {ex}')
 
   def __iter__(self):
     return iter(self.generate())
