@@ -2,6 +2,8 @@ import hashlib
 import multiprocessing
 import os
 import pickle
+import queue
+import threading
 
 from . import alog as alog
 from . import assert_checks as tas
@@ -81,46 +83,32 @@ class UrlFetcher:
     self._path = path
     self._num_workers = num_workers or max(os.cpu_count() * 2, 32)
     self._fs_kwargs = fs_kwargs
-    self._manager = None
     self._uqueue = self._rqueue = None
-    self._procs = []
+    self._workers = []
 
   def start(self):
-    tas.check(self._manager is None, msg=f'Already started')
-
-    manager = multiprocessing.Manager()
-
-    fw.fin_wrap(self, '_manager', manager,
-                finfn=wcall.weak_call(manager, 'shutdown'))
-
-    self._uqueue = self._manager.Queue()
-    self._rqueue = self._manager.Queue()
+    self._uqueue = queue.Queue()
+    self._rqueue = queue.Queue()
     for i in range(self._num_workers):
-      proc = multiprocessing.Process(
+      worker = threading.Thread(
         target=fetcher,
         args=(self._path, self._fs_kwargs, self._uqueue, self._rqueue),
+        daemon=True,
       )
-      proc.start()
-      self._procs.append(proc)
+      worker.start()
+      self._workers.append(worker)
 
   def shutdown(self):
-    manager = self._manager
-    if manager is not None:
-      fw.fin_wrap(self, '_manager', None)
+    alog.verbose(f'Sending shutdowns down the queue')
+    for _ in range(len(self._workers)):
+      self._uqueue.put('')
 
-      alog.verbose(f'Sending shutdowns down the queue')
-      for _ in range(len(self._procs)):
-        self._uqueue.put('')
+    alog.verbose(f'Joining fetcher workers')
+    for worker in self._workers:
+      worker.join()
 
-      alog.verbose(f'Joining fetcher processes')
-      for proc in self._procs:
-        proc.join()
-
-      self._uqueue = self._rqueue = None
-      self._procs = []
-
-      alog.verbose(f'Manager shutdown')
-      manager.shutdown()
+    self._uqueue = self._rqueue = None
+    self._workers = []
 
   def enqueue(self, *urls):
     for url in urls:
