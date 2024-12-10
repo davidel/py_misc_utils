@@ -95,13 +95,15 @@ def epoch_to_date(epoch_time=None):
   return time.strftime(_HTTP_DATE_FMT, time.gmtime(epoch_time or time.time()))
 
 
-def filter_request_args(kwargs):
-  req_kwargs = dict()
-  for arg in ('headers', 'timeout', 'auth', 'cookies', 'allow_redirects',
-              'proxies', 'verify', 'cert'):
-    argv = kwargs.get(arg)
-    if argv is not None:
-      req_kwargs[arg] = argv
+def filter_request_args(kwargs, key=None):
+  req_kwargs = kwargs.get(key or 'requests')
+  if req_kwargs is None:
+    req_kwargs = dict()
+    for arg in ('headers', 'timeout', 'auth', 'cookies', 'allow_redirects',
+                'proxies', 'verify', 'cert'):
+      argv = kwargs.get(arg)
+      if argv is not None:
+        req_kwargs[arg] = argv
 
   return req_kwargs
 
