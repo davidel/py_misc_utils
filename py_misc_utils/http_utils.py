@@ -95,14 +95,14 @@ def epoch_to_date(epoch_time=None):
   return time.strftime(_HTTP_DATE_FMT, time.gmtime(epoch_time or time.time()))
 
 
-def info(url, headers=None, mod=None):
+def info(url, mod=None, headers=None, **kwargs):
   mod = mod or requests
   req_headers = headers.copy() if headers else dict()
 
   add_range(req_headers, 0, 1024)
 
   try:
-    resp = mod.get(url, headers=req_headers)
+    resp = mod.get(url, headers=req_headers, **kwargs)
     resp.raise_for_status()
 
     hrange = range(resp.headers)
@@ -115,16 +115,16 @@ def info(url, headers=None, mod=None):
     resp = None
 
   if resp is None:
-    resp = mod.head(url, headers=headers)
+    resp = mod.head(url, headers=headers, **kwargs)
     resp.raise_for_status()
 
   return resp
 
 
-def get(url, headers=None, mod=None):
+def get(url, mod=None, **kwargs):
   mod = mod or requests
 
-  resp = mod.get(url, headers=headers)
+  resp = mod.get(url, **kwargs)
   resp.raise_for_status()
 
   return resp.content

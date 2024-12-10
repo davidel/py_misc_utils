@@ -62,7 +62,10 @@ class ArchiveStreamer:
 
       entries.append(ArchiveEntry(name=f'{ruid}.{col}', data=data))
       if col == 'url':
-        url_data = hu.get(data, headers=self._kwargs.get('headers'), mod=session)
+        url_data = hu.get(data,
+                          mod=session,
+                          headers=self._kwargs.get('headers'),
+                          timeout=self._kwargs.get('timeout'))
         ext = hu.url_splitext(data)[1]
         entries.append(ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=url_data))
 
