@@ -9,6 +9,7 @@ from . import alog as alog
 from . import assert_checks as tas
 from . import gfs
 from . import http_utils as hu
+from . import img_utils as imgu
 
 
 ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_path')
@@ -55,19 +56,21 @@ class ArchiveStreamer:
         data = tfile.extractfile(tinfo).read()
         yield ArchiveEntry(name=tinfo.name, data=data)
 
-  def _create_parquet_entries(self, ddf, ruid, n, session):
+  def _create_dict_entries(self, ddf, ruid, n, session):
     entries = []
     for col, values in ddf.items():
       data = values[n]
 
       entries.append(ArchiveEntry(name=f'{ruid}.{col}', data=data))
-      if col == 'url':
+      if isinstance(data, str) and gfs.get_proto(data) in {'http', 'https'}:
         url_data = hu.get(data,
                           mod=session,
                           headers=self._kwargs.get('headers'),
                           timeout=self._kwargs.get('timeout'))
-        ext = hu.url_splitext(data)[1]
-        entries.append(ArchiveEntry(name=f'{ruid}.{ext[1:].lower()}', data=url_data))
+        entries.append(ArchiveEntry(name=f'{ruid}.{col}.data', data=url_data))
+        if hu.url_splitext(data)[1].lower() in {'jpg', 'jpeg', 'png', 'tif', 'tiff'}:
+          img = imgu.pyimg.from_bytes(url_data)
+          entries.append(ArchiveEntry(name=f'{ruid}.img', data=img))
 
     return entries
 
@@ -86,13 +89,13 @@ class ArchiveStreamer:
           ruid = f'{uid}_{nrecs}'
 
           try:
-            entries = self._create_parquet_entries(ddf, ruid, n, session)
+            entries = self._create_dict_entries(ddf, ruid, n, session)
             for aentry in entries:
               yield aentry
 
             nrecs += 1
-          except requests.exceptions.RequestException:
-            pass
+          except Exception as ex:
+            alog.spam(f'Unable to create parquet entry: {ex}')
 
   def generate(self):
     specs = parse_specs(self._url)

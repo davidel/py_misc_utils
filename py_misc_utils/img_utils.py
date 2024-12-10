@@ -9,6 +9,6 @@ def from_bytes(data):
   return Image.open(io.BytesIO(data))
 
 
-def from_url(url, headers=None):
-  return from_bytes(hu.get(url, headers=headers))
+def from_url(url, **kwargs):
+  return from_bytes(hu.get(url, **kwargs))
 
