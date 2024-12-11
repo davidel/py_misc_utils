@@ -15,16 +15,18 @@ ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_p
 ArchiveEntry = collections.namedtuple('ArchiveEntry', 'name, data')
 
 
+_EXT_COMPRESSION = {
+  'gz': 'gz',
+  'xz': 'xz',
+  'bz2': 'bz2',
+  'bzip2': 'bz2',
+}
+
 def parse_specs(url):
   usplit = gfs.splitext(url)
 
-  ubase = usplit.base
-  if usplit.ext in {'gz', 'xz', 'bz2'}:
-    compression = usplit.ext
-  elif usplit.ext == 'bzip2':
-    compression = 'bz2'
-  else:
-    compression, ubase = None, usplit.purl.path
+  compression = _EXT_COMPRESSION.get(usplit.ext)
+  ubase = usplit.base if compression else usplit.purl.path
 
   base_path, ext = os.path.splitext(ubase)
 
