@@ -46,3 +46,8 @@ def main(parser, mainfn, args=None, setupfn=None, rem_args=None):
   finally:
     _cleanup()
 
+
+def basic_main(mainfn):
+  parser = argparse.ArgumentParser()
+  main(parser, mainfn)
+
