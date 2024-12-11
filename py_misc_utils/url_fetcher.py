@@ -80,7 +80,7 @@ class UrlFetcher:
     )
 
     self._path = path
-    self._num_workers = num_workers or max(os.cpu_count() * 2, 32)
+    self._num_workers = num_workers or max(os.cpu_count() * 4, 128)
     self._fs_kwargs = fs_kwargs
     self._uqueue = self._rqueue = None
     self._workers = []
