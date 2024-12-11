@@ -7,7 +7,6 @@ import zipfile
 from . import alog as alog
 from . import assert_checks as tas
 from . import gfs
-from . import http_utils as hu
 from . import img_utils as imgu
 from . import utils as ut
 
@@ -17,23 +16,24 @@ ArchiveEntry = collections.namedtuple('ArchiveEntry', 'name, data')
 
 
 def parse_specs(url):
-  ubase, ext, purl = hu.url_splitext(url)
+  usplit = gfs.splitext(url)
 
-  if ext in {'.gz', '.xz', '.bz2'}:
-    compression = ext[1:]
-  elif ext == '.bzip2':
+  ubase = usplit.base
+  if usplit.ext in {'gz', 'xz', 'bz2'}:
+    compression = usplit.ext
+  elif usplit.ext == 'bzip2':
     compression = 'bz2'
   else:
-    compression, ubase = None, purl.path
+    compression, ubase = None, usplit.purl.path
 
   base_path, ext = os.path.splitext(ubase)
 
   tas.check(ext, msg=f'Unable to infer archive type: {url}')
 
-  return ArchiveSpecs(kind=ext[1:].lower(),
+  return ArchiveSpecs(kind=usplit.ext.lower(),
                       compression=compression,
                       base_path=base_path,
-                      purl=purl)
+                      purl=usplit.purl)
 
 
 class ArchiveStreamer:

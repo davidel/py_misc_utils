@@ -3,7 +3,6 @@ import os
 import re
 import requests
 import time
-import urllib.parse as uparse
 
 
 ACCEPT_RANGES = 'Accept-Ranges'
@@ -141,10 +140,4 @@ def get(url, mod=None, **kwargs):
   resp.raise_for_status()
 
   return resp.content
-
-
-def url_splitext(url):
-  purl = uparse.urlparse(url)
-
-  return *os.path.splitext(purl.path), purl
 

@@ -109,6 +109,15 @@ def path_of(path):
   return os.fspath(path) if isinstance(path, (str, os.PathLike)) else None
 
 
+PathSplit = collections.namedtuple('PathSplit', 'base, ext, purl')
+
+def splitext(path):
+  purl = uparse.urlparse(path)
+  base, ext = os.path.splitext(purl.path)
+
+  return PathSplit(base=base, ext=ext[1:], purl=purl)
+
+
 def is_file(path):
   fs, fpath = resolve_fs(path)
 
