@@ -69,9 +69,9 @@ class ArchiveStreamer:
     pq_streamer = pqs.ParquetStreamer(self._url, **self._kwargs)
     for recd in pq_streamer:
       ruid = f'{uid}_{nrecs}'
+      nrecs += 1
       for name, data in recd.items():
         yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
-        nrecs += 1
 
   def generate(self):
     specs = parse_specs(self._url)
