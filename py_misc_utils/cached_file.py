@@ -1,4 +1,5 @@
 import collections
+import datetime
 import functools
 import hashlib
 import os
@@ -453,19 +454,20 @@ def make_tag(**kwargs):
   return hashlib.sha1(stag.encode()).hexdigest()
 
 
+_CLEANUP_PERIOD = int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
+
 def _cleanup_check(path):
   lpath = os.path.join(path, '.last_cleanup')
   if (sres := fsu.stat(lpath)) is None:
     do_cleanup = os.path.isdir(path)
   else:
-    cleanup_period = int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
-    do_cleanup = time.time() > sres.st_mtime + cleanup_period
+    do_cleanup = time.time() > sres.st_mtime + _CLEANUP_PERIOD
 
   if do_cleanup:
     alog.debug(f'Triggering cache cleanup: {path}')
     cleanup_cache(path)
-    with open(lpath, mode='w'):
-      pass
+    with open(lpath, mode='w') as fd:
+      fd.write(datetime.datetime.now().isoformat(timespec='microseconds'))
 
   return path
 
