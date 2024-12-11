@@ -24,12 +24,15 @@ class ParquetStreamer:
     self._load_columns = ut.value_or(load_columns, dict())
     self._kwargs = kwargs
 
-    fetch_path = tmpd.create()
-    fetcher = urlf.UrlFetcher(fetch_path, num_workers=num_workers, fs_kwargs=kwargs)
-    fetcher.start()
+    if self._load_columns:
+      fetch_path = tmpd.create()
+      fetcher = urlf.UrlFetcher(fetch_path, num_workers=num_workers, fs_kwargs=kwargs)
+      fetcher.start()
 
-    finfn = functools.partial(self._cleaner, fetcher, fetch_path)
-    fw.fin_wrap(self, '_fetcher', fetcher, finfn=finfn)
+      finfn = functools.partial(self._cleaner, fetcher, fetch_path)
+      fw.fin_wrap(self, '_fetcher', fetcher, finfn=finfn)
+    else:
+      self._fetcher = None
 
   @classmethod
   def _cleaner(cls, fetcher, fetch_path):
@@ -37,9 +40,10 @@ class ParquetStreamer:
     gfs.rmtree(fetch_path, ignore_errors=True)
 
   def _prefetch(self, recs):
-    for recd in recs:
-      for key in self._load_columns.keys():
-        self._fetcher.enqueue(recd[key])
+    if self._fetcher is not None:
+      for recd in recs:
+        for key in self._load_columns.keys():
+          self._fetcher.enqueue(recd[key])
 
   def generate(self):
     with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
