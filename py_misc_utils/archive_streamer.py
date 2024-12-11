@@ -38,6 +38,8 @@ def parse_specs(url):
 
 class ArchiveStreamer:
 
+  MAX_UIDLEN = 8
+
   def __init__(self, url, **kwargs):
     self._url = url
     self._kwargs = kwargs
@@ -63,7 +65,7 @@ class ArchiveStreamer:
     # Keep the import dependency local, to make it required only if parquet is used.
     from . import parquet_streamer as pqs
 
-    uid = hashlib.sha1(self._url.encode()).hexdigest()[: 16]
+    uid = hashlib.sha1(self._url.encode()).hexdigest()[: self.MAX_UIDLEN]
     nrecs = 0
 
     pq_streamer = pqs.ParquetStreamer(self._url, **self._kwargs)
