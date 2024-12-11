@@ -1,11 +1,12 @@
 import ftplib
-import ftputil
 import functools
 import hashlib
 import io
 import os
 import tempfile
 import urllib.parse as uparse
+
+import ftputil
 
 from .. import alog
 from .. import assert_checks as tas

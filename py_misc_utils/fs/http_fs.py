@@ -1,4 +1,3 @@
-import bs4
 import functools
 import hashlib
 import io
@@ -8,6 +7,8 @@ import re
 import requests
 import stat as st
 import tempfile
+
+import bs4
 
 from .. import alog
 from .. import assert_checks as tas
