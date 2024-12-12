@@ -4,6 +4,8 @@ import os
 import queue
 import threading
 
+import numpy as np
+
 from . import cleanups
 from . import run_once as ro
 
@@ -54,7 +56,8 @@ class AsyncContext:
 
 class _Worker:
 
-  def __init__(self, task_ctor, out_queue):
+  def __init__(self, wid, task_ctor, out_queue):
+    self._wid = wid
     self._task_ctor = task_ctor
     self._out_queue = out_queue
     self._in_queue = multiprocessing.Queue()
@@ -76,7 +79,7 @@ class _Worker:
 
     result = await task
 
-    self._out_queue.put((work, result))
+    self._out_queue.put((self._wid, work, result))
 
   def _work_feeder(self, loop):
     context = AsyncContext()
@@ -109,9 +112,9 @@ class AsyncManager:
     num_workers = num_workers or os.cpu_count()
 
     self._out_queue = multiprocessing.Queue()
-    self._workers = [_Worker(task_ctor, self._out_queue) for _ in range(num_workers)]
+    self._workers = [_Worker(i, task_ctor, self._out_queue) for i in range(num_workers)]
     self._lock = threading.Lock()
-    self._next_in = 0
+    self._queued = np.zeros(num_workers, dtype=np.int64)
 
   def close(self):
     for worker in self._workers:
@@ -119,14 +122,20 @@ class AsyncManager:
 
   def enqueue_work(self, work):
     with self._lock:
-      worker = self._workers[self._next_in]
-      self._next_in = (self._next_in + 1) % len(self._workers)
+      wid = np.argmin(self._queued)
+      self._queued[wid] += 1
+      worker = self._workers[wid]
 
     worker.enqueue_work(work)
 
   def fetch_result(self, block=True, timeout=None):
     try:
-      return self._out_queue.get(block=block, timeout=timeout)
+      wid, work, result = self._out_queue.get(block=block, timeout=timeout)
+
+      with self._lock:
+        self._queued[wid] -= 1
+
+      return work, result
     except queue.Empty:
       pass
 
