@@ -77,9 +77,12 @@ class _Worker:
     thread.join()
 
   async def _task_runner(self, context, work):
-    task = work.ctor(context=context)
+    try:
+      task = work.ctor(context=context)
 
-    result = await task
+      result = await task
+    except Exception as ex:
+      result = ex
 
     self._out_queue.put((self._wid, work.id, result))
 
