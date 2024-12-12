@@ -54,11 +54,12 @@ class AsyncContext:
     return False
 
 
+_Work = collections.namedtuple('Work', 'id, ctor')
+
 class _Worker:
 
-  def __init__(self, wid, task_ctor, out_queue):
+  def __init__(self, wid, out_queue):
     self._wid = wid
-    self._task_ctor = task_ctor
     self._out_queue = out_queue
     self._in_queue = multiprocessing.Queue()
     self._proc = multiprocessing.Process(target=self._run)
@@ -75,11 +76,11 @@ class _Worker:
     thread.join()
 
   async def _task_runner(self, context, work):
-    task = self._task_ctor(context, work)
+    task = work.ctor(work.id, context=context)
 
     result = await task
 
-    self._out_queue.put((self._wid, work, result))
+    self._out_queue.put((self._wid, work.id, result))
 
   def _work_feeder(self, loop):
     context = AsyncContext()
@@ -102,17 +103,17 @@ class _Worker:
     self._in_queue.put(None)
     self._proc.join()
 
-  def enqueue_work(self, work):
-    self._in_queue.put(work)
+  def enqueue_work(self, work_id, work_ctor):
+    self._in_queue.put(_Work(id=work_id, ctor=work_ctor))
 
 
 class AsyncManager:
 
-  def __init__(self, task_ctor, num_workers=None):
+  def __init__(self, num_workers=None):
     num_workers = num_workers or os.cpu_count()
 
     self._out_queue = multiprocessing.Queue()
-    self._workers = [_Worker(i, task_ctor, self._out_queue) for i in range(num_workers)]
+    self._workers = [_Worker(i, self._out_queue) for i in range(num_workers)]
     self._lock = threading.Lock()
     self._queued = np.zeros(num_workers, dtype=np.int64)
 
@@ -120,22 +121,22 @@ class AsyncManager:
     for worker in self._workers:
       worker.stop()
 
-  def enqueue_work(self, work):
+  def enqueue_work(self, work_id, work_ctor):
     with self._lock:
       wid = np.argmin(self._queued)
       self._queued[wid] += 1
       worker = self._workers[wid]
 
-    worker.enqueue_work(work)
+    worker.enqueue_work(work_id, work_ctor)
 
   def fetch_result(self, block=True, timeout=None):
     try:
-      wid, work, result = self._out_queue.get(block=block, timeout=timeout)
+      wid, work_id, result = self._out_queue.get(block=block, timeout=timeout)
 
       with self._lock:
         self._queued[wid] -= 1
 
-      return work, result
+      return work_id, result
     except queue.Empty:
       pass
 
