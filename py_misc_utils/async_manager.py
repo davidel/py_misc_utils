@@ -8,6 +8,49 @@ from . import cleanups
 from . import run_once as ro
 
 
+class AsyncContext:
+
+  def __init__(self):
+    self._contexts = dict()
+
+  async def add(self, name, context):
+    result = await context.__aenter__()
+    self._contexts[name] = (context, result)
+
+    return result
+
+  async def remove(self, name):
+    context, _ = self._contexts.pop(name)
+    await context.__aexit__(None, None, None)
+
+  async def get(self, name, context_ctor):
+    context_result = self._contexts.get(name)
+    if context_result is None:
+      result = await self.add(name, context_ctor())
+    else:
+      result = context_result[1]
+
+    return result
+
+  async def close(self, *exc):
+    rexc = exc or (None, None, None)
+    needs_raise = False
+    for context, _ in self._contexts.values():
+      exitres = await context.__aexit__(*rexc)
+      needs_raise = needs_raise or not exitres
+
+    if needs_raise and rexc[1] is not None:
+      raise rexc[1]
+
+  async def __aenter__(self):
+    return self
+
+  async def __aexit__(self, *exc):
+    await self.close(*exc)
+
+    return False
+
+
 class _Worker:
 
   def __init__(self, task_ctor, out_queue):
@@ -27,26 +70,28 @@ class _Worker:
     loop.run_forever()
     thread.join()
 
-  async def _task_runner(self, work):
-    task = self._task_ctor(work)
+  async def _task_runner(self, context, work):
+    task = self._task_ctor(context, work)
 
     result = await task
 
     self._out_queue.put((work, result))
 
   def _work_feeder(self, loop):
+    context = AsyncContext()
+
     while True:
       work = self._in_queue.get()
       if work is None:
         break
 
-      asyncio.run_coroutine_threadsafe(self._task_runner(work), loop)
+      asyncio.run_coroutine_threadsafe(self._task_runner(context, work), loop)
 
-    asyncio.run_coroutine_threadsafe(self._stop_loop(), loop)
+    asyncio.run_coroutine_threadsafe(self._shutdown(context, loop), loop)
 
   @classmethod
-  async def _stop_loop(cls):
-    loop = asyncio.get_running_loop()
+  async def _shutdown(cls, context, loop):
+    await context.close()
     loop.stop()
 
   def stop(self):
