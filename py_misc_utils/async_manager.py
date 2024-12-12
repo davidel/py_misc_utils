@@ -126,7 +126,7 @@ class AsyncManager:
 
   def fetch_result(self, block=True, timeout=None):
     try:
-      return self._out_queue.get()
+      return self._out_queue.get(block=block, timeout=timeout)
     except queue.Empty:
       pass
 
