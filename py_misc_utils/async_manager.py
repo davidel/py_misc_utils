@@ -77,7 +77,7 @@ class _Worker:
     thread.join()
 
   async def _task_runner(self, context, work):
-    task = work.ctor(work.id, context=context)
+    task = work.ctor(context=context)
 
     result = await task
 
