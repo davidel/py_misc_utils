@@ -55,7 +55,7 @@ class AsyncContext:
     return False
 
 
-_Work = collections.namedtuple('Work', 'id, ctor')
+Work = collections.namedtuple('Work', 'id, ctor')
 
 class _Worker:
 
@@ -105,7 +105,7 @@ class _Worker:
     self._proc.join()
 
   def enqueue_work(self, work_id, work_ctor):
-    self._in_queue.put(_Work(id=work_id, ctor=work_ctor))
+    self._in_queue.put(Work(id=work_id, ctor=work_ctor))
 
 
 class AsyncManager:
