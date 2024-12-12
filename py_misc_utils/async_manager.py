@@ -124,8 +124,11 @@ class AsyncManager:
 
     worker.enqueue_work(work)
 
-  def fetch_result(self):
-    return self._out_queue.get()
+  def fetch_result(self, block=True, timeout=None):
+    try:
+      return self._out_queue.get()
+    except queue.Empty:
+      pass
 
 
 class AsyncRunner:
