@@ -39,6 +39,7 @@ class AsyncContext:
       exitres = await context.__aexit__(*rexc)
       needs_raise = needs_raise or not exitres
 
+    self._contexts = dict()
     if needs_raise and rexc[1] is not None:
       raise rexc[1]
 
