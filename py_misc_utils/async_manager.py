@@ -8,7 +8,7 @@ from . import cleanups
 from . import run_once as ro
 
 
-class Worker:
+class _Worker:
 
   def __init__(self, task_ctor, out_queue):
     self._task_ctor = task_ctor
@@ -63,7 +63,7 @@ class AsyncManager:
     num_workers = num_workers or os.cpu_count()
 
     self._out_queue = multiprocessing.Queue()
-    self._workers = [Worker(task_ctor, self._out_queue) for _ in range(num_workers)]
+    self._workers = [_Worker(task_ctor, self._out_queue) for _ in range(num_workers)]
     self._lock = threading.Lock()
     self._next_in = 0
 
