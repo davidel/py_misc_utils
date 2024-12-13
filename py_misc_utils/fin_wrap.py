@@ -63,3 +63,12 @@ class FinWrapper:
 
       setattr(obj, name, value)
 
+  def __delattr__(self, name):
+    pd = super().__getattribute__('__dict__')
+    if name in _RESERVED_NAMES:
+      pd.pop(name)
+    else:
+      obj = pd[_OBJ_NAME]
+
+      delattr(obj, name)
+
