@@ -26,6 +26,11 @@ def make_error(msg):
   return _ERROR_TAG + msg
 
 
+def write_error(path, **kwargs):
+  with fow.FileOverwrite(path, mode='wb') as fd:
+    fd.write(make_error(pickle.dumps(kwargs)))
+
+
 def get_error(data):
   emask = data[: len(_ERROR_TAG)]
   if emask == _ERROR_TAG:
@@ -62,9 +67,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
         for data in fs.get_file(fpath):
           fd.write(data)
     except Exception as ex:
-      exdata = dict(url=url, exception=ex)
-      with fow.FileOverwrite(upath, mode='wb') as fd:
-        fd.write(make_error(pickle.dumps(exdata)))
+      write_error(upath, url=url, exception=ex)
     finally:
       rqueue.put(url)
 
