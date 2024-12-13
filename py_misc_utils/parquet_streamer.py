@@ -25,19 +25,17 @@ class ParquetStreamer:
     self._kwargs = kwargs
 
     if self._load_columns:
-      fetch_path = tmpd.create()
-      fetcher = urlf.UrlFetcher(fetch_path, num_workers=num_workers, fs_kwargs=kwargs)
+      fetcher = urlf.UrlFetcher(num_workers=num_workers, fs_kwargs=kwargs)
       fetcher.start()
 
-      finfn = functools.partial(self._cleaner, fetcher, fetch_path)
+      finfn = functools.partial(self._cleaner, fetcher)
       fw.fin_wrap(self, '_fetcher', fetcher, finfn=finfn)
     else:
       self._fetcher = None
 
   @classmethod
-  def _cleaner(cls, fetcher, fetch_path):
+  def _cleaner(cls, fetcher):
     fetcher.shutdown()
-    gfs.rmtree(fetch_path, ignore_errors=True)
 
   def _prefetch(self, recs):
     if self._fetcher is not None:

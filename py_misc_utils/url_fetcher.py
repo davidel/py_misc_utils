@@ -8,6 +8,7 @@ from . import alog as alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
 from . import gfs as gfs
+from . import tempdir as tmpd
 from . import utils as ut
 from . import weak_call as wcall
 
@@ -74,20 +75,21 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
 
 class UrlFetcher:
 
-  def __init__(self, path, num_workers=None, fs_kwargs=None):
+  def __init__(self, path=None, num_workers=None, fs_kwargs=None):
     fs_kwargs = fs_kwargs or dict()
     fs_kwargs = ut.dict_setmissing(
       fs_kwargs,
       timeout=ut.getenv('FETCHER_TIMEO', dtype=float, defval=10.0),
     )
 
-    self._path = path
+    self._ctor_path = self._path = path
     self._num_workers = num_workers or max(os.cpu_count() * 4, 128)
     self._fs_kwargs = fs_kwargs
     self._uqueue = self._rqueue = None
     self._workers = []
 
   def start(self):
+    self._path = self._ctor_path or tmpd.create()
     self._uqueue = queue.Queue()
     self._rqueue = queue.Queue()
     for i in range(self._num_workers):
@@ -110,6 +112,10 @@ class UrlFetcher:
 
     self._uqueue = self._rqueue = None
     self._workers = []
+
+    if self._ctor_path != self._path:
+      gfs.rmtree(self._path, ignore_errors=True)
+      self._path = self._ctor_path
 
   def enqueue(self, *urls):
     for url in urls:
