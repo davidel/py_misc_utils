@@ -1,7 +1,6 @@
 import hashlib
 import os
 import psutil
-import tempfile
 import time
 import yaml
 
@@ -11,37 +10,10 @@ from . import fs_utils as fsu
 from . import obj
 from . import osfd
 from . import rnd_utils as rngu
+from . import tempdir as tmpd
 
 
-def _try_lockdir(path):
-  if os.path.isdir(path):
-    lockdir = os.path.join(path, '.locks')
-    try:
-      os.makedirs(lockdir, exist_ok=True)
-
-      return lockdir
-    except:
-      pass
-
-
-def _find_lockdir():
-  path = os.getenv('LOCKSDIR', None)
-  if path is not None and (lockdir := _try_lockdir(path)) is not None:
-    return lockdir
-
-  if os.name == 'posix':
-    # Try known tmpfs/ramfs places in case on Unix.
-    for path in ('/dev/shm', '/run/lock'):
-      if (lockdir := _try_lockdir(path)) is not None:
-        return lockdir
-
-  lockdir = os.path.join(tempfile.gettempdir(), '.locks')
-  os.makedirs(lockdir, exist_ok=True)
-
-  return lockdir
-
-
-_LOCKDIR = _find_lockdir()
+_LOCKDIR = tmpd.fastfs_dir(name='.locks', exist_ok=True)
 
 def _lockfile(name):
   lhash = hashlib.sha1(name.encode()).hexdigest()
