@@ -54,7 +54,8 @@ def fastfs_dir(name=None, namelen=None, exist_ok=None):
 
   if os.name == 'posix':
     # Try known tmpfs/ramfs places in case on Linux.
-    fastfs_dirs.extend(('/dev/shm', '/run/lock'))
+    fastfs_dirs.append(f'/run/user/{os.getuid()}')
+    fastfs_dirs.append('/dev/shm')
 
   fastfs_dirs.append(tempfile.gettempdir())
 
