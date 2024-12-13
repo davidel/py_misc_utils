@@ -143,9 +143,6 @@ class AsyncManager:
       return work_id, result
     except queue.Empty:
       pass
-    except Exception as ex:
-      print('ERROR FETCH:', ex)
-      raise
 
   def __enter__(self):
     return self
