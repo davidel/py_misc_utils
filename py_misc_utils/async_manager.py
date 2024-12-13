@@ -144,6 +144,14 @@ class AsyncManager:
     except queue.Empty:
       pass
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, *exc):
+    self.close()
+
+    return False
+
 
 class AsyncRunner:
 
