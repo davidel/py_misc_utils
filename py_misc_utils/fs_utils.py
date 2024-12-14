@@ -38,17 +38,17 @@ def os_opener(*args, **kwargs):
   return functools.partial(os.open, *args, **kwargs)
 
 
-def safe_rmtree(path, ignore_errors=None, **kwargs):
+def safe_rmtree(path, **kwargs):
   tpath = rngu.temp_path(nspath=path)
   try:
     os.rename(path, tpath)
   except FileNotFoundError:
-    if ignore_errors not in (None, False):
+    if not kwargs.get('ignore_errors', False):
       raise
 
     return
 
-  shutil.rmtree(tpath, ignore_errors=ignore_errors, **kwargs)
+  shutil.rmtree(tpath, **kwargs)
 
 
 def readall(fd):
