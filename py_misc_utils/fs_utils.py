@@ -38,9 +38,16 @@ def os_opener(*args, **kwargs):
   return functools.partial(os.open, *args, **kwargs)
 
 
-def safe_rmtree(path, **kwargs):
+def safe_rmtree(path, ignore_errors=None, **kwargs):
   tpath = rngu.temp_path(nspath=path)
-  os.rename(path, tpath)
+  try:
+    os.rename(path, tpath)
+  except FileNotFoundError:
+    if ignore_errors not in (None, False):
+      raise
+
+    return
+
   shutil.rmtree(tpath, **kwargs)
 
 
