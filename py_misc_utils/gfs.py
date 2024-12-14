@@ -277,8 +277,12 @@ def normpath(path):
   return fpath
 
 
+_CACHE_DIR = fsu.normpath(
+  os.getenv('CACHE_DIR', os.path.join(os.getenv('HOME', '.'), '.cache'))
+)
+
 def cache_dir(path=None):
-  return chf.get_cache_dir(path=path)
+  return fsu.normpath(path) if path else _CACHE_DIR
 
 
 def find_mount(path):
@@ -343,9 +347,8 @@ def get_proto_fs(proto, **kwargs):
 def resolve_fs(path, **kwargs):
   proto = get_proto(path)
 
-  cachedir = kwargs.pop('cache_dir', None)
-  if cachedir is None:
-    cachedir = cache_dir()
+  cachedir = chf.get_cache_dir(kwargs.pop('cache_dir', _CACHE_DIR))
+
   cache_iface = kwargs.pop('cache_iface', None)
   if cache_iface is None:
     cache_iface = chf.CacheInterface(cache_dir=cachedir)

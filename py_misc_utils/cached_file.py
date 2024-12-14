@@ -472,13 +472,8 @@ def _cleanup_check(path):
   return path
 
 
-_CACHE_DIR = fsu.normpath(
-  os.getenv('GFS_CACHE_DIR',
-            os.path.join(os.getenv('HOME', '.'), '.cache', 'gfs'))
-)
+def get_cache_dir(path):
+  cdpath = os.path.join(fsu.normpath(path), 'gfs')
 
-def get_cache_dir(path=None):
-  cpath = fsu.normpath(path) if path is not None else _CACHE_DIR
-
-  return _cleanup_check(cpath)
+  return _cleanup_check(cdpath)
 
