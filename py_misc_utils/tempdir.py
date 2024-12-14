@@ -32,7 +32,7 @@ def create():
 
 def _try_fastfs_dir(path, name, exist_ok):
   if os.path.isdir(path):
-    fastfs_dir = os.path.join(path, name)
+    fastfs_dir = os.path.join(path, 'fastfs', name)
     try:
       os.makedirs(fastfs_dir, exist_ok=exist_ok)
 
