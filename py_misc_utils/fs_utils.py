@@ -48,7 +48,7 @@ def safe_rmtree(path, ignore_errors=None, **kwargs):
 
     return
 
-  shutil.rmtree(tpath, **kwargs)
+  shutil.rmtree(tpath, ignore_errors=ignore_errors, **kwargs)
 
 
 def readall(fd):
