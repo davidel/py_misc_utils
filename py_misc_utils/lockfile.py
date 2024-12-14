@@ -13,7 +13,7 @@ from . import rnd_utils as rngu
 from . import tempdir as tmpd
 
 
-_LOCKDIR = tmpd.fastfs_dir(name='.locks', exist_ok=True)
+_LOCKDIR = tmpd.fastfs_dir(name='.locks')
 
 def _lockfile(name):
   lhash = hashlib.sha1(name.encode()).hexdigest()

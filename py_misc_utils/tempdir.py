@@ -30,23 +30,18 @@ def create():
   return tempfile.mkdtemp(dir=_TEMPDIR)
 
 
-def _try_fastfs_dir(path, name, exist_ok):
+def _try_fastfs_dir(path):
   if os.path.isdir(path):
-    fastfs_dir = os.path.join(path, 'fastfs', name)
+    fastfs_dir = os.path.join(path, 'fastfs')
     try:
-      os.makedirs(fastfs_dir, exist_ok=exist_ok)
+      os.makedirs(fastfs_dir, exist_ok=True)
 
       return fastfs_dir
     except:
       pass
 
 
-_NAMELEN = int(os.getenv('FASTFS_NAMELEN', 12))
-
-def fastfs_dir(name=None, namelen=None, exist_ok=None):
-  name = name or rngu.rand_string(namelen or _NAMELEN)
-  exist_ok = exist_ok not in (False, None)
-
+def _find_fastfs_dir():
   fastfs_dirs = []
 
   if (path := os.getenv('FASTFS_DIR')) is not None:
@@ -58,8 +53,21 @@ def fastfs_dir(name=None, namelen=None, exist_ok=None):
     fastfs_dirs.append('/dev/shm')
 
   fastfs_dirs.append(tempfile.gettempdir())
+  fastfs_dirs.append(os.getcwd())
 
   for path in fastfs_dirs:
-    if (fastfs_dir := _try_fastfs_dir(path, name, exist_ok)) is not None:
+    if (fastfs_dir := _try_fastfs_dir(path)) is not None:
       return fastfs_dir
+
+
+_FASTFS_DIR = _find_fastfs_dir()
+_NAMELEN = int(os.getenv('FASTFS_NAMELEN', 12))
+
+def fastfs_dir(name=None, namelen=None):
+  name = name or rngu.rand_string(namelen or _NAMELEN)
+
+  path = os.path.join(_FASTFS_DIR, name)
+  os.makedirs(path, exist_ok=True)
+
+  return path
 
