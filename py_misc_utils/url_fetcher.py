@@ -64,7 +64,7 @@ class UrlFetcher:
 
   def start(self):
     if self._path is None:
-      self._tmp_path = tmpd.create()
+      self._tmp_path = tmpd.fastfs_dir()
       self._path = self._tmp_path
 
     self._uqueue = queue.Queue()

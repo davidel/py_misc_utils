@@ -47,7 +47,7 @@ class HttpAsyncFetcher:
 
   def start(self):
     if self._path is None:
-      self._tmp_path = tmpd.create()
+      self._tmp_path = tmpd.fastfs_dir()
       self._path = self._tmp_path
 
     async_manager = asym.AsyncManager(num_workers=self._num_workers)
