@@ -56,14 +56,17 @@ class UrlFetcher:
       timeout=ut.getenv('FETCHER_TIMEO', dtype=float, defval=10.0),
     )
 
-    self._ctor_path = self._path = path
+    self._path, self._tmp_path = path, None
     self._num_workers = num_workers or max(os.cpu_count() * 4, 128)
     self._fs_kwargs = fs_kwargs
     self._uqueue = self._rqueue = None
     self._workers = []
 
   def start(self):
-    self._path = self._ctor_path or tmpd.create()
+    if self._path is None:
+      self._tmp_path = tmpd.create()
+      self._path = self._tmp_path
+
     self._uqueue = queue.Queue()
     self._rqueue = queue.Queue()
     for i in range(self._num_workers):
@@ -87,9 +90,8 @@ class UrlFetcher:
     self._uqueue = self._rqueue = None
     self._workers = []
 
-    if self._ctor_path != self._path:
-      gfs.rmtree(self._path, ignore_errors=True)
-      self._path = self._ctor_path
+    if self._tmp_path is not None:
+      gfs.rmtree(self._tmp_path, ignore_errors=True)
 
   def enqueue(self, *urls):
     for url in urls:
