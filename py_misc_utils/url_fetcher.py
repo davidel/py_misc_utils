@@ -1,6 +1,4 @@
-import hashlib
 import os
-import pickle
 import queue
 import threading
 
@@ -11,31 +9,7 @@ from . import gfs as gfs
 from . import tempdir as tmpd
 from . import utils as ut
 from . import weak_call as wcall
-
-
-def url_path(path, url, dirlen=2):
-  uhash = hashlib.sha1(url.encode()).hexdigest()
-  udir = os.path.join(path, uhash[-dirlen:])
-  os.makedirs(udir, exist_ok=True)
-
-  return os.path.join(udir, uhash)
-
-
-_ERROR_TAG = b'#!$ERROR\n\n'
-
-def make_error(msg):
-  return _ERROR_TAG + msg
-
-
-def write_error(path, **kwargs):
-  with fow.FileOverwrite(path, mode='wb') as fd:
-    fd.write(make_error(pickle.dumps(kwargs)))
-
-
-def get_error(data):
-  emask = data[: len(_ERROR_TAG)]
-  if emask == _ERROR_TAG:
-    return pickle.loads(data[len(emask):])
+from . import work_results as wres
 
 
 def resolve_url(fss, url, fs_kwargs):
@@ -58,7 +32,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
     if not url:
       break
 
-    upath = url_path(path, url)
+    upath = wres.url_path(path, url)
 
     alog.verbose(f'Fetching "{url}"')
     try:
@@ -68,7 +42,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
         for data in fs.get_file(fpath):
           fd.write(data)
     except Exception as ex:
-      write_error(upath, url=url, exception=ex)
+      wres.write_error(upath, url=url, exception=ex)
     finally:
       rqueue.put(url)
 
@@ -126,19 +100,19 @@ class UrlFetcher:
     with open(upath, mode='rb') as fd:
       data = fd.read()
 
-    error = get_error(data)
+    error = wres.get_error(data)
     if error is not None:
       raise error['exception']
 
     return data
 
   def try_get(self, url):
-    upath = url_path(self._path, url)
+    upath = wres.url_path(self._path, url)
 
     return self._get(url, upath) if os.path.isfile(upath) else None
 
   def wait(self, url):
-    upath = url_path(self._path, url)
+    upath = wres.url_path(self._path, url)
     if not os.path.isfile(upath):
       while True:
         rurl = self._rqueue.get()
