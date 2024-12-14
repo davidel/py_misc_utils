@@ -68,12 +68,10 @@ class ArchiveStreamer:
     from . import parquet_streamer as pqs
 
     uid = hashlib.sha1(self._url.encode()).hexdigest()[: self.MAX_UIDLEN]
-    nrecs = 0
 
     pq_streamer = pqs.ParquetStreamer(self._url, **self._kwargs)
-    for recd in pq_streamer:
-      ruid = f'{uid}_{nrecs}'
-      nrecs += 1
+    for i, recd in enumerate(pq_streamer):
+      ruid = f'{uid}_{i}'
       for name, data in recd.items():
         yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
 
