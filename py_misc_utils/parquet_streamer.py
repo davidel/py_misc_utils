@@ -43,6 +43,23 @@ class ParquetStreamer:
         for key in self._load_columns.keys():
           self._fetcher.enqueue(recd[key])
 
+  def _transform(self, recd):
+    if self._fetcher is not None:
+      for key, kind in self._load_columns.items():
+        data = self._fetcher.wait(recd[key])
+        if kind == 'img':
+          kdata = imgu.from_bytes(data)
+        elif kind == 'rgbimg':
+          kdata = imgu.from_bytes(data, convert='RGB')
+        elif kind == 'raw':
+          kdata = data
+        else:
+          alog.xraise(ValueError, f'Unknown load column kind: {kind}')
+
+        recd[f'{key}_{kind}'] = kdata
+
+    return recd
+
   def generate(self):
     with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
       pqfd = pq.ParquetFile(stream)
@@ -52,20 +69,7 @@ class ParquetStreamer:
         self._prefetch(recs)
         for recd in recs:
           try:
-            for key, kind in self._load_columns.items():
-              data = self._fetcher.wait(recd[key])
-              if kind == 'img':
-                kdata = imgu.from_bytes(data)
-              elif kind == 'rgbimg':
-                kdata = imgu.from_bytes(data, convert='RGB')
-              elif kind == 'raw':
-                kdata = data
-              else:
-                alog.xraise(ValueError, f'Unknown load column kind: {kind}')
-
-              recd[f'{key}_{kind}'] = kdata
-
-            yield recd
+            yield self._transform(recd)
           except Exception as ex:
             alog.verbose(f'Unable to create parquet entry ({recd}): {ex}')
 
