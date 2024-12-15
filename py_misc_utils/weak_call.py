@@ -18,3 +18,4 @@ def weak_call(obj, name, *args, **kwargs):
   ref = weakref.ref(obj)
 
   return functools.partial(weak_caller, ref, name, *args, **kwargs)
+
