@@ -1,3 +1,4 @@
+import functools
 import weakref
 
 
@@ -7,14 +8,13 @@ class _Gone:
 GONE = _Gone()
 
 
+def weak_caller(ref, name, *args, **kwargs):
+  wobj = ref()
+
+  return getattr(wobj, name)(*args, **kwargs) if wobj is not None else GONE
+
+
 def weak_call(obj, name, *args, **kwargs):
   ref = weakref.ref(obj)
-  del obj
 
-  def wfn():
-    wobj = ref()
-
-    return getattr(wobj, name)(*args, **kwargs) if wobj is not None else GONE
-
-  return wfn
-
+  return functools.partial(weak_caller, ref, name, *args, **kwargs)
