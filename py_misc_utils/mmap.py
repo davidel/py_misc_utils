@@ -48,7 +48,7 @@ class MMap:
     if mm is not None:
       mrf.unmirror(self, name='mm')
       fw.fin_wrap(self, '_mm', None)
-      self._cleaner(self._fd, mm, self.mode & self.WRITE)
+      self._cleaner(self._fd, mm, self._mode & self.WRITE)
 
   def view(self):
     return memoryview(self._mm)
