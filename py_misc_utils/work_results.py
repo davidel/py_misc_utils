@@ -8,7 +8,8 @@ from . import file_overwrite as fow
 class WorkException:
 
   def __init__(self, exception):
-    # Some exceptions cannot be pickled, so the real exception cannot be serialized.
+    # Some exceptions cannot be pickled, so the real exception cannot be serialized
+    # (or it can be serialized, and failed to be deserialized for missing arguments).
     # In such cases we write a generic exception with the string representation of
     # the original one.
     try:
