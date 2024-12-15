@@ -13,19 +13,19 @@ from . import work_results as wres
 
 
 async def http_fetch_url(url, context=None, path=None, http_args=None):
-  upath = wres.url_path(path, url)
+  wpath = wres.work_path(path, url)
   try:
     client = await context.get('httpx.AsyncClient', httpx.AsyncClient)
 
     resp = await client.get(url, **http_args)
     resp.raise_for_status()
 
-    with fow.FileOverwrite(upath, mode='wb') as fd:
+    with fow.FileOverwrite(wpath, mode='wb') as fd:
       fd.write(resp.content)
   except Exception as ex:
-    wres.write_error(upath, ex, url=url)
+    wres.write_error(wpath, ex, url=url)
   finally:
-    return upath
+    return wpath
 
 
 class HttpAsyncFetcher:
@@ -69,20 +69,20 @@ class HttpAsyncFetcher:
                                       http_args=self._http_args)
         self._async_manager.enqueue_work(url, work_ctor)
 
-  def _get(self, url, upath):
-    with open(upath, mode='rb') as fd:
+  def _get(self, url, wpath):
+    with open(wpath, mode='rb') as fd:
       data = fd.read()
 
     return wres.raise_on_error(data)
 
   def try_get(self, url):
-    upath = wres.url_path(self._path, url)
+    wpath = wres.work_path(self._path, url)
 
-    return self._get(url, upath) if os.path.isfile(upath) else None
+    return self._get(url, wpath) if os.path.isfile(wpath) else None
 
   def wait(self, url):
-    upath = wres.url_path(self._path, url)
-    if not os.path.isfile(upath):
+    wpath = wres.work_path(self._path, url)
+    if not os.path.isfile(wpath):
       while True:
         (rurl, result) = self._async_manager.fetch_result()
 
@@ -90,7 +90,7 @@ class HttpAsyncFetcher:
         if rurl == url:
           break
 
-    return self._get(url, upath)
+    return self._get(url, wpath)
 
   def __enter__(self):
     self.start()

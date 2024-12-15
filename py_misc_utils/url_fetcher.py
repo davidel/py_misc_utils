@@ -32,17 +32,17 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
     if not url:
       break
 
-    upath = wres.url_path(path, url)
+    wpath = wres.work_path(path, url)
 
     alog.verbose(f'Fetching "{url}"')
     try:
       fs, fpath = resolve_url(fss, url, fs_kwargs)
 
-      with fow.FileOverwrite(upath, mode='wb') as fd:
+      with fow.FileOverwrite(wpath, mode='wb') as fd:
         for data in fs.get_file(fpath):
           fd.write(data)
     except Exception as ex:
-      wres.write_error(upath, ex, url=url)
+      wres.write_error(wpath, ex, url=url)
     finally:
       rqueue.put(url)
 
@@ -98,26 +98,26 @@ class UrlFetcher:
       if url:
         self._uqueue.put(url)
 
-  def _get(self, url, upath):
-    with open(upath, mode='rb') as fd:
+  def _get(self, url, wpath):
+    with open(wpath, mode='rb') as fd:
       data = fd.read()
 
     return wres.raise_on_error(data)
 
   def try_get(self, url):
-    upath = wres.url_path(self._path, url)
+    wpath = wres.work_path(self._path, url)
 
-    return self._get(url, upath) if os.path.isfile(upath) else None
+    return self._get(url, wpath) if os.path.isfile(wpath) else None
 
   def wait(self, url):
-    upath = wres.url_path(self._path, url)
-    if not os.path.isfile(upath):
+    wpath = wres.work_path(self._path, url)
+    if not os.path.isfile(wpath):
       while True:
         rurl = self._rqueue.get()
         if rurl == url:
           break
 
-    return self._get(url, upath)
+    return self._get(url, wpath)
 
   def __enter__(self):
     self.start()

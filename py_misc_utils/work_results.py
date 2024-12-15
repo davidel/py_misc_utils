@@ -27,8 +27,8 @@ class WorkException:
 
 
 
-def url_path(path, url, dirlen=2):
-  uhash = hashlib.sha1(url.encode()).hexdigest()
+def work_path(path, workid, dirlen=2):
+  uhash = hashlib.sha1(workid.encode()).hexdigest()
   udir = os.path.join(path, uhash[-dirlen:])
   os.makedirs(udir, exist_ok=True)
 
