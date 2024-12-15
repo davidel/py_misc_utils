@@ -40,8 +40,6 @@ def parse_specs(url):
 
 class ArchiveStreamer:
 
-  MAX_UIDLEN = 8
-
   def __init__(self, url, **kwargs):
     self._url = url
     self._kwargs = kwargs
@@ -67,10 +65,13 @@ class ArchiveStreamer:
     # Keep the import dependency local, to make it required only if parquet is used.
     from . import parquet_streamer as pqs
 
-    uid = hashlib.sha1(self._url.encode()).hexdigest()[: self.MAX_UIDLEN]
+    uid = hashlib.sha1(self._url.encode()).hexdigest()[: 8]
 
     pq_streamer = pqs.ParquetStreamer(self._url, **self._kwargs)
     for i, recd in enumerate(pq_streamer):
+      # Simulate a streaming similar to what a Web Dataset would expect, with a
+      # UID.ENTITY naming, where the UID is constant for all the entities of a record
+      # (which are streamed sequentially).
       ruid = f'{uid}_{i}'
       for name, data in recd.items():
         yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
