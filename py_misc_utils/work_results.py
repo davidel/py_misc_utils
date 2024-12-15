@@ -56,9 +56,8 @@ def write_error(path, exception, **kwargs):
 
 
 def get_error(data):
-  emask = data[: len(_ERROR_TAG)]
-  if emask == _ERROR_TAG:
-    return pickle.loads(data[len(emask):])
+  if data.startswith(_ERROR_TAG):
+    return pickle.loads(data[len(_ERROR_TAG):])
 
 
 def raise_on_error(data):
