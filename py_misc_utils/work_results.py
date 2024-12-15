@@ -35,7 +35,7 @@ def work_path(path, workid, dirlen=2):
   return os.path.join(udir, uhash)
 
 
-_ERROR_TAG = b'#!$ERROR\n\n'
+_ERROR_TAG = b'#@$ERROR$@#\n'
 
 def make_error(msg):
   return _ERROR_TAG + msg
