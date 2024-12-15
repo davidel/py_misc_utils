@@ -83,7 +83,7 @@ class _Worker:
 
       result = await task
     except Exception as ex:
-      result = wres.WorkException(ex)
+      result = wres.WorkException(ex, workid=work.id)
 
     self._out_queue.put((self._wid, work.id, result))
 
