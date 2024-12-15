@@ -45,10 +45,8 @@ def safe_rmtree(path, **kwargs):
   except FileNotFoundError:
     if not kwargs.get('ignore_errors', False):
       raise
-
-    return
-
-  shutil.rmtree(tpath, **kwargs)
+  else:
+    shutil.rmtree(tpath, **kwargs)
 
 
 def readall(fd):
