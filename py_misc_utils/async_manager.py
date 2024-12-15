@@ -9,6 +9,7 @@ import numpy as np
 
 from . import cleanups
 from . import run_once as ro
+from . import work_results as wres
 
 
 class AsyncContext:
@@ -82,7 +83,7 @@ class _Worker:
 
       result = await task
     except Exception as ex:
-      result = ex
+      result = wres.WorkException(ex)
 
     self._out_queue.put((self._wid, work.id, result))
 

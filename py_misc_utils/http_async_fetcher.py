@@ -23,7 +23,7 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
     with fow.FileOverwrite(upath, mode='wb') as fd:
       fd.write(resp.content)
   except Exception as ex:
-    wres.write_error(upath, url=url, exception=Exception(repr(ex)))
+    wres.write_error(upath, ex, url=url)
   finally:
     return upath
 
@@ -73,11 +73,7 @@ class HttpAsyncFetcher:
     with open(upath, mode='rb') as fd:
       data = fd.read()
 
-    error = wres.get_error(data)
-    if error is not None:
-      raise error['exception']
-
-    return data
+    return wres.raise_on_error(data)
 
   def try_get(self, url):
     upath = wres.url_path(self._path, url)
@@ -90,8 +86,7 @@ class HttpAsyncFetcher:
       while True:
         (rurl, result) = self._async_manager.fetch_result()
 
-        if isinstance(result, Exception):
-          raise result
+        wres.raise_if_error(result)
         if rurl == url:
           break
 

@@ -42,7 +42,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
         for data in fs.get_file(fpath):
           fd.write(data)
     except Exception as ex:
-      wres.write_error(upath, url=url, exception=ex)
+      wres.write_error(upath, ex, url=url)
     finally:
       rqueue.put(url)
 
@@ -102,11 +102,7 @@ class UrlFetcher:
     with open(upath, mode='rb') as fd:
       data = fd.read()
 
-    error = wres.get_error(data)
-    if error is not None:
-      raise error['exception']
-
-    return data
+    return wres.raise_on_error(data)
 
   def try_get(self, url):
     upath = wres.url_path(self._path, url)
