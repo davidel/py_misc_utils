@@ -17,11 +17,13 @@ class ParquetStreamer:
   def __init__(self, url,
                batch_size=None,
                load_columns=None,
+               rename_columns=None,
                num_workers=None,
                **kwargs):
     self._url = url
     self._batch_size = ut.value_or(batch_size, 128)
     self._load_columns = ut.value_or(load_columns, dict())
+    self._rename_columns = ut.value_or(rename_columns, dict())
     self._kwargs = kwargs
 
     if self._load_columns:
@@ -45,18 +47,11 @@ class ParquetStreamer:
 
   def _transform(self, recd):
     if self._fetcher is not None:
-      for key, kind in self._load_columns.items():
-        data = self._fetcher.wait(recd[key])
-        if kind == 'img':
-          kdata = imgu.from_bytes(data)
-        elif kind == 'rgbimg':
-          kdata = imgu.from_bytes(data, convert='RGB')
-        elif kind == 'raw':
-          kdata = data
-        else:
-          alog.xraise(ValueError, f'Unknown load column kind: {kind}')
+      for key, name in self._load_columns.items():
+        recd[name] = self._fetcher.wait(recd[key])
 
-        recd[f'{key}_{kind}'] = kdata
+    for key, name in self._rename_columns.items():
+      recd[name] = recd.pop(key)
 
     return recd
 
