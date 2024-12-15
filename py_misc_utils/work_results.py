@@ -74,3 +74,18 @@ def raise_if_error(data):
 
   return data
 
+
+def get_work(wpath, path=None, workid=None):
+  wpath = wpath or work_path(path, workid)
+
+  with open(wpath, mode='rb') as fd:
+    data = fd.read()
+
+  return raise_on_error(data)
+
+
+def tryget_work(path, workid):
+  wpath = work_path(path, workid)
+
+  return get_work(wpath) if os.path.isfile(wpath) else None
+

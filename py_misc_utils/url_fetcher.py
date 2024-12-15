@@ -98,16 +98,8 @@ class UrlFetcher:
       if url:
         self._uqueue.put(url)
 
-  def _get(self, url, wpath):
-    with open(wpath, mode='rb') as fd:
-      data = fd.read()
-
-    return wres.raise_on_error(data)
-
   def try_get(self, url):
-    wpath = wres.work_path(self._path, url)
-
-    return self._get(url, wpath) if os.path.isfile(wpath) else None
+    return wres.tryget_work(self._path, url)
 
   def wait(self, url):
     wpath = wres.work_path(self._path, url)
@@ -117,7 +109,7 @@ class UrlFetcher:
         if rurl == url:
           break
 
-    return self._get(url, wpath)
+    return wres.get_work(wpath)
 
   def __enter__(self):
     self.start()
