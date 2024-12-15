@@ -12,6 +12,7 @@ class WorkException:
     # (or it can be serialized, and failed to be deserialized for missing arguments).
     # In such cases we write a generic exception with the string representation of
     # the original one.
+    self._type = type(exception)
     try:
       self._data = pickle.dumps(exception)
       pickle.loads(self._data)
@@ -20,6 +21,10 @@ class WorkException:
 
   def do_raise(self):
     raise pickle.loads(self._data)
+
+  def is_instance(self, *types):
+    return any(t == self._type for t in types)
+
 
 
 def url_path(path, url, dirlen=2):
