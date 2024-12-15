@@ -13,6 +13,7 @@ class WorkException:
     # the original one.
     try:
       self._data = pickle.dumps(exception)
+      pickle.loads(self._data)
     except:
       self._data = pickle.dumps(Exception(repr(exception)))
 
