@@ -2,7 +2,7 @@ import hashlib
 import os
 import pickle
 
-from . import file_overwrite as fow
+from . import rnd_utils as rngu
 
 
 class WorkException:
@@ -40,8 +40,14 @@ _EXCEPT_KEY = 'exception'
 
 def write_error(path, exception, **kwargs):
   kwargs[_EXCEPT_KEY] = WorkException(exception)
-  with fow.FileOverwrite(path, mode='wb') as fd:
+
+  # This does FileOverwrite() task (locally limited) but here we do not pull that
+  # dependency to minimize the ones of this module.
+  tpath = rngu.temp_path(nspath=path)
+  with open(tpath, mode='wb') as fd:
     fd.write(make_error(pickle.dumps(kwargs)))
+
+  os.replace(tpath, path)
 
 
 def get_error(data):
