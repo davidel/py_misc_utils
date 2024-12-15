@@ -60,3 +60,5 @@ def raise_if_error(data):
   if isinstance(data, WorkException):
     data.do_raise()
 
+  return data
+
