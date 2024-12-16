@@ -8,13 +8,29 @@ class _Gone:
 GONE = _Gone()
 
 
-def weak_caller(ref, name, *args, **kwargs):
-  wobj = ref()
+class WeakMethod:
 
-  return getattr(wobj, name)(*args, **kwargs) if wobj is not None else GONE
+  def __init__(self, fn):
+    if isinstance(fn, weakref.WeakMethod):
+      self._fn = fn
+    else:
+      if hasattr(fn, '__self__'):
+        self._fn = weakref.WeakMethod(fn)
+      else:
+        self._fn = lambda: fn
+
+  def __call__(self):
+    return self._fn()
 
 
-def weak_call(obj, name, *args, **kwargs):
-  ref = weakref.ref(obj)
+def weak_caller(wmeth, *args, **kwargs):
+  fn = wmeth()
 
-  return functools.partial(weak_caller, ref, name, *args, **kwargs)
+  return fn(*args, **kwargs) if fn is not None else GONE
+
+
+def weak_call(fn, *args, **kwargs):
+  wmeth = WeakMethod(fn)
+
+  return functools.partial(weak_caller, wmeth, *args, **kwargs)
+

@@ -8,7 +8,6 @@ from . import file_overwrite as fow
 from . import gfs as gfs
 from . import tempdir as tmpd
 from . import utils as ut
-from . import weak_call as wcall
 from . import work_results as wres
 
 
