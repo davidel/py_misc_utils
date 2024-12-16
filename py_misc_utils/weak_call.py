@@ -12,11 +12,10 @@ class WeakCall:
   def __init__(self, fn, *args, **kwargs):
     if isinstance(fn, weakref.WeakMethod):
       self._fn = fn
+    elif hasattr(fn, '__self__'):
+      self._fn = weakref.WeakMethod(fn)
     else:
-      if hasattr(fn, '__self__'):
-        self._fn = weakref.WeakMethod(fn)
-      else:
-        self._fn = lambda: fn
+      self._fn = lambda: fn
 
     self._args = args
     self._kwargs = kwargs
