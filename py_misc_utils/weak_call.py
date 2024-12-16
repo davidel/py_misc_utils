@@ -1,4 +1,3 @@
-import functools
 import weakref
 
 
@@ -8,9 +7,9 @@ class _Gone:
 GONE = _Gone()
 
 
-class WeakMethod:
+class WeakCall:
 
-  def __init__(self, fn):
+  def __init__(self, fn, *args, **kwargs):
     if isinstance(fn, weakref.WeakMethod):
       self._fn = fn
     else:
@@ -19,18 +18,11 @@ class WeakMethod:
       else:
         self._fn = lambda: fn
 
+    self._args = args
+    self._kwargs = kwargs
+
   def __call__(self):
-    return self._fn()
+    fn = self._fn()
 
-
-def weak_caller(wmeth, *args, **kwargs):
-  fn = wmeth()
-
-  return fn(*args, **kwargs) if fn is not None else GONE
-
-
-def weak_call(fn, *args, **kwargs):
-  wmeth = WeakMethod(fn)
-
-  return functools.partial(weak_caller, wmeth, *args, **kwargs)
+    return fn(*self._args, **self._kwargs) if fn is not None else GONE
 

@@ -10,7 +10,7 @@ class PeriodicTask:
 
   def __init__(self, name, periodic_fn, period, scheduler=None, stop_on_error=None):
     self._name = name
-    self._periodic_fn = wcall.weak_call(periodic_fn)
+    self._periodic_fn = wcall.WeakCall(periodic_fn)
     self._period = period
     self._scheduler = scheduler or sch.common_scheduler()
     self._stop_on_error = stop_on_error in (None, True)
