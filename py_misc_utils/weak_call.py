@@ -21,8 +21,14 @@ class WeakCall:
     self._args = args
     self._kwargs = kwargs
 
-  def __call__(self):
+  def __call__(self, *args, **kwargs):
     fn = self._fn()
+    if fn is not None:
+      cargs = self._args + args
+      ckwargs = self._kwargs.copy()
+      ckwargs.update(kwargs)
 
-    return fn(*self._args, **self._kwargs) if fn is not None else GONE
+      return fn(*cargs, **ckwargs)
+    else:
+      return GONE
 
