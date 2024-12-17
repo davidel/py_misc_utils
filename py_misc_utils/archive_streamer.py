@@ -81,19 +81,18 @@ class ArchiveStreamer:
 
   def _generate_msgpack(self, specs):
     # Keep the import dependency local, to make it required only if parquet is used.
-    import msgpack
+    from . import msgpack_streamer as mps
 
     uid = self._url_uid(self._url)
 
-    with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
-      unpacker = msgpack.Unpacker(stream)
-      for i, recd in enumerate(unpacker):
-        # Simulate a streaming similar to what a Web Dataset would expect, with a
-        # UID.ENTITY naming, where the UID is constant for all the entities of a record
-        # (which are streamed sequentially).
-        ruid = f'{uid}_{i}'
-        for name, data in recd.items():
-          yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
+    mps_streamer = mps.MsgPackStreamer(self._url, **self._kwargs)
+    for i, recd in enumerate(mps_streamer):
+      # Simulate a streaming similar to what a Web Dataset would expect, with a
+      # UID.ENTITY naming, where the UID is constant for all the entities of a record
+      # (which are streamed sequentially).
+      ruid = f'{uid}_{i}'
+      for name, data in recd.items():
+        yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
 
   def generate(self):
     specs = parse_specs(self._url)
