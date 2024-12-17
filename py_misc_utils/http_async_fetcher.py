@@ -13,7 +13,7 @@ from . import work_results as wres
 
 
 async def http_fetch_url(url, context=None, path=None, http_args=None):
-  wpath = wres.work_path(path, url)
+  wpath = wres.work_path(path, url, create_parents=True)
   try:
     client = await context.get('httpx.AsyncClient', httpx.AsyncClient)
 

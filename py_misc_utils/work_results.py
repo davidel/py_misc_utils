@@ -29,10 +29,11 @@ class WorkException:
     return any(t == self._ex_type for t in types)
 
 
-def work_path(path, workid, dirlen=2):
+def work_path(path, workid, create_parents=None, dirlen=2):
   uhash = hashlib.sha1(workid.encode()).hexdigest()
   udir = os.path.join(path, uhash[-dirlen:])
-  os.makedirs(udir, exist_ok=True)
+  if create_parents is True:
+    os.makedirs(udir, exist_ok=True)
 
   return os.path.join(udir, uhash)
 

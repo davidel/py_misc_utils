@@ -31,7 +31,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
     if not url:
       break
 
-    wpath = wres.work_path(path, url)
+    wpath = wres.work_path(path, url, create_parents=True)
 
     alog.verbose(f'Fetching "{url}"')
     try:
