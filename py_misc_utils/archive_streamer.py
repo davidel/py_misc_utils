@@ -44,6 +44,9 @@ class ArchiveStreamer:
     self._url = url
     self._kwargs = kwargs
 
+  def _url_uid(self, url):
+    return hashlib.sha1(url.encode()).hexdigest()[: 8]
+
   def _generate_zip(self, specs):
     # The ZIP format requires random access (specifically, the file list is at EOF)
     # so it is better to cache the file locally before opening.
@@ -61,11 +64,11 @@ class ArchiveStreamer:
         data = tfile.extractfile(tinfo).read()
         yield ArchiveEntry(name=tinfo.name, data=data)
 
-  def _generate_parquet(self, specs, batch_size=16):
+  def _generate_parquet(self, specs):
     # Keep the import dependency local, to make it required only if parquet is used.
     from . import parquet_streamer as pqs
 
-    uid = hashlib.sha1(self._url.encode()).hexdigest()[: 8]
+    uid = self._url_uid(self._url)
 
     pq_streamer = pqs.ParquetStreamer(self._url, **self._kwargs)
     for i, recd in enumerate(pq_streamer):
@@ -76,6 +79,22 @@ class ArchiveStreamer:
       for name, data in recd.items():
         yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
 
+  def _generate_msgpack(self, specs):
+    # Keep the import dependency local, to make it required only if parquet is used.
+    import msgpack
+
+    uid = self._url_uid(self._url)
+
+    with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
+      unpacker = msgpack.Unpacker(stream)
+      for i, recd in enumerate(unpacker):
+        # Simulate a streaming similar to what a Web Dataset would expect, with a
+        # UID.ENTITY naming, where the UID is constant for all the entities of a record
+        # (which are streamed sequentially).
+        ruid = f'{uid}_{i}'
+        for name, data in recd.items():
+          yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
+
   def generate(self):
     specs = parse_specs(self._url)
     if specs.kind == 'zip':
@@ -84,6 +103,8 @@ class ArchiveStreamer:
       yield from self._generate_tar(specs)
     elif specs.kind == 'parquet':
       yield from self._generate_parquet(specs)
+    elif specs.kind == 'msgpack':
+      yield from self._generate_msgpack(specs)
     else:
       alog.xraise(RuntimeError, f'Unknown archive type "{specs.kind}": {self._url}')
 

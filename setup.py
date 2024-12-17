@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='py_misc_utils',
-      version='0.1.38',
+      version='0.1.40',
       description='Miscellaneous Utility APIs',
       author='Davide Libenzi',
       packages=find_packages(),
@@ -15,16 +15,16 @@ setup(name='py_misc_utils',
       },
       include_package_data=True,
       install_requires=[
-          'pyyaml',
           'numpy',
           'pandas',
           'psutil',
+          'pyyaml',
       ],
       extras_require={
           'fs': [
-              'ftputil',
               'boto3',
               'bs4',
+              'ftputil',
               'google-cloud-storage',
               'pyarrow',
           ],
