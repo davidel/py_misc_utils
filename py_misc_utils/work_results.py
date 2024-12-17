@@ -60,17 +60,15 @@ def get_error(data):
     return pickle.loads(data[len(_ERROR_TAG):])
 
 
-def raise_on_error(data):
-  wex = get_error(data)
-  if wex is not None:
-    wex.do_raise()
+def raise_if_error(data):
+  if isinstance(data, WorkException):
+    data.do_raise()
 
   return data
 
 
-def raise_if_error(data):
-  if isinstance(data, WorkException):
-    data.do_raise()
+def raise_on_error(data):
+  raise_if_error(get_error(data))
 
   return data
 
