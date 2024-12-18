@@ -920,6 +920,15 @@ def to_type(v, vtype):
   return vtype(ast.literal_eval(v))
 
 
+def to_bool(v):
+  return to_type(v, bool)
+
+
+def cast(v, vtype):
+  if v is not None:
+    return to_type(v, vtype) if isinstance(v, str) else vtype(v)
+
+
 def infer_value(v, vtype=None, allow_exec=False):
   if vtype is not None:
     return to_type(v, vtype)
@@ -971,31 +980,6 @@ def parse_dict(data, vtype=None, allow_args=False, allow_exec=False):
       alog.xraise(ValueError, f'Syntax error: {part}')
 
   return (ma_dict, tuple(ma_args)) if allow_args else ma_dict
-
-
-_BOOLS = {
-  'True': True,
-  'true': True,
-  '1': True,
-  1: True,
-  'False': False,
-  'false': False,
-  '0': False,
-  0: False,
-}
-
-def to_bool(v):
-  if isinstance(v, bool):
-    return v
-
-  bv = _BOOLS.get(v)
-  tas.check_is_not_none(bv, msg=f'Unable to convert to bool: {v}')
-
-  return bv
-
-
-def cast(v, vtype):
-  return vtype(v) if v is not None else v
 
 
 def add_bool_argument(parser, name, defval, help=None):
