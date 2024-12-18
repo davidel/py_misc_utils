@@ -929,25 +929,15 @@ def to_type(v, vtype):
   return _BOOL_MAP[v.lower()] if vtype == bool else vtype(v)
 
 
-_INFER_QUOTE_MAP = {
-  '`': '`',
-  '(': ')',
-  '{': '}',
-  '[': ']',
-}
-
 def infer_value(v, vtype=None):
   if vtype is not None:
     return to_type(v, vtype)
 
-  try:
-    return ast.literal_eval(v)
-  except:
-    pass
-
-  uv = sp.unquote(v, quote_map=_INFER_QUOTE_MAP)
+  uv = sp.unquote(v)
   if v is not uv:
-    if v[0] in '[(':
+    if v[0] in '"\'':
+      return uv
+    elif v[0] in '[(':
       values = []
       for part in comma_split(uv):
         values.append(infer_value(part))
@@ -973,7 +963,10 @@ def infer_value(v, vtype=None):
 
       return value
 
-  return v
+  try:
+    return ast.literal_eval(v)
+  except:
+    return v
 
 
 def parse_dict(data, vtype=None, allow_args=False):
