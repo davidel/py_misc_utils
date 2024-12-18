@@ -2,6 +2,7 @@ import inspect
 import sys
 import types
 
+from . import assert_checks as tas
 from . import traceback as tb
 
 
@@ -68,6 +69,36 @@ def fetch_args(func, locs):
         kwargs[n] = pv
 
   return args, kwargs
+
+
+def get_fn_kwargs(args, func, prefix=None, roffset=None):
+  aspec = inspect.getfullargspec(func)
+
+  sdefaults = aspec.defaults or ()
+  sargs = aspec.args or ()
+  ndelta = len(sargs) - len(sdefaults)
+
+  fnargs = dict()
+  for i, an in enumerate(sargs):
+    if i != 0 or an != 'self':
+      nn = f'{prefix}.{an}' if prefix else an
+      di = i - ndelta
+      if di >= 0:
+        fnargs[an] = args.get(nn, sdefaults[di])
+      elif roffset is not None and i >= roffset:
+        aval = args.get(nn, inspect.Signature.empty)
+        tas.check(aval is not inspect.Signature.empty,
+                  msg=f'The "{an}" argument must be present as "{nn}": {args}')
+        fnargs[an] = aval
+
+  if aspec.kwonlyargs:
+    for an in aspec.kwonlyargs:
+      nn = f'{prefix}.{an}' if prefix else an
+      aval = args.get(nn, aspec.kwonlydefaults.get(an, inspect.Signature.empty))
+      if aval is not inspect.Signature.empty:
+        fnargs[an] = aval
+
+  return fnargs
 
 
 def parent_locals(level=0):

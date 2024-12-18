@@ -122,36 +122,6 @@ def infer_str(v):
   return infer_value(v) if isinstance(v, str) else v
 
 
-def get_fn_kwargs(args, fn, prefix=None, roffset=None):
-  aspec = inspect.getfullargspec(fn)
-
-  sdefaults = aspec.defaults or ()
-  sargs = aspec.args or ()
-  ndelta = len(sargs) - len(sdefaults)
-
-  fnargs = dict()
-  for i, an in enumerate(sargs):
-    if i != 0 or an != 'self':
-      nn = f'{prefix}.{an}' if prefix else an
-      di = i - ndelta
-      if di >= 0:
-        fnargs[an] = args.get(nn, sdefaults[di])
-      elif roffset is not None and i >= roffset:
-        aval = args.get(nn, NONE)
-        tas.check(aval is not NONE,
-                  msg=f'The "{an}" argument must be present as "{nn}": {args}')
-        fnargs[an] = aval
-
-  if aspec.kwonlyargs:
-    for an in aspec.kwonlyargs:
-      nn = f'{prefix}.{an}' if prefix else an
-      aval = args.get(nn, aspec.kwonlydefaults.get(an, NONE))
-      if aval is not NONE:
-        fnargs[an] = aval
-
-  return fnargs
-
-
 def _stri(obj, seen, float_fmt):
   oid = id(obj)
   sres = seen.get(oid, NONE)
