@@ -128,33 +128,26 @@ def get_fn_kwargs(args, fn, prefix=None, roffset=None):
   sdefaults = aspec.defaults or ()
   sargs = aspec.args or ()
   ndelta = len(sargs) - len(sdefaults)
+
   fnargs = dict()
   for i, an in enumerate(sargs):
     if i != 0 or an != 'self':
       nn = f'{prefix}.{an}' if prefix else an
       di = i - ndelta
       if di >= 0:
-        d = sdefaults[di]
-        if isinstance(d, (int, float, str)):
-          dtype = type(d)
-        else:
-          dtype = infer_str
-        fnargs[an] = dget(args, nn, d, dtype=dtype)
+        fnargs[an] = args.get(nn, sdefaults[di])
       elif roffset is not None and i >= roffset:
-        tas.check(nn in args, msg=f'The "{an}" argument must be present as "{nn}"')
-        fnargs[an] = args[nn]
+        aval = args.get(nn, NONE)
+        tas.check(aval is not NONE,
+                  msg=f'The "{an}" argument must be present as "{nn}": {args}')
+        fnargs[an] = aval
 
   if aspec.kwonlyargs:
     for an in aspec.kwonlyargs:
       nn = f'{prefix}.{an}' if prefix else an
-      d = aspec.kwonlydefaults.get(an, NONE)
-      if isinstance(d, (int, float, str)):
-        dtype = type(d)
-      else:
-        dtype = infer_str
-      argval = dget(args, nn, d, dtype=dtype)
-      if argval is not NONE:
-        fnargs[an] = argval
+      aval = args.get(nn, aspec.kwonlydefaults.get(an, NONE))
+      if aval is not NONE:
+        fnargs[an] = aval
 
   return fnargs
 
