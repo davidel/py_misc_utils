@@ -927,7 +927,7 @@ def to_type(v, vtype):
   return _BOOL_MAP[v.lower()] if vtype == bool else vtype(v)
 
 
-def infer_value(v, vtype=None):
+def infer_value(v, vtype=None, allow_exec=False):
   if vtype is not None:
     return to_type(v, vtype)
 
@@ -936,11 +936,11 @@ def infer_value(v, vtype=None):
     if v[0] in '"\'':
       return uv
     elif v[0] in '[(':
-      values = [infer_value(part) for part in comma_split(uv)]
+      values = [infer_value(part, allow_exec=allow_exec) for part in comma_split(uv)]
 
       return tuple(values) if v[0] == '(' else values
     elif v[0] == '{':
-      pdict, pargs = parse_dict(uv, allow_args=True)
+      pdict, pargs = parse_dict(uv, allow_args=True, allow_exec=allow_exec)
       if not pdict:
         return set(pargs)
       if pargs:
@@ -948,12 +948,12 @@ def infer_value(v, vtype=None):
 
       return pdict
     elif v[0] == '`':
-      pdict, pargs = parse_dict(uv, allow_args=True)
-      tas.check_eq(len(pargs), 2, msg=f'Wrong exec args: {uv}')
+      tas.check(allow_exec, msg=f'Exec not allowed: {uv}')
 
-      path, fname = pargs
+      pdict, pargs = parse_dict(uv, allow_args=True, allow_exec=allow_exec)
+      tas.check_ge(len(pargs), 2, msg=f'Wrong exec args: {uv}')
 
-      return run(path, fname, **pdict)
+      return run(*pargs, **pdict)
 
   try:
     return ast.literal_eval(v)
@@ -961,19 +961,19 @@ def infer_value(v, vtype=None):
     return v
 
 
-def parse_dict(data, vtype=None, allow_args=False):
+def parse_dict(data, vtype=None, allow_args=False, allow_exec=False):
   ma_dict, ma_args = dict(), []
   for part in comma_split(data):
     parts = resplit(part, '=')
     if len(parts) == 2:
       name, value = parts
-      ma_dict[name] = infer_value(value, vtype=vtype)
+      ma_dict[name] = infer_value(value, vtype=vtype, allow_exec=allow_exec)
     elif len(parts) == 1:
       if not allow_args:
         alog.xraise(ValueError, f'Arguments parsing disabled: {data}')
       if ma_dict:
         alog.xraise(ValueError, f'Arguments can appear only at the beginning: {data}')
-      ma_args.append(infer_value(parts[0], vtype=vtype))
+      ma_args.append(infer_value(parts[0], vtype=vtype, allow_exec=allow_exec))
     else:
       alog.xraise(ValueError, f'Syntax error: {part}')
 
