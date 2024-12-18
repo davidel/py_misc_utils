@@ -916,15 +916,8 @@ def sleep_until(date, msg=None):
     time.sleep(date.timestamp() - now.timestamp())
 
 
-_BOOL_MAP = {
-  'true': True,
-  '1': True,
-  'false': False,
-  '0': False,
-}
-
 def to_type(v, vtype):
-  return _BOOL_MAP[v.lower()] if vtype == bool else vtype(v)
+  return vtype(ast.literal_eval(v))
 
 
 def infer_value(v, vtype=None, allow_exec=False):
