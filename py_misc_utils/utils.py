@@ -23,6 +23,7 @@ from . import alog
 from . import assert_checks as tas
 from . import file_overwrite as fow
 from . import gfs
+from . import mmap as mm
 from . import obj
 from . import split as sp
 from . import template_replace as tr
@@ -624,12 +625,9 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
 
 def run(path, fnname, *args, **kwargs):
-  with gfs.open(path, mode='r') as cfd:
-    code = cfd.read()
-
   compile_args, = pop_kwargs(kwargs, 'compile_args')
 
-  fn, = compile(code, fnname, **(compile_args or dict()))
+  fn, = compile(mm.file_view(path), fnname, **(compile_args or dict()))
 
   return fn(*args, **kwargs)
 
@@ -954,10 +952,7 @@ def infer_value(v, vtype=None):
       tas.check_eq(len(pargs), 2, msg=f'Wrong exec args: {uv}')
 
       path, vname = pargs
-      with gfs.open(path, mode='r') as cfd:
-        code = cfd.read()
-
-      value, = compile(code, vname, **pdict)
+      value, = compile(mm.file_view(path), vname, **pdict)
 
       return value
 
