@@ -28,11 +28,7 @@ from . import template_replace as tr
 from . import traceback as tb
 
 
-class _None:
-  pass
-
-
-NONE = _None()
+_NONE = object()
 
 
 def pickle_proto():
@@ -46,8 +42,8 @@ def ident(x):
 def make_ntuple(ntc, args):
   targs = []
   for f in ntc._fields:
-    fv = args.get(f, NONE)
-    if fv is NONE:
+    fv = args.get(f, _NONE)
+    if fv is _NONE:
       fv = ntc._field_defaults.get(f)
 
     targs.append(fv)
@@ -124,10 +120,10 @@ def infer_str(v):
 
 def _stri(obj, seen, float_fmt):
   oid = id(obj)
-  sres = seen.get(oid, NONE)
+  sres = seen.get(oid, _NONE)
   if sres is None:
     return '...'
-  elif sres is not NONE:
+  elif sres is not _NONE:
     return sres
 
   seen[oid] = None
@@ -188,8 +184,8 @@ def dmerge(*args):
 
 
 def dget(sdict, name, defval, dtype=None):
-  v = sdict.get(name, NONE)
-  if v is NONE:
+  v = sdict.get(name, _NONE)
+  if v is _NONE:
     return defval
 
   if dtype is None and defval is not None:
@@ -222,8 +218,8 @@ def getvar(obj, name, defval=None):
 
 
 def get_property(obj, name, defval=None):
-  p = getattr(obj, name, NONE)
-  if p is NONE:
+  p = getattr(obj, name, _NONE)
+  if p is _NONE:
     return defval
 
   return p() if callable(p) else p
@@ -233,8 +229,8 @@ def dict_subset(d, *keys):
   mkeys = expand_strings(*keys)
   subd = dict()
   for k in mkeys:
-    v = d.get(k, NONE)
-    if v is not NONE:
+    v = d.get(k, _NONE)
+    if v is not _NONE:
       subd[k] = v
 
   return subd
@@ -279,10 +275,10 @@ def append_if_missing(arr, elem):
 
 def state_override(obj, state, keys):
   for key in keys:
-    sv = state.get(key, NONE)
-    if sv is not NONE:
-      curv = getattr(obj, key, NONE)
-      if curv is not NONE:
+    sv = state.get(key, _NONE)
+    if sv is not _NONE:
+      curv = getattr(obj, key, _NONE)
+      if curv is not _NONE:
         setattr(obj, key, sv)
 
 
@@ -579,8 +575,8 @@ class _ArgList(list):
 
 
 def dict_add(ddict, name, value):
-  ivalue = ddict.get(name, NONE)
-  if ivalue is not NONE:
+  ivalue = ddict.get(name, _NONE)
+  if ivalue is not _NONE:
     if isinstance(ivalue, _ArgList):
       ivalue.append(value)
     else:
@@ -980,9 +976,9 @@ def infer_value(v, vtype=None):
     elif v[0] == '`':
       return eval(uv)
 
-  sv = _SPECIAL_VALUES.get(v, NONE)
+  sv = _SPECIAL_VALUES.get(v, _NONE)
 
-  return v if sv is NONE else sv
+  return v if sv is _NONE else sv
 
 
 def parse_dict(data, vtype=None, allow_args=False):
@@ -1059,7 +1055,7 @@ def args(*uargs, **kwargs):
 def maybe_call(obj, name, *args, **kwargs):
   fn = getattr(obj, name, None)
 
-  return fn(*args, **kwargs) if fn is not None else NONE
+  return fn(*args, **kwargs) if fn is not None else _NONE
 
 
 def maybe_call_dv(obj, name, defval, *args, **kwargs):
