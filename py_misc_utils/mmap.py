@@ -5,7 +5,7 @@ from . import alog
 from . import osfd
 
 
-def file_mmap_view(path):
+def file_view(path):
   with osfd.OsFd(path, os.O_RDONLY) as fd:
     mm = mmap.mmap(fd, 0, access=mmap.ACCESS_READ)
 
