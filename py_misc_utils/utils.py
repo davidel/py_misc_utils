@@ -917,7 +917,7 @@ def sleep_until(date, msg=None):
 
 
 def to_type(v, vtype):
-  return vtype(ast.literal_eval(v))
+  return vtype(ast.literal_eval(v)) if isinstance(v, str) else vtype(v)
 
 
 def to_bool(v):
@@ -925,8 +925,7 @@ def to_bool(v):
 
 
 def cast(v, vtype):
-  if v is not None:
-    return to_type(v, vtype) if isinstance(v, str) else vtype(v)
+  return to_type(v, vtype) if v is not None else None
 
 
 def infer_value(v, vtype=None, allow_exec=False):
