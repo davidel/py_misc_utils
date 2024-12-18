@@ -946,33 +946,34 @@ def infer_value(v, vtype=None):
     pass
 
   uv = sp.unquote(v, quote_map=_INFER_QUOTE_MAP)
-  tas.check(uv is not v, msg=f'Unable to infer value: {v}')
+  if v is not uv:
+    if v[0] in '[(':
+      values = []
+      for part in comma_split(uv):
+        values.append(infer_value(part))
 
-  if v[0] in '[(':
-    values = []
-    for part in comma_split(uv):
-      values.append(infer_value(part))
+      return tuple(values) if v[0] == '(' else values
+    elif v[0] == '{':
+      pdict, pargs = parse_dict(uv, allow_args=True)
+      if not pdict:
+        return set(pargs)
+      if pargs:
+        alog.xraise(ValueError, f'Cannot return both arguments and dictionary: {pargs} {pdict}')
 
-    return tuple(values) if v[0] == '(' else values
-  elif v[0] == '{':
-    pdict, pargs = parse_dict(uv, allow_args=True)
-    if not pdict:
-      return set(pargs)
-    if pargs:
-      alog.xraise(ValueError, f'Cannot return both arguments and dictionary: {pargs} {pdict}')
+      return pdict
+    elif v[0] == '`':
+      pdict, pargs = parse_dict(uv, allow_args=True)
+      tas.check_eq(len(pargs), 2, msg=f'Wrong exec args: {uv}')
 
-    return pdict
-  elif v[0] == '`':
-    pdict, pargs = parse_dict(uv, allow_args=True)
-    tas.check_eq(len(pargs), 2, msg=f'Wrong exec args: {uv}')
+      path, vname = pargs
+      with gfs.open(path, mode='r') as cfd:
+        code = cfd.read()
 
-    path, vname = pargs
-    with gfs.open(path, mode='r') as cfd:
-      code = cfd.read()
+      value, = compile(code, vname, **pdict)
 
-    value, = compile(code, vname, **pdict)
+      return value
 
-    return value
+  return v
 
 
 def parse_dict(data, vtype=None, allow_args=False):
