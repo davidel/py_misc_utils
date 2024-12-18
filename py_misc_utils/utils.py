@@ -938,9 +938,7 @@ def infer_value(v, vtype=None):
     if v[0] in '"\'':
       return uv
     elif v[0] in '[(':
-      values = []
-      for part in comma_split(uv):
-        values.append(infer_value(part))
+      values = [infer_value(part) for part in comma_split(uv)]
 
       return tuple(values) if v[0] == '(' else values
     elif v[0] == '{':
