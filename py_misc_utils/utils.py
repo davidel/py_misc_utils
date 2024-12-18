@@ -1,4 +1,5 @@
 import array
+import ast
 import collections
 import copy
 import datetime
@@ -928,57 +929,50 @@ def to_type(v, vtype):
   return _BOOL_MAP[v.lower()] if vtype == bool else vtype(v)
 
 
-_SPECIAL_VALUES = {
-  'True': True,
-  'False': False,
-  'None': None,
+_INFER_QUOTE_MAP = {
+  '`': '`',
+  '(': ')',
+  '{': '}',
+  '[': ']',
 }
 
 def infer_value(v, vtype=None):
   if vtype is not None:
     return to_type(v, vtype)
-  if re.match(r'[+-]?([1-9]\d*|0)$', v):
-    return int(v)
-  if re.match(r'0x[0-9a-fA-F]+$', v):
-    return int(v, 16)
-  if re.match(r'0o[0-7]+$', v):
-    return int(v, 8)
 
-  #    [-+]? # optional sign
-  #    (?:
-  #      (?: \d* \. \d+ ) # .1 .12 .123 etc 9.1 etc 98.1 etc
-  #      |
-  #      (?: \d+ \.? ) # 1. 12. 123. etc 1 12 123 etc
-  #    )
-  #    (?: [Ee] [+-]? \d+ ) ? # optional exponent part
-  float_rx = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?$'
-  if re.match(float_rx, v):
-    return float(v)
+  try:
+    return ast.literal_eval(v)
+  except:
+    pass
 
-  uv = sp.unquote(v)
-  if uv is not v:
-    if v[0] in '\'"':
-      return uv
-    elif v[0] in '[(':
-      values = []
-      for part in comma_split(uv):
-        values.append(infer_value(part))
+  uv = sp.unquote(v, quote_map=_INFER_QUOTE_MAP)
+  tas.check(uv is not v, msg=f'Unable to infer value: {v}')
 
-      return tuple(values) if v[0] == '(' else values
-    elif v[0] == '{':
-      pdict, pargs = parse_dict(uv, allow_args=True)
-      if not pdict:
-        return set(pargs)
-      if pargs:
-        alog.xraise(ValueError, f'Cannot return both arguments and dictionary: {pargs} {pdict}')
+  if v[0] in '[(':
+    values = []
+    for part in comma_split(uv):
+      values.append(infer_value(part))
 
-      return pdict
-    elif v[0] == '`':
-      return eval(uv)
+    return tuple(values) if v[0] == '(' else values
+  elif v[0] == '{':
+    pdict, pargs = parse_dict(uv, allow_args=True)
+    if not pdict:
+      return set(pargs)
+    if pargs:
+      alog.xraise(ValueError, f'Cannot return both arguments and dictionary: {pargs} {pdict}')
 
-  sv = _SPECIAL_VALUES.get(v, _NONE)
+    return pdict
+  elif v[0] == '`':
+    pdict, pargs = parse_dict(uv, allow_args=True)
+    tas.check_eq(len(pargs), 2, msg=f'Wrong exec args: {uv}')
 
-  return v if sv is _NONE else sv
+    path, vname = pargs
+    with gfs.open(path, mode='r') as cfd:
+      code = cfd.read()
+
+    value, = compile(code, vname, **pdict)
+
+    return value
 
 
 def parse_dict(data, vtype=None, allow_args=False):
