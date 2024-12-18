@@ -951,10 +951,9 @@ def infer_value(v, vtype=None):
       pdict, pargs = parse_dict(uv, allow_args=True)
       tas.check_eq(len(pargs), 2, msg=f'Wrong exec args: {uv}')
 
-      path, vname = pargs
-      value, = compile(mm.file_view(path), vname, **pdict)
+      path, fname = pargs
 
-      return value
+      return run(path, fname, **pdict)
 
   try:
     return ast.literal_eval(v)
