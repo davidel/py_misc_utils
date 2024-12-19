@@ -22,7 +22,13 @@ class _Skipper:
 
 
 def _chars_regex(chars):
-  return re.compile(r'[\\' + ''.join([rf'\{c}' for c in sorted(chars)]) + ']')
+  rexs = bytearray(b'[\\')
+  for c in sorted(chars):
+    rexs.extend((ord('\\'), c))
+
+  rexs.append(ord(']'))
+
+  return re.compile(bytes(rexs))
 
 
 def _specials_regex(qmap):
@@ -51,9 +57,11 @@ def _split_forward(data, pos, split_rx, skipper, seq):
 SplitContext = collections.namedtuple('SplitContext', 'map, quote_rx, quote_sprx')
 
 def make_context(quote_map):
-  return SplitContext(map=quote_map,
-                      quote_rx=_chars_regex(quote_map.keys()),
-                      quote_sprx=_specials_regex(quote_map))
+  bmap = {ord(k): ord(v) for k, v in quote_map.items()}
+
+  return SplitContext(map=bmap,
+                      quote_rx=_chars_regex(bmap.keys()),
+                      quote_sprx=_specials_regex(bmap))
 
 
 _QUOTE_MAP = {
@@ -72,24 +80,27 @@ _Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
 def split(data, split_rx, quote_ctx=None):
   qctx = quote_ctx or _QUOTE_CTX
 
-  split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
+  split_rx = re.compile(split_rx.encode()) if isinstance(split_rx, str) else split_rx
   skipper = _Skipper(qctx.quote_rx)
 
-  pos, spos, qstack, parts, seq = 0, -1, [], [], array.array('u')
-  while pos < len(data):
-    if seq and seq[-1] == '\\' and pos > spos:
-      if (c := data[pos]) != '\\':
+  bdata = memoryview(data.encode())
+
+  spos, sval = -1, ord('\\')
+  pos, qstack, parts, seq = 0, [], [], array.array('B')
+  while pos < len(bdata):
+    if seq and seq[-1] == sval and pos > spos:
+      if (c := bdata[pos]) != sval:
         seq[-1] = c
       pos += 1
       spos = pos
     elif qstack:
-      m = re.search(qctx.quote_sprx, data[pos:])
+      m = re.search(qctx.quote_sprx, bdata[pos:])
       if not m:
         break
 
-      seq.extend(data[pos: pos + m.start()])
+      seq.extend(bdata[pos: pos + m.start()])
       pos += m.start()
-      c = data[pos]
+      c = bdata[pos]
       tq = qstack[-1]
       if c == tq.closec:
         qstack.pop()
@@ -98,12 +109,12 @@ def split(data, split_rx, quote_ctx=None):
       seq.append(c)
       pos += 1
     else:
-      kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
+      kpos, is_split = _split_forward(bdata, pos, split_rx, skipper, seq)
       if is_split:
-        parts.append(seq.tounicode())
-        seq = array.array('u')
-      elif kpos < len(data):
-        c = data[kpos]
+        parts.append(seq)
+        seq = array.array('B')
+      elif kpos < len(bdata):
+        c = bdata[kpos]
         if cc := qctx.map.get(c):
           qstack.append(_Quote(cc, kpos, c != cc))
         seq.append(c)
@@ -112,9 +123,9 @@ def split(data, split_rx, quote_ctx=None):
 
   tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
   if seq or parts:
-    parts.append(seq.tounicode())
+    parts.append(seq)
 
-  return tuple(parts)
+  return tuple(p.tobytes().decode() for p in parts)
 
 
 def unquote(data, quote_map=None):
