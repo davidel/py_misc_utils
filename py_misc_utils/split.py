@@ -79,8 +79,8 @@ def split(data, split_rx, quote_map=None):
       if not m:
         break
 
-      seq.extend(data[pos: m.start()])
-      pos = m.start()
+      seq.extend(data[pos: pos + m.start()])
+      pos += m.start()
       c = data[pos]
       if c == '\\':
         if pos + 1 >= len(data):
