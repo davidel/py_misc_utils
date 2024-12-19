@@ -77,13 +77,10 @@ def split(data, split_rx, quote_ctx=None):
 
   pos, qstack, parts, seq = 0, [], [], array.array('u')
   while pos < len(data):
-    c = data[pos]
-    if c == '\\':
-      if pos + 1 >= len(data):
-        seq.append(c)
-        break
-      seq.append(data[pos + 1])
-      pos += 2
+    if seq and seq[-1] == '\\':
+      if (c := data[pos]) != '\\':
+        seq[-1] = c
+      pos += 1
     elif qstack:
       m = re.search(qctx.quote_sprx, data[pos:])
       if not m:
