@@ -91,7 +91,7 @@ def split(data, split_rx, quote_ctx=None):
       tq = qstack[-1]
       if c == tq.closec:
         qstack.pop()
-      elif tq.nest_ok and (cc := qctx.quote_map.get(c)):
+      elif tq.nest_ok and (cc := qctx.map.get(c)):
         qstack.append(_Quote(cc, pos, c != cc))
       seq.append(c)
       pos += 1
@@ -102,7 +102,7 @@ def split(data, split_rx, quote_ctx=None):
         seq = array.array('u')
       elif kpos < len(data):
         c = data[kpos]
-        if cc := qctx.quote_map.get(c):
+        if cc := qctx.map.get(c):
           qstack.append(_Quote(cc, kpos, c != cc))
         seq.append(c)
         kpos += 1
