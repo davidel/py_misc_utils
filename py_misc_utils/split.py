@@ -24,10 +24,12 @@ class _Skipper:
     return next_pos
 
 
-def _keys_regex(qmap):
-  stopvals = sorted(qmap.keys())
+def _chars_regex(chars):
+  return re.compile(r'[\\' + ''.join([rf'\{c}' for c in sorted(chars)]) + ']')
 
-  return re.compile(r'[\\' + ''.join([rf'\{c}' for c in stopvals]) + ']')
+
+def _specials_regex(qmap):
+  return _chars_regex(set(tuple(qmap.keys()) + tuple(qmap.values())))
 
 
 def _split_forward(data, pos, split_rx, skipper, seq):
@@ -44,8 +46,7 @@ def _split_forward(data, pos, split_rx, skipper, seq):
     seq_pos = next_pos = skip_pos
     xm = None
 
-  if seq_pos:
-    seq.extend(pdata[: seq_pos])
+  seq.extend(pdata[: seq_pos])
 
   return pos + next_pos, xm is not None
 
@@ -59,13 +60,14 @@ _QUOTE_MAP = {
   '[': ']',
   '<': '>',
 }
-_QUOTE_RX = _keys_regex(_QUOTE_MAP)
+_QUOTE_RX = _chars_regex(_QUOTE_MAP.keys())
+_QUOTE_SPRX = _specials_regex(_QUOTE_MAP)
 
 def split(data, split_rx, quote_map=None):
   if quote_map is None:
-    quote_map, quote_rx = _QUOTE_MAP, _QUOTE_RX
+    quote_map, quote_rx, quote_sprx = _QUOTE_MAP, _QUOTE_RX, _QUOTE_SPRX
   else:
-    quote_rx = _keys_regex(quote_map)
+    quote_rx, quote_sprx = _chars_regex(quote_map.keys()), _specials_regex(quote_map)
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
   skipper = _Skipper(quote_rx)
@@ -73,9 +75,18 @@ def split(data, split_rx, quote_map=None):
   pos, qstack, parts, seq = 0, [], [], array.array('u')
   while pos < len(data):
     if qstack:
+      m = re.search(quote_sprx, data[pos:])
+      if not m:
+        break
+
+      seq.extend(data[pos: m.start()])
+      pos = m.start()
       c = data[pos]
-      if seq and seq[-1] == '\\':
-        seq[-1] = c
+      if c == '\\':
+        if pos + 1 >= len(data):
+          break
+        seq.append(data[pos + 1])
+        pos += 1
       else:
         tq = qstack[-1]
         if c == tq.closec:
