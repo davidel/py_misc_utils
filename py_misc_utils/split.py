@@ -120,7 +120,7 @@ def split(data, split_rx, quote_ctx=None):
     else:
       kpos, is_split = _split_forward(bdata, pos, bsplit_rx, skipper, seq)
       if is_split:
-        parts.append(seq)
+        parts.append(seq.tobytes())
         seq = array.array('B')
       elif kpos < len(bdata):
         c = bdata[kpos]
@@ -132,11 +132,9 @@ def split(data, split_rx, quote_ctx=None):
 
   tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
   if seq or parts:
-    parts.append(seq)
+    parts.append(seq.tobytes())
 
-  decode = (lambda b: b.decode()) if isinstance(data, str) else (lambda b: b)
-
-  return tuple(decode(p.tobytes()) for p in parts)
+  return tuple(p.decode() for p in parts) if isinstance(data, str) else tuple(parts)
 
 
 def unquote(data, quote_map=None):
