@@ -64,6 +64,17 @@ def make_context(quote_map):
                       quote_sprx=_specials_regex(bmap))
 
 
+def _to_bytes(data, split_rx):
+  if isinstance(data, str):
+    data = data.encode()
+  if isinstance(split_rx, str):
+    split_rx = split_rx.encode()
+
+  split_rx = re.compile(split_rx) if isinstance(split_rx, bytes) else split_rx
+
+  return memoryview(data), split_rx
+
+
 _QUOTE_MAP = {
   '"': '"',
   "'": "'",
@@ -80,10 +91,8 @@ _Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
 def split(data, split_rx, quote_ctx=None):
   qctx = quote_ctx or _QUOTE_CTX
 
-  split_rx = re.compile(split_rx.encode()) if isinstance(split_rx, str) else split_rx
+  bdata, bsplit_rx = _to_bytes(data, split_rx)
   skipper = _Skipper(qctx.quote_rx)
-
-  bdata = memoryview(data.encode())
 
   spos, sval = -1, ord('\\')
   pos, qstack, parts, seq = 0, [], [], array.array('B')
@@ -109,7 +118,7 @@ def split(data, split_rx, quote_ctx=None):
       seq.append(c)
       pos += 1
     else:
-      kpos, is_split = _split_forward(bdata, pos, split_rx, skipper, seq)
+      kpos, is_split = _split_forward(bdata, pos, bsplit_rx, skipper, seq)
       if is_split:
         parts.append(seq)
         seq = array.array('B')
@@ -125,7 +134,9 @@ def split(data, split_rx, quote_ctx=None):
   if seq or parts:
     parts.append(seq)
 
-  return tuple(p.tobytes().decode() for p in parts)
+  decode = (lambda b: b.decode()) if isinstance(data, str) else (lambda b: b)
+
+  return tuple(decode(p.tobytes()) for p in parts)
 
 
 def unquote(data, quote_map=None):
