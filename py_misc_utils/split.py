@@ -75,12 +75,13 @@ def split(data, split_rx, quote_ctx=None):
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
   skipper = _Skipper(qctx.quote_rx)
 
-  pos, qstack, parts, seq = 0, [], [], array.array('u')
+  pos, spos, qstack, parts, seq = 0, -1, [], [], array.array('u')
   while pos < len(data):
-    if seq and seq[-1] == '\\':
+    if seq and seq[-1] == '\\' and pos > spos:
       if (c := data[pos]) != '\\':
         seq[-1] = c
       pos += 1
+      spos = pos
     elif qstack:
       m = re.search(qctx.quote_sprx, data[pos:])
       if not m:
