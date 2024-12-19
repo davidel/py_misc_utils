@@ -74,7 +74,10 @@ def split(data, split_rx, quote_map=None):
 
   pos, qstack, parts, seq = 0, [], [], array.array('u')
   while pos < len(data):
-    if qstack:
+    if seq and seq[-1] == '\\':
+      seq[-1] = data[pos]
+      pos += 1
+    elif qstack:
       m = re.search(quote_sprx, data[pos:])
       if not m:
         break
@@ -82,18 +85,12 @@ def split(data, split_rx, quote_map=None):
       seq.extend(data[pos: pos + m.start()])
       pos += m.start()
       c = data[pos]
-      if c == '\\':
-        if pos + 1 >= len(data):
-          break
-        seq.append(data[pos + 1])
-        pos += 1
-      else:
-        tq = qstack[-1]
-        if c == tq.closec:
-          qstack.pop()
-        elif tq.nest_ok and (cc := quote_map.get(c)):
-          qstack.append(_Quote(cc, pos, c != cc))
-        seq.append(c)
+      tq = qstack[-1]
+      if c == tq.closec:
+        qstack.pop()
+      elif tq.nest_ok and (cc := quote_map.get(c)):
+        qstack.append(_Quote(cc, pos, c != cc))
+      seq.append(c)
       pos += 1
     else:
       kpos, is_split = _split_forward(data, pos, split_rx, skipper, seq)
