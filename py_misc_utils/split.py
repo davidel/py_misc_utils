@@ -5,9 +5,6 @@ import re
 from . import assert_checks as tas
 
 
-_Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
-
-
 class _Skipper:
 
   def __init__(self, quote_rx):
@@ -51,6 +48,14 @@ def _split_forward(data, pos, split_rx, skipper, seq):
   return pos + next_pos, xm is not None
 
 
+SplitContext = collections.namedtuple('SplitContext', 'map, quote_rx, quote_sprx')
+
+def make_context(quote_map):
+  return SplitContext(map=quote_map,
+                      quote_rx=_chars_regex(quote_map.keys()),
+                      quote_sprx=_specials_regex(quote_map))
+
+
 _QUOTE_MAP = {
   '"': '"',
   "'": "'",
@@ -60,17 +65,15 @@ _QUOTE_MAP = {
   '[': ']',
   '<': '>',
 }
-_QUOTE_RX = _chars_regex(_QUOTE_MAP.keys())
-_QUOTE_SPRX = _specials_regex(_QUOTE_MAP)
+_QUOTE_CTX = make_context(_QUOTE_MAP)
 
-def split(data, split_rx, quote_map=None):
-  if quote_map is None:
-    quote_map, quote_rx, quote_sprx = _QUOTE_MAP, _QUOTE_RX, _QUOTE_SPRX
-  else:
-    quote_rx, quote_sprx = _chars_regex(quote_map.keys()), _specials_regex(quote_map)
+_Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
+
+def split(data, split_rx, quote_ctx=None):
+  qctx = quote_ctx or _QUOTE_CTX
 
   split_rx = re.compile(split_rx) if isinstance(split_rx, str) else split_rx
-  skipper = _Skipper(quote_rx)
+  skipper = _Skipper(qctx.quote_rx)
 
   pos, qstack, parts, seq = 0, [], [], array.array('u')
   while pos < len(data):
@@ -78,7 +81,7 @@ def split(data, split_rx, quote_map=None):
       seq[-1] = data[pos]
       pos += 1
     elif qstack:
-      m = re.search(quote_sprx, data[pos:])
+      m = re.search(qctx.quote_sprx, data[pos:])
       if not m:
         break
 
@@ -88,7 +91,7 @@ def split(data, split_rx, quote_map=None):
       tq = qstack[-1]
       if c == tq.closec:
         qstack.pop()
-      elif tq.nest_ok and (cc := quote_map.get(c)):
+      elif tq.nest_ok and (cc := qctx.quote_map.get(c)):
         qstack.append(_Quote(cc, pos, c != cc))
       seq.append(c)
       pos += 1
@@ -99,7 +102,7 @@ def split(data, split_rx, quote_map=None):
         seq = array.array('u')
       elif kpos < len(data):
         c = data[kpos]
-        if cc := quote_map.get(c):
+        if cc := qctx.quote_map.get(c):
           qstack.append(_Quote(cc, kpos, c != cc))
         seq.append(c)
         kpos += 1
