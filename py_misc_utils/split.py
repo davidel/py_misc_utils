@@ -94,17 +94,12 @@ def split(data, split_rx, quote_ctx=None):
   bdata, bsplit_rx = _to_bytes(data, split_rx)
   skipper = _Skipper(qctx.quote_rx)
 
-  spos, sval = -1, ord('\\')
+  sval = ord('\\')
   pos, qstack, parts, seq = 0, [], [], array.array('B')
   while pos < len(bdata):
-    if seq and seq[-1] == sval and pos > spos:
-      if qstack:
-        tq = qstack[-1]
-        if not tq.nest_ok and bdata[pos] == tq.closec:
-          seq[-1] = tq.closec
-
+    if seq and seq[-1] == sval:
+      seq.append(bdata[pos])
       pos += 1
-      spos = pos
     elif qstack:
       m = re.search(qctx.quote_sprx, bdata[pos:])
       if not m:
@@ -145,7 +140,9 @@ def unquote(data, quote_map=None):
     quote_map = quote_map or _QUOTE_MAP
     cc = quote_map.get(data[0])
     if cc == data[-1]:
-      return data[1: -1]
+      udata = data[1: -1]
+
+      return re.sub(rf'\\{cc}', rf'{cc}', udata) if cc == data[0] else udata
 
   return data
 
