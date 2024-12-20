@@ -98,8 +98,11 @@ def split(data, split_rx, quote_ctx=None):
   pos, qstack, parts, seq = 0, [], [], array.array('B')
   while pos < len(bdata):
     if seq and seq[-1] == sval and pos > spos:
-      if (c := bdata[pos]) != sval:
-        seq[-1] = c
+      if qstack:
+        tq = qstack[-1]
+        if not tq.nest_ok and bdata[pos] == tq.closec:
+          seq[-1] = tq.closec
+
       pos += 1
       spos = pos
     elif qstack:
