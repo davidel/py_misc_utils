@@ -21,6 +21,7 @@ import numpy as np
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import file_overwrite as fow
 from . import gfs
 from . import mmap as mm
@@ -77,10 +78,6 @@ def func_name(func):
   return fname if fname is not None else cname(func)
 
 
-def is_builtin_function(obj):
-  return isinstance(obj, types.BuiltinFunctionType)
-
-
 def is_subclass(cls, cls_group):
   return inspect.isclass(cls) and issubclass(cls, cls_group)
 
@@ -91,11 +88,6 @@ def classof(obj):
 
 def moduleof(obj):
   return getattr(classof(obj), '__module__', None)
-
-
-def refcount(obj):
-  # Discard 2 frame references (our own, and the sys.getrefcount() one).
-  return sys.getrefcount(obj) - 2
 
 
 def infer_str(v):
@@ -155,10 +147,6 @@ def norm_slice(start, stop, size):
   return start, stop
 
 
-def denone(**kwargs):
-  return {k: v for k, v in kwargs.items() if v is not None}
-
-
 def dmerge(*args):
   mdict = dict()
   for d in args:
@@ -178,19 +166,8 @@ def dget(sdict, name, defval, dtype=None):
   return dtype(v) if v is not None and dtype is not None else v
 
 
-def expand_strings(*args):
-  margs = []
-  for arg in args:
-    if isinstance(arg, (list, tuple, types.GeneratorType)):
-      margs.extend(arg)
-    else:
-      margs.extend(comma_split(arg))
-
-  return tuple(margs)
-
-
 def mget(d, *args, as_dict=False):
-  margs = expand_strings(*args)
+  margs = cu.expand_strings(*args)
   if as_dict:
     return {f: d.get(f) for f in margs}
   else:
@@ -210,7 +187,7 @@ def get_property(obj, name, defval=None):
 
 
 def dict_subset(d, *keys):
-  mkeys = expand_strings(*keys)
+  mkeys = cu.expand_strings(*keys)
   subd = dict()
   for k in mkeys:
     v = d.get(k, _NONE)
@@ -241,9 +218,9 @@ def dict_setmissing(d, **kwargs):
 def pop_kwargs(kwargs, names, args_key=None):
   xargs = kwargs.pop(args_key or '_', None)
   if xargs is not None:
-    args = [xargs.get(name) for name in expand_strings(names)]
+    args = [xargs.get(name) for name in cu.expand_strings(names)]
   else:
-    args = [kwargs.pop(name, None) for name in expand_strings(names)]
+    args = [kwargs.pop(name, None) for name in cu.expand_strings(names)]
 
   return tuple(args)
 
@@ -486,7 +463,7 @@ def make_object_recursive(**kwargs):
 
 
 def locals_capture(locs, exclude=None):
-  exclude = set(expand_strings(value_or(exclude, 'self')))
+  exclude = set(cu.expand_strings(value_or(exclude, 'self')))
 
   return make_object(**{k: v for k, v in locs.items() if k not in exclude})
 
@@ -603,7 +580,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
   exec(code, env)
 
-  return tuple(env.get(s) for s in expand_strings(syms))
+  return tuple(env.get(s) for s in cu.expand_strings(syms))
 
 
 def run(path, fnname, *args, **kwargs):
@@ -988,24 +965,4 @@ def state_update(path, **kwargs):
 
 def args(*uargs, **kwargs):
   return uargs, kwargs
-
-
-def maybe_call(obj, name, *args, **kwargs):
-  fn = getattr(obj, name, None)
-
-  return fn(*args, **kwargs) if fn is not None else _NONE
-
-
-def maybe_call_dv(obj, name, defval, *args, **kwargs):
-  fn = getattr(obj, name, None)
-
-  return fn(*args, **kwargs) if fn is not None else defval
-
-
-def unique(data):
-  udata = collections.defaultdict(lambda: array.array('L'))
-  for i, v in enumerate(data):
-    udata[v].append(i)
-
-  return udata
 
