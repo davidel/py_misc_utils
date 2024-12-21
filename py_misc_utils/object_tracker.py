@@ -20,7 +20,9 @@ def _get_referred(obj):
   return tuple(referred)
 
 
-def _get_tracking_references(obj, tracked_by, max_references=8):
+def _get_tracking_references(obj, tracked_by, max_references=None):
+  max_references = max_references or 8
+
   references = []
   to_track = [(obj, None)]
   while to_track:
@@ -37,13 +39,13 @@ def _get_tracking_references(obj, tracked_by, max_references=8):
 
     if ntrack == 0:
       references.append((iu.qual_name(tobj), tname))
-      if len(references) > max_references:
+      if len(references) >= max_references:
         break
 
   return tuple(references)
 
 
-def track_objects(tracker):
+def track_objects(tracker, max_references=None):
   gc.collect()
 
   gc_objs = gc.get_objects()
@@ -66,7 +68,8 @@ def track_objects(tracker):
       if (trackres := tracker.track(obj)) is not None:
         prio, info = trackres
 
-        refs = _get_tracking_references(obj, tracked_by)
+        refs = _get_tracking_references(obj, tracked_by,
+                                        max_references=max_references)
 
         treport = [info]
         for r in refs:
