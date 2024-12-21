@@ -63,19 +63,16 @@ def track_objects(tracker):
   report = []
   for obj in all_objs.values():
     try:
-      if tracker.is_instance(obj):
-        headres = tracker.headline(obj)
+      if (trackres := tracker.track(obj)) is not None:
+        prio, info = trackres
 
-        if headres is not None:
-          prio, headline = headres
+        refs = _get_tracking_references(obj, tracked_by)
 
-          refs = _get_tracking_references(obj, tracked_by)
+        treport = [info]
+        for r in refs:
+          treport.append(f'  refby = {r[0]} ({r[1]})')
 
-          treport = [headline]
-          for r in refs:
-            treport.append(f'  refby = {r[0]} ({r[1]})')
-
-          report.append((prio, treport))
+        report.append((prio, treport))
     except Exception as ex:
       alog.warning(f'Exception while tracking objects: {ex}')
 
