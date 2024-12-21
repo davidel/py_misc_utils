@@ -54,15 +54,6 @@ def make_ntuple(ntc, args):
   return ntc._make(targs)
 
 
-def enum_values(obj):
-  if isinstance(obj, dict):
-    for k, v in obj.items():
-      yield k, v
-  else:
-    for k in dir(obj):
-      yield k, getattr(obj, k)
-
-
 def fname():
   return tb.get_frame(1).f_code.co_name
 
@@ -267,61 +258,6 @@ def name_values(base_name, values, force_expand=False):
     names.append((base_name, values))
 
   return tuple(names)
-
-
-def genhash(v):
-  if isinstance(v, dict):
-    vdata = []
-    for k in sorted(v.keys()):
-      vdata.append(genhash(k))
-      vdata.append(genhash(v[k]))
-
-    return hash((type(v), tuple(vdata)))
-  elif isinstance(v, (list, tuple)):
-    vdata = [genhash(e) for e in v]
-
-    return hash((type(v), tuple(vdata)))
-
-  return hash((type(v), v))
-
-
-def signature(v):
-  if isinstance(v, dict):
-    vdata = dict()
-    for k in sorted(v.keys()):
-      vdata[k] = signature(v[k])
-
-    return vdata
-  elif isinstance(v, (list, tuple)):
-    vdata = [signature(e) for e in v]
-
-    return type(v)(vdata)
-
-  return type(v)
-
-
-def equal_signature(a, b, subcls=True):
-  if isinstance(a, dict):
-    if not isinstance(b, dict) or len(a) != len(b):
-      return False
-
-    for k, t in a.items():
-      tb = b.get(k)
-      if tb is None or not equal_signature(t, tb, subcls=subcls):
-        return False
-
-    return True
-  elif isinstance(a, (list, tuple)):
-    if type(a) != type(b) or len(a) != len(b):
-      return False
-
-    for ea, eb in zip(a, b):
-      if not equal_signature(ea, eb, subcls=subcls):
-        return False
-
-    return True
-
-  return issubclass(a, b) or issubclass(b, a) if subcls else a == b
 
 
 _TLS = threading.local()
