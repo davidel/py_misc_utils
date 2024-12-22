@@ -210,16 +210,16 @@ class StringTable:
     return x
 
 
-class _ArgList(list):
+class ArgList(list):
   pass
 
 def dict_add(ddict, name, value):
   ivalue = ddict.get(name, _NONE)
   if ivalue is not _NONE:
-    if isinstance(ivalue, _ArgList):
+    if isinstance(ivalue, ArgList):
       ivalue.append(value)
     else:
-      ddict[name] = _ArgList((ivalue, value))
+      ddict[name] = ArgList((ivalue, value))
   else:
     ddict[name] = value
 
