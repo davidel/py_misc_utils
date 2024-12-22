@@ -727,14 +727,6 @@ def parse_dict(data, vtype=None, allow_args=False, allow_exec=False):
   return (ma_dict, tuple(ma_args)) if allow_args else ma_dict
 
 
-def add_bool_argument(parser, name, defval, help=None):
-  parser.add_argument(f'--{name}', dest=name, action='store_true',
-                      help=f'Enable {help or name}' if help else None)
-  parser.add_argument(f'--no-{name}', dest=name, action='store_false',
-                      help=f'Disable {help or name}' if help else None)
-  parser.set_defaults(**{name: defval})
-
-
 def state_update(path, **kwargs):
   if sfile := gfs.maybe_open(path, mode='rb'):
     with sfile as fd:
