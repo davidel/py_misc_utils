@@ -38,6 +38,10 @@ def choices(weights, n):
   return random.choices(range(len(weights)), weights=weights, k=n)
 
 
+def shuffle(args):
+  return random.sample(args, k=len(args))
+
+
 def uniform(center, delta=None, pct=None):
   if pct is not None:
     delta = abs(center * pct)

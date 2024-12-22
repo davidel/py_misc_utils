@@ -9,7 +9,6 @@ import logging
 import math
 import os
 import pickle
-import random
 import re
 import sys
 import time
@@ -489,10 +488,6 @@ def unpack_n(l, n, defval=None):
   return tuple(l[:n] if len(l) >= n else l + [defval] * (n - len(l)))
 
 
-def shuffle(args):
-  return random.sample(args, k=len(args))
-
-
 def sign_extend(value, nbits):
   sign = 1 << (nbits - 1)
 
@@ -726,30 +721,6 @@ def checked_remove(l, o):
     return False
 
   return True
-
-
-def bisect_right(x, key, hi, lo=0):
-  tas.check_ge(lo, 0)
-  while lo < hi:
-    mid = (lo + hi) // 2
-    if x < key(mid):
-      hi = mid
-    else:
-      lo = mid + 1
-
-  return lo
-
-
-def bisect_left(x, key, hi, lo=0):
-  tas.check_ge(lo, 0)
-  while lo < hi:
-    mid = (lo + hi) // 2
-    if key(mid) < x:
-      lo = mid + 1
-    else:
-      hi = mid
-
-  return lo
 
 
 def sleep_until(date, msg=None):

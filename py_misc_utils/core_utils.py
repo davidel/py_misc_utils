@@ -134,3 +134,27 @@ def run_async(fn, *args, **kwargs):
 
   return thread
 
+
+def bisect_right(x, key, hi, lo=0):
+  tas.check_ge(lo, 0)
+  while lo < hi:
+    mid = (lo + hi) // 2
+    if x < key(mid):
+      hi = mid
+    else:
+      lo = mid + 1
+
+  return lo
+
+
+def bisect_left(x, key, hi, lo=0):
+  tas.check_ge(lo, 0)
+  while lo < hi:
+    mid = (lo + hi) // 2
+    if key(mid) < x:
+      lo = mid + 1
+    else:
+      hi = mid
+
+  return lo
+
