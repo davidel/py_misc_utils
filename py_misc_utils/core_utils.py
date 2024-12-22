@@ -1,6 +1,7 @@
 # This module is for APIs which has no local dependecies.
 import array
 import collections
+import copy
 import sys
 import threading
 import types
@@ -157,4 +158,22 @@ def bisect_left(x, key, hi, lo=0):
       hi = mid
 
   return lo
+
+
+def is_namedtuple(obj):
+  return isinstance(obj, tuple) and hasattr(obj, '_asdict') and hasattr(obj, '_fields')
+
+
+def new_with(obj, **kwargs):
+  if is_namedtuple(obj):
+    return obj._replace(**kwargs)
+
+  nobj = copy.copy(obj)
+  if isinstance(nobj, dict):
+    nobj.update(kwargs)
+  else:
+    for k, v in kwargs.items():
+      setattr(nobj, k, v)
+
+  return nobj
 

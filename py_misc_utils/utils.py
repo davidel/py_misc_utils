@@ -1,7 +1,6 @@
 import array
 import ast
 import collections
-import copy
 import datetime
 import inspect
 import json
@@ -19,6 +18,7 @@ import numpy as np
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import file_overwrite as fow
 from . import gfs
 from . import mmap as mm
@@ -98,7 +98,7 @@ def _stri(obj, seen, float_fmt):
     result = f'{obj:{float_fmt}}'
   elif isinstance(obj, bytes):
     result = obj.decode()
-  elif is_namedtuple(obj):
+  elif cu.is_namedtuple(obj):
     result = str(obj)
   elif isinstance(obj, (tuple, list, types.GeneratorType)):
     sl = ', '.join(_stri(x, seen, float_fmt) for x in obj)
@@ -304,24 +304,6 @@ def assert_instance(msg, t, ta):
       parts.append(f'a {cname(ta)}')
 
     alog.xraise(ValueError, ''.join(parts))
-
-
-def is_namedtuple(obj):
-  return isinstance(obj, tuple) and hasattr(obj, '_asdict') and hasattr(obj, '_fields')
-
-
-def new_with(obj, **kwargs):
-  if is_namedtuple(obj):
-    return obj._replace(**kwargs)
-
-  nobj = copy.copy(obj)
-  if isinstance(nobj, dict):
-    nobj.update(kwargs)
-  else:
-    for k, v in kwargs.items():
-      setattr(nobj, k, v)
-
-  return nobj
 
 
 class StringTable:
