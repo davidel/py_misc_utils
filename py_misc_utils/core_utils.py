@@ -10,6 +10,10 @@ import types
 _NONE = object()
 
 
+def args(*uargs, **kwargs):
+  return uargs, kwargs
+
+
 def is_builtin_function(obj):
   return isinstance(obj, types.BuiltinFunctionType)
 
