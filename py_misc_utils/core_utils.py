@@ -113,3 +113,16 @@ def genhash(v):
 
   return hash((type(v), v))
 
+
+def norm_slice(start, stop, size):
+  if start is None:
+    start = 0
+  elif start < 0:
+    start = size + start
+  if stop is None:
+    stop = size
+  elif stop < 0:
+    stop = size + stop
+
+  return start, stop
+

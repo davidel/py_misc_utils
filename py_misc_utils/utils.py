@@ -124,19 +124,6 @@ def stri(l, float_fmt=None):
   return _stri(l, dict(), float_fmt or '.3e')
 
 
-def norm_slice(start, stop, size):
-  if start is None:
-    start = 0
-  elif start < 0:
-    start = size + start
-  if stop is None:
-    stop = size
-  elif stop < 0:
-    stop = size + stop
-
-  return start, stop
-
-
 def dmerge(*args):
   mdict = dict()
   for d in args:
@@ -224,15 +211,6 @@ def append_if_missing(arr, elem):
     arr.append(elem)
 
 
-def state_override(obj, state, keys):
-  for key in keys:
-    sv = state.get(key, _NONE)
-    if sv is not _NONE:
-      curv = getattr(obj, key, _NONE)
-      if curv is not _NONE:
-        setattr(obj, key, sv)
-
-
 def resplit(csstr, sep):
   return sp.split(csstr, r'\s*' + sep + r'\s*')
 
@@ -268,37 +246,6 @@ def name_values(base_name, values, force_expand=False):
     names.append((base_name, values))
 
   return tuple(names)
-
-
-_TLS = threading.local()
-
-class Context:
-
-  def __init__(self, name, obj):
-    self._name = name
-    self._obj = obj
-
-  def __enter__(self):
-    stack = getattr(_TLS, self._name, None)
-    if stack is None:
-      stack = []
-      setattr(_TLS, self._name, stack)
-
-    stack.append(self._obj)
-
-    return self._obj
-
-  def __exit__(self, *exc):
-    stack = getattr(_TLS, self._name)
-    obj = stack.pop()
-
-    return False
-
-
-def get_context(name):
-  stack = getattr(_TLS, name, None)
-
-  return stack[-1] if stack else None
 
 
 def load_config(cfg_file=None, **kwargs):
