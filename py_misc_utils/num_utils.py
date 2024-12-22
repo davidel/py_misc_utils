@@ -34,3 +34,9 @@ def nearest_divisor(value, n):
 
   return nmin if dmin < (nmax - n) else nmax
 
+
+def sign_extend(value, nbits):
+  sign = 1 << (nbits - 1)
+
+  return (value & (sign - 1)) - (value & sign)
+

@@ -108,6 +108,16 @@ def is_numpy(v):
   return type(v).__module__ == np.__name__
 
 
+def is_sorted(data, descending=False):
+  if not isinstance(data, np.ndarray):
+    data = np.array(data)
+
+  if descending:
+    return np.all(data[:-1] >= data[1:])
+
+  return np.all(data[:-1] <= data[1:])
+
+
 def astype(data, col, dtype):
   if isinstance(dtype, dict):
     cdtype = dtype.get(col)

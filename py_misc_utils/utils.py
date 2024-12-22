@@ -419,12 +419,6 @@ def unpack_n(l, n, defval=None):
   return tuple(l[:n] if len(l) >= n else l + [defval] * (n - len(l)))
 
 
-def sign_extend(value, nbits):
-  sign = 1 << (nbits - 1)
-
-  return (value & (sign - 1)) - (value & sign)
-
-
 def range_split(n, split, minsize, reverse=False):
   splits = list(range(0, n, split))
   if len(splits) > 1 and (n - splits[-1]) < minsize:
@@ -613,16 +607,6 @@ def numel(t):
   sp = get_property(t, 'shape')
 
   return np.prod(sp) if sp is not None else len(t)
-
-
-def is_sorted(data, descending=False):
-  if not isinstance(data, np.ndarray):
-    data = np.array(data)
-
-  if descending:
-    return np.all(data[:-1] >= data[1:])
-
-  return np.all(data[:-1] <= data[1:])
 
 
 def round_up(v, step):
