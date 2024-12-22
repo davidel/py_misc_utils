@@ -136,3 +136,7 @@ def qual_name(obj):
 
   return name
 
+
+def is_subclass(cls, cls_group):
+  return inspect.isclass(cls) and issubclass(cls, cls_group)
+

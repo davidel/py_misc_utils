@@ -2,8 +2,8 @@ import collections
 
 import numpy as np
 
+from . import core_utils as cu
 from . import np_utils as ut
-from . import utils as npu
 
 
 class TransformArray(collections.abc.Sequence):
@@ -12,7 +12,7 @@ class TransformArray(collections.abc.Sequence):
     super().__init__()
     self.data = data
     self._pipeline = pipeline
-    self.shape = ut.compute_shape(data)
+    self.shape = cu.compute_shape(data)
 
   def __getitem__(self, idx):
     if isinstance(idx, slice):

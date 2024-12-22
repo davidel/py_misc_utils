@@ -2,14 +2,14 @@ import collections
 
 import numpy as np
 
-from . import utils as ut
+from . import core_utils as cu
 
 
 def _compute_shape(data, indices):
   shape = [len(indices)]
   if shape[0] > 0:
     t = data[indices[0]]
-    shape.extend(ut.compute_shape(t))
+    shape.extend(cu.compute_shape(t))
 
   return tuple(shape)
 

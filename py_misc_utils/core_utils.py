@@ -242,3 +242,24 @@ def enum_dict_values(ddict, name):
     else:
       yield ivalue
 
+
+def get_property(obj, name, defval=None):
+  p = getattr(obj, name, _NONE)
+  if p is _NONE:
+    return defval
+
+  return p() if callable(p) else p
+
+
+def compute_shape(data):
+  sp = get_property(data, 'shape')
+  if sp is not None:
+    return tuple(sp)
+  shape = []
+  if hasattr(data, '__len__'):
+    shape.append(len(data))
+    if shape[0] > 0 and hasattr(data, '__getitem__'):
+      shape.extend(compute_shape(data[0]))
+
+  return tuple(shape)
+

@@ -54,10 +54,6 @@ def func_name(func):
   return fname if fname is not None else cname(func)
 
 
-def is_subclass(cls, cls_group):
-  return inspect.isclass(cls) and issubclass(cls, cls_group)
-
-
 def classof(obj):
   return obj if inspect.isclass(obj) else getattr(obj, '__class__', None)
 
@@ -139,14 +135,6 @@ def mget(d, *args, as_dict=False):
 
 def getvar(obj, name, defval=None):
   return obj.get(name, defval) if isinstance(obj, dict) else getattr(obj, name, defval)
-
-
-def get_property(obj, name, defval=None):
-  p = getattr(obj, name, _NONE)
-  if p is _NONE:
-    return defval
-
-  return p() if callable(p) else p
 
 
 def dict_subset(d, *keys):
@@ -590,21 +578,8 @@ class RevGen:
     return self._fmt.format(name=name, ver=ver) if ver != 0 or not shortzero else name
 
 
-def compute_shape(data):
-  sp = get_property(data, 'shape')
-  if sp is not None:
-    return tuple(sp)
-  shape = []
-  if hasattr(data, '__len__'):
-    shape.append(len(data))
-    if shape[0] > 0 and hasattr(data, '__getitem__'):
-      shape.extend(compute_shape(data[0]))
-
-  return tuple(shape)
-
-
 def numel(t):
-  sp = get_property(t, 'shape')
+  sp = cu.get_property(t, 'shape')
 
   return np.prod(sp) if sp is not None else len(t)
 
