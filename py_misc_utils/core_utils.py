@@ -7,6 +7,9 @@ import threading
 import types
 
 
+_NONE = object()
+
+
 def is_builtin_function(obj):
   return isinstance(obj, types.BuiltinFunctionType)
 
@@ -176,4 +179,16 @@ def new_with(obj, **kwargs):
       setattr(nobj, k, v)
 
   return nobj
+
+
+def make_ntuple(ntc, args):
+  targs = []
+  for f in ntc._fields:
+    fv = args.get(f, _NONE)
+    if fv is _NONE:
+      fv = ntc._field_defaults.get(f)
+
+    targs.append(fv)
+
+  return ntc._make(targs)
 

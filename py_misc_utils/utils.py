@@ -39,18 +39,6 @@ def ident(x):
   return x
 
 
-def make_ntuple(ntc, args):
-  targs = []
-  for f in ntc._fields:
-    fv = args.get(f, _NONE)
-    if fv is _NONE:
-      fv = ntc._field_defaults.get(f)
-
-    targs.append(fv)
-
-  return ntc._make(targs)
-
-
 def fname():
   return tb.get_frame(1).f_code.co_name
 
