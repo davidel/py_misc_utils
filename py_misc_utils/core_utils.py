@@ -2,6 +2,7 @@
 import array
 import collections
 import sys
+import threading
 import types
 
 
@@ -125,4 +126,11 @@ def norm_slice(start, stop, size):
     stop = size + stop
 
   return start, stop
+
+
+def run_async(fn, *args, **kwargs):
+  thread = threading.Thread(target=fn, args=args, kwargs=kwargs, daemon=True)
+  thread.start()
+
+  return thread
 

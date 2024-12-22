@@ -12,7 +12,6 @@ import pickle
 import random
 import re
 import sys
-import threading
 import time
 import types
 import yaml
@@ -751,13 +750,6 @@ def bisect_left(x, key, hi, lo=0):
       hi = mid
 
   return lo
-
-
-def run_async(fn):
-  thread = threading.Thread(target=fn, daemon=True)
-  thread.start()
-
-  return thread
 
 
 def sleep_until(date, msg=None):
