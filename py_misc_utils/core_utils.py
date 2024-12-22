@@ -210,16 +210,16 @@ class StringTable:
     return x
 
 
-class ArgList(list):
+class ValueList(list):
   pass
 
 def dict_add(ddict, name, value):
   ivalue = ddict.get(name, _NONE)
   if ivalue is not _NONE:
-    if isinstance(ivalue, ArgList):
+    if isinstance(ivalue, ValueList):
       ivalue.append(value)
     else:
-      ddict[name] = ArgList((ivalue, value))
+      ddict[name] = ValueList((ivalue, value))
   else:
     ddict[name] = value
 
@@ -232,7 +232,7 @@ def dict_update_append(d, **kwargs):
 def enum_dict_values(ddict, name):
   ivalue = ddict.get(name, _NONE)
   if ivalue is not _NONE:
-    if isinstance(ivalue, ArgList):
+    if isinstance(ivalue, ValueList):
       for value in ivalue:
         yield value
     else:
