@@ -228,3 +228,13 @@ def dict_update_append(d, **kwargs):
   for k, v in kwargs.items():
     dict_add(d, k, v)
 
+
+def enum_dict_values(ddict, name):
+  ivalue = ddict.get(name, _NONE)
+  if ivalue is not _NONE:
+    if isinstance(ivalue, ArgList):
+      for value in ivalue:
+        yield value
+    else:
+      yield ivalue
+
