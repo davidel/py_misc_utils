@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import utils as ut
 
 
@@ -41,7 +42,7 @@ class NamedArray:
     self.names = tuple(fnames)
     self.fmt = fmt
     self._names_index = {n: i for i, n in enumerate(self.names)}
-    self._str_tbl = ut.StringTable()
+    self._str_tbl = cu.StringTable()
     self._data = tuple([[] if f in _NOT_NUMERIC else array.array(f) for f in fmt])
 
   def append(self, *args):

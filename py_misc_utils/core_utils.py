@@ -192,3 +192,39 @@ def make_ntuple(ntc, args):
 
   return ntc._make(targs)
 
+
+class StringTable:
+
+  def __init__(self):
+    self._tbl = dict()
+
+  def __len__(self):
+    return len(self._tbl)
+
+  def add(self, s):
+    x = self._tbl.get(s)
+    if x is None:
+      x = s
+      self._tbl[x] = x
+
+    return x
+
+
+class _ArgList(list):
+  pass
+
+def dict_add(ddict, name, value):
+  ivalue = ddict.get(name, _NONE)
+  if ivalue is not _NONE:
+    if isinstance(ivalue, _ArgList):
+      ivalue.append(value)
+    else:
+      ddict[name] = _ArgList((ivalue, value))
+  else:
+    ddict[name] = value
+
+
+def dict_update_append(d, **kwargs):
+  for k, v in kwargs.items():
+    dict_add(d, k, v)
+

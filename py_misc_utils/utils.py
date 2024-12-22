@@ -294,23 +294,6 @@ def assert_instance(msg, t, ta):
     alog.xraise(ValueError, ''.join(parts))
 
 
-class StringTable:
-
-  def __init__(self):
-    self._tbl = dict()
-
-  def __len__(self):
-    return len(self._tbl)
-
-  def add(self, s):
-    x = self._tbl.get(s)
-    if x is None:
-      x = s
-      self._tbl[x] = x
-
-    return x
-
-
 def make_object(**kwargs):
   return obj.Obj(**kwargs)
 
@@ -388,28 +371,6 @@ def seqfirst(s):
 
 def value_or(v, defval):
   return v if v is not None else defval
-
-
-class _ArgList(list):
-
-  def __init__(self, *args):
-    super().__init__(args)
-
-
-def dict_add(ddict, name, value):
-  ivalue = ddict.get(name, _NONE)
-  if ivalue is not _NONE:
-    if isinstance(ivalue, _ArgList):
-      ivalue.append(value)
-    else:
-      ddict[name] = _ArgList(ivalue, value)
-  else:
-    ddict[name] = value
-
-
-def dict_update_append(d, **kwargs):
-  for k, v in kwargs.items():
-    dict_add(d, k, v)
 
 
 def dict_rget(sdict, path, defval=None, sep='/'):
