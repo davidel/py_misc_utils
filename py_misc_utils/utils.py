@@ -21,7 +21,6 @@ import numpy as np
 
 from . import alog
 from . import assert_checks as tas
-from . import core_utils as cu
 from . import file_overwrite as fow
 from . import gfs
 from . import mmap as mm
@@ -158,7 +157,7 @@ def dget(sdict, name, defval, dtype=None):
 
 
 def mget(d, *args, as_dict=False):
-  margs = cu.expand_strings(*args)
+  margs = expand_strings(*args)
   if as_dict:
     return {f: d.get(f) for f in margs}
   else:
@@ -178,7 +177,7 @@ def get_property(obj, name, defval=None):
 
 
 def dict_subset(d, *keys):
-  mkeys = cu.expand_strings(*keys)
+  mkeys = expand_strings(*keys)
   subd = dict()
   for k in mkeys:
     v = d.get(k, _NONE)
@@ -209,9 +208,9 @@ def dict_setmissing(d, **kwargs):
 def pop_kwargs(kwargs, names, args_key=None):
   xargs = kwargs.pop(args_key or '_', None)
   if xargs is not None:
-    args = [xargs.get(name) for name in cu.expand_strings(names)]
+    args = [xargs.get(name) for name in expand_strings(names)]
   else:
-    args = [kwargs.pop(name, None) for name in cu.expand_strings(names)]
+    args = [kwargs.pop(name, None) for name in expand_strings(names)]
 
   return tuple(args)
 
@@ -244,6 +243,17 @@ def comma_split(csstr):
 
 def ws_split(data):
   return sp.split(data, r'\s+')
+
+
+def expand_strings(*args):
+  margs = []
+  for arg in args:
+    if isinstance(arg, (list, tuple, types.GeneratorType)):
+      margs.extend(arg)
+    else:
+      margs.extend(comma_split(arg))
+
+  return tuple(margs)
 
 
 def name_values(base_name, values, force_expand=False):
@@ -399,7 +409,7 @@ def make_object_recursive(**kwargs):
 
 
 def locals_capture(locs, exclude=None):
-  exclude = set(cu.expand_strings(value_or(exclude, 'self')))
+  exclude = set(expand_strings(value_or(exclude, 'self')))
 
   return make_object(**{k: v for k, v in locs.items() if k not in exclude})
 
@@ -516,7 +526,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
 
   exec(code, env)
 
-  return tuple(env.get(s) for s in cu.expand_strings(syms))
+  return tuple(env.get(s) for s in expand_strings(syms))
 
 
 def run(path, fnname, *args, **kwargs):

@@ -18,17 +18,6 @@ def denone(**kwargs):
   return {k: v for k, v in kwargs.items() if v is not None}
 
 
-def expand_strings(*args):
-  margs = []
-  for arg in args:
-    if isinstance(arg, (list, tuple, types.GeneratorType)):
-      margs.extend(arg)
-    else:
-      margs.extend(comma_split(arg))
-
-  return tuple(margs)
-
-
 def enum_values(obj):
   if isinstance(obj, dict):
     for k, v in obj.items():
