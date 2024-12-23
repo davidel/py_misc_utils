@@ -500,9 +500,8 @@ def stringify(s):
 
 
 def mlog(msg, level=logging.DEBUG):
-  # No reason to split the message in lines, as the GLOG formatter alreay handles it.
-  if logging.getLogger().isEnabledFor(level):
-    logging.log(level, msg() if callable(msg) else msg)
+  if alog.level_active(level):
+    alog.log(level, msg() if callable(msg) else msg)
 
 
 def seq_rewrite(seq, sd):
