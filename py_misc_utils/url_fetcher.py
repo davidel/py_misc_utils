@@ -2,10 +2,11 @@ import os
 import queue
 import threading
 
-from . import alog as alog
+from . import alog
 from . import assert_checks as tas
+from . import cleanups
 from . import file_overwrite as fow
-from . import gfs as gfs
+from . import gfs
 from . import tempdir as tmpd
 from . import utils as ut
 from . import work_results as wres
@@ -55,17 +56,21 @@ class UrlFetcher:
       timeout=ut.getenv('FETCHER_TIMEO', dtype=float, defval=10.0),
     )
 
-    self._path, self._tmp_path = path, None
+    self._ctor_path = path
+    self._path = None
     self._num_workers = num_workers or max(os.cpu_count() * 4, 128)
     self._fs_kwargs = fs_kwargs
     self._uqueue = self._rqueue = None
     self._workers = []
+    self._path_cid = None
     self._pending = set()
 
   def start(self):
-    if self._path is None:
-      self._tmp_path = tmpd.fastfs_dir()
-      self._path = self._tmp_path
+    if self._ctor_path is None:
+      self._path = tmpd.fastfs_dir()
+      self._path_cid = cleanups.register(gfs.rmtree, self._path, ignore_errors=True)
+    else:
+      self._path = self._ctor_path
 
     self._uqueue = queue.Queue()
     self._rqueue = queue.Queue()
@@ -90,8 +95,11 @@ class UrlFetcher:
     self._uqueue = self._rqueue = None
     self._workers = []
 
-    if self._tmp_path is not None:
-      gfs.rmtree(self._tmp_path, ignore_errors=True)
+    if self._path_cid is not None:
+      cleanups.unregister(self._path_cid, run=True)
+
+    self._path_cid = None
+    self._pending = set()
 
   def enqueue(self, *urls):
     wmap = dict()
