@@ -31,9 +31,16 @@ def reg(fn):
   return fn
 
 
-def unregister(cid):
+def unregister(cid, run=False):
   with _LOCK:
-    return _CLEANUPS.pop(cid, None)
+    cfdata = _CLEANUPS.pop(cid, None)
+
+  if run and cfdata is not None:
+    fn, args, kwargs = cfdata
+
+    fn(*args, **kwargs)
+
+  return cdata
 
 
 def run():
