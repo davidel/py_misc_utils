@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import os
 import pickle
@@ -55,16 +56,29 @@ def make_error(msg):
   return _ERROR_TAG + msg
 
 
-def write_error(path, exception, **kwargs):
-  wex = WorkException(exception, **kwargs)
-
+@contextlib.contextmanager
+def write_result(path):
   # This does FileOverwrite() task (locally limited) but here we do not pull that
   # dependency to minimize the ones of this module.
   tpath = rngu.temp_path(nspath=path)
-  with open(tpath, mode='wb') as fd:
-    fd.write(make_error(pickle.dumps(wex)))
 
-  os.replace(tpath, path)
+  fd = open(tpath, mode='wb')
+  try:
+    yield fd
+  except:
+    tpath = None
+    raise
+  finally:
+    fd.close()
+    if tpath is not None:
+      os.replace(tpath, path)
+
+
+def write_error(path, exception, **kwargs):
+  wex = WorkException(exception, **kwargs)
+
+  with write_result(path) as fd:
+    fd.write(make_error(pickle.dumps(wex)))
 
 
 def get_error(data):

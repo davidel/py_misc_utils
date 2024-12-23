@@ -20,7 +20,7 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
     resp = await client.get(url, **http_args)
     resp.raise_for_status()
 
-    with fow.FileOverwrite(wpath, mode='wb') as fd:
+    with wres.write_result(wpath) as fd:
       fd.write(resp.content)
   except Exception as ex:
     wres.write_error(wpath, ex, workid=url)

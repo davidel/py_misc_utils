@@ -37,7 +37,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
     try:
       fs, fpath = resolve_url(fss, url, fs_kwargs)
 
-      with fow.FileOverwrite(wpath, mode='wb') as fd:
+      with wres.write_result(wpath) as fd:
         for data in fs.get_file(fpath):
           fd.write(data)
     except Exception as ex:
