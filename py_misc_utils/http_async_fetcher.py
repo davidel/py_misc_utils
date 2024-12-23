@@ -91,7 +91,8 @@ class HttpAsyncFetcher:
 
     return wres.get_work(wpath)
 
-  def iter_results(self, block=True, timeout=None):
+  def iter_results(self, max_results=None, block=True, timeout=None):
+    count = 0
     while self._pending:
       if (fetchres := self._async_manager.fetch_result(block=block,
                                                        timeout=timeout)) is None:
@@ -103,6 +104,10 @@ class HttpAsyncFetcher:
       wpath = wres.work_path(self._path, rurl)
 
       yield rurl, wres.load_work(wpath)
+
+      count += 1
+      if max_results is not None and count >= max_results:
+        break
 
   def __enter__(self):
     self.start()

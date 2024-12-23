@@ -117,7 +117,8 @@ class UrlFetcher:
 
     return wres.get_work(wpath)
 
-  def iter_results(self, block=True, timeout=None):
+  def iter_results(self, max_results=None, block=True, timeout=None):
+    count = 0
     while self._pending:
       try:
         rurl = self._rqueue.get(block=block, timeout=timeout)
@@ -127,6 +128,10 @@ class UrlFetcher:
 
         yield rurl, wres.load_work(wpath)
       except queue.Empty:
+        break
+
+      count += 1
+      if max_results is not None and count >= max_results:
         break
 
   def __enter__(self):

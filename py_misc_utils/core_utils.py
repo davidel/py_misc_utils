@@ -302,7 +302,7 @@ def compute_shape(data):
 class RevGen:
 
   def __init__(self, fmt=None):
-    self._fmt = value_or(fmt, '{name}_{ver}')
+    self._fmt = fmt or '{name}_{ver}'
     self._revdb = dict()
 
   def getver(self, name, defval=None):
