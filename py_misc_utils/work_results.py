@@ -24,10 +24,13 @@ class WorkException:
       setattr(self, k, v)
 
   def do_raise(self):
-    raise pickle.loads(self._ex_data)
+    raise self.exception()
 
   def is_instance(self, *types):
     return any(t == self._ex_type for t in types)
+
+  def exception(self):
+    return pickle.loads(self._ex_data)
 
   def __repr__(self):
     exception = pickle.loads(self._ex_data)
