@@ -109,9 +109,3 @@ def get_work(wpath, path=None, workid=None):
 
   return raise_if_error(data)
 
-
-def tryget_work(path, workid):
-  wpath = work_path(path, workid)
-
-  return get_work(wpath) if os.path.isfile(wpath) else None
-

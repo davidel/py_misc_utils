@@ -4,6 +4,7 @@ import os
 import httpx
 
 from . import async_manager as asym
+from . import assert_checks as tas
 from . import file_overwrite as fow
 from . import fin_wrap as fw
 from . import gfs as gfs
@@ -75,10 +76,9 @@ class HttpAsyncFetcher:
 
     return wmap
 
-  def try_get(self, url):
-    return wres.tryget_work(self._path, url)
-
   def wait(self, url):
+    tas.check(url in self._pending, msg=f'URL already retired: {url}')
+
     wpath = wres.work_path(self._path, url)
     if not os.path.isfile(wpath):
       while self._pending:
@@ -89,7 +89,10 @@ class HttpAsyncFetcher:
         if rurl == url:
           break
 
-    return wres.get_work(wpath)
+    try:
+      return wres.get_work(wpath)
+    finally:
+      os.remove(wpath)
 
   def iter_results(self, max_results=None, block=True, timeout=None):
     count = 0
@@ -103,7 +106,11 @@ class HttpAsyncFetcher:
       self._pending.discard(rurl)
       wpath = wres.work_path(self._path, rurl)
 
-      yield rurl, wres.load_work(wpath)
+      wdata = wres.load_work(wpath)
+
+      os.remove(wpath)
+
+      yield rurl, wdata
 
       count += 1
       if max_results is not None and count >= max_results:
