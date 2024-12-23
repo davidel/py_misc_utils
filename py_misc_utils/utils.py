@@ -220,7 +220,7 @@ def parse_config(cfg, **kwargs):
     with fdctx as fp:
       cfgd = yaml.safe_load(fp)
   else:
-    alog.xraise(ValueError. f'Invalid config data format: {cfg}')
+    alog.xraise(ValueError, f'Invalid config data format: {cfg}')
 
   for k, v in kwargs.items():
     if v is not None:
