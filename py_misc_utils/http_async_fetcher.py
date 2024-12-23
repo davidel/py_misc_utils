@@ -13,7 +13,7 @@ from . import work_results as wres
 
 
 async def http_fetch_url(url, context=None, path=None, http_args=None):
-  wpath = wres.work_path(path, url, create_parents=True)
+  wpath = wres.work_path(path, url)
   try:
     client = await context.get('httpx.AsyncClient', httpx.AsyncClient)
 
@@ -62,12 +62,16 @@ class HttpAsyncFetcher:
       self._cleaner(async_manager, self._tmp_path)
 
   def enqueue(self, *urls):
+    wmap = dict()
     for url in urls:
       if url:
         work_ctor = functools.partial(http_fetch_url, url,
                                       path=self._path,
                                       http_args=self._http_args)
         self._async_manager.enqueue_work(url, work_ctor)
+        wmap[url] = wres.work_hash(url)
+
+    return wmap
 
   def try_get(self, url):
     return wres.tryget_work(self._path, url)

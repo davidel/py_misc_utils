@@ -31,7 +31,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
     if not url:
       break
 
-    wpath = wres.work_path(path, url, create_parents=True)
+    wpath = wres.work_path(path, url)
 
     alog.verbose(f'Fetching "{url}"')
     try:
@@ -93,9 +93,13 @@ class UrlFetcher:
       gfs.rmtree(self._tmp_path, ignore_errors=True)
 
   def enqueue(self, *urls):
+    wmap = dict()
     for url in urls:
       if url:
         self._uqueue.put(url)
+        wmap[url] = wres.work_hash(url)
+
+    return wmap
 
   def try_get(self, url):
     return wres.tryget_work(self._path, url)

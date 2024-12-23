@@ -29,13 +29,18 @@ class WorkException:
     return any(t == self._ex_type for t in types)
 
 
-def work_path(path, workid, create_parents=None, dirlen=2):
-  uhash = hashlib.sha1(workid.encode()).hexdigest()
-  udir = os.path.join(path, uhash[-dirlen:])
-  if create_parents is True:
-    os.makedirs(udir, exist_ok=True)
+def work_hash(workid):
+  return hashlib.sha1(workid.encode()).hexdigest()
 
-  return os.path.join(udir, uhash)
+
+def work_path(path, workid):
+  return os.path.join(path, work_hash(workid))
+
+
+def enum_ready(path):
+  with os.scandir(path) as rit:
+    for dentry in rit:
+      yield rit.name, rit.path
 
 
 _ERROR_TAG = b'#@$ERROR$@#\n'
