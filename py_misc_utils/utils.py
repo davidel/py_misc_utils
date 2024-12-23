@@ -3,7 +3,6 @@ import collections
 import datetime
 import inspect
 import json
-import logging
 import math
 import os
 import pickle
@@ -499,7 +498,7 @@ def stringify(s):
   return data_rewrite(s, rwfn)
 
 
-def mlog(msg, level=logging.DEBUG):
+def mlog(msg, level=alog.DEBUG):
   if alog.level_active(level):
     alog.log(level, msg() if callable(msg) else msg)
 
