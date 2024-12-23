@@ -38,24 +38,24 @@ def unregister(cid, run=False):
   if run and cfdata is not None:
     fn, args, kwargs = cfdata
 
-    print(f'*** CLEANUP: {fn}({args}, {kwargs})')
-
     fn(*args, **kwargs)
 
   return cdata
 
 
 def run():
+  global _CLEANUPS
+
   with _LOCK:
-    # Sort by reverse ID, which is reverse register order.
-    cids = sorted(_CLEANUPS.keys(), reverse=True)
-    cfdata = [_CLEANUPS[cid] for cid in cids]
-    _CLEANUPS.clear()
+    cleanups = _CLEANUPS
+    _CLEANUPS = dict()
+
+  # Sort by reverse ID, which is reverse register order.
+  cids = sorted(cleanups.keys(), reverse=True)
+  cfdata = [cleanups[cid] for cid in cids]
 
   for fn, args, kwargs in cfdata:
     try:
-      print(f'*** CLEANUP: {fn}({args}, {kwargs})')
-
       fn(*args, **kwargs)
     except Exception as e:
       tb = traceback.format_exc()
