@@ -40,7 +40,7 @@ def unregister(cid, run=False):
 
     fn(*args, **kwargs)
 
-  return cdata
+  return cfdata
 
 
 def run():
