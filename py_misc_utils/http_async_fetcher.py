@@ -90,14 +90,15 @@ class HttpAsyncFetcher:
 
   def iter_results(self, block=True, timeout=None):
     while True:
-      try:
-        (rurl, result) = self._async_manager.fetch_result(block=block, timeout=timeout)
-
-        wpath = wres.work_path(self._path, rurl)
-
-        yield rurl, wres.load_work(wpath)
-      except queue.Empty:
+      if (fetchres := self._async_manager.fetch_result(block=block,
+                                                       timeout=timeout)) is None:
         break
+
+      rurl, result = fetchres
+
+      wpath = wres.work_path(self._path, rurl)
+
+      yield rurl, wres.load_work(wpath)
 
   def __enter__(self):
     self.start()
