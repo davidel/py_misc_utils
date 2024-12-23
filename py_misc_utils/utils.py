@@ -106,25 +106,6 @@ def stri(l, float_fmt=None):
   return _stri(l, dict(), float_fmt or '.3e')
 
 
-def dmerge(*args):
-  mdict = dict()
-  for d in args:
-    mdict.update(d)
-
-  return mdict
-
-
-def dget(sdict, name, defval, dtype=None):
-  v = sdict.get(name, _NONE)
-  if v is _NONE:
-    return defval
-
-  if dtype is None and defval is not None:
-    dtype = type(defval)
-
-  return dtype(v) if v is not None and dtype is not None else v
-
-
 def mget(d, *args, as_dict=False):
   margs = expand_strings(*args)
   if as_dict:
@@ -148,18 +129,6 @@ def dict_subset(d, *keys):
   return subd
 
 
-def dict_extract(d, prefix=None, rx=None):
-  if rx is None:
-    rx = f'{prefix}(.*)'
-  xd = dict()
-  for k, v in d.items():
-    m = re.match(rx, k)
-    if m:
-      xd[m.group(1)] = v
-
-  return xd
-
-
 def dict_setmissing(d, **kwargs):
   kwargs.update(d)
 
@@ -174,10 +143,6 @@ def pop_kwargs(kwargs, names, args_key=None):
     args = [kwargs.pop(name, None) for name in expand_strings(names)]
 
   return tuple(args)
-
-
-def index_select(arr, idx):
-  return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
 
 
 def append_if_missing(arr, elem):

@@ -36,6 +36,41 @@ def enum_values(obj):
       yield k, v
 
 
+def dmerge(*args):
+  mdict = dict()
+  for d in args:
+    mdict.update(d)
+
+  return mdict
+
+
+def dict_extract(d, prefix=None, rx=None):
+  if rx is None:
+    rx = f'{prefix}(.*)'
+  xd = dict()
+  for k, v in d.items():
+    m = re.match(rx, k)
+    if m:
+      xd[m.group(1)] = v
+
+  return xd
+
+
+def dget(sdict, name, defval, dtype=None):
+  v = sdict.get(name, _NONE)
+  if v is _NONE:
+    return defval
+
+  if dtype is None and defval is not None:
+    dtype = type(defval)
+
+  return dtype(v) if v is not None and dtype is not None else v
+
+
+def index_select(arr, idx):
+  return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
+
+
 def size_str(size):
   syms = ('B', 'KB', 'MB', 'GB', 'TB')
 
