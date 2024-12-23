@@ -214,13 +214,12 @@ def config_to_string(cfg, **kwargs):
 
 
 def parse_config(cfg, **kwargs):
-  if cfg.startswith('{'):
-    cfgd = parse_dict(cfg)
-  elif (fdctx := gfs.maybe_open(cfg, mode='r')) is not None:
-    with fdctx as fp:
-      cfgd = yaml.safe_load(fp)
-  else:
-    alog.xraise(ValueError, f'Invalid config data format: {cfg}')
+  if not cfg.startswith('{'):
+    # It must be either a dictionary in YAML format, or a valid path.
+    with gfs.open(cfg, mode='r') as fd:
+      cfg = fd.read()
+
+  cfgd = yaml.safe_load(cfg)
 
   for k, v in kwargs.items():
     if v is not None:
