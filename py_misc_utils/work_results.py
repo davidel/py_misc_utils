@@ -28,6 +28,11 @@ class WorkException:
   def is_instance(self, *types):
     return any(t == self._ex_type for t in types)
 
+  def __repr__(self):
+    exception = pickle.loads(self._ex_data)
+
+    return f'{repr(exception)}: {vars(self)}'
+
 
 def work_hash(workid):
   return hashlib.sha1(workid.encode()).hexdigest()
