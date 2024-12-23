@@ -215,12 +215,12 @@ def config_to_string(cfg, **kwargs):
 
 def parse_config(cfg, **kwargs):
   if cfg.startswith('{'):
-    cfgd = json.loads(cfg)
-  elif fdctx := gfs.maybe_open(cfg, mode='r'):
+    cfgd = parse_dict(cfg)
+  elif (fdctx := gfs.maybe_open(cfg, mode='r')) is not None:
     with fdctx as fp:
       cfgd = yaml.safe_load(fp)
   else:
-    cfgd = parse_dict(cfg)
+    alog.xraise(ValueError. f'Invalid config data format: {cfg}')
 
   for k, v in kwargs.items():
     if v is not None:
