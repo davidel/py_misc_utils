@@ -521,27 +521,6 @@ def enum_set(l, s, present):
       yield x
 
 
-class RevGen:
-
-  def __init__(self, fmt=None):
-    self._fmt = value_or(fmt, '{name}_{ver}')
-    self._revdb = dict()
-
-  def getver(self, name, defval=None):
-    return self._revdb.get(name, defval)
-
-  def newver(self, name):
-    ver = self._revdb.get(name, 0)
-    self._revdb[name] = ver + 1
-
-    return ver
-
-  def newname(self, name, shortzero=False):
-    ver = self.newver(name)
-
-    return self._fmt.format(name=name, ver=ver) if ver != 0 or not shortzero else name
-
-
 def numel(t):
   sp = cu.get_property(t, 'shape')
 
