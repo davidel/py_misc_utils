@@ -78,23 +78,21 @@ def raise_if_error(data):
   return data
 
 
-def raise_on_error(data):
-  raise_if_error(get_error(data))
-
-  return data
-
-
 def load_work(wpath, path=None, workid=None):
   wpath = wpath or work_path(path, workid)
 
   with open(wpath, mode='rb') as fd:
-    return fd.read()
+    data = fd.read()
+
+  error = get_error(data)
+
+  return error or data
 
 
 def get_work(wpath, path=None, workid=None):
   data = load_work(wpath, path=path, workid=workid)
 
-  return raise_on_error(data)
+  return raise_if_error(data)
 
 
 def tryget_work(path, workid):
