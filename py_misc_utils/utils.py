@@ -1,5 +1,4 @@
 import array
-import ast
 import collections
 import datetime
 import inspect
@@ -587,7 +586,7 @@ def sleep_until(date, msg=None):
 
 
 def to_type(v, vtype):
-  return vtype(ast.literal_eval(v)) if isinstance(v, str) else vtype(v)
+  return vtype(yaml.safe_load(v)) if isinstance(v, str) else vtype(v)
 
 
 def to_bool(v):
@@ -598,57 +597,26 @@ def cast(v, vtype):
   return to_type(v, vtype) if v is not None else None
 
 
-def infer_value(v, vtype=None, allow_exec=False):
-  if vtype is not None:
-    return to_type(v, vtype)
-
-  uv = sp.unquote(v)
-  if v is not uv:
-    if v[0] in '"\'':
-      return uv
-    elif v[0] in '[(':
-      values = [infer_value(part, allow_exec=allow_exec) for part in comma_split(uv)]
-
-      return tuple(values) if v[0] == '(' else values
-    elif v[0] == '{':
-      pdict, pargs = parse_dict(uv, allow_args=True, allow_exec=allow_exec)
-      if not pdict:
-        return set(pargs)
-      if pargs:
-        alog.xraise(ValueError, f'Cannot return both arguments and dictionary: {pargs} {pdict}')
-
-      return pdict
-    elif v[0] == '`':
-      tas.check(allow_exec, msg=f'Exec not allowed: {uv}')
-
-      pdict, pargs = parse_dict(uv, allow_args=True, allow_exec=allow_exec)
-      tas.check_ge(len(pargs), 2, msg=f'Wrong exec args: {uv}')
-
-      return run(*pargs, **pdict)
-
-  try:
-    return ast.literal_eval(v)
-  except:
-    return v
+def infer_value(v, vtype=None):
+  return yaml.safe_load(v) if vtype is None else to_type(v, vtype)
 
 
-def parse_dict(data, vtype=None, allow_args=False, allow_exec=False):
-  ma_dict, ma_args = dict(), []
-  for part in comma_split(data):
-    parts = resplit(part, '=')
+def parse_dict(data):
+  return yaml.safe_load(data)
+
+
+def parse_args(in_args):
+  args, kwargs = [], dict()
+  for arg in in_args:
+    parts = resplit(arg, '=')
     if len(parts) == 2:
-      name, value = parts
-      ma_dict[name] = infer_value(value, vtype=vtype, allow_exec=allow_exec)
+      kwargs[parts[0]] = yaml.safe_load(parts[1])
     elif len(parts) == 1:
-      if not allow_args:
-        alog.xraise(ValueError, f'Arguments parsing disabled: {data}')
-      if ma_dict:
-        alog.xraise(ValueError, f'Arguments can appear only at the beginning: {data}')
-      ma_args.append(infer_value(parts[0], vtype=vtype, allow_exec=allow_exec))
+      args.append(yaml.safe_load(parts[0]))
     else:
-      alog.xraise(ValueError, f'Syntax error: {part}')
+      alog.xraise(ValueError, f'Syntax error: {arg}')
 
-  return (ma_dict, tuple(ma_args)) if allow_args else ma_dict
+  return args, kwargs
 
 
 def state_update(path, **kwargs):
