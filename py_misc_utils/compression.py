@@ -61,8 +61,8 @@ def compressor(ext):
 _DECOMPRESSORS = {
   '.bz2': _Processor(processor=fbunzip2, module=bz2),
   '.bzip': _Processor(processor=fbunzip2, module=bz2),
-  '.gz': _Processor(processor=fgumzip, module=gzip),
-  '.xz': _Processor(processor=fxumzip, module=lzma),
+  '.gz': _Processor(processor=fgunzip, module=gzip),
+  '.xz': _Processor(processor=fxunzip, module=lzma),
 }
 
 def decompressor(ext):
