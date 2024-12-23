@@ -23,7 +23,7 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
     with fow.FileOverwrite(wpath, mode='wb') as fd:
       fd.write(resp.content)
   except Exception as ex:
-    wres.write_error(wpath, ex, url=url)
+    wres.write_error(wpath, ex, workid=url)
   finally:
     return wpath
 
@@ -87,6 +87,17 @@ class HttpAsyncFetcher:
           break
 
     return wres.get_work(wpath)
+
+  def iter_results(self, block=True, timeout=None):
+    while True:
+      try:
+        (rurl, result) = self._async_manager.fetch_result(block=block, timeout=timeout)
+
+        wpath = wres.work_path(self._path, rurl)
+
+        yield rurl, wres.load_work(wpath)
+      except queue.Empty:
+        break
 
   def __enter__(self):
     self.start()

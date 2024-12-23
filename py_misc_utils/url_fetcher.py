@@ -41,7 +41,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
         for data in fs.get_file(fpath):
           fd.write(data)
     except Exception as ex:
-      wres.write_error(wpath, ex, url=url)
+      wres.write_error(wpath, ex, workid=url)
     finally:
       rqueue.put(url)
 
@@ -113,6 +113,17 @@ class UrlFetcher:
           break
 
     return wres.get_work(wpath)
+
+  def iter_results(self, block=True, timeout=None):
+    while True:
+      try:
+        rurl = self._rqueue.get(block=block, timeout=timeout)
+
+        wpath = wres.work_path(self._path, rurl)
+
+        yield rurl, wres.load_work(wpath)
+      except queue.Empty:
+        break
 
   def __enter__(self):
     self.start()

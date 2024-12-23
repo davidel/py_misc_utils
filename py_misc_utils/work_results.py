@@ -79,11 +79,15 @@ def raise_on_error(data):
   return data
 
 
-def get_work(wpath, path=None, workid=None):
+def load_work(wpath, path=None, workid=None):
   wpath = wpath or work_path(path, workid)
 
   with open(wpath, mode='rb') as fd:
-    data = fd.read()
+    return fd.read()
+
+
+def get_work(wpath, path=None, workid=None):
+  data = load_work(wpath, path=path, workid=workid)
 
   return raise_on_error(data)
 
