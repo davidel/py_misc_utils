@@ -60,6 +60,7 @@ class UrlFetcher:
     self._fs_kwargs = fs_kwargs
     self._uqueue = self._rqueue = None
     self._workers = []
+    self._pending = set()
 
   def start(self):
     if self._path is None:
@@ -97,6 +98,7 @@ class UrlFetcher:
     for url in urls:
       if url:
         self._uqueue.put(url)
+        self._pending.add(url)
         wmap[url] = wres.work_hash(url)
 
     return wmap
@@ -107,18 +109,20 @@ class UrlFetcher:
   def wait(self, url):
     wpath = wres.work_path(self._path, url)
     if not os.path.isfile(wpath):
-      while True:
+      while self._pending:
         rurl = self._rqueue.get()
+        self._pending.discard(rurl)
         if rurl == url:
           break
 
     return wres.get_work(wpath)
 
   def iter_results(self, block=True, timeout=None):
-    while True:
+    while self._pending:
       try:
         rurl = self._rqueue.get(block=block, timeout=timeout)
 
+        self._pending.discard(rurl)
         wpath = wres.work_path(self._path, rurl)
 
         yield rurl, wres.load_work(wpath)

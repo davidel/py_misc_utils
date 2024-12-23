@@ -38,6 +38,7 @@ class HttpAsyncFetcher:
     )
     self._num_workers = num_workers
     self._async_manager = None
+    self._pending = set()
 
   @classmethod
   def _cleaner(cls, async_manager, path):
@@ -69,6 +70,7 @@ class HttpAsyncFetcher:
                                       path=self._path,
                                       http_args=self._http_args)
         self._async_manager.enqueue_work(url, work_ctor)
+        self._pending.add(url)
         wmap[url] = wres.work_hash(url)
 
     return wmap
@@ -79,9 +81,10 @@ class HttpAsyncFetcher:
   def wait(self, url):
     wpath = wres.work_path(self._path, url)
     if not os.path.isfile(wpath):
-      while True:
+      while self._pending:
         (rurl, result) = self._async_manager.fetch_result()
 
+        self._pending.discard(rurl)
         wres.raise_if_error(result)
         if rurl == url:
           break
@@ -89,13 +92,14 @@ class HttpAsyncFetcher:
     return wres.get_work(wpath)
 
   def iter_results(self, block=True, timeout=None):
-    while True:
+    while self._pending:
       if (fetchres := self._async_manager.fetch_result(block=block,
                                                        timeout=timeout)) is None:
         break
 
       rurl, result = fetchres
 
+      self._pending.discard(rurl)
       wpath = wres.work_path(self._path, rurl)
 
       yield rurl, wres.load_work(wpath)
