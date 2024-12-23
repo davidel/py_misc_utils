@@ -1,6 +1,6 @@
 import msgpack
 
-from . import alog as alog
+from . import alog
 from . import gfs
 from . import utils as ut
 

@@ -4,7 +4,7 @@ import os
 import tarfile
 import zipfile
 
-from . import alog as alog
+from . import alog
 from . import assert_checks as tas
 from . import gfs
 from . import img_utils as imgu

@@ -1,7 +1,7 @@
 import threading
 import weakref
 
-from . import alog as alog
+from . import alog
 from . import scheduler as sch
 from . import weak_call as wcall
 

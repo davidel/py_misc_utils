@@ -2,7 +2,7 @@ import functools
 
 import pyarrow.parquet as pq
 
-from . import alog as alog
+from . import alog
 from . import fin_wrap as fw
 from . import gfs
 from . import url_fetcher as urlf

@@ -1,7 +1,7 @@
 import bisect
 import os
 
-from . import alog as alog
+from . import alog
 from . import assert_checks as tas
 
 

@@ -5,7 +5,7 @@ import os
 import threading
 import time
 
-from . import alog as alog
+from . import alog
 from . import fin_wrap as fw
 from . import periodic_task as ptsk
 
