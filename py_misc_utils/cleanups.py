@@ -38,6 +38,8 @@ def unregister(cid, run=False):
   if run and cfdata is not None:
     fn, args, kwargs = cfdata
 
+    print(f'*** CLEANUP: {fn}({args}, {kwargs})')
+
     fn(*args, **kwargs)
 
   return cdata
@@ -52,6 +54,8 @@ def run():
 
   for fn, args, kwargs in cfdata:
     try:
+      print(f'*** CLEANUP: {fn}({args}, {kwargs})')
+
       fn(*args, **kwargs)
     except Exception as e:
       tb = traceback.format_exc()
