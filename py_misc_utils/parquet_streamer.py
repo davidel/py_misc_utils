@@ -62,6 +62,8 @@ class ParquetStreamer:
         for recd in recs:
           try:
             yield self._transform(recd)
+          except GeneratorExit:
+            raise
           except Exception as ex:
             alog.verbose(f'Unable to create parquet entry ({recd}): {ex}')
 

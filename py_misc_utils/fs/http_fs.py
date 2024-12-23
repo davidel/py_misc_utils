@@ -181,6 +181,8 @@ class HttpFs(fsb.FsBase):
           de = self.stat(lurl)
 
           yield de
+        except GeneratorExit:
+          raise
         except Exception as ex:
           alog.debug(f'Unable to stat URL {lurl}: {ex}')
 
