@@ -65,12 +65,13 @@ def write_result(path):
   fd = open(tpath, mode='wb')
   try:
     yield fd
-  except:
-    tpath = None
-    raise
-  finally:
     fd.close()
-    if tpath is not None:
+    fd = None
+  finally:
+    if fd is not None:
+      fd.close()
+      os.remove(tpath)
+    else:
       os.replace(tpath, path)
 
 
