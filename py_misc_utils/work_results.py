@@ -30,7 +30,7 @@ class WorkException:
 
   def __repr__(self):
     exception = pickle.loads(self._ex_data)
-    xvars = {k: v for vars(self).items() if not k.startswith('_')}
+    xvars = {k: v for k, v in vars(self).items() if not k.startswith('_')}
 
     return f'{repr(exception)}: {xvars}'
 
