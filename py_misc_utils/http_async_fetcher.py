@@ -5,7 +5,6 @@ import httpx
 
 from . import async_manager as asym
 from . import assert_checks as tas
-from . import cleanups
 from . import file_overwrite as fow
 from . import fin_wrap as fw
 from . import gfs
@@ -41,33 +40,34 @@ class HttpAsyncFetcher:
     )
     self._num_workers = num_workers
     self._async_manager = None
-    self._path_cid = None
     self._pending = set()
 
   @classmethod
-  def _cleaner(cls, async_manager, path_cid):
+  def _cleaner(cls, async_manager, path):
     async_manager.close()
-    if path_cid is not None:
-      cleanups.unregister(path_cid, run=True)
+    if path is not None:
+      gfs.rmtree(path, ignore_errors=True)
+
+  def _path_to_clean(self):
+    return self._path if self._path != self._ctor_path else None
 
   def start(self):
     if self._ctor_path is None:
       self._path = tmpd.fastfs_dir()
-      self._path_cid = cleanups.register(gfs.rmtree, self._path, ignore_errors=True)
     else:
       self._path = self._ctor_path
 
     async_manager = asym.AsyncManager(num_workers=self._num_workers)
 
-    finfn = functools.partial(self._cleaner, async_manager, self._path_cid)
+    finfn = functools.partial(self._cleaner, async_manager, self._path_to_clean())
     fw.fin_wrap(self, '_async_manager', async_manager, finfn=finfn)
 
   def shutdown(self):
     async_manager = self._async_manager
     if async_manager is not None:
       fw.fin_wrap(self, '_async_manager', None)
-      self._cleaner(async_manager, self._path_cid)
-      self._path_cid = None
+      self._cleaner(async_manager, self._path_to_clean())
+      self._path = None
       self._pending = set()
 
   def enqueue(self, *urls):

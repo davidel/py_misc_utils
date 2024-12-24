@@ -4,7 +4,6 @@ import threading
 
 from . import alog
 from . import assert_checks as tas
-from . import cleanups
 from . import file_overwrite as fow
 from . import gfs
 from . import tempdir as tmpd
@@ -62,13 +61,11 @@ class UrlFetcher:
     self._fs_kwargs = fs_kwargs
     self._uqueue = self._rqueue = None
     self._workers = []
-    self._path_cid = None
     self._pending = set()
 
   def start(self):
     if self._ctor_path is None:
       self._path = tmpd.fastfs_dir()
-      self._path_cid = cleanups.register(gfs.rmtree, self._path, ignore_errors=True)
     else:
       self._path = self._ctor_path
 
@@ -95,10 +92,10 @@ class UrlFetcher:
     self._uqueue = self._rqueue = None
     self._workers = []
 
-    if self._path_cid is not None:
-      cleanups.unregister(self._path_cid, run=True)
+    if self._path != self._ctor_path:
+      gfs.rmtree(self._path, ignore_errors=True)
 
-    self._path_cid = None
+    self._path = None
     self._pending = set()
 
   def enqueue(self, *urls):
