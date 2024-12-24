@@ -281,8 +281,7 @@ class CachedFile:
   def close(self):
     cbf = self.cbf
     if cbf is not None:
-      fw.fin_wrap(self, 'cbf', None)
-      cbf.close()
+      fw.fin_wrap(self, 'cbf', None, cleanup=True)
 
   @property
   def closed(self):
