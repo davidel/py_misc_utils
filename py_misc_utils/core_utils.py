@@ -10,6 +10,13 @@ import types
 _NONE = object()
 
 
+def object_context(sobj, **kwargs):
+  ctx_args = vars(sobj).copy()
+  ctx_args.update(**kwargs)
+
+  return types.SimpleNamespace(**ctx_args)
+
+
 def args(*uargs, **kwargs):
   return uargs, kwargs
 

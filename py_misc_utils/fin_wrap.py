@@ -9,7 +9,7 @@ def _finalizer_name(name):
 
 class fin_wrap:
 
-  def __init__(self, parent, name, obj, finfn=None):
+  def __init__(self, parent, name, obj, finfn=None, cleanup=False):
     setattr(parent, name, obj)
     fname = _finalizer_name(name)
     if obj is not None:
@@ -21,7 +21,10 @@ class fin_wrap:
       fwrap = getattr(parent, fname, None)
       if fwrap is not None:
         delattr(parent, fname)
-        fwrap._finalizer.detach()
+        if cleanup:
+          fwrap._finalizer()
+        else:
+          fwrap._finalizer.detach()
 
 
 class _Wrapper:
