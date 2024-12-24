@@ -185,20 +185,6 @@ def name_values(base_name, values, force_expand=False):
   return tuple(names)
 
 
-def load_config(cfg_file=None, **kwargs):
-  if cfg_file is not None:
-    with gfs.open(cfg_file, mode='r') as cf:
-      cfg = yaml.safe_load(cf)
-  else:
-    cfg = dict()
-
-  for k, v in kwargs.items():
-    if v is not None:
-      cfg[k] = v
-
-  return cfg
-
-
 def write_config(cfg, dest, **kwargs):
   default_flow_style = kwargs.get('default_flow_style', False)
 
@@ -225,6 +211,10 @@ def parse_config(cfg, **kwargs):
       cfgd[k] = v
 
   return cfgd
+
+
+def load_config(path, **kwargs):
+  return parse_config(path, **kwargs)
 
 
 def fatal(msg, exc=RuntimeError):

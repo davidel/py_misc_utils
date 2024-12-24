@@ -37,7 +37,7 @@ def _get_credentials(user=None):
                   f'No configuration file "{cfg_path}" found to lookup credentials ' \
                   f'for user "{user}"')
 
-    cfg = ut.load_config(cfg_file=cfg_path)
+    cfg = ut.load_config(cfg_path)
     users_cfg = cfg.get('users')
     if users_cfg is None:
       alog.xraise(RuntimeError, f'Missing "users" entry in configuration file "{cfg_path}"')
