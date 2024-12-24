@@ -9,8 +9,12 @@ class Obj:
   def update(self, **kwargs):
     self.__dict__.update(kwargs)
 
+    return self
+
   def update_from(self, obj):
     self.__dict__.update(obj.__dict__)
+
+    return self
 
   def clone(self, **kwargs):
     nobj = copy.copy(self)
