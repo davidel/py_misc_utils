@@ -1,11 +1,28 @@
 import os
 import tempfile
 
+from . import cleanups
+from . import gfs
+from . import init_variables as ivar
 from . import rnd_utils as rngu
 
 
+def _init_tmproot():
+  tmproot = tempfile.mkdtemp()
+
+  cleanups.register(gfs.rmtree, tmproot, ignore_errors=True)
+
+  return tmproot
+
+
+_VARID = ivar.varid(__name__, 'tmproot')
+
+def _tmproot():
+  return ivar.get(_VARID, _init_tmproot)
+
+
 def create():
-  return tempfile.mkdtemp()
+  return tempfile.mkdtemp(dir=_tmproot())
 
 
 def _try_fastfs_dir(path):
