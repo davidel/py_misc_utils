@@ -9,11 +9,17 @@ def varid(prefix, name):
 def get(name, initfn):
   with _LOCK:
     value = _VARS.get(name, _NONE)
-    if value is _NONE:
-      value = initfn()
-      _VARS[name] = value
 
-    return value
+  if value is _NONE:
+    # Do not create the new value within the lock since init functions using
+    # the init_variables module will deadlock.
+    new_value = initfn()
+    with _LOCK:
+      value = _VARS.get(name, _NONE)
+      if value is _NONE:
+        _VARS[name] = value = new_value
+
+  return value
 
 
 def _init_vars():
