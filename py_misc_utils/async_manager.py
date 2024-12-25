@@ -9,7 +9,6 @@ import numpy as np
 
 from . import cleanups
 from . import init_variables as ivar
-from . import run_once as ro
 from . import work_results as wres
 
 
