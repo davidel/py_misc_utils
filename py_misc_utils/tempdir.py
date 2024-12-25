@@ -17,14 +17,10 @@ class _RootDir:
     cleanups.unregister(self.cid)
 
 
-def _init_tmproot():
-  return _RootDir()
-
-
 _VARID = ivar.varid(__name__, 'tmproot')
 
 def _tmproot():
-  return ivar.get(_VARID, _init_tmproot).path
+  return ivar.get(_VARID, _RootDir).path
 
 
 def create():
