@@ -34,7 +34,7 @@ class _Cleanups:
 
   def run(self):
     with self._lock:
-      cleanups = self._funcs
+      funcs = self._funcs
       self._funcs = dict()
 
     # Sort by reverse ID, which is reverse register order.
