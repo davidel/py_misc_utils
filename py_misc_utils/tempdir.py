@@ -7,18 +7,24 @@ from . import init_variables as ivar
 from . import rnd_utils as rngu
 
 
+class _RootDir:
+
+  def __init__(self):
+    self.path = tempfile.mkdtemp()
+    self.cid = cleanups.register(gfs.rmtree, self.path, ignore_errors=True)
+
+  def cleanup(self):
+    cleanups.unregister(self.cid)
+
+
 def _init_tmproot():
-  tmproot = tempfile.mkdtemp()
-
-  cleanups.register(gfs.rmtree, tmproot, ignore_errors=True)
-
-  return tmproot
+  return _RootDir()
 
 
 _VARID = ivar.varid(__name__, 'tmproot')
 
 def _tmproot():
-  return ivar.get(_VARID, _init_tmproot)
+  return ivar.get(_VARID, _init_tmproot).path
 
 
 def create():
