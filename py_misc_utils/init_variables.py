@@ -27,5 +27,6 @@ def _init_vars():
 
 _init_vars()
 
-os.register_at_fork(after_in_child=_init_vars)
+if os.name == 'posix':
+  os.register_at_fork(after_in_child=_init_vars)
 
