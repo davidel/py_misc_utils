@@ -4,7 +4,7 @@ import sys
 
 from . import alog
 from . import cleanups
-from . import utils as ut
+from . import core_utils as cu
 
 
 def _cleanup():
@@ -18,7 +18,7 @@ def _main(parser, mainfn, args, rem_args):
   if rem_args:
     xargs = args or sys.argv[1:]
 
-    ddpos = ut.lindex(xargs, '--')
+    ddpos = cu.lindex(xargs, '--')
     if ddpos >= 0:
       rargs = xargs[ddpos + 1:]
       xargs = xargs[: ddpos]

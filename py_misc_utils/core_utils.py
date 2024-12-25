@@ -78,6 +78,13 @@ def index_select(arr, idx):
   return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
 
 
+def lindex(l, e, start=0, end=None):
+  try:
+    return l.index(e, start, end if end is not None else len(l))
+  except ValueError:
+    return -1
+
+
 def size_str(size):
   syms = ('B', 'KB', 'MB', 'GB', 'TB')
 

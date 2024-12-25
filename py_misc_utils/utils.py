@@ -271,13 +271,6 @@ def sreplace(rex, data, mapfn, nmapfn=None, join=True):
   return ''.join(parts) if join else parts
 
 
-def lindex(l, e, start=0, end=None):
-  try:
-    return l.index(e, start, end if end is not None else len(l))
-  except ValueError:
-    return -1
-
-
 def idx_expand(data, idx, filler=None):
   if idx >= len(data):
     data = data + [filler] * (idx + 1 - len(data))
