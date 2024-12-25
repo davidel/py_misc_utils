@@ -8,6 +8,7 @@ import threading
 import numpy as np
 
 from . import cleanups
+from . import init_variables as ivar
 from . import run_once as ro
 from . import work_results as wres
 
@@ -173,19 +174,20 @@ class AsyncRunner:
     return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
 
-_ASYNC_RUNNER = None
+def _init_async_runner():
+  async_runner = AsyncRunner()
 
-@ro.run_once
-def _create_async_runner():
-  global _ASYNC_RUNNER
+  cleanups.register(async_runner.stop)
 
-  _ASYNC_RUNNER = AsyncRunner()
+  return async_runner
 
-  cleanups.register(_ASYNC_RUNNER.stop)
+
+_VARID = ivar.varid(__name__, 'async_runner')
+
+def _async_runner():
+  return ivar.get(_VARID, _init_async_runner)
 
 
 def run_async(coro):
-  _create_async_runner()
-
-  return _ASYNC_RUNNER.run(coro)
+  return _async_runner().run(coro)
 
