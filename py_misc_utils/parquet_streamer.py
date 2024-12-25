@@ -1,3 +1,4 @@
+import contextlib
 import functools
 
 import pyarrow.parquet as pq
@@ -21,31 +22,26 @@ class ParquetStreamer:
     self._batch_size = ut.value_or(batch_size, 128)
     self._load_columns = ut.value_or(load_columns, dict())
     self._rename_columns = ut.value_or(rename_columns, dict())
+    self._num_workers = num_workers
     self._kwargs = kwargs
 
+  def _fetcher(self):
     if self._load_columns:
-      fetcher = urlf.UrlFetcher(num_workers=num_workers, fs_kwargs=kwargs)
-      fetcher.start()
-
-      finfn = functools.partial(self._cleaner, fetcher)
-      fw.fin_wrap(self, '_fetcher', fetcher, finfn=finfn)
+      return urlf.UrlFetcher(num_workers=self._num_workers,
+                             fs_kwargs=self._kwargs)
     else:
-      self._fetcher = None
+      return contextlib.nullcontext()
 
-  @classmethod
-  def _cleaner(cls, fetcher):
-    fetcher.shutdown()
-
-  def _prefetch(self, recs):
-    if self._fetcher is not None:
+  def _prefetch(self, fetcher, recs):
+    if fetcher is not None:
       for recd in recs:
         for key in self._load_columns.keys():
-          self._fetcher.enqueue(recd[key])
+          fetcher.enqueue(recd[key])
 
-  def _transform(self, recd):
-    if self._fetcher is not None:
+  def _transform(self, fetcher, recd):
+    if fetcher is not None:
       for key, name in self._load_columns.items():
-        recd[name] = self._fetcher.wait(recd[key])
+        recd[name] = fetcher.wait(recd[key])
 
     for key, name in self._rename_columns.items():
       recd[name] = recd.pop(key)
@@ -53,15 +49,16 @@ class ParquetStreamer:
     return recd
 
   def generate(self):
-    with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
+    with (self._fetcher() as fetcher,
+          gfs.open(self._url, mode='rb', **self._kwargs) as stream):
       pqfd = pq.ParquetFile(stream)
       for batch in pqfd.iter_batches(batch_size=self._batch_size):
         recs = batch.to_pylist()
 
-        self._prefetch(recs)
+        self._prefetch(fetcher, recs)
         for recd in recs:
           try:
-            yield self._transform(recd)
+            yield self._transform(fetcher, recd)
           except GeneratorExit:
             raise
           except Exception as ex:
