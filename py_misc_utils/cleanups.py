@@ -34,7 +34,7 @@ class _Cleanups(ivar.VarBase):
     with self._lock:
       cfdata = self._funcs.pop(cid, None)
 
-    if run in (None, True) and cfdata is not None:
+    if run is True and cfdata is not None:
       fn, args, kwargs = cfdata
 
       fn(*args, **kwargs)
