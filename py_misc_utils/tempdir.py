@@ -14,7 +14,7 @@ class _RootDir(ivar.VarBase):
     self.cid = cleanups.register(gfs.rmtree, self.path, ignore_errors=True)
 
   def cleanup(self):
-    cleanups.unregister(self.cid)
+    cleanups.unregister(self.cid, run=True)
 
 
 _VARID = ivar.varid(__name__, 'tmproot')
