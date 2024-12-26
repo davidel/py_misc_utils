@@ -15,7 +15,7 @@ class VarBase(abc.ABC):
 _VID_PACKER = struct.Struct('<Q')
 
 def varid(path, name):
-  vstr = f'{path}.{name}'
+  vstr = f'{path}:{name}'
   vdata = hashlib.sha1(vstr.encode()).digest()[: _VID_PACKER.size]
 
   return _VID_PACKER.unpack(vdata)[0]
