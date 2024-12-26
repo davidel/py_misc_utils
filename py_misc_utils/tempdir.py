@@ -7,7 +7,7 @@ from . import init_variables as ivar
 from . import rnd_utils as rngu
 
 
-class _RootDir:
+class _RootDir(ivar.VarBase):
 
   def __init__(self):
     self.path = tempfile.mkdtemp()

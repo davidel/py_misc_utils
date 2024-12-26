@@ -154,12 +154,16 @@ class AsyncManager:
     return False
 
 
-class AsyncRunner:
+class AsyncRunner(ivar.VarBase):
 
   def __init__(self):
     self._loop = asyncio.new_event_loop()
     self._thread = threading.Thread(target=self._async_runner, daemon=True)
     self._thread.start()
+    self._cid = cleanups.register(self.stop)
+
+  def cleanup(self):
+    cleanups.unregister(self._cid, run=True)
 
   def _async_runner(self):
     asyncio.set_event_loop(self._loop)
@@ -173,18 +177,10 @@ class AsyncRunner:
     return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
 
-def _init_async_runner():
-  async_runner = AsyncRunner()
-
-  cleanups.register(async_runner.stop)
-
-  return async_runner
-
-
 _VARID = ivar.varid(__name__, 'async_runner')
 
 def _async_runner():
-  return ivar.get(_VARID, _init_async_runner)
+  return ivar.get(_VARID, AsyncRunner)
 
 
 def run_async(coro):

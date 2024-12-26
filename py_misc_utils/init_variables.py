@@ -1,5 +1,13 @@
+import abc
 import os
 import threading
+
+
+class VarBase(abc.ABC):
+
+  @abc.abstractmethod
+  def cleanup(self):
+    ...
 
 
 def varid(prefix, name):
@@ -20,10 +28,9 @@ def get(name, initfn):
         _VARS[name] = value = new_value
 
     # It can happen that two instances gets created due to initializing outside
-    # the lock. Functions that cares can create objects with a cleanup() API which
-    # get called to give the new object a chance to undo possible side effects of
-    # its creation.
-    if new_value is not value and hasattr(new_value, 'cleanup'):
+    # the lock. Calling the cleanup() API will give the new object a chance to
+    # undo possible side effects of its creation.
+    if new_value is not value:
       new_value.cleanup()
 
   return value
