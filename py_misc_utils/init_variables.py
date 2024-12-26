@@ -34,7 +34,7 @@ def get(vid, initfn):
       if value is _NONE:
         _VARS[vid] = value = new_value
 
-    # It can happen that two instances gets created due to initializing outside
+    # It can happen that more instances gets created due to initializing outside
     # the lock. Calling the cleanup() API will give the new object a chance to
     # undo possible side effects of its creation.
     if new_value is not value:
