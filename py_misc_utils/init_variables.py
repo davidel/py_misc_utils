@@ -1,5 +1,7 @@
 import abc
+import hashlib
 import os
+import struct
 import threading
 
 
@@ -10,22 +12,27 @@ class VarBase(abc.ABC):
     ...
 
 
-def varid(prefix, name):
-  return f'{prefix}.{name}'
+_VID_PACKER = struct.Struct('<Q')
+
+def varid(path, name):
+  vstr = f'{path}.{name}'
+  vdata = hashlib.sha1(vstr.encode()).digest()[: _VID_PACKER.size]
+
+  return _VID_PACKER.unpack(vdata)[0]
 
 
-def get(name, initfn):
+def get(vid, initfn):
   with _LOCK:
-    value = _VARS.get(name, _NONE)
+    value = _VARS.get(vid, _NONE)
 
   if value is _NONE:
     # Do not create the new value within the lock since init functions using
     # the init_variables module will deadlock.
     new_value = initfn()
     with _LOCK:
-      value = _VARS.get(name, _NONE)
+      value = _VARS.get(vid, _NONE)
       if value is _NONE:
-        _VARS[name] = value = new_value
+        _VARS[vid] = value = new_value
 
     # It can happen that two instances gets created due to initializing outside
     # the lock. Calling the cleanup() API will give the new object a chance to

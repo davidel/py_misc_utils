@@ -58,7 +58,7 @@ class _Cleanups(ivar.VarBase):
         alog.error(f'Exception while running cleanups: {e}\n{tb}')
 
 
-_VARID = ivar.varid(__name__, 'cleanups')
+_VARID = ivar.varid(__file__, 'cleanups')
 
 def _cleanups():
   return ivar.get(_VARID, _Cleanups)

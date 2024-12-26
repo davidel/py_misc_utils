@@ -177,7 +177,7 @@ class AsyncRunner(ivar.VarBase):
     return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
 
-_VARID = ivar.varid(__name__, 'async_runner')
+_VARID = ivar.varid(__file__, 'async_runner')
 
 def _async_runner():
   return ivar.get(_VARID, AsyncRunner)
