@@ -10,8 +10,8 @@ class VarBase(abc.ABC):
     ...
 
 
-def varid(path, name):
-  return f'{path}:{name}'
+def varid(root, name):
+  return f'{root}:{name}'
 
 
 def get(vid, initfn):

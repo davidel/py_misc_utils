@@ -17,7 +17,7 @@ class _RootDir(ivar.VarBase):
     cleanups.unregister(self.cid, run=True)
 
 
-_VARID = ivar.varid(__file__, 'tmproot')
+_VARID = ivar.varid(__name__, 'tmproot')
 
 def _tmproot():
   return ivar.get(_VARID, _RootDir).path
