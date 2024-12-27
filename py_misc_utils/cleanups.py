@@ -19,9 +19,6 @@ class _Cleanups(ivar.VarBase):
     # up going out the app_main path.
     atexit.register(self.run)
 
-  def cleanup(self):
-    atexit.unregister(self.run)
-
   def register(self, fn, *args, **kwargs):
     with self._lock:
       cid = self._nextid

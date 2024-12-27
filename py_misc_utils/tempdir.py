@@ -13,9 +13,6 @@ class _RootDir(ivar.VarBase):
     self.path = tempfile.mkdtemp()
     self.cid = cleanups.register(gfs.rmtree, self.path, ignore_errors=True)
 
-  def cleanup(self):
-    cleanups.unregister(self.cid, run=True)
-
 
 _VARID = ivar.varid(__name__, 'tmproot')
 

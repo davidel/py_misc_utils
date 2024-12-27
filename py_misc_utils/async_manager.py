@@ -162,9 +162,6 @@ class AsyncRunner(ivar.VarBase):
     self._thread.start()
     self._cid = cleanups.register(self.stop)
 
-  def cleanup(self):
-    cleanups.unregister(self._cid, run=True)
-
   def _async_runner(self):
     asyncio.set_event_loop(self._loop)
     self._loop.run_forever()
