@@ -33,10 +33,6 @@ def pickle_proto():
   return getenv('PICKLE_PROTO', dtype=int, defval=pickle.HIGHEST_PROTOCOL)
 
 
-def ident(x):
-  return x
-
-
 def fname():
   return tb.get_frame(1).f_code.co_name
 

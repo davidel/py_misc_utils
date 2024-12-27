@@ -10,6 +10,10 @@ import types
 _NONE = object()
 
 
+def ident(x):
+  return x
+
+
 def object_context(sobj, **kwargs):
   ctx_args = vars(sobj).copy()
   ctx_args.update(**kwargs)
