@@ -18,7 +18,7 @@ def _debug(signum, frame):
 
 
 def install_pdb_hook(signum):
-  signum = getattr(signal, signame) if isinstance(signum, str) else signum
+  signum = getattr(signal, signum) if isinstance(signum, str) else signum
 
   signal.signal(signum, _debug)
 
