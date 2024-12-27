@@ -9,9 +9,10 @@ import pandas as pd
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import gfs
 from . import np_utils as pyn
-from . import utils as pyu
+from . import utils as ut
 
 
 def get_df_columns(df, discards=None):
@@ -45,7 +46,7 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
     args = dict() if args is None else args
     if args.get('index_col') is None:
       args = args.copy()
-      fields = pyu.comma_split(fd.readline())
+      fields = ut.comma_split(fd.readline())
       fd.seek(0)
       # If 'index_col' is not specified, we use column 0 if its name is empty, otherwise
       # we disable it setting it to False.
@@ -66,22 +67,22 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
 def save_dataframe(df, path, **kwargs):
   _, ext = os.path.splitext(os.path.basename(path))
   if ext == '.pkl':
-    args = pyu.dict_subset(kwargs, ('compression', 'protocol', 'storage_options'))
+    args = ut.dict_subset(kwargs, ('compression', 'protocol', 'storage_options'))
     if 'protocol' not in args:
-      args['protocol'] = pyu.pickle_proto()
+      args['protocol'] = ut.pickle_proto()
     with gfs.open(path, mode='wb') as fd:
       df.to_pickle(fd, **args)
   elif ext == '.csv':
-    args = pyu.dict_subset(kwargs, ('float_format', 'columns', 'header', 'index',
-                                    'index_label', 'mode', 'encoding', 'quoting',
-                                    'quotechar', 'line_terminator', 'chunksize',
-                                    'date_format', 'doublequote', 'escapechar',
-                                    'decimal', 'compression', 'error', 'storage_options'))
+    args = ut.dict_subset(kwargs, ('float_format', 'columns', 'header', 'index',
+                                   'index_label', 'mode', 'encoding', 'quoting',
+                                   'quotechar', 'line_terminator', 'chunksize',
+                                   'date_format', 'doublequote', 'escapechar',
+                                   'decimal', 'compression', 'error', 'storage_options'))
 
     # For CSV file, unless otherwise specified, and the index has no name, drop
     # the index column as it adds no value to the output (it's simply a sequential).
     if not df.index.name:
-      args = pyu.dict_setmissing(args, index=None)
+      args = ut.dict_setmissing(args, index=None)
 
     with gfs.open(path, mode='w') as fd:
       df.to_csv(fd, **args)
@@ -97,20 +98,20 @@ def load_dataframe(path, **kwargs):
   elif ext == '.csv':
     rows_sample = kwargs.pop('rows_sample', 100)
     dtype = kwargs.pop('dtype', None)
-    args = pyu.dict_subset(kwargs, ('sep', 'delimiter', 'header', 'names',
-                                    'index_col', 'usecols', 'squeeze', 'prefix',
-                                    'mangle_dupe_cols', 'dtype', 'engine',
-                                    'converters', 'true_values', 'false_values',
-                                    'skipinitialspace', 'skiprows', 'skipfooter',
-                                    'nrows', 'na_values', 'keep_default_na', 'na_filter',
-                                    'verbose', 'skip_blank_lines', 'parse_dates',
-                                    'infer_datetime_format', 'keep_date_col', 'date_parser',
-                                    'dayfirst', 'cache_dates', 'iterator', 'chunksize',
-                                    'compression', 'thousands', 'decimal', 'lineterminator',
-                                    'quotechar', 'quoting', 'doublequote', 'escapechar',
-                                    'comment', 'encoding', 'dialect', 'error_bad_lines',
-                                    'warn_bad_lines', 'delim_whitespace', 'low_memory',
-                                    'memory_map', 'float_precision', 'storage_options'))
+    args = ut.dict_subset(kwargs, ('sep', 'delimiter', 'header', 'names',
+                                   'index_col', 'usecols', 'squeeze', 'prefix',
+                                   'mangle_dupe_cols', 'dtype', 'engine',
+                                   'converters', 'true_values', 'false_values',
+                                   'skipinitialspace', 'skiprows', 'skipfooter',
+                                   'nrows', 'na_values', 'keep_default_na', 'na_filter',
+                                   'verbose', 'skip_blank_lines', 'parse_dates',
+                                   'infer_datetime_format', 'keep_date_col', 'date_parser',
+                                   'dayfirst', 'cache_dates', 'iterator', 'chunksize',
+                                   'compression', 'thousands', 'decimal', 'lineterminator',
+                                   'quotechar', 'quoting', 'doublequote', 'escapechar',
+                                   'comment', 'encoding', 'dialect', 'error_bad_lines',
+                                   'warn_bad_lines', 'delim_whitespace', 'low_memory',
+                                   'memory_map', 'float_precision', 'storage_options'))
 
     return read_csv(path, rows_sample=rows_sample, dtype=dtype,
                     args=args)
@@ -162,7 +163,7 @@ def columns_transform(df, cols, tfn):
 def get_columns_index(df):
   cols = df.columns.tolist()
 
-  return pyu.make_index_dict(cols), cols
+  return ut.make_index_dict(cols), cols
 
 
 def concat_dataframes(files, **kwargs):
@@ -181,7 +182,7 @@ def get_dataframe_groups(df, cols, cols_transforms=None):
   # Row numbers must be strictly ascending within each group, do NOT change that!
   groups = collections.defaultdict(lambda: array.array('L'))
   if cols_transforms:
-    tcols = [(df[c], cols_transforms.get(c, pyu.ident)) for c in cols]
+    tcols = [(df[c], cols_transforms.get(c, pycu.ident)) for c in cols]
     for i in range(len(df)):
       k = tuple([f(d[i]) for d, f in tcols])
       groups[k].append(i)
