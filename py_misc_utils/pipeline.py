@@ -33,3 +33,6 @@ class Pipeline:
 
     return x
 
+  def clone(self):
+    return Pipeline(*self._elems)
+
