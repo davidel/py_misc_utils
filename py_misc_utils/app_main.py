@@ -1,4 +1,5 @@
 import argparse
+import functools
 import gc
 import sys
 
@@ -38,8 +39,8 @@ def _main(parser, mainfn, args, rem_args):
 def main(parser, mainfn, args=None, rem_args=None):
   try:
     _main(parser, mainfn, args, rem_args)
-  except Exception as e:
-    alog.exception(e, exmsg=f'Exception while running main function')
+  except Exception as ex:
+    alog.exception(ex, exmsg=f'Exception while running main function')
     raise
   finally:
     _cleanup()
@@ -48,4 +49,18 @@ def main(parser, mainfn, args=None, rem_args=None):
 def basic_main(mainfn):
   parser = argparse.ArgumentParser()
   main(parser, mainfn)
+
+
+def _wrapped_main(mainfn, *args, **kwargs):
+  try:
+    return mainfn(*args, **kwargs)
+  except Exception as ex:
+    alog.exception(ex, exmsg=f'Exception while running main function')
+    raise
+  finally:
+    _cleanup()
+
+
+def wrap_main(mainfn, *args, **kwargs):
+  return functools.partial(_wrapped_main, mainfn, *args, **kwargs)
 
