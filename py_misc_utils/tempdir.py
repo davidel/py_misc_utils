@@ -13,15 +13,18 @@ class _RootDir(ivar.VarBase):
     self.path = tempfile.mkdtemp()
     self.cid = cleanups.register(gfs.rmtree, self.path, ignore_errors=True)
 
+  def create(self):
+    return tempfile.mkdtemp(dir=self.path)
+
 
 _VARID = ivar.varid(__name__, 'tmproot')
 
-def _tmproot():
-  return ivar.get(_VARID, _RootDir).path
+def _root_dir():
+  return ivar.get(_VARID, _RootDir)
 
 
 def create():
-  return tempfile.mkdtemp(dir=_tmproot())
+  return _root_dir().create()
 
 
 def _try_fastfs_dir(path):
