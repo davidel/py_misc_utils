@@ -57,6 +57,8 @@ def _wrapped_main(mainfn, *args, **kwargs):
     kwargs = dynamod.wrap_procfn_child(kwargs)
 
     return mainfn(*args, **kwargs)
+  except KeyboardInterrupt:
+    sys.exit(1)
   except Exception as ex:
     alog.exception(ex, exmsg=f'Exception while running main function')
     raise
