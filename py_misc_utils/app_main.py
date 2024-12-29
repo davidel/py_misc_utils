@@ -106,7 +106,13 @@ def _wrapped_main(mainfn, *args, **kwargs):
 
 
 def create_process(mainfn, args=None, kwargs=None, context=None):
-  mpctx = multiprocessing if context is None else multiprocessing.get_context(method=context)
+  if context is None:
+    mpctx = multiprocessing
+  elif isinstance(context, str):
+    mpctx = multiprocessing.get_context(method=context)
+  else:
+    mpctx = context
+
   args = () if args is None else args
   kwargs = {} if kwargs is None else kwargs
 
