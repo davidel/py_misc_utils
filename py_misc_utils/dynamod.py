@@ -66,13 +66,13 @@ def get_module(name):
 
 
 def wrap_procfn_parent(kwargs):
-  kwargs.update(_dynamod_folder=get_mod_folder())
+  kwargs.update(dynamod_folder=get_mod_folder())
 
   return kwargs
 
 
 def wrap_procfn_child(kwargs):
-  path = kwargs.pop('_dynamod_folder', None)
+  path = kwargs.pop('dynamod_folder', None)
   if path is not None:
     set_mod_folder(path)
 

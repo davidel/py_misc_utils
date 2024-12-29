@@ -1,6 +1,7 @@
 import argparse
 import functools
 import gc
+import multiprocessing
 import sys
 
 from . import alog
@@ -68,19 +69,24 @@ def basic_main(mainfn):
 def _apply_child_context(kwargs):
   global _ARGS
 
-  if (args := kwargs.pop('_main_args', None)) is not None:
-    _ARGS = args
-    _setup_modules(args)
+  ctx = kwargs.pop('_parent_context', None)
+  if ctx is not None:
+    if (args := ctx.pop('main_args', None)) is not None:
+      _ARGS = args
+      _setup_modules(args)
 
-  kwargs = dynamod.wrap_procfn_child(kwargs)
+    ctx = dynamod.wrap_procfn_child(ctx)
 
   return kwargs
 
 
 def _capture_parent_context(kwargs):
-  kwargs.update(_main_args=_ARGS)
+  ctx = dict()
 
-  kwargs = dynamod.wrap_procfn_parent(kwargs)
+  ctx.update(main_args=_ARGS)
+  ctx = dynamod.wrap_procfn_parent(ctx)
+
+  kwargs.update(_parent_context=ctx)
 
   return kwargs
 
@@ -99,8 +105,16 @@ def _wrapped_main(mainfn, *args, **kwargs):
     _cleanup()
 
 
-def wrap_main(mainfn, *args, **kwargs):
-  kwargs = _capture_parent_context(kwargs)
+def create_process(mainfn, args=None, kwargs=None, context=None):
+  mpctx = multiprocessing if context is None else multiprocessing.get_context(method=context)
+  args = () if args is None else args
+  kwargs = {} if kwargs is None else kwargs
 
-  return functools.partial(_wrapped_main, mainfn, *args, **kwargs)
+  if mpctx.get_start_method() == 'fork':
+    target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
+  else:
+    kwargs = _capture_parent_context(kwargs)
+    target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
+
+  return mpctx.Process(target=target)
 
