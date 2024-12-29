@@ -6,6 +6,7 @@ import sys
 from . import alog
 from . import cleanups
 from . import core_utils as cu
+from . import dynamod
 
 
 def _cleanup():
@@ -53,6 +54,8 @@ def basic_main(mainfn):
 
 def _wrapped_main(mainfn, *args, **kwargs):
   try:
+    kwargs = dynamod.wrap_procfn_child(kwargs)
+
     return mainfn(*args, **kwargs)
   except Exception as ex:
     alog.exception(ex, exmsg=f'Exception while running main function')
@@ -62,5 +65,7 @@ def _wrapped_main(mainfn, *args, **kwargs):
 
 
 def wrap_main(mainfn, *args, **kwargs):
+  kwargs = dynamod.wrap_procfn_parent(kwargs)
+
   return functools.partial(_wrapped_main, mainfn, *args, **kwargs)
 
