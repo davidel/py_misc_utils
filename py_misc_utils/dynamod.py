@@ -56,18 +56,22 @@ def make_code_name(code):
   return f'_hashed.ch_{chash}'
 
 
-def create_module(name, code):
+def create_module(name, code, overwrite=None):
   path = get_mod_folder(create=True)
   mod_parts = name.split('.')
   mpath = os.path.join(path, *mod_parts) + '.py'
 
   with _LOCK:
     if os.path.exists(mpath):
-      raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
+      if overwrite in (None, False):
+        raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
       f.write(code)
+
+    if name in sys.modules:
+      importlib.reload(sys.modules[name])
 
   return get_module(name)
 
