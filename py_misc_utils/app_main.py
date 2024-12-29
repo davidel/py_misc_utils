@@ -52,9 +52,21 @@ def basic_main(mainfn):
   main(parser, mainfn)
 
 
+def _apply_child_context(kwargs):
+  kwargs = dynamod.wrap_procfn_child(kwargs)
+
+  return kwargs
+
+
+def _capture_parent_context(kwargs):
+  kwargs = dynamod.wrap_procfn_parent(kwargs)
+
+  return kwargs
+
+
 def _wrapped_main(mainfn, *args, **kwargs):
   try:
-    kwargs = dynamod.wrap_procfn_child(kwargs)
+    kwargs = _apply_child_context(kwargs)
 
     return mainfn(*args, **kwargs)
   except KeyboardInterrupt:
@@ -67,7 +79,7 @@ def _wrapped_main(mainfn, *args, **kwargs):
 
 
 def wrap_main(mainfn, *args, **kwargs):
-  kwargs = dynamod.wrap_procfn_parent(kwargs)
+  kwargs = _capture_parent_context(kwargs)
 
   return functools.partial(_wrapped_main, mainfn, *args, **kwargs)
 
