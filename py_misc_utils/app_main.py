@@ -14,8 +14,16 @@ def _cleanup():
   gc.collect()
 
 
-def _main(parser, mainfn, args, rem_args):
+def _add_modules_arguments(parser):
   alog.add_logging_options(parser)
+
+
+def _setup_modules(args):
+  alog.setup_logging(args)
+
+
+def _main(parser, mainfn, args, rem_args):
+  _add_modules_arguments(parser)
 
   if rem_args:
     xargs = args or sys.argv[1:]
@@ -32,7 +40,7 @@ def _main(parser, mainfn, args, rem_args):
   else:
     parsed_args = parser.parse_args(args=args)
 
-  alog.setup_logging(parsed_args)
+  _setup_modules(parsed_args)
 
   mainfn(parsed_args)
 
