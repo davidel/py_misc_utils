@@ -49,12 +49,14 @@ def set_mod_folder(path):
 
 def create_module(name, code):
   path = get_mod_folder(create=True)
-  mpath = os.path.join(path, f'{name}.py')
+  mod_parts = name.split('.')
+  mpath = os.path.join(path, *mod_parts) + '.py'
 
   with _LOCK:
     if os.path.exists(mpath):
       raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
 
+    os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
       f.write(code)
 
