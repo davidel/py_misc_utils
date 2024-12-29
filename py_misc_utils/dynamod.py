@@ -71,7 +71,7 @@ def create_module(name, code, overwrite=None):
       f.write(code)
 
     if name in sys.modules:
-      importlib.reload(sys.modules[name])
+      sys.modules[name] = importlib.reload(sys.modules[name])
 
   return get_module(name)
 
