@@ -325,6 +325,8 @@ def append_index_dict(xlist, xdict, value):
 
 
 def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
+  # Note that objects compiled with this API cannot be pickled.
+  # If that is a requirement, use the dynamod module.
   env = value_or(env, dict())
   if vals is not None or lookup_fn is not None:
     code = tr.template_replace(code, vals=vals, lookup_fn=lookup_fn, delim=delim)
