@@ -22,7 +22,11 @@ def _setup_modules(args):
   alog.setup_logging(args)
 
 
+_ARGS = None
+
 def _main(parser, mainfn, args, rem_args):
+  global _ARGS
+
   _add_modules_arguments(parser)
 
   if rem_args:
@@ -40,6 +44,7 @@ def _main(parser, mainfn, args, rem_args):
   else:
     parsed_args = parser.parse_args(args=args)
 
+  _ARGS = parsed_args
   _setup_modules(parsed_args)
 
   mainfn(parsed_args)
@@ -61,12 +66,20 @@ def basic_main(mainfn):
 
 
 def _apply_child_context(kwargs):
+  global _ARGS
+
+  if (args := kwargs.pop('_main_args', None)) is not None:
+    _ARGS = args
+    _setup_modules(args)
+
   kwargs = dynamod.wrap_procfn_child(kwargs)
 
   return kwargs
 
 
 def _capture_parent_context(kwargs):
+  kwargs.update(_main_args=_ARGS)
+
   kwargs = dynamod.wrap_procfn_parent(kwargs)
 
   return kwargs
