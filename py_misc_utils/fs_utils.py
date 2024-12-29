@@ -4,6 +4,7 @@ import shutil
 
 from . import alog
 from . import assert_checks as tas
+from . import osfd
 from . import rnd_utils as rngu
 
 
@@ -50,10 +51,14 @@ def safe_rmtree(path, **kwargs):
 
 
 def readall(fd):
-  sres = os.stat(fd)
-  os.lseek(fd, 0, os.SEEK_SET)
+  if isinstance(fd, str):
+    with osfd.OsFd(fd, os.O_RDONLY) as ifd:
+      return readall(ifd)
+  else:
+    sres = os.stat(fd)
+    os.lseek(fd, 0, os.SEEK_SET)
 
-  return os.read(fd, sres.st_size)
+    return os.read(fd, sres.st_size)
 
 
 def stat(path):
