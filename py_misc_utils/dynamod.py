@@ -43,6 +43,8 @@ def set_mod_folder(path):
 
   with _LOCK:
     _MOD_FOLDER = path
+    if path not in sys.path:
+      sys.path.append(path)
 
 
 def create_module(name, code):
