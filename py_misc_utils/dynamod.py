@@ -1,3 +1,4 @@
+import hashlib
 import importlib
 import os
 import shutil
@@ -45,6 +46,14 @@ def set_mod_folder(path):
     _MOD_FOLDER = path
     if path not in sys.path:
       sys.path.append(path)
+
+
+_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 8))
+
+def make_code_name(code):
+  chash = hashlib.sha1(code.encode()).hexdigest()[: _HASHNAME_LEN]
+
+  return f'_hashed.ch_{chash}'
 
 
 def create_module(name, code):
