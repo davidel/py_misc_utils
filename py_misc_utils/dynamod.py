@@ -56,6 +56,10 @@ def make_code_name(code):
   return f'_hashed.ch_{chash}'
 
 
+def module_name(name):
+  return f'{_MODNAME}.{name}'
+
+
 def create_module(name, code, overwrite=None):
   path = get_mod_folder(create=True)
   mod_parts = name.split('.')
@@ -70,14 +74,16 @@ def create_module(name, code, overwrite=None):
     with open(mpath, mode='w') as f:
       f.write(code)
 
-    if name in sys.modules:
-      sys.modules[name] = importlib.reload(sys.modules[name])
+    modname = module_name(name)
+    module = sys.modules.get(modname)
+    if module is not None:
+      sys.modules[modname] = importlib.reload(module)
 
   return get_module(name)
 
 
 def get_module(name):
-  return importlib.import_module(f'{_MODNAME}.{name}')
+  return importlib.import_module(module_name(name))
 
 
 def wrap_procfn_parent(kwargs):
