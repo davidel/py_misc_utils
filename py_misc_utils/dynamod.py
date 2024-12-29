@@ -60,24 +60,18 @@ def module_name(name):
   return f'{_MODNAME}.{name}'
 
 
-def create_module(name, code, overwrite=None):
+def create_module(name, code):
   path = get_mod_folder(create=True)
   mod_parts = name.split('.')
   mpath = os.path.join(path, *mod_parts) + '.py'
 
   with _LOCK:
     if os.path.exists(mpath):
-      if overwrite in (None, False):
-        raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
+      raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
       f.write(code)
-
-    modname = module_name(name)
-    module = sys.modules.get(modname)
-    if module is not None:
-      sys.modules[modname] = importlib.reload(module)
 
   return get_module(name)
 
