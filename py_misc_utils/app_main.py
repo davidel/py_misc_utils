@@ -167,10 +167,16 @@ class Main:
     self._func = func
     self._sig = inspect.signature(func)
 
-  def __call__(self, args):
-    fargs = {n: getattr(args, n, None) for n in self._sig.parameters.keys()}
+  def __call__(self, parsed_args):
+    args, kwargs = [], {}
+    for n, p in self._sig.parameters.items():
+      pv = getattr(parsed_args, n, None)
+      if p.kind == p.POSITIONAL_ONLY:
+        args.append(pv)
+      else:
+        kwargs[n] = pv
 
-    return self._func(**fargs)
+    return self._func(*args, **kwargs)
 
   def add_arguments(self, parser):
     fname = self._func.__name__
