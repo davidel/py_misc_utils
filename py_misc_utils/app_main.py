@@ -87,9 +87,9 @@ def main(parser, mainfn, args=None, rem_args=None):
     _cleanup()
 
 
-def basic_main(mainfn):
+def basic_main(mainfn, description='Basic Main'):
   parser = argparse.ArgumentParser(
-    description='Basic Main',
+    description=description,
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
   )
   main(parser, mainfn)
