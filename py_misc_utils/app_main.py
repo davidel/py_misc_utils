@@ -182,7 +182,7 @@ class Main:
       else:
         ptype = type(defval) if defval is not None else str
 
-      help_str = f'Argument "{n}" of function {fname}(...)'
+      help_str = f'Argument "{n}" (type={ptype.__name__}) of function {fname}(...)'
       if defval is None or p.kind == p.POSITIONAL_ONLY:
         parser.add_argument(n, type=ptype, default=defval, help=help_str)
       else:
