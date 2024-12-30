@@ -7,7 +7,6 @@ import sys
 from . import alog
 from . import cleanups
 from . import core_utils as cu
-from . import dynamod
 
 
 def _cleanup():
@@ -102,6 +101,7 @@ def _apply_child_context(kwargs):
       init_modules = _get_init_modules()
       _config_modules(init_modules, args)
 
+    from . import dynamod
     ctx = dynamod.wrap_procfn_child(ctx)
 
   return kwargs
@@ -111,6 +111,8 @@ def _capture_parent_context(kwargs):
   ctx = dict()
 
   ctx.update({_ARGS_KEY: _ARGS})
+
+  from . import dynamod
   ctx = dynamod.wrap_procfn_parent(ctx)
 
   kwargs.update({_CONTEXT_KEY: ctx})
