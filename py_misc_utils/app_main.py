@@ -84,7 +84,10 @@ def main(parser, mainfn, args=None, rem_args=None):
 
 
 def basic_main(mainfn):
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(
+    description='Basic Main',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+  )
   main(parser, mainfn)
 
 
