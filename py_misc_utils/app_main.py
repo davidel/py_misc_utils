@@ -1,6 +1,7 @@
 import argparse
 import functools
 import gc
+import inspect
 import multiprocessing
 import sys
 
@@ -48,6 +49,9 @@ _ARGS = None
 
 def _main(parser, mainfn, args, rem_args):
   global _ARGS
+
+  if isinstance(mainfn, Main):
+    mainfn.add_arguments(parser)
 
   init_modules = _get_init_modules()
   _add_arguments(init_modules, parser)
@@ -155,4 +159,32 @@ def create_process(mainfn, args=None, kwargs=None, context=None):
     target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
 
   return mpctx.Process(target=target)
+
+
+class Main:
+
+  def __init__(self, func):
+    self._func = func
+    self._sig = inspect.signature(func)
+
+  def __call__(self, args):
+    fargs = {n: getattr(args, n, None) for n in self._sig.parameters.keys()}
+
+    return self._func(**fargs)
+
+  def add_arguments(self, parser):
+    fname = self._func.__name__
+
+    for n, p in self._sig.parameters.items():
+      defval = p.default if p.default is not p.empty else None
+      if p.annotation is not p.empty:
+        ptype = p.annotation
+      else:
+        ptype = type(defval) if defval is not None else str
+
+      help_str = f'Argument "{n}" of function {fname}(...)'
+      if defval is None or p.kind == p.POSITIONAL_ONLY:
+        parser.add_argument(n, type=ptype, default=defval, help=help_str)
+      else:
+        parser.add_argument(f'--{n}', type=ptype, default=defval, help=help_str)
 
