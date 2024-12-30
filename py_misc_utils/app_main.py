@@ -90,13 +90,14 @@ def basic_main(mainfn):
 
 
 _CONTEXT_KEY = '_parent_context'
+_ARGS_KEY = 'main_args'
 
 def _apply_child_context(kwargs):
   global _ARGS
 
   ctx = kwargs.pop(_CONTEXT_KEY, None)
   if ctx is not None:
-    if (args := ctx.pop('main_args', None)) is not None:
+    if (args := ctx.pop(_ARGS_KEY, None)) is not None:
       _ARGS = args
       init_modules = _get_init_modules()
       _config_modules(init_modules, args)
@@ -109,7 +110,7 @@ def _apply_child_context(kwargs):
 def _capture_parent_context(kwargs):
   ctx = dict()
 
-  ctx.update(main_args=_ARGS)
+  ctx.update({_ARGS_KEY: _ARGS})
   ctx = dynamod.wrap_procfn_parent(ctx)
 
   kwargs.update({_CONTEXT_KEY: ctx})
