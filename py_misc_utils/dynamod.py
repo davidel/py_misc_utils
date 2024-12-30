@@ -61,18 +61,21 @@ def create_module(name, code, overwrite=None):
   mpath = os.path.join(path, *name.split('.')) + '.py'
 
   with _LOCK:
-    # Note that there exist an issue with Python import subsystem:
-    #
-    #   https://bugs.python.org/issue31772
-    #
-    # Such issue causes a module to not be reloaded if the size of the source file
-    # has not changed.
     reload = False
     if os.path.exists(mpath):
       if overwrite in (None, False):
         raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
       else:
+        # Note that there exist an issue with Python import subsystem:
+        #
+        #   https://bugs.python.org/issue31772
+        #
+        # Such issue causes a module to not be reloaded if the size of the source file
+        # has not changed.
+        # So BIG HACK here to add an extra newline if that's the case!
         reload = True
+        if os.stat(mpath).st_size == len(code):
+          code = code + '\n'
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
