@@ -4,9 +4,9 @@ import os
 import sys
 import time
 import traceback
+import types
 
 from . import call_limiter as cl
-from . import obj
 from . import run_once as ro
 
 
@@ -148,7 +148,12 @@ def setup_logging(args):
 def basic_setup(**kwargs):
   args = _DEFAULT_ARGS.copy()
   args.update(kwargs)
-  setup_logging(obj.Obj(**args))
+  setup_logging(types.SimpleNamespace(**args))
+
+
+def get_main_config():
+  return types.SimpleNamespace(add_arguments=add_logging_options,
+                               config_module=setup_logging)
 
 
 _LEVEL = DEBUG

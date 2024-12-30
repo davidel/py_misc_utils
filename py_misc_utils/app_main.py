@@ -15,12 +15,34 @@ def _cleanup():
   gc.collect()
 
 
-def _add_modules_arguments(parser):
-  alog.add_logging_options(parser)
+def _get_init_modules():
+  # Here is the place to import (import here to avoid cycling dependencies) and
+  # call the get_main_config() API of modules which require setting up a
+  # command line and configuring themselves with the parsed arguments.
+  # Note that alog is imported at the top since it is used in other places (and
+  # also has minimal dependencies which do not create issues).
+  # Objects returned by the get_main_config() API must have a add_arguments(parser)
+  # API to allow them to add command line arguments, and a config_module(args) API
+  # to configure themselves with the parsed arguments.
+  # Example:
+  #
+  #   from . import foo
+  #   modules.append(foo.get_main_config())
+  #
+  modules = []
+  modules.append(alog.get_main_config())
+
+  return tuple(modules)
 
 
-def _setup_modules(args):
-  alog.setup_logging(args)
+def _add_arguments(init_modules, parser):
+  for module in init_modules:
+    module.add_arguments(parser)
+
+
+def _config_modules(init_modules, args):
+  for module in init_modules:
+    module.config_module(args)
 
 
 _ARGS = None
@@ -28,7 +50,8 @@ _ARGS = None
 def _main(parser, mainfn, args, rem_args):
   global _ARGS
 
-  _add_modules_arguments(parser)
+  init_modules = _get_init_modules()
+  _add_arguments(init_modules, parser)
 
   if rem_args:
     xargs = args or sys.argv[1:]
@@ -46,7 +69,7 @@ def _main(parser, mainfn, args, rem_args):
     parsed_args = parser.parse_args(args=args)
 
   _ARGS = parsed_args
-  _setup_modules(parsed_args)
+  _config_modules(init_modules, parsed_args)
 
   mainfn(parsed_args)
 
@@ -75,7 +98,8 @@ def _apply_child_context(kwargs):
   if ctx is not None:
     if (args := ctx.pop('main_args', None)) is not None:
       _ARGS = args
-      _setup_modules(args)
+      init_modules = _get_init_modules()
+      _config_modules(init_modules, args)
 
     ctx = dynamod.wrap_procfn_child(ctx)
 
