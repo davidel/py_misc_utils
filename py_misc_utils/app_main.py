@@ -166,6 +166,7 @@ class Main:
   def __init__(self, func):
     self._func = func
     self._sig = inspect.signature(func)
+    functools.update_wrapper(self, func)
 
   def __call__(self, parsed_args):
     args, kwargs = [], {}
