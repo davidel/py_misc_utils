@@ -56,14 +56,9 @@ def make_code_name(code):
   return f'_hashed.ch_{chash}'
 
 
-def module_name(name):
-  return f'{_MODNAME}.{name}'
-
-
 def create_module(name, code):
   path = get_mod_folder(create=True)
-  mod_parts = name.split('.')
-  mpath = os.path.join(path, *mod_parts) + '.py'
+  mpath = os.path.join(path, *name.split('.')) + '.py'
 
   with _LOCK:
     if os.path.exists(mpath):
@@ -74,6 +69,10 @@ def create_module(name, code):
       f.write(code)
 
   return get_module(name)
+
+
+def module_name(name):
+  return f'{_MODNAME}.{name}'
 
 
 def get_module(name):
