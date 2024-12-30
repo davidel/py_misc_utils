@@ -66,10 +66,12 @@ def basic_main(mainfn):
   main(parser, mainfn)
 
 
+_CONTEXT_KEY = '_parent_context'
+
 def _apply_child_context(kwargs):
   global _ARGS
 
-  ctx = kwargs.pop('_parent_context', None)
+  ctx = kwargs.pop(_CONTEXT_KEY, None)
   if ctx is not None:
     if (args := ctx.pop('main_args', None)) is not None:
       _ARGS = args
@@ -86,7 +88,7 @@ def _capture_parent_context(kwargs):
   ctx.update(main_args=_ARGS)
   ctx = dynamod.wrap_procfn_parent(ctx)
 
-  kwargs.update(_parent_context=ctx)
+  kwargs.update({_CONTEXT_KEY: ctx})
 
   return kwargs
 

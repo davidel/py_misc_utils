@@ -79,14 +79,16 @@ def get_module(name):
   return importlib.import_module(module_name(name))
 
 
+_FOLDER_KEY = 'dynamod_folder'
+
 def wrap_procfn_parent(kwargs):
-  kwargs.update(dynamod_folder=get_mod_folder())
+  kwargs.update({_FOLDER_KEY: get_mod_folder()})
 
   return kwargs
 
 
 def wrap_procfn_child(kwargs):
-  path = kwargs.pop('dynamod_folder', None)
+  path = kwargs.pop(_FOLDER_KEY, None)
   if path is not None:
     set_mod_folder(path)
 
