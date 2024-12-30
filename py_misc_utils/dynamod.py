@@ -56,19 +56,25 @@ def make_code_name(code):
   return f'_hashed.ch_{chash}'
 
 
-def create_module(name, code):
+def create_module(name, code, overwrite=None):
   path = get_mod_folder(create=True)
   mpath = os.path.join(path, *name.split('.')) + '.py'
 
   with _LOCK:
-    if os.path.exists(mpath):
+    # Note that there exist an issue with Python import subsystem:
+    #
+    #   https://bugs.python.org/issue31772
+    #
+    # Such issue causes a module to not be reloaded if the size of the source file
+    # has not changed.
+    if os.path.exists(mpath) and overwrite in (None, False):
       raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
       f.write(code)
 
-  return get_module(name)
+    return importlib.reload(get_module(name))
 
 
 def module_name(name):
