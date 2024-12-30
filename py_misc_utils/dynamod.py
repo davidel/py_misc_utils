@@ -72,10 +72,10 @@ def create_module(name, code, overwrite=None):
         #
         # Such issue causes a module to not be reloaded if the size of the source file
         # has not changed.
-        # So BIG HACK here to add an extra newline if that's the case!
+        # So BIG HACK here to add an headline comment if that's the case!
         reload = True
         if os.stat(mpath).st_size == len(code):
-          code = code + '\n'
+          code = f'# Note: Added due to https://bugs.python.org/issue31772\n\n{code}'
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
