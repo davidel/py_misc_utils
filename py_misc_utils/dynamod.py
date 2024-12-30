@@ -67,14 +67,20 @@ def create_module(name, code, overwrite=None):
     #
     # Such issue causes a module to not be reloaded if the size of the source file
     # has not changed.
-    if os.path.exists(mpath) and overwrite in (None, False):
-      raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
+    reload = False
+    if os.path.exists(mpath):
+      if overwrite in (None, False):
+        raise RuntimeError(f'Dynamic module "{name}" already exists: {mpath}')
+      else:
+        reload = True
 
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, mode='w') as f:
       f.write(code)
 
-    return importlib.reload(get_module(name))
+    module = get_module(name)
+
+    return importlib.reload(module) if reload else module
 
 
 def module_name(name):
@@ -82,7 +88,8 @@ def module_name(name):
 
 
 def get_module(name):
-  return importlib.import_module(module_name(name))
+  with _LOCK:
+    return importlib.import_module(module_name(name))
 
 
 _FOLDER_KEY = 'dynamod_folder'
