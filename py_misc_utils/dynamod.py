@@ -45,7 +45,7 @@ def _get_mod_folder(create=False):
     return _MOD_FOLDER
 
 
-def _set_mod_folder(src_path):
+def _clone_mod_folder(src_path):
   global _MOD_FOLDER
 
   path = _create_root()
@@ -59,12 +59,12 @@ def _set_mod_folder(src_path):
   _MOD_FOLDER = path
 
 
-_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 8))
+_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 10))
 
 def make_code_name(code):
   chash = hashlib.sha1(code.encode()).hexdigest()[: _HASHNAME_LEN]
 
-  return f'_hashed.ch_{chash}'
+  return f'_hashed._{chash}'
 
 
 def create_module(name, code, overwrite=None):
@@ -117,7 +117,7 @@ def wrap_procfn_parent(kwargs):
 def wrap_procfn_child(kwargs):
   path = kwargs.pop(_FOLDER_KEY, None)
   if path is not None:
-    _set_mod_folder(path)
+    _clone_mod_folder(path)
 
   return kwargs
 
