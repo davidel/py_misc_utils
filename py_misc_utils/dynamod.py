@@ -6,20 +6,28 @@ import sys
 import threading
 
 
+_MODROOT = 'pym'
+
+def _create_root():
+  from . import tempdir as tmpd
+
+  path = os.path.join(tmpd.get_temp_root(), _MODROOT)
+  os.mkdir(path)
+
+  return path
+
+
 _MODNAME = '_dynamod'
 
 def _create_mod_folder():
-  from . import tempdir as tmpd
-
-  path = os.path.join(tmpd.get_temp_root(), 'pym')
+  path = _create_root()
   dpath = os.path.join(path, _MODNAME)
-  if not os.path.isdir(dpath):
-    os.makedirs(dpath)
+  os.mkdir(dpath)
 
-    with open(os.path.join(dpath, '__init__.py'), mode='w') as fd:
-      pass
+  with open(os.path.join(dpath, '__init__.py'), mode='w') as fd:
+    pass
 
-    sys.path.append(path)
+  sys.path.append(path)
 
   return dpath
 
@@ -27,7 +35,7 @@ def _create_mod_folder():
 _MOD_FOLDER = None
 _LOCK = threading.RLock()
 
-def get_mod_folder(create=False):
+def _get_mod_folder(create=False):
   global _MOD_FOLDER
 
   with _LOCK:
@@ -37,13 +45,18 @@ def get_mod_folder(create=False):
     return _MOD_FOLDER
 
 
-def set_mod_folder(path):
+def _set_mod_folder(src_path):
   global _MOD_FOLDER
 
-  with _LOCK:
-    _MOD_FOLDER = path
-    if path not in sys.path:
-      sys.path.append(path)
+  path = _create_root()
+  shutil.copytree(src_path, os.path.join(path, _MODNAME))
+
+  src_root = os.path.dirname(src_path)
+  if src_root in sys.path:
+    sys.path.remove(src_root)
+  sys.path.append(path)
+
+  _MOD_FOLDER = path
 
 
 _HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 8))
@@ -55,7 +68,7 @@ def make_code_name(code):
 
 
 def create_module(name, code, overwrite=None):
-  path = get_mod_folder(create=True)
+  path = _get_mod_folder(create=True)
   mpath = os.path.join(path, *name.split('.')) + '.py'
 
   with _LOCK:
@@ -96,7 +109,7 @@ def get_module(name):
 _FOLDER_KEY = 'dynamod_folder'
 
 def wrap_procfn_parent(kwargs):
-  kwargs.update({_FOLDER_KEY: get_mod_folder()})
+  kwargs.update({_FOLDER_KEY: _get_mod_folder()})
 
   return kwargs
 
@@ -104,7 +117,7 @@ def wrap_procfn_parent(kwargs):
 def wrap_procfn_child(kwargs):
   path = kwargs.pop(_FOLDER_KEY, None)
   if path is not None:
-    set_mod_folder(path)
+    _set_mod_folder(path)
 
   return kwargs
 
