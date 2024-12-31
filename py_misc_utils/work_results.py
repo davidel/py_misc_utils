@@ -3,6 +3,7 @@ import hashlib
 import os
 import pickle
 
+from . import core_utils as cu
 from . import rnd_utils as rngu
 
 
@@ -59,23 +60,8 @@ def make_error(msg):
   return _ERROR_TAG + msg
 
 
-@contextlib.contextmanager
 def write_result(path):
-  # This does FileOverwrite() task (locally limited) but here we do not pull that
-  # dependency to minimize the ones of this module.
-  tpath = rngu.temp_path(nspath=path)
-
-  fd = open(tpath, mode='wb')
-  try:
-    yield fd
-    fd.close()
-    fd = None
-  finally:
-    if fd is not None:
-      fd.close()
-      os.remove(tpath)
-    else:
-      os.replace(tpath, path)
+  return cu.atomic_write(path)
 
 
 def write_error(path, exception, **kwargs):
