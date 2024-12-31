@@ -3,12 +3,11 @@ import array
 import collections
 import contextlib
 import copy
-import hashlib
 import os
-import struct
 import sys
 import threading
 import types
+import uuid
 
 
 _NONE = object()
@@ -18,13 +17,10 @@ def ident(x):
   return x
 
 
-_ID_PACKER = struct.Struct('<Q')
 _UID_LENGTH = int(os.getenv('UID_LENGTH', 12))
 
 def unique_id():
-  id_bytes = _ID_PACKER.pack(os.getpid()) + _ID_PACKER.pack(threading.get_native_id())
-
-  return hashlib.sha1(id_bytes).hexdigest()[: _UID_LENGTH]
+  return uuid.uuid4().hex[: _UID_LENGTH]
 
 
 @contextlib.contextmanager
