@@ -46,6 +46,10 @@ def _get_mod_folder(create=False):
 
 
 def _clone_mod_folder(src_path):
+  # This copies the source folder into a new temporary one for the new process,
+  # which will be in turn deleted once this exists.
+  # We cannot point directly to the source folder since it will be removed once
+  # the parent exists.
   global _MOD_FOLDER
 
   path = _create_root()
@@ -59,7 +63,7 @@ def _clone_mod_folder(src_path):
   _MOD_FOLDER = path
 
 
-_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 10))
+_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 12))
 
 def make_code_name(code):
   chash = hashlib.sha1(code.encode()).hexdigest()[: _HASHNAME_LEN]

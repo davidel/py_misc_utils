@@ -2,13 +2,17 @@ import inspect
 import logging
 import os
 
+# Using the logging module above to not add the alog module dependency here,
+# since that requires more dependencies to be pulled.
+# At the end, alog.log(...) is exactly the same as logging.log(...) in substance.
+
 
 def _get_loc(path, lineno):
   if os.path.isfile(path):
-    with open(path, mode='r') as f:
-      lines = f.read().splitlines()
+    with open(path, mode='r') as fd:
+      lines = fd.read().splitlines()
 
-      return lines[lineno - 1] if len(lines) > lineno else None
+    return lines[lineno - 1] if len(lines) > lineno else None
 
 
 def _get_caller_info(n_back):
