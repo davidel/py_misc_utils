@@ -505,10 +505,6 @@ def numel(t):
   return np.prod(sp) if sp is not None else len(t)
 
 
-def round_up(v, step):
-  return ((v + step - 1) // step) * step
-
-
 def scale_data(data, base_data, scale):
   return ((data - base_data) / base_data) * scale
 

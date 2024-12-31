@@ -40,3 +40,11 @@ def sign_extend(value, nbits):
 
   return (value & (sign - 1)) - (value & sign)
 
+
+def round_up(v, step):
+  return ((v + step - 1) // step) * step
+
+
+def round_down(v, step):
+  return (v // step) * step
+
