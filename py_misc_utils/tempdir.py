@@ -1,8 +1,8 @@
 import os
+import shutil
 import tempfile
 
 from . import cleanups
-from . import gfs
 from . import init_variables as ivar
 from . import rnd_utils as rngu
 
@@ -10,11 +10,14 @@ from . import rnd_utils as rngu
 class _RootDir(ivar.VarBase):
 
   def __init__(self):
-    self.path = tempfile.mkdtemp()
-    self.cid = cleanups.register(gfs.rmtree, self.path, ignore_errors=True)
+    self._path = tempfile.mkdtemp()
+    self._cid = cleanups.register(shutil.rmtree, self._path, ignore_errors=True)
 
   def create(self):
-    return tempfile.mkdtemp(dir=self.path)
+    return tempfile.mkdtemp(dir=self._path)
+
+  def root(self):
+    return self._path
 
 
 _VARID = ivar.varid(__name__, 'tmproot')
@@ -25,6 +28,10 @@ def _root_dir():
 
 def create():
   return _root_dir().create()
+
+
+def get_temp_root():
+  return _root_dir().root()
 
 
 def _try_fastfs_dir(path):

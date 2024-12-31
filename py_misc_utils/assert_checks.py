@@ -2,10 +2,8 @@ import inspect
 import logging
 import os
 
-from . import alog
 
-
-def get_loc(path, lineno):
+def _get_loc(path, lineno):
   if os.path.isfile(path):
     with open(path, mode='r') as f:
       lines = f.read().splitlines()
@@ -13,19 +11,19 @@ def get_loc(path, lineno):
       return lines[lineno - 1] if len(lines) > lineno else None
 
 
-def get_caller_info(n_back):
+def _get_caller_info(n_back):
   frame = inspect.stack()[n_back + 1][0]
   caller = inspect.getframeinfo(frame)
-  loc = get_loc(caller.filename, caller.lineno)
+  loc = _get_loc(caller.filename, caller.lineno)
   if loc:
     return f'{caller.filename}:{caller.lineno}: {loc.lstrip()}'
 
   return f'{caller.filename}:{caller.lineno}'
 
 
-def report_fail(level, op, *args, **kwargs):
+def _report_fail(level, op, *args, **kwargs):
   fmsg = kwargs.get('msg')
-  cinfo = get_caller_info(2)
+  cinfo = _get_caller_info(2)
   if fmsg:
     cinfo = f'{cinfo}; {fmsg}'
   if op:
@@ -44,67 +42,67 @@ def report_fail(level, op, *args, **kwargs):
   else:
     msg = f'Check failed from {cinfo}'
 
-  alog.log(level, msg)
+  logging.log(level, msg)
 
   raise AssertionError(msg)
 
 
 def check(a, level=logging.ERROR, msg=None):
   if not a:
-    report_fail(level, None, msg=msg)
+    _report_fail(level, None, msg=msg)
 
 
 def check_fn(fn, *args, level=logging.ERROR, msg=None):
   if not fn(*args):
-    report_fail(level, fn, *args, msg=msg)
+    _report_fail(level, fn, *args, msg=msg)
 
 
 def check_fnres_eq(res, fn, *args, level=logging.ERROR, msg=None):
   if not (fn(*args) == res):
-    report_fail(level, fn, *args, res=res, res_op='==', msg=msg)
+    _report_fail(level, fn, *args, res=res, res_op='==', msg=msg)
 
 
 def check_fnres_ne(res, fn, *args, level=logging.ERROR, msg=None):
   if fn(*args) == res:
-    report_fail(level, fn, *args, res=res, res_op='!=', msg=msg)
+    _report_fail(level, fn, *args, res=res, res_op='!=', msg=msg)
 
 
 def check_is_none(a, level=logging.ERROR, msg=None):
   if a is not None:
-    report_fail(level, '==', a, 'None', msg=msg)
+    _report_fail(level, '==', a, 'None', msg=msg)
 
 
 def check_is_not_none(a, level=logging.ERROR, msg=None):
   if a is None:
-    report_fail(level, '!=', a, 'None', msg=msg)
+    _report_fail(level, '!=', a, 'None', msg=msg)
 
 
 def check_eq(a, b, level=logging.ERROR, msg=None):
   if not (a == b):
-    report_fail(level, '==', a, b, msg=msg)
+    _report_fail(level, '==', a, b, msg=msg)
 
 
 def check_ne(a, b, level=logging.ERROR, msg=None):
   if not (a != b):
-    report_fail(level, '!=', a, b, msg=msg)
+    _report_fail(level, '!=', a, b, msg=msg)
 
 
 def check_le(a, b, level=logging.ERROR, msg=None):
   if not (a <= b):
-    report_fail(level, '<=', a, b, msg=msg)
+    _report_fail(level, '<=', a, b, msg=msg)
 
 
 def check_ge(a, b, level=logging.ERROR, msg=None):
   if not (a >= b):
-    report_fail(level, '>=', a, b, msg=msg)
+    _report_fail(level, '>=', a, b, msg=msg)
 
 
 def check_lt(a, b, level=logging.ERROR, msg=None):
   if not (a < b):
-    report_fail(level, '<', a, b, msg=msg)
+    _report_fail(level, '<', a, b, msg=msg)
 
 
 def check_gt(a, b, level=logging.ERROR, msg=None):
   if not (a > b):
-    report_fail(level, '>', a, b, msg=msg)
+    _report_fail(level, '>', a, b, msg=msg)
 

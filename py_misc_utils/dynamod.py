@@ -3,25 +3,23 @@ import importlib
 import os
 import shutil
 import sys
-import tempfile
 import threading
 
 
 _MODNAME = '_dynamod'
 
 def _create_mod_folder():
-  path = tempfile.mkdtemp()
+  from . import tempdir as tmpd
+
+  path = os.path.join(tmpd.get_temp_root(), 'pym')
   dpath = os.path.join(path, _MODNAME)
-  os.makedirs(dpath)
+  if not os.path.isdir(dpath):
+    os.makedirs(dpath)
 
-  with open(os.path.join(dpath, '__init__.py'), mode='w') as fd:
-    pass
+    with open(os.path.join(dpath, '__init__.py'), mode='w') as fd:
+      pass
 
-  sys.path.append(path)
-
-  from . import cleanups
-
-  cleanups.register(shutil.rmtree, path, ignore_errors=True)
+    sys.path.append(path)
 
   return dpath
 
