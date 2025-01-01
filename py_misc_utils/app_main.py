@@ -95,34 +95,49 @@ def basic_main(mainfn, description='Basic Main'):
   main(parser, mainfn)
 
 
-_CONTEXT_KEY = '_parent_context'
 _ARGS_KEY = 'main_args'
 
-def _apply_child_context(kwargs):
+def _wrap_procfn_parent(method, ctx):
+  if method == 'spawn':
+    ctx.update({_ARGS_KEY: _ARGS})
+
+  return ctx
+
+
+def _wrap_procfn_child(ctx):
   global _ARGS
 
-  ctx = kwargs.pop(_CONTEXT_KEY, None)
-  if ctx is not None:
-    if (args := ctx.pop(_ARGS_KEY, None)) is not None:
-      _ARGS = args
-      init_modules = _get_init_modules()
-      _config_modules(init_modules, args)
+  if (args := ctx.pop(_ARGS_KEY, None)) is not None:
+    _ARGS = args
+    init_modules = _get_init_modules()
+    _config_modules(init_modules, args)
 
-    from . import dynamod
-    ctx = dynamod.wrap_procfn_child(ctx)
+  return ctx
+
+
+_CONTEXT_KEY = '_parent_context'
+
+def _capture_parent_context(method, kwargs):
+  ctx = dict()
+
+  ctx = _wrap_procfn_parent(method, ctx)
+
+  from . import dynamod
+  ctx = dynamod.wrap_procfn_parent(method, ctx)
+
+  if ctx:
+    kwargs.update({_CONTEXT_KEY: ctx})
 
   return kwargs
 
 
-def _capture_parent_context(kwargs):
-  ctx = dict()
+def _apply_child_context(kwargs):
+  ctx = kwargs.pop(_CONTEXT_KEY, None)
+  if ctx is not None:
+    ctx = _wrap_procfn_child(ctx)
 
-  ctx.update({_ARGS_KEY: _ARGS})
-
-  from . import dynamod
-  ctx = dynamod.wrap_procfn_parent(ctx)
-
-  kwargs.update({_CONTEXT_KEY: ctx})
+    from . import dynamod
+    ctx = dynamod.wrap_procfn_child(ctx)
 
   return kwargs
 
@@ -152,11 +167,8 @@ def create_process(mainfn, args=None, kwargs=None, context=None):
   args = () if args is None else args
   kwargs = {} if kwargs is None else kwargs
 
-  if mpctx.get_start_method() == 'fork':
-    target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
-  else:
-    kwargs = _capture_parent_context(kwargs)
-    target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
+  kwargs = _capture_parent_context(mpctx.get_start_method(), kwargs)
+  target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
 
   return mpctx.Process(target=target)
 

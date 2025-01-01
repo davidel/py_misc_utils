@@ -112,7 +112,7 @@ def get_module(name):
 
 _FOLDER_KEY = 'dynamod_folder'
 
-def wrap_procfn_parent(kwargs):
+def wrap_procfn_parent(method, kwargs):
   kwargs.update({_FOLDER_KEY: _get_mod_folder()})
 
   return kwargs
