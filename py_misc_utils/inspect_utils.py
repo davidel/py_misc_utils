@@ -41,6 +41,12 @@ def current_module():
   return inspect.getmodule(tb.get_frame(1))
 
 
+def has_argument(func, name):
+  sig = inspect.signature(func)
+
+  return name in sig.parameters
+
+
 def fetch_args(func, locs):
   sig = inspect.signature(func)
 
