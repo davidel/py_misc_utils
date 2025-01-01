@@ -242,8 +242,8 @@ def make_object_recursive(**kwargs):
   return make_object(**kwargs)
 
 
-def locals_capture(locs, exclude=None):
-  exclude = set(expand_strings(value_or(exclude, 'self')))
+def locals_capture(locs, exclude='self'):
+  exclude = set(expand_strings(exclude, 'self'))
 
   return make_object(**{k: v for k, v in locs.items() if k not in exclude})
 

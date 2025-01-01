@@ -13,13 +13,12 @@ from . import utils as ut
 class ParquetStreamer:
 
   def __init__(self, url,
-               batch_size=None,
+               batch_size=128,
                load_columns=None,
                rename_columns=None,
                num_workers=None,
                **kwargs):
     self._url = url
-    self._batch_size = ut.value_or(batch_size, 128)
     self._load_columns = ut.value_or(load_columns, dict())
     self._rename_columns = ut.value_or(rename_columns, dict())
     self._num_workers = num_workers
