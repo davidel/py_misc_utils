@@ -203,7 +203,7 @@ class Main:
 
       help_str = f'Argument "{n}" (type={ptype.__name__}) of function {fname}(...)'
       if defval is None or p.kind == p.POSITIONAL_ONLY:
-        parser.add_argument(n, type=ptype, default=defval, help=help_str)
+        parser.add_argument(n, metavar=n.upper(), type=ptype, default=defval, help=help_str)
       else:
         parser.add_argument(f'--{n}', type=ptype, default=defval, help=help_str)
 
