@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import os
 import shutil
@@ -154,4 +155,26 @@ def temp_path(nspath=None, nsdir=None, rndsize=_TMPFN_RNDSIZE):
   nsdir = tempfile.gettempdir() if nsdir is None else nsdir
 
   return os.path.join(nsdir, f'{rngu.rand_string(rndsize)}.tmp')
+
+
+# This does FileOverwrite() task (although locally limited) but here we do not
+# pull that dependency to allow inlcusion in this module (which allows none).
+@contextlib.contextmanager
+def atomic_write(path, mode='wb', create_parents=False):
+  tpath = temp_path(nspath=path)
+
+  if create_parents:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+  fd = open(tpath, mode=mode)
+  try:
+    yield fd
+    fd.close()
+    fd = None
+  finally:
+    if fd is not None:
+      fd.close()
+      os.remove(tpath)
+    else:
+      os.replace(tpath, path)
 

@@ -1,41 +1,17 @@
 # This module is for APIs which has no local dependecies.
 import array
 import collections
-import contextlib
 import copy
 import os
 import sys
 import threading
 import types
-import uuid
 
 _NONE = object()
 
 
 def ident(x):
   return x
-
-
-@contextlib.contextmanager
-def atomic_write(path, mode='wb', create_parents=False):
-  # This does FileOverwrite() task (although locally limited) but here we do not
-  # pull that dependency to allow inlcusion in this module (which allows none).
-  tpath = f'{path}.{uuid.uuid4().hex}'
-
-  if create_parents:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-  fd = open(tpath, mode=mode)
-  try:
-    yield fd
-    fd.close()
-    fd = None
-  finally:
-    if fd is not None:
-      fd.close()
-      os.remove(tpath)
-    else:
-      os.replace(tpath, path)
 
 
 def object_context(sobj, **kwargs):

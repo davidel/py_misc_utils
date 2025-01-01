@@ -3,8 +3,7 @@ import hashlib
 import os
 import pickle
 
-from . import core_utils as cu
-from . import rnd_utils as rngu
+from . import fs_utils as fsu
 
 
 class WorkException:
@@ -61,7 +60,7 @@ def make_error(msg):
 
 
 def write_result(path):
-  return cu.atomic_write(path)
+  return fsu.atomic_write(path)
 
 
 def write_error(path, exception, **kwargs):
