@@ -82,10 +82,10 @@ class HttpAsyncFetcher:
     return wmap
 
   def wait(self, url):
-    tas.check(url in self._pending, msg=f'URL already retired: {url}')
-
     wpath = wres.work_path(self._path, url)
     if not os.path.isfile(wpath):
+      tas.check(url in self._pending, msg=f'URL already retired: {url}')
+
       while self._pending:
         (rurl, result) = self._async_manager.fetch_result()
 
