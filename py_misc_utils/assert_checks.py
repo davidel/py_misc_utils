@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 
+# Note: This is a core module, which cannot have local imports!
 # Using the logging module above to not add the alog module dependency here,
 # since that requires more dependencies to be pulled.
 # At the end, alog.log(...) is exactly the same as logging.log(...) in substance.

@@ -17,7 +17,6 @@ from . import lockfile as lockf
 from . import no_except as nox
 from . import obj
 from . import osfd
-from . import rnd_utils as rngu
 from . import tempdir as tmpd
 
 
@@ -69,7 +68,7 @@ class CachedBlockFile:
 
   @classmethod
   def create(cls, path, meta):
-    tpath = rngu.temp_path(nspath=path)
+    tpath = fsu.temp_path(nspath=path)
     try:
       os.makedirs(tpath, exist_ok=True)
       os.mkdir(cls.blocks_dir(tpath))
@@ -89,7 +88,7 @@ class CachedBlockFile:
     bpath = self._fblock_path(offset)
     with lockf.LockFile(bpath):
       if (sres := fsu.stat(bpath)) is None:
-        tpath = rngu.temp_path(nspath=bpath)
+        tpath = fsu.temp_path(nspath=bpath)
         try:
           rsize = self._reader.read_block(tpath, offset, self.meta.block_size)
           if rsize > 0:

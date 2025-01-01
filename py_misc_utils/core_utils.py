@@ -9,7 +9,6 @@ import threading
 import types
 import uuid
 
-
 _NONE = object()
 
 
@@ -17,17 +16,11 @@ def ident(x):
   return x
 
 
-_UID_LENGTH = int(os.getenv('UID_LENGTH', 12))
-
-def unique_id():
-  return uuid.uuid4().hex[: _UID_LENGTH]
-
-
 @contextlib.contextmanager
 def atomic_write(path, mode='wb', create_parents=False):
   # This does FileOverwrite() task (although locally limited) but here we do not
   # pull that dependency to allow inlcusion in this module (which allows none).
-  tpath = f'{path}.{unique_id()}'
+  tpath = f'{path}.{uuid.uuid4().hex}'
 
   if create_parents:
     os.makedirs(os.path.dirname(path), exist_ok=True)

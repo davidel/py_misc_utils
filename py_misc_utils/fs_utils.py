@@ -1,6 +1,7 @@
 import functools
 import os
 import shutil
+import tempfile
 
 from . import alog
 from . import assert_checks as tas
@@ -40,7 +41,7 @@ def os_opener(*args, **kwargs):
 
 
 def safe_rmtree(path, **kwargs):
-  tpath = rngu.temp_path(nspath=path)
+  tpath = temp_path(nspath=path)
   try:
     os.rename(path, tpath)
   except FileNotFoundError:
@@ -142,4 +143,15 @@ def du(path, follow_symlinks=None, visited=None):
                  visited=visited)
 
   return size
+
+
+_TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
+
+def temp_path(nspath=None, nsdir=None, rndsize=_TMPFN_RNDSIZE):
+  if nspath is not None:
+    return f'{nspath}.{rngu.rand_string(rndsize)}'
+
+  nsdir = tempfile.gettempdir() if nsdir is None else nsdir
+
+  return os.path.join(nsdir, f'{rngu.rand_string(rndsize)}.tmp')
 

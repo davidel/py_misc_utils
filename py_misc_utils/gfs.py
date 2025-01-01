@@ -14,7 +14,6 @@ from . import cached_file as chf
 from . import context_managers as cm
 from . import fs_utils as fsu
 from . import mirror_from as mrf
-from . import rnd_utils as rngu
 from . import run_once as ro
 
 
@@ -27,7 +26,7 @@ class TempFile:
     nsdir = nsdir if nsdir is None or is_local_path(nsdir) else None
     nspath = nspath if nspath is None or is_local_path(nspath) else None
 
-    self._fs, self._path = resolve_fs(rngu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
+    self._fs, self._path = resolve_fs(fsu.temp_path(nspath=nspath, nsdir=nsdir), **kwargs)
     self._kwargs = kwargs
     self._fd, self._delete = None, False
 

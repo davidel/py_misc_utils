@@ -67,8 +67,8 @@ def _find_fastfs_dir():
 _FASTFS_DIR = _find_fastfs_dir()
 _NAMELEN = int(os.getenv('FASTFS_NAMELEN', 12))
 
-def fastfs_dir(name=None, namelen=None):
-  name = name or rngu.rand_string(namelen or _NAMELEN)
+def fastfs_dir(name=None, namelen=_NAMELEN):
+  name = name or rngu.rand_string(namelen)
 
   path = os.path.join(_FASTFS_DIR, name)
   os.makedirs(path, exist_ok=True)
