@@ -6,6 +6,9 @@ from . import assert_checks as tas
 from . import traceback as tb
 
 
+_NONE = object()
+
+
 def _fn_lookup(frame, name):
   xns, xname = None, name
   while True:
@@ -48,13 +51,11 @@ def fetch_args(func, locs, input_args=()):
     if len(args) < len(input_args):
       args.append(input_args[len(args)])
     else:
-      pv = locs.get(n, inspect.Signature.empty)
-      if pv is not inspect.Signature.empty:
+      pv = locs.get(n, _NONE)
+      if pv is not _NONE:
         args.append(pv)
-      else:
-        fself = getattr(func, '__self__', None)
-        if args or fself is not None:
-          alog.xraise(RuntimeError, f'Missing argument: {n}')
+      elif args:
+        alog.xraise(RuntimeError, f'Missing argument: {n}')
 
   args, kwargs = [], dict()
   for n, p in sig.parameters.items():
@@ -88,8 +89,8 @@ def get_fn_kwargs(args, func, prefix=None, roffset=None):
       if di >= 0:
         fnargs[an] = args.get(nn, sdefaults[di])
       elif roffset is not None and i >= roffset:
-        aval = args.get(nn, inspect.Signature.empty)
-        tas.check(aval is not inspect.Signature.empty,
+        aval = args.get(nn, _NONE)
+        tas.check(aval is not _NONE,
                   msg=f'The "{an}" argument must be present as "{nn}": {args}')
         fnargs[an] = aval
 
