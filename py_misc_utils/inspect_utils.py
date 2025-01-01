@@ -41,24 +41,20 @@ def current_module():
   return inspect.getmodule(tb.get_frame(1))
 
 
-def has_argument(func, name):
-  sig = inspect.signature(func)
-
-  return name in sig.parameters
-
-
-def fetch_args(func, locs):
+def fetch_args(func, locs, input_args=()):
   sig = inspect.signature(func)
 
   def args_append(args, n):
-    pv = locs.get(n, inspect.Signature.empty)
-    if pv is not inspect.Signature.empty:
-      args.append(pv)
+    if len(args) < len(input_args):
+      args.append(input_args[len(args)])
     else:
-      fself = getattr(func, '__self__', None)
-      if args or fself is not None:
-        alog.xraise(RuntimeError, f'Missing argument: {n}')
-
+      pv = locs.get(n, inspect.Signature.empty)
+      if pv is not inspect.Signature.empty:
+        args.append(pv)
+      else:
+        fself = getattr(func, '__self__', None)
+        if args or fself is not None:
+          alog.xraise(RuntimeError, f'Missing argument: {n}')
 
   args, kwargs = [], dict()
   for n, p in sig.parameters.items():
