@@ -7,6 +7,7 @@ import threading
 
 import numpy as np
 
+from . import app_main
 from . import cleanups
 from . import init_variables as ivar
 from . import work_results as wres
@@ -60,11 +61,11 @@ Work = collections.namedtuple('Work', 'id, ctor')
 
 class _Worker:
 
-  def __init__(self, wid, out_queue):
+  def __init__(self, mpctx, wid, out_queue):
     self._wid = wid
     self._out_queue = out_queue
-    self._in_queue = multiprocessing.Queue()
-    self._proc = multiprocessing.Process(target=self._run)
+    self._in_queue = mpctx.Queue()
+    self._proc = app_main.create_process(self._run, context=mpctx)
     self._proc.start()
 
   def _run(self):
@@ -114,11 +115,11 @@ class _Worker:
 
 class AsyncManager:
 
-  def __init__(self, num_workers=None):
+  def __init__(self, num_workers=None, mpctx=multiprocessing):
     num_workers = num_workers or os.cpu_count()
 
-    self._out_queue = multiprocessing.Queue()
-    self._workers = [_Worker(i, self._out_queue) for i in range(num_workers)]
+    self._out_queue = mpctx.Queue()
+    self._workers = [_Worker(mpctx, i, self._out_queue) for i in range(num_workers)]
     self._lock = threading.Lock()
     self._queued = np.zeros(num_workers, dtype=np.int64)
 

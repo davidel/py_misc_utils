@@ -173,6 +173,12 @@ def create_process(mainfn, args=None, kwargs=None, context=None):
   return mpctx.Process(target=target)
 
 
+# This is similar to Fire but brings up the app_main infrastructure.
+# Use as:
+#
+# @app_main.Main
+# def my_main(arg, ..., kwarg=17, ...):
+#   ...
 class Main:
 
   def __init__(self, func):

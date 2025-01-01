@@ -32,14 +32,19 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
 
 class HttpAsyncFetcher:
 
-  def __init__(self, path=None, num_workers=None, http_args=None):
+  def __init__(self,
+               path=None,
+               num_workers=None,
+               http_args=None,
+               mpctx=None):
     self._ctor_path = path
     self._path = None
+    self._num_workers = num_workers
     self._http_args = ut.dict_setmissing(
       http_args or dict(),
       timeout=ut.getenv('FETCHER_TIMEO', dtype=float, defval=10.0),
     )
-    self._num_workers = num_workers
+    self._mpctx = mpctx
     self._async_manager = None
     self._pending = set()
 
@@ -55,7 +60,8 @@ class HttpAsyncFetcher:
     else:
       self._path = self._ctor_path
 
-    async_manager = asym.AsyncManager(num_workers=self._num_workers)
+    async_manager = asym.AsyncManager(**cu.denone(num_workers=self._num_workers,
+                                                  mpctx=self._mpctx))
 
     finfn = functools.partial(self._cleaner,
                               cu.object_context(self, _async_manager=async_manager))
