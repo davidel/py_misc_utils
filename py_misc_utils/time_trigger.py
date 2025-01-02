@@ -7,7 +7,7 @@ class TimeTrigger:
     self._interval = interval
     self.next = time.time() + interval
 
-  def __call__(self):
+  def __bool__(self):
     if self._interval:
       if (now := time.time()) >= self.next:
         self.next = now + self._interval
