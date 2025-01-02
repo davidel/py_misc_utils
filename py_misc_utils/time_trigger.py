@@ -3,15 +3,16 @@ import time
 
 class TimeTrigger:
 
-  def __init__(self, trig):
-    self.trig = trig
-    self.last = time.time()
+  def __init__(self, interval):
+    self._interval = interval
+    self.next = time.time() + interval
 
   def __call__(self):
-    now = time.time()
-    if now >= self.last + self.trig:
-      self.last = now
-      return True
+    if self._interval:
+      if (now := time.time()) >= self.next:
+        self.next = now + self._interval
+
+        return True
 
     return False
 
