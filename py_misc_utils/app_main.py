@@ -207,9 +207,20 @@ class Main:
       else:
         ptype = type(defval) if defval is not None else str
 
+      action = argparse.BooleanOptionalAction if ptype is bool else None
+
       help_str = f'Argument "{n}" (type={ptype.__name__}) of function {fname}(...)'
       if p.default is p.empty or p.kind == p.POSITIONAL_ONLY:
-        parser.add_argument(n, metavar=n.upper(), type=ptype, default=defval, help=help_str)
+        parser.add_argument(n,
+                            metavar=n.upper(),
+                            action=action,
+                            type=ptype,
+                            default=defval,
+                            help=help_str)
       else:
-        parser.add_argument(f'--{n}', type=ptype, default=defval, help=help_str)
+        parser.add_argument(f'--{n}',
+                            action=action,
+                            type=ptype,
+                            default=defval,
+                            help=help_str)
 
