@@ -4,6 +4,7 @@ import gc
 import inspect
 import multiprocessing
 import sys
+import yaml
 
 from . import alog
 from . import cleanups
@@ -205,7 +206,7 @@ class Main:
       if p.annotation is not p.empty:
         ptype = p.annotation
       else:
-        ptype = type(defval) if defval is not None else str
+        ptype = type(defval) if defval is not None else yaml.safe_load
 
       action = argparse.BooleanOptionalAction if ptype is bool else None
 
