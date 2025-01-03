@@ -294,10 +294,6 @@ def format(seq, fmt):
   return type(seq)(sfmt.format(x) for x in seq)
 
 
-def seqfirst(s):
-  return next(iter(s))
-
-
 def value_or(v, defval):
   return v if v is not None else defval
 

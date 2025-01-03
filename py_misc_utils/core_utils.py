@@ -38,6 +38,17 @@ def denone(**kwargs):
   return {k: v for k, v in kwargs.items() if v is not None}
 
 
+def seqfirst(s):
+  return next(iter(s))
+
+
+def iter_next(it, defval=None):
+  try:
+    return next(it)
+  except StopIteration:
+    return defval
+
+
 def enum_values(obj):
   if isinstance(obj, dict):
     for k, v in obj.items():
