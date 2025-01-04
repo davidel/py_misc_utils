@@ -11,7 +11,7 @@ from . import alog
 from . import assert_checks as tas
 from . import core_utils as cu
 from . import gfs
-from . import np_utils as pyn
+from . import np_utils as npu
 from . import utils as ut
 
 
@@ -59,7 +59,7 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
     else:
       df_test = pd.read_csv(fd, nrows=rows_sample, **args)
       fd.seek(0)
-      dtype = {c: dtype for c in get_typed_columns(df_test, pyn.is_numeric)}
+      dtype = {c: dtype for c in get_typed_columns(df_test, npu.is_numeric)}
 
     return pd.read_csv(fd, dtype=dtype, **args)
 
@@ -127,7 +127,7 @@ def to_npdict(df, reset_index=False, dtype=None, no_convert=()):
   for c in df.columns:
     data = df[c].to_numpy()
     if dtype is not None and c not in no_convert:
-      data = pyn.astype(data, c, dtype)
+      data = npu.astype(data, c, dtype)
     cdata[c] = data
 
   return cdata

@@ -3,7 +3,7 @@ import collections
 import numpy as np
 
 from . import core_utils as cu
-from . import np_utils as ut
+from . import np_utils as npu
 
 
 class TransformArray(collections.abc.Sequence):
