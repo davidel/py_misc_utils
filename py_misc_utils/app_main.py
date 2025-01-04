@@ -180,6 +180,12 @@ def create_process(mainfn, args=None, kwargs=None, context=None):
 # @app_main.Main
 # def my_main(arg, ..., kwarg=17, ...):
 #   ...
+#
+# if __name__ == '__main__':
+#   parser = argparse.ArgumentParser(...)
+#   ...
+#   app_main.main(parser, my_main, ...)
+#
 class Main:
 
   def __init__(self, func):
