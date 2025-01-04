@@ -7,47 +7,58 @@ from . import core_utils as cu
 from . import np_utils as npu
 
 
-class _NpCaster:
+class _NoopCaster:
+
+  def in_cast(self, value):
+    return value
+
+  def out_cast(self, value):
+    return value
+
+  def buffer_cast(self, values):
+    return values
+
+
+class _NpCaster(_NoopCaster):
 
   def __init__(self, dtype):
+    super().__init__()
     self.dtype = dtype
 
-  def cast(self, value):
+  def out_cast(self, value):
     return self.dtype.type(value)
 
   def buffer_cast(self, values):
     return np.array(values, dtype=self.dtype)
 
 
-class _TypeCaster:
+class _TypeCaster(_NoopCaster):
 
   def __init__(self, vtype):
+    super().__init__()
     self.vtype = vtype
 
-  def cast(self, value):
+  def out_cast(self, value):
     return self.vtype(value)
 
   def buffer_cast(self, values):
     return [self.vtype(v) for v in values]
 
 
-class _StrCaster:
+class _StrCaster(_NoopCaster):
 
   def __init__(self, str_table):
+    super().__init__()
     self.str_table = str_table
 
-  def cast(self, value):
+  def in_cast(self, value):
     return self.str_table.add(value)
-
-  def buffer_cast(self, values):
-    return values
 
 
 class ArrayStorage:
 
   def __init__(self):
     self.data = dict()
-    self._casters = dict()
     self._str_table = cu.StringTable()
 
   def _create_buffer(self, value):
@@ -60,52 +71,45 @@ class ArrayStorage:
     elif isinstance(value, bool):
       return array.array('B'), _TypeCaster(bool)
     elif isinstance(value, int):
-      return array.array('q'), None
+      return array.array('q'), _NoopCaster()
     elif isinstance(value, float):
-      return array.array('d'), None
+      return array.array('d'), _NoopCaster()
     elif isinstance(value, str):
       return [], _StrCaster(self._str_table)
     else:
-      return [], None
+      return [], _NoopCaster()
 
   def _get_buffer(self, name, value):
-    buf = self.data.get(name)
-    if buf is None:
-      buf, caster = self._create_buffer(value)
-      self.data[name] = buf
-      if caster is not None:
-        self._casters[name] = caster
+    buf_caster = self.data.get(name)
+    if buf_caster is None:
+      buf_caster = self._create_buffer(value)
+      self.data[name] = buf_caster
 
-    return buf
+    return buf_caster
 
   def __len__(self):
-    return min(*[len(buf) for buf in self.data.values()])
+    return min(*[len(buf) for buf, caster in self.data.values()])
 
   def __getitem__(self, i):
     item = dict()
-    for name, buf in self.data.items():
+    for name, (buf, caster) in self.data.items():
       value = buf[i]
-      caster = self._casters.get(name)
-      item[name] = value if caster is None else caster.cast(value)
+      item[name] = caster.out_cast(value)
 
     return item
 
   def append(self, *args, **kwargs):
     for name, value in args:
-      buf = self._get_buffer(name, value)
-      buf.append(value)
+      buf, caster = self._get_buffer(name, value)
+      buf.append(caster.in_cast(value))
     for name, value in kwargs.items():
-      buf = self._get_buffer(name, value)
-      buf.append(value)
+      buf, caster = self._get_buffer(name, value)
+      buf.append(caster.in_cast(value))
 
   def dataframe(self):
     dfdata = dict()
-    for name, buf in self.data.items():
-      caster = self._casters.get(name)
-      if caster is None:
-        dfdata[name] = buf
-      else:
-        dfdata[name] = caster.buffer_cast(buf)
+    for name, (buf, caster) in self.data.items():
+      dfdata[name] = caster.buffer_cast(buf)
 
     return pd.DataFrame(data=dfdata)
 
