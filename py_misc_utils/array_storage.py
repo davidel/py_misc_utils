@@ -1,7 +1,9 @@
 import array
 
+import numpy as np
 import pandas as pd
 
+from . import core_utils as cu
 from . import np_utils as npu
 
 
@@ -29,11 +31,24 @@ class _TypeCaster:
     return [self.vtype(v) for v in values]
 
 
+class _StrCaster:
+
+  def __init__(self, str_table):
+    self.str_table = str_table
+
+  def cast(self, value):
+    return self.str_table.add(value)
+
+  def buffer_cast(self, values):
+    return values
+
+
 class ArrayStorage:
 
   def __init__(self):
     self.data = dict()
     self._casters = dict()
+    self._str_table = cu.StringTable()
 
   def _create_buffer(self, value):
     if npu.is_numpy(value):
@@ -48,6 +63,8 @@ class ArrayStorage:
       return array.array('q'), None
     elif isinstance(value, float):
       return array.array('d'), None
+    elif isinstance(value, str):
+      return [], _StrCaster(self._str_table)
     else:
       return [], None
 

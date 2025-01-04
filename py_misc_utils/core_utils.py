@@ -276,8 +276,7 @@ class StringTable:
   def add(self, s):
     x = self._tbl.get(s)
     if x is None:
-      x = s
-      self._tbl[x] = x
+      self._tbl[s] = x = s
 
     return x
 
