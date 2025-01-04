@@ -7,52 +7,59 @@ from . import core_utils as cu
 from . import np_utils as npu
 
 
-class _NoopCaster:
+class _BufferBase:
 
-  def in_cast(self, value):
-    return value
+  def append(self, value):
+    self.data.append(value)
 
-  def out_cast(self, value):
-    return value
+  def __len__(self):
+    return len(self.data)
 
-  def buffer_cast(self, values):
-    return values
+  def __getitem__(self, i):
+    return self.data[i]
 
-
-class _NpCaster(_NoopCaster):
-
-  def __init__(self, dtype):
-    super().__init__()
-    self.dtype = dtype
-
-  def out_cast(self, value):
-    return self.dtype.type(value)
-
-  def buffer_cast(self, values):
-    return np.array(values, dtype=self.dtype)
+  def get_buffer(self):
+    return self.data
 
 
-class _TypeCaster(_NoopCaster):
+class _Buffer(_BufferBase):
 
-  def __init__(self, vtype):
+  def __init__(self, typecode=None, vtype=None):
     super().__init__()
     self.vtype = vtype
+    self.data = [] if typecode is None else array.array(typecode)
 
-  def out_cast(self, value):
-    return self.vtype(value)
+  def __getitem__(self, i):
+    value = self.data[i]
+    return value if self.vtype is None else self.vtype(value)
 
-  def buffer_cast(self, values):
-    return [self.vtype(v) for v in values]
+  def get_buffer(self):
+    return self.data if self.vtype is None else [self.vtype(v) for v in self.data]
 
 
-class _StrCaster(_NoopCaster):
+class _NpBuffer(_BufferBase):
+
+  def __init__(self, typecode, dtype):
+    super().__init__()
+    self.dtype = dtype
+    self.data = array.array(typecode)
+
+  def __getitem__(self, i):
+    return self.dtype.type(self.data[i])
+
+  def get_buffer(self):
+    return np.array(self.data, dtype=self.dtype)
+
+
+class _StrBuffer(_BufferBase):
 
   def __init__(self, str_table):
     super().__init__()
     self.str_table = str_table
+    self.data = []
 
-  def in_cast(self, value):
-    return self.str_table.add(value)
+  def append(self, value):
+    self.data.append(self.str_table.add(value))
 
 
 class ArrayStorage:
@@ -63,53 +70,45 @@ class ArrayStorage:
 
   def _create_buffer(self, value):
     if npu.is_numpy(value):
-      caster = _NpCaster(value.dtype)
       if npu.is_integer(value.dtype):
-        return array.array('q'), caster
+        return _NpBuffer('q', value.dtype)
       else:
-        return array.array('d'), caster
+        return _NpBuffer('d', value.dtype)
     elif isinstance(value, bool):
-      return array.array('B'), _TypeCaster(bool)
+      return _Buffer(typecode='B', vtype=bool)
     elif isinstance(value, int):
-      return array.array('q'), _NoopCaster()
+      return _Buffer(typecode='q')
     elif isinstance(value, float):
-      return array.array('d'), _NoopCaster()
+      return _Buffer(typecode='d')
     elif isinstance(value, str):
-      return [], _StrCaster(self._str_table)
+      return _StrBuffer(self._str_table)
     else:
-      return [], _NoopCaster()
+      return _Buffer()
 
   def _get_buffer(self, name, value):
-    buf_caster = self.data.get(name)
-    if buf_caster is None:
-      buf_caster = self._create_buffer(value)
-      self.data[name] = buf_caster
+    buffer = self.data.get(name)
+    if buffer is None:
+      buffer = self._create_buffer(value)
+      self.data[name] = buffer
 
-    return buf_caster
+    return buffer
 
   def __len__(self):
-    return min(*[len(buf) for buf, caster in self.data.values()])
+    return min(*[len(buffer) for buffer in self.data.values()])
 
   def __getitem__(self, i):
-    item = dict()
-    for name, (buf, caster) in self.data.items():
-      value = buf[i]
-      item[name] = caster.out_cast(value)
-
-    return item
+    return {name: buffer[i] for name, buffer in self.data.items()}
 
   def append(self, *args, **kwargs):
     for name, value in args:
-      buf, caster = self._get_buffer(name, value)
-      buf.append(caster.in_cast(value))
+      buffer = self._get_buffer(name, value)
+      buffer.append(value)
     for name, value in kwargs.items():
-      buf, caster = self._get_buffer(name, value)
-      buf.append(caster.in_cast(value))
+      buffer = self._get_buffer(name, value)
+      buffer.append(value)
 
   def dataframe(self):
-    dfdata = dict()
-    for name, (buf, caster) in self.data.items():
-      dfdata[name] = caster.buffer_cast(buf)
+    dfdata = {name: buffer.get_buffer() for name, buffer in self.data.items()}
 
     return pd.DataFrame(data=dfdata)
 
