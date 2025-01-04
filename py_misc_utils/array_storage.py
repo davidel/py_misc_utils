@@ -73,7 +73,10 @@ class ArrayStorage:
 
     return item
 
-  def append(self, **kwargs):
+  def append(self, *args, **kwargs):
+    for name, value in args:
+      buf = self._get_buffer(name, value)
+      buf.append(value)
     for name, value in kwargs.items():
       buf = self._get_buffer(name, value)
       buf.append(value)
