@@ -3,6 +3,7 @@ import array
 import numpy as np
 import pandas as pd
 
+from . import assert_checks as tas
 from . import core_utils as cu
 from . import np_utils as npu
 
@@ -39,16 +40,37 @@ class _Buffer(_BufferBase):
 
 class _NpBuffer(_BufferBase):
 
-  def __init__(self, typecode, dtype):
+  def __init__(self, value):
+    tas.check_le(len(value.shape), 1, msg=f'Invalid shape: {value.shape}')
+    typecode = 'q' if npu.is_integer(value.dtype) else 'd'
+
     super().__init__()
-    self.dtype = dtype
+    self.dtype = value.dtype
     self.data = array.array(typecode)
+    self.size = value.size if value.shape else None
+
+  def append(self, value):
+    if self.size is None:
+      self.data.append(value)
+    else:
+      self.data.extend(value.flatten())
+
+  def __len__(self):
+    return len(self.data) if self.size is None else len(self.data) // self.size
 
   def __getitem__(self, i):
-    return self.dtype.type(self.data[i])
+    if self.size is None:
+      return self.dtype.type(self.data[i])
+
+    offset = i * self.size
+    return np.array(self.data[offset: offset + self.size], dtype=self.dtype)
 
   def get_buffer(self):
-    return np.array(self.data, dtype=self.dtype)
+    data = np.array(self.data, dtype=self.dtype)
+    if self.size is None:
+      return data
+
+    return [data[i: i + self.size] for i in range(0, len(self.data), self.size)]
 
 
 class _StrBuffer(_BufferBase):
@@ -70,10 +92,7 @@ class ArrayStorage:
 
   def _create_buffer(self, value):
     if npu.is_numpy(value):
-      if npu.is_integer(value.dtype):
-        return _NpBuffer('q', value.dtype)
-      else:
-        return _NpBuffer('d', value.dtype)
+      return _NpBuffer(value)
     elif isinstance(value, bool):
       return _Buffer(typecode='B', vtype=bool)
     elif isinstance(value, int):
