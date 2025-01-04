@@ -14,6 +14,10 @@ def ident(x):
   return x
 
 
+def noop(*args, **kwargs):
+  pass
+
+
 def object_context(sobj, **kwargs):
   ctx_args = vars(sobj).copy()
   ctx_args.update(**kwargs)
