@@ -53,6 +53,7 @@ class _NpBuffer(_BufferBase):
     if self.size is None:
       self.data.append(value)
     else:
+      tas.check_eq(value.size, self.size, msg=f'Invalid size: {value.size}')
       self.data.extend(value.flatten())
 
   def __len__(self):
@@ -107,13 +108,12 @@ class ArrayStorage:
   def _get_buffer(self, name, value):
     buffer = self.data.get(name)
     if buffer is None:
-      buffer = self._create_buffer(value)
-      self.data[name] = buffer
+      self.data[name] = buffer = self._create_buffer(value)
 
     return buffer
 
   def __len__(self):
-    return min(*[len(buffer) for buffer in self.data.values()])
+    return min(len(buffer) for buffer in self.data.values())
 
   def __getitem__(self, i):
     return {name: buffer[i] for name, buffer in self.data.items()}
