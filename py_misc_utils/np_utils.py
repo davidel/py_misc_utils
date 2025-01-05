@@ -289,3 +289,22 @@ class RingBuffer:
 
     return slices
 
+
+_NP_ARRAY_TYPECODES = {
+  np.bool: 'B',
+  np.int8: 'b',
+  np.uint8: 'B',
+  np.int16: 'h',
+  np.uint16: 'H',
+  np.int32: 'l',
+  np.uint32: 'L',
+  np.int64: 'q',
+  np.uint64: 'Q',
+  np.float16: 'f',
+  np.float32: 'f',
+  np.float64: 'd',
+}
+
+def array_typecode(dtype):
+  return _NP_ARRAY_TYPECODES.get(dtype.type)
+

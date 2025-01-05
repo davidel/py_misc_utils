@@ -42,7 +42,8 @@ class _NpBuffer(_BufferBase):
 
   def __init__(self, value):
     tas.check_le(len(value.shape), 1, msg=f'Invalid shape: {value.shape}')
-    typecode = 'q' if npu.is_integer(value.dtype) else 'd'
+
+    typecode = npu.array_typecode(value.dtype) or 'd'
 
     super().__init__()
     self.dtype = value.dtype
@@ -53,7 +54,8 @@ class _NpBuffer(_BufferBase):
     if self.size is None:
       self.data.append(value)
     else:
-      tas.check_eq(value.size, self.size, msg=f'Invalid size: {value.size}')
+      tas.check_eq(value.size, self.size,
+                   msg=f'Invalid size: {value.size} vs {self.size}')
       self.data.extend(value.flatten())
 
   def __len__(self):
