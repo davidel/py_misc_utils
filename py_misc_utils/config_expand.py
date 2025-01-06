@@ -25,8 +25,9 @@ class ExpandHelper:
         return str(value)
 
 
-def var_expand(sdata, mappings):
-  while True:
+def var_expand(sdata, mappings, max_depth=10):
+  # Prevent circular references by limiting lookups.
+  for n in range(max_depth):
     templ = string.Template(sdata)
     xdata = templ.safe_substitute(ExpandHelper(mappings))
     if xdata == sdata:
