@@ -55,6 +55,13 @@ def _expand(data, mappings):
   return data
 
 
+# This API allows configuration expansion of $VAR references, with mappings
+# that are the input data iself, or, for example, os.environ.
+# A string can reference ${A.B.C} which will be expanded to a value obtained
+# from progressively looking up A (from the root mappings), then B within A,
+# then C within B.
+# Valid mappings are either dictionaries (mapping['A']) or namespaces/objects
+# (mapping.A).
 def expand(data, envs=None):
   mappings = [data]
   if envs:
