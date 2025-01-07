@@ -2,22 +2,13 @@ import collections
 import re
 import string
 
+from . import core_utils as cu
+
 
 class ExpandHelper:
 
   def __init__(self, mappings):
     self.mappings = mappings
-
-  def _try_lookup(self, ns, key):
-    for part in key.split('.'):
-      if isinstance(ns, collections.abc.Mapping):
-        ns = ns.get(part)
-      else:
-        ns = getattr(ns, part, None)
-      if ns is None:
-        break
-
-    return ns
 
   def _parse_key(self, key):
     m = re.match(r'([^:]+):(.*)', key)
@@ -28,7 +19,7 @@ class ExpandHelper:
     lkey, defval = self._parse_key(key)
 
     for ns in self.mappings:
-      value = self._try_lookup(ns, lkey)
+      value = cu._lookup(ns, lkey)
       if value is not None:
         return str(value)
 

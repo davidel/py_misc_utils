@@ -93,6 +93,18 @@ def dget(sdict, name, defval, dtype=None):
   return dtype(v) if v is not None and dtype is not None else v
 
 
+def ns_lookup(ns, key):
+  for part in key.split('.'):
+    if isinstance(ns, collections.abc.Mapping):
+      ns = ns.get(part)
+    else:
+      ns = getattr(ns, part, None)
+    if ns is None:
+      break
+
+  return ns
+
+
 def index_select(arr, idx):
   return arr[idx] if isinstance(idx, slice) else [arr[i] for i in idx]
 
