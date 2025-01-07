@@ -32,14 +32,19 @@ class ExpandHelper:
       if value is not None:
         return str(value)
 
-    return defval
+    return self.substitute(defval) if defval is not None else defval
+
+  def substitute(self, sdata):
+    templ = string.Template(sdata)
+
+    return templ.safe_substitute(self)
 
 
 def var_expand(sdata, mappings, max_depth=10):
   # Prevent circular references by limiting lookups.
+  helper = ExpandHelper(mappings)
   for n in range(max_depth):
-    templ = string.Template(sdata)
-    xdata = templ.safe_substitute(ExpandHelper(mappings))
+    xdata = helper.substitute(sdata)
     if xdata == sdata:
       break
     sdata = xdata
