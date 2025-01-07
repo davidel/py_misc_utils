@@ -1,4 +1,5 @@
 import collections
+import re
 import string
 
 
@@ -18,11 +19,20 @@ class ExpandHelper:
 
     return ns
 
+  def _parse_key(self, key):
+    m = re.match(r'([^:]+):(.*)', key)
+
+    return (m.group(1), m.group(2)) if m else (key, None)
+
   def __getitem__(self, key):
+    lkey, defval = self._parse_key(key)
+
     for ns in self.mappings:
-      value = self._try_lookup(ns, key)
+      value = self._try_lookup(ns, lkey)
       if value is not None:
         return str(value)
+
+    return defval
 
 
 def var_expand(sdata, mappings, max_depth=10):
