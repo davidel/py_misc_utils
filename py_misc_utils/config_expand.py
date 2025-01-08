@@ -18,10 +18,9 @@ class ExpandHelper:
   def __getitem__(self, key):
     lkey, defval = self._parse_key(key)
 
-    for ns in self.mappings:
-      value = cu._lookup(ns, lkey)
-      if value is not None:
-        return str(value)
+    value = cu.ns_lookup(lkey, self.mappings)
+    if value is not None:
+      return str(value)
 
     return self.substitute(defval) if defval is not None else defval
 
@@ -54,7 +53,13 @@ def _expand(data, mappings):
   elif isinstance(data, set):
     return set(_expand(v, mappings) for v in data)
   elif isinstance(data, str):
-    return var_expand(data, mappings)
+    # The @KEY allows to reference any other data within the configuration.
+    if (m := re.match(r'@([\w\.]+)$', sdata)) is not None:
+      xdata = cu.ns_lookup(m.group(1), mappings)
+
+      return sdata if xdata is None else _expand(xdata, mappings)
+    else:
+      return var_expand(data, mappings)
   elif hasattr(data, '__dict__'):
     for k, v in vars(data).items():
       setattr(data, k, _expand(v, mappings))
