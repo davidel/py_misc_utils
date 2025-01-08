@@ -16,7 +16,6 @@ import numpy as np
 
 from . import alog
 from . import assert_checks as tas
-from . import config_expand as cex
 from . import core_utils as cu
 from . import file_overwrite as fow
 from . import gfs
@@ -195,7 +194,7 @@ def config_to_string(cfg, **kwargs):
   return yaml.dump(cfg, default_flow_style=default_flow_style, **kwargs)
 
 
-def parse_config(cfg, expand=False):
+def parse_config(cfg):
   if not cfg.startswith('{'):
     # It must be either a dictionary in YAML format, or a valid path.
     with gfs.open(cfg, mode='r') as fd:
@@ -203,21 +202,18 @@ def parse_config(cfg, expand=False):
   else:
     data = cfg
 
-  cfgd = yaml.safe_load(data)
-
-  return cex.expand(cfgd, envs=(os.environ,)) if expand else cfgd
+  return yaml.safe_load(data)
 
 
-def load_config(path, expand=False, extra=None):
+def load_config(path, extra=None):
   cfgd = parse_config(path)
 
-  # Wait for extras before eventual expand.
   if extra:
     for k, v in extra.items():
       if v is not None:
         cfgd[k] = v
 
-  return cex.expand(cfgd, envs=(os.environ,)) if expand else cfgd
+  return cfgd
 
 
 def fatal(msg, exc=RuntimeError):
