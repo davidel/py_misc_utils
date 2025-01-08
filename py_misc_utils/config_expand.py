@@ -42,6 +42,15 @@ def var_expand(sdata, mappings, max_depth=10):
   return xdata
 
 
+def _expand_string(data, mappings):
+  # The @KEY allows to reference any other data within the configuration.
+  if (m := re.match(r'@([\w\.]+)$', data)) is not None:
+    if (xdata := cu.ns_lookup(m.group(1), mappings)) is not None:
+      return _expand(xdata, mappings)
+
+  return var_expand(data, mappings)
+
+
 def _expand(data, mappings):
   if isinstance(data, collections.abc.Mapping):
     for k, v in data.items():
@@ -53,13 +62,7 @@ def _expand(data, mappings):
   elif isinstance(data, set):
     return set(_expand(v, mappings) for v in data)
   elif isinstance(data, str):
-    # The @KEY allows to reference any other data within the configuration.
-    if (m := re.match(r'@([\w\.]+)$', sdata)) is not None:
-      xdata = cu.ns_lookup(m.group(1), mappings)
-
-      return sdata if xdata is None else _expand(xdata, mappings)
-    else:
-      return var_expand(data, mappings)
+    return _expand_string(data, mappings)
   elif hasattr(data, '__dict__'):
     for k, v in vars(data).items():
       setattr(data, k, _expand(v, mappings))
