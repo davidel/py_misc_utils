@@ -133,6 +133,19 @@ def astype(data, col, dtype):
   return data if cdtype is None else data.astype(cdtype)
 
 
+def softmax(x):
+  e_x = np.exp(x - np.max(x))
+
+  return e_x / e_x.sum()
+
+
+def categorical(x, n=None):
+  probs = softmax(x)
+  values = np.random.multinomial(n or 1, pvals=probs)
+
+  return values[0] if n is None else values
+
+
 def moving_average(data, window, include_current=True):
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')
