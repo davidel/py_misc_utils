@@ -139,8 +139,8 @@ def softmax(x):
   return e_x / e_x.sum()
 
 
-def categorical(x, n=None):
-  probs = softmax(x)
+def categorical(un_probs, n=None):
+  probs = softmax(un_probs)
   values = np.random.choice(len(probs), size=n or 1, p=probs)
 
   return values[0] if n is None else values
