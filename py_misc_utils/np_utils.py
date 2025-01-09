@@ -141,7 +141,7 @@ def softmax(x):
 
 def categorical(x, n=None):
   probs = softmax(x)
-  values = np.random.multinomial(n or 1, pvals=probs)
+  values = np.random.choice(len(probs), size=n or 1, p=probs)
 
   return values[0] if n is None else values
 
