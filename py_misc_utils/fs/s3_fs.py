@@ -12,6 +12,7 @@ from .. import alog as alog
 from .. import assert_checks as tas
 from .. import cached_file as chf
 from .. import fs_base as fsb
+from .. import fs_utils as fsu
 from .. import iter_file as itf
 from .. import object_cache as objc
 from .. import osfd as osfd
@@ -31,7 +32,7 @@ _Credentials = collections.namedtuple(
 
 def _get_credentials(user=None):
   if user:
-    cfg_path = os.path.join(os.getenv('HOME', '.'), '.aws.conf')
+    cfg_path = os.path.join(fsu.home(), '.aws.conf')
     if not os.path.exists(cfg_path):
       alog.xraise(RuntimeError,
                   f'No configuration file "{cfg_path}" found to lookup credentials ' \

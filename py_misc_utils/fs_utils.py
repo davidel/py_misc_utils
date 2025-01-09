@@ -1,6 +1,7 @@
 import contextlib
 import functools
 import os
+import pathlib
 import shutil
 import tempfile
 
@@ -8,6 +9,10 @@ from . import alog
 from . import assert_checks as tas
 from . import osfd
 from . import rnd_utils as rngu
+
+
+def home():
+  return pathlib.Path.home()
 
 
 def link_or_copy(src_path, dest_path):
