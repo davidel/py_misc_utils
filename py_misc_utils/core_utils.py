@@ -97,7 +97,7 @@ def ns_lookup(key, mappings):
   kparts = key.split('.')
   for ns in mappings:
     for part in kparts:
-      if isinstance(ns, collections.abc.Mapping):
+      if isinstance(ns, dict):
         ns = ns.get(part)
       else:
         ns = getattr(ns, part, None)
