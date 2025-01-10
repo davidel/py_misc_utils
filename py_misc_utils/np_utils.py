@@ -146,6 +146,12 @@ def categorical(un_probs, n=None):
   return values[0] if n is None else values
 
 
+def onehot(values):
+  cat_max = np.max(values) + 1
+
+  return np.eye(cat_max)[values]
+
+
 def moving_average(data, window, include_current=True):
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')
