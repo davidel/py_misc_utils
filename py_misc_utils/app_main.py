@@ -4,6 +4,7 @@ import gc
 import inspect
 import multiprocessing
 import sys
+import typing
 import yaml
 
 from . import alog
@@ -208,9 +209,13 @@ class Main:
     fname = self._func.__name__
 
     for n, p in self._sig.parameters.items():
+      choices = None
       defval = p.default if p.default is not p.empty else None
       if p.annotation is not p.empty:
         ptype = p.annotation
+        if typing.get_origin(ptype) == typing.Literal:
+          choices = typing.get_args(ptype)
+          ptype = type(choices[0])
       else:
         ptype = type(defval) if defval is not None else yaml.safe_load
 
@@ -223,11 +228,13 @@ class Main:
                             action=action,
                             type=ptype,
                             default=defval,
+                            choices=choices,
                             help=help_str)
       else:
         parser.add_argument(f'--{n}',
                             action=action,
                             type=ptype,
                             default=defval,
+                            choices=choices,
                             help=help_str)
 
