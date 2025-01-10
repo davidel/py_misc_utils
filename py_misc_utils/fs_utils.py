@@ -15,6 +15,11 @@ def home():
   return pathlib.Path.home()
 
 
+def maybe_remove(path):
+  if os.path.exists(path):
+    os.remove(path)
+
+
 def link_or_copy(src_path, dest_path):
   try:
     os.link(src_path, dest_path)
