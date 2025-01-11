@@ -215,17 +215,11 @@ def is_ordered(v, reverse=False):
 
 class RingBuffer:
 
-  def __init__(self, size, dtype, init=None):
-    self._size = size
-    self._data = np.empty(size, dtype=dtype)
-    self._rpos, self._wpos, self._avail = 0, 0, size
-
-    if init is not None:
-      vinit = tuple(init) if isinstance(init, types.GeneratorType) else init
-      idata = np.array(vinit[-size:], dtype=dtype)
-      self._data[: len(idata)] = idata
-      self._avail -= len(idata)
-      self._wpos = len(idata) % size
+  def __init__(self, capacity, dtype, vshape=()):
+    self._capacity = capacity
+    self._vshape = tuple(vshape)
+    self._count = 0
+    self._data = np.empty((capacity,) + self._vshape, dtype=dtype)
 
   @property
   def dtype(self):
@@ -235,78 +229,62 @@ class RingBuffer:
   def shape(self):
     return (len(self), )
 
-  def push(self, v):
-    self._data[self._wpos] = v
-    self._wpos = (self._wpos + 1) % self._size
-    if self._avail > 0:
-      self._avail -= 1
-    else:
-      self._rpos = self._wpos
+  def resize(self, capacity):
+    self._data = np.resize(self._data, capacity)
+    self._count = min(self._count, self._capacity, capacity)
+    self._capacity = capacity
 
-  def pop(self):
-    tas.check_lt(self._avail, self._size, msg=f'Empty buffer')
+  def append(self, v):
+    self._data[self._count % self._capacity] = v
+    self._count += 1
 
-    v = self._data[self._rpos]
-    self._rpos = (self._rpos + 1) % self._size
-    self._avail += 1
+  def extend(self, v):
+    arr = np.asarray(v, dtype=self.dtype)
+    if self._vshape:
+      arr = arr.reshape((-1,) + self._vshape)
 
-    return v
+    pos = self._count % self._capacity
+    space = self._capacity - pos
+    front = min(space, len(arr))
+
+    self._data[pos:] = arr[: front]
+
+    space = self._capacity - space
+    back = min(space, len(arr) - front)
+    if back > 0:
+      self._data[: back] = arr[front: front + back]
+
+    self._count += front + back
 
   def to_numpy(self):
-    if len(self) == 0:
-      return np.empty(0, dtype=self.dtype)
+    return np.concatenate(tuple(self.iter_views()))
 
-    if self._wpos > self._rpos:
-      arr = self._data[self._rpos: self._wpos]
+  def iter_views(self):
+    if self._count <= self._capacity:
+      yield self._data[: self._count]
     else:
-      arr = np.concatenate((self._data[self._rpos:], self._data[: self._wpos]))
+      pos = self._count % self._capacity
 
-    return arr
+      yield self._data[pos:]
+
+      if pos > 0:
+        yield self._data[: pos]
 
   def __len__(self):
-    return self._size - self._avail
+    return min(self._capacity, self._count)
 
   def __getitem__(self, i):
-    if isinstance(i, slice):
-      return np.concatenate(tuple(self._data[s] for s in self._slice(i)))
+    if isinstance(i, int):
+      idx = (max(self._count, self._capacity) + i) % self._capacity
+    else:
+      idx = i
 
-    return self._data[self._rindex(i)]
+    return self._data[idx]
 
   def __array__(self, dtype=None):
     arr = self.to_numpy()
 
     return arr if dtype is None else arr.astype(dtype)
-
-  def _rindex(self, i):
-    return (self._rpos + i) % self._size
-
-  def _slice(self, s):
-    start = s.start if s.start is not None else 0
-    stop = s.stop if s.stop is not None else len(self)
-    step = s.step if s.step is not None else 1
-
-    start = self._rindex(start)
-    stop = self._rindex(stop)
-
-    slices = []
-    if step > 0:
-      if start < stop:
-        slices.append(slice(start, stop, step))
-      else:
-        slices.append(slice(start, self._size, step))
-
-        base = step - 1 - (self._size - start - 1) % step
-        slices.append(slice(base, stop, step))
-    else:
-      if start > stop:
-        slices.append(slice(start, stop, step))
-      else:
-        slices.append(slice(start, None, step))
-
-        rem = step + 1 + start % -step
-        slices.append(slice(self._size - 1 + rem, stop, step))
-
-    return slices
 
 
 _NP_ARRAY_TYPECODES = {
