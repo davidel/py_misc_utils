@@ -14,7 +14,6 @@ from .. import context_managers as cm
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import cached_file as chf
-from .. import no_except as nox
 from .. import object_cache as objc
 from .. import writeback_file as wbf
 

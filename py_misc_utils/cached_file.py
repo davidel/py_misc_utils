@@ -96,7 +96,7 @@ class CachedBlockFile:
             if offset == self.WHOLE_OFFSET:
               self._make_link(bpath)
         except:
-          nox.qno_except(os.remove, tpath)
+          fsu.maybe_remove(tpath)
           raise
       else:
         rsize = sres.st_size
