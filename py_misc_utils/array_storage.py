@@ -1,4 +1,5 @@
 import array
+import functools
 
 import numpy as np
 import pandas as pd
@@ -25,9 +26,10 @@ class _BufferBase:
 
 class _Buffer(_BufferBase):
 
-  def __init__(self, typecode=None, vtype=None):
+  def __init__(self, typecode=None, vtype=None, buf_vtype=None):
     super().__init__()
     self.vtype = vtype
+    self.buf_vtype = buf_vtype
     self.data = [] if typecode is None else array.array(typecode)
 
   def __getitem__(self, i):
@@ -35,15 +37,16 @@ class _Buffer(_BufferBase):
     return value if self.vtype is None else self.vtype(value)
 
   def get_buffer(self):
+    if self.buf_vtype is not None:
+      return self.buf_vtype(self.data)
+
     return self.data if self.vtype is None else [self.vtype(v) for v in self.data]
 
 
 class _NpBuffer(_BufferBase):
 
-  def __init__(self, value):
+  def __init__(self, value, typecode):
     tas.check_le(len(value.shape), 1, msg=f'Invalid shape: {value.shape}')
-
-    typecode = npu.array_typecode(value.dtype) or 'd'
 
     super().__init__()
     self.dtype = value.dtype
@@ -95,7 +98,10 @@ class ArrayStorage:
 
   def _create_buffer(self, value):
     if npu.is_numpy(value):
-      return _NpBuffer(value)
+      if (typecode := npu.array_typecode(value.dtype)) is None:
+        return _Buffer(buf_vtype=functools.partial(np.array, dtype=value.dtype))
+
+      return _NpBuffer(value, typecode)
     elif isinstance(value, bool):
       return _Buffer(typecode='B', vtype=bool)
     elif isinstance(value, int):
