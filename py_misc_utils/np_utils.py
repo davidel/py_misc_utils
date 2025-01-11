@@ -219,7 +219,7 @@ class RingBuffer:
     self._capacity = capacity
     self._vshape = tuple(vshape)
     self._count = 0
-    self._data = np.empty((capacity,) + self._vshape, dtype=dtype)
+    self._data = np.zeros((capacity,) + self._vshape, dtype=dtype)
 
   @property
   def dtype(self):
@@ -277,6 +277,7 @@ class RingBuffer:
     if isinstance(i, int):
       idx = (max(self._count, self._capacity) + i) % self._capacity
     else:
+      # Allow seamless slicing in case of non-integer indexing.
       idx = i
 
     return self._data[idx]
