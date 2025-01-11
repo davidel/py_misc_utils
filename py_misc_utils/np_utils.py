@@ -227,7 +227,7 @@ class RingBuffer:
 
   @property
   def shape(self):
-    return (len(self), )
+    return (len(self),) + self._vshape
 
   def resize(self, capacity):
     self._data = np.resize(self._data, capacity)
