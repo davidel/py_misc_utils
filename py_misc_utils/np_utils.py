@@ -215,7 +215,7 @@ def is_ordered(v, reverse=False):
 
 class RingBuffer:
 
-  def __init__(self, capacity, dtype, vshape=()):
+  def __init__(self, capacity, dtype, vshape):
     self._capacity = capacity
     self._vshape = tuple(vshape)
     self._count = 0
