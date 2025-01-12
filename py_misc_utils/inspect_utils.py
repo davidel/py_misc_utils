@@ -74,6 +74,12 @@ def fetch_args(func, locs, input_args=()):
   return args, kwargs
 
 
+def fetch_call(func, locs, input_args=()):
+  args, kwargs = fetch_args(func, locs, input_args=input_args)
+
+  return func(*args, **kwargs)
+
+
 def get_fn_kwargs(args, func, prefix=None, roffset=None):
   aspec = inspect.getfullargspec(func)
 
