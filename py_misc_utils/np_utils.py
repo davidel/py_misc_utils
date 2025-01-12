@@ -244,13 +244,11 @@ class RingBuffer:
       arr = arr.reshape((-1,) + self._vshape)
 
     pos = self._count % self._capacity
-    space = self._capacity - pos
-    front = min(space, len(arr))
+    front = min(self._capacity - pos, len(arr))
 
-    self._data[pos:] = arr[: front]
+    self._data[pos: pos + front] = arr[: front]
 
-    space = self._capacity - space
-    back = min(space, len(arr) - front)
+    back = min(pos, len(arr) - front)
     if back > 0:
       self._data[: back] = arr[front: front + back]
 
