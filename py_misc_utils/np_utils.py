@@ -232,7 +232,7 @@ class RingBuffer:
 
   def resize(self, capacity):
     self._data = np.resize(self._data, capacity)
-    self._count = min(self._count, self._capacity, capacity)
+    self._count = min(self._count % self._capacity, capacity)
     self._capacity = capacity
 
   def append(self, v):
