@@ -149,6 +149,8 @@ def categorical(un_probs, n=None):
 def onehot(values, num_categories=None):
   if num_categories is None:
     num_categories = np.max(values) + 1
+  else:
+    tas.check_lt(np.max(values), num_categories)
 
   return np.eye(num_categories)[values]
 
