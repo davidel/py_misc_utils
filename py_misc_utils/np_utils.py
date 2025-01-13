@@ -231,7 +231,7 @@ class RingBuffer:
     return (len(self),) + self._vshape
 
   def resize(self, capacity):
-    self._data = np.resize(self._data, capacity)
+    self._data = np.resize(self._data, (capacity,) + self._vshape)
     self._count = min(self._count % self._capacity, capacity)
     self._capacity = capacity
 
