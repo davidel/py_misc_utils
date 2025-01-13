@@ -269,6 +269,12 @@ class RingBuffer:
       if pos > 0:
         yield self._data[: pos]
 
+  def iter_indices(self):
+    if self._count <= self._capacity:
+      return np.arange(0, self._count)
+
+    return np.arange(self._count, self._count + self._capacity) % self._capacity
+
   def __len__(self):
     return min(self._capacity, self._count)
 
