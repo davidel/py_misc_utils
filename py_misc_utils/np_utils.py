@@ -219,14 +219,11 @@ def is_ordered(v, reverse=False):
 class RingBuffer:
 
   def __init__(self, capacity, dtype, vshape):
-    self._capacity = capacity
+    self.capacity = capacity
+    self.dtype = dtype
     self._vshape = tuple(vshape)
     self._count = 0
     self._data = np.zeros((capacity,) + self._vshape, dtype=dtype)
-
-  @property
-  def dtype(self):
-    return self._data.dtype
 
   @property
   def shape(self):
@@ -234,11 +231,11 @@ class RingBuffer:
 
   def resize(self, capacity):
     self._data = np.resize(self._data, (capacity,) + self._vshape)
-    self._count = min(self._count % self._capacity, capacity)
-    self._capacity = capacity
+    self._count = min(self._count % self.capacity, capacity)
+    self.capacity = capacity
 
   def append(self, v):
-    self._data[self._count % self._capacity] = v
+    self._data[self._count % self.capacity] = v
     self._count += 1
 
   def extend(self, v):
@@ -246,8 +243,8 @@ class RingBuffer:
     if self._vshape:
       arr = arr.reshape((-1,) + self._vshape)
 
-    pos = self._count % self._capacity
-    front = min(self._capacity - pos, len(arr))
+    pos = self._count % self.capacity
+    front = min(self.capacity - pos, len(arr))
 
     self._data[pos: pos + front] = arr[: front]
 
@@ -261,10 +258,10 @@ class RingBuffer:
     return np.concatenate(tuple(self.iter_views()))
 
   def iter_views(self):
-    if self._count <= self._capacity:
+    if self._count <= self.capacity:
       yield self._data[: self._count]
     else:
-      pos = self._count % self._capacity
+      pos = self._count % self.capacity
 
       yield self._data[pos:]
 
@@ -272,17 +269,17 @@ class RingBuffer:
         yield self._data[: pos]
 
   def iter_indices(self):
-    if self._count <= self._capacity:
+    if self._count <= self.capacity:
       return np.arange(0, self._count)
 
-    return np.arange(self._count, self._count + self._capacity) % self._capacity
+    return np.arange(self._count, self._count + self.capacity) % self.capacity
 
   def __len__(self):
-    return min(self._capacity, self._count)
+    return min(self.capacity, self._count)
 
   def __getitem__(self, i):
     if isinstance(i, int):
-      idx = (max(self._count, self._capacity) + i) % self._capacity
+      idx = (max(self._count, self.capacity) + i) % self.capacity
     else:
       # Allow seamless slicing in case of non-integer indexing.
       idx = i
