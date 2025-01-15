@@ -7,12 +7,12 @@ class Obj:
     self.update(**kwargs)
 
   def update(self, **kwargs):
-    self.__dict__.update(kwargs)
+    vars(self).update(kwargs)
 
     return self
 
   def update_from(self, obj):
-    self.__dict__.update(obj.__dict__)
+    vars(self).update(vars(obj))
 
     return self
 
@@ -24,7 +24,7 @@ class Obj:
 
   def as_dict(self):
     ad = dict()
-    for k, v in self.__dict__.items():
+    for k, v in vars(self).items():
       if isinstance(v, Obj):
         v = v.as_dict()
       elif isinstance(v, (list, tuple)):
@@ -50,21 +50,22 @@ class Obj:
 
   def __eq__(self, other):
     missing = object()
-    for k, v in self.__dict__.items():
+    for k, v in vars(self).items():
       ov = getattr(other, k, missing)
       if ov is missing or v != ov:
         return False
-    for k in other.__dict__.keys():
+    for k in vars(other).keys():
       if not hasattr(self, k):
         return False
 
     return True
 
   def __repr__(self):
-    values = ', '.join(f'{k}={str_value(v)}' for k, v in self.__dict__.items())
+    values = ', '.join(f'{k}={str_value(v)}' for k, v in vars(self).items())
 
     return f'{type(self).__name__}({values})'
 
 
 def str_value(v):
   return '"' + v.replace('"', '\\"') + '"' if isinstance(v, str) else str(v)
+
