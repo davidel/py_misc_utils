@@ -53,7 +53,9 @@ def classof(obj):
 
 
 def moduleof(obj):
-  return getattr(classof(obj), '__module__', None)
+  cls = classof(obj)
+
+  return getattr(cls, '__module__', None) if cls is not None else None
 
 
 def infer_str(v):
