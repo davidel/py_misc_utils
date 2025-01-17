@@ -68,6 +68,8 @@ def _wrap(obj):
     return wobj if wrapped else obj
   elif _needs_wrap(obj):
     return PickleWrap(obj)
+  elif isinstance(obj, PickleWrap):
+    return obj
   elif hasattr(obj, '__dict__'):
     state = dict()
     for k, v in obj.__dict__.items():
@@ -77,13 +79,7 @@ def _wrap(obj):
 
       wobj[k] = wv
 
-    if wrapped:
-      wobj = obj.__class__.new(obj.__class__)
-      wobj.__dict__.update(state)
-
-      return wobj
-    else:
-      return obj
+    return cu.new_with(obj, **state) if wrapped else obj
   else:
     return obj
 
@@ -128,13 +124,7 @@ def _unwrap(obj):
 
       uwobj[k] = wv
 
-    if unwrapped:
-      uwobj = obj.__class__.new(obj.__class__)
-      uwobj.__dict__.update(state)
-
-      return uwobj
-    else:
-      return obj
+    return cu.new_with(obj, **state) if unwrapped else obj
   else:
     return obj
 
