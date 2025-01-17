@@ -160,7 +160,9 @@ _TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
 
 def temp_path(nspath=None, nsdir=None, rndsize=_TMPFN_RNDSIZE):
   if nspath is not None:
-    return f'{nspath}.{rngu.rand_string(rndsize)}'
+    bpath, ext = os.path.splitext(nspath)
+
+    return f'{bpath}.{rngu.rand_string(rndsize)}{ext}'
 
   nsdir = tempfile.gettempdir() if nsdir is None else nsdir
 
