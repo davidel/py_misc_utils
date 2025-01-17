@@ -1,5 +1,6 @@
 import pickle
 
+from . import alog
 from . import core_utils as cu
 
 
@@ -115,7 +116,8 @@ def _unwrap(obj):
   elif isinstance(obj, PickleWrap):
     try:
       return obj.load()
-    except:
+    except Exception as ex:
+      alog.debug(f'Unable to reload pickle-wrapped data: {ex}')
       return obj
   elif hasattr(obj, '__dict__'):
     state = dict()
