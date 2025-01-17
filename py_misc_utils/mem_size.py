@@ -4,6 +4,8 @@ import threading
 
 import numpy as np
 
+from . import core_utils as cu
+
 
 _LOCK = threading.Lock()
 _TYPES_SIZE = dict()
@@ -44,7 +46,7 @@ def _get_size(obj, seen):
   else:
     size = sys.getsizeof(obj)
     if otype not in _SIZE_AWARE:
-      if isinstance(obj, dict):
+      if cu.isdict(obj):
         size += sum(_get_size(v, seen) + _get_size(k, seen) for k, v in obj.items())
       elif ustg := getattr(obj, 'untyped_storage', None):
         # Handle PyTorch tensors.
