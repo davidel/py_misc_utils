@@ -3,18 +3,6 @@ import pickle
 from . import core_utils as cu
 
 
-KNOWN_MODULES = {
-  'builtins',
-  'numpy',
-  'pandas',
-  'py_misc_utils',
-  'torch',
-}
-
-def add_known_module(modname):
-  KNOWN_MODULES.add(_root_module(modname))
-
-
 def _root_module(modname):
   return modname.split('.', maxsplit=1)[0]
 
@@ -29,6 +17,18 @@ def _fqcname(obj):
   cls = getattr(obj, '__class__', None)
   if cls is not None:
     return f'{cls.__module__}.{cls.__qualname__}'
+
+
+KNOWN_MODULES = {
+  'builtins',
+  'numpy',
+  'pandas',
+  'torch',
+  _root_module(__name__),
+}
+
+def add_known_module(modname):
+  KNOWN_MODULES.add(_root_module(modname))
 
 
 def _needs_wrap(obj):
