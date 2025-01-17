@@ -118,10 +118,9 @@ def _unwrap(obj):
 
     return uwobj if unwrapped else obj
   elif isinstance(obj, PickleWrap):
-    wclass = obj.wrapped_class()
-    if wclass is None or _root_module(wclass) in KNOWN_MODULES:
+    try:
       return obj.load()
-    else:
+    except:
       return obj
   elif hasattr(obj, '__dict__'):
     state = dict()
