@@ -183,7 +183,7 @@ _LOGGING_FRAMES = 1 if sys.version_info >= (3, 11) else 2
 def logging_args(kwargs):
   limit = kwargs.pop('limit', -1)
   stacklevel = kwargs.get('stacklevel', 1)
-  if limit < 0 or cl.trigger(stacklevel + 1, limit):
+  if limit < 0 or cl.trigger(__file__, limit):
     kwargs['stacklevel'] = stacklevel + _LOGGING_FRAMES
 
     return kwargs
