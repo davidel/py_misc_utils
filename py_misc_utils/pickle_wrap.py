@@ -89,12 +89,7 @@ def _wrap(obj):
 
 def _unwrap(obj):
   unwrapped = 0
-  if isinstance(obj, list):
-    for i, v in enumerate(obj):
-      obj[i] = _unwrap(v)
-
-    return obj
-  elif isinstance(obj, tuple):
+  if isinstance(obj, (list, tuple)):
     uwobj = []
     for v in obj:
       wv = _unwrap(v)
@@ -103,7 +98,7 @@ def _unwrap(obj):
 
       uwobj.append(wv)
 
-    return tuple(uwobj) if unwrapped else obj
+    return type(obj)(uwobj) if unwrapped else obj
   elif cu.isdict(obj):
     uwobj = type(obj)()
     for k, v in obj.items():
