@@ -117,7 +117,7 @@ def _unwrap(obj):
     try:
       return obj.load()
     except Exception as ex:
-      alog.debug(f'Unable to reload pickle-wrapped data: {ex}')
+      alog.debug(f'Unable to reload pickle-wrapped data ({obj.wrapped_class()}): {ex}')
       return obj
   elif hasattr(obj, '__dict__'):
     state = dict()
