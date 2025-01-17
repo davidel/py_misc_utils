@@ -33,6 +33,10 @@ def is_builtin_function(obj):
   return isinstance(obj, types.BuiltinFunctionType)
 
 
+def isdict(value):
+  return isinstance(value, collections.abc.Mapping)
+
+
 def refcount(obj):
   # Discard 2 frame references (our own, and the sys.getrefcount() one).
   return sys.getrefcount(obj) - 2
@@ -54,7 +58,7 @@ def iter_next(it, defval=None):
 
 
 def enum_values(obj):
-  if isinstance(obj, dict):
+  if isdict(obj):
     for k, v in obj.items():
       yield k, v
   else:
@@ -97,7 +101,7 @@ def ns_lookup(key, mappings):
   kparts = key.split('.')
   for ns in mappings:
     for part in kparts:
-      if isinstance(ns, dict):
+      if isdict(ns):
         ns = ns.get(part)
       else:
         ns = getattr(ns, part, None)
@@ -152,7 +156,7 @@ def unique(data):
 
 
 def signature(v):
-  if isinstance(v, dict):
+  if isdict(v):
     vdata = dict()
     for k in sorted(v.keys()):
       vdata[k] = signature(v[k])
@@ -167,8 +171,8 @@ def signature(v):
 
 
 def equal_signature(a, b, subcls=True):
-  if isinstance(a, dict):
-    if not isinstance(b, dict) or len(a) != len(b):
+  if isdict(a):
+    if not isdict(b) or len(a) != len(b):
       return False
 
     for k, t in a.items():
@@ -191,7 +195,7 @@ def equal_signature(a, b, subcls=True):
 
 
 def genhash(v):
-  if isinstance(v, dict):
+  if isdict(v):
     vdata = []
     for k in sorted(v.keys()):
       vdata.append(genhash(k))
@@ -259,7 +263,7 @@ def new_with(obj, **kwargs):
     return obj._replace(**kwargs)
 
   nobj = copy.copy(obj)
-  if isinstance(nobj, dict):
+  if isdict(nobj):
     nobj.update(kwargs)
   else:
     for k, v in kwargs.items():

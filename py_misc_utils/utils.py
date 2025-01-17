@@ -84,7 +84,7 @@ def _stri(obj, seen, float_fmt):
     sl = ', '.join(_stri(x, seen, float_fmt) for x in obj)
 
     result = '[' + sl + ']' if isinstance(obj, list) else '(' + sl + ')'
-  elif isinstance(obj, dict):
+  elif cu.isdict(obj):
     result = '{' + ', '.join(f'{k}={_stri(v, seen, float_fmt)}' for k, v in obj.items()) + '}'
   elif hasattr(obj, '__dict__'):
     # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
@@ -111,7 +111,7 @@ def mget(d, *args, as_dict=False):
 
 
 def getvar(obj, name, defval=None):
-  return obj.get(name, defval) if isinstance(obj, dict) else getattr(obj, name, defval)
+  return obj.get(name, defval) if cu.isdict(obj) else getattr(obj, name, defval)
 
 
 def dict_subset(d, *keys):
@@ -241,7 +241,7 @@ def make_object(**kwargs):
 
 def make_object_recursive(**kwargs):
   for k, v in kwargs.items():
-    if isinstance(v, dict):
+    if cu.isdict(v):
       kwargs[k] = make_object_recursive(**v)
 
   return make_object(**kwargs)
@@ -309,7 +309,7 @@ def dict_rget(sdict, path, defval=None, sep='/'):
 
   result = sdict
   for key in path:
-    if not isinstance(result, dict):
+    if not cu.isdict(result):
       return defval
     result = result.get(key, defval)
 
@@ -466,7 +466,7 @@ def data_rewrite(v, rwfn):
   elif isinstance(v, (list, tuple)):
     vals = [data_rewrite(x, rwfn) for x in v]
     return type(v)(vals)
-  elif isinstance(v, dict):
+  elif cu.isdict(v):
     return {data_rewrite(k, rwfn): data_rewrite(x, rwfn) for k, x in v.items()}
   else:
     return v
@@ -474,7 +474,7 @@ def data_rewrite(v, rwfn):
 
 def stringify(s):
   def rwfn(v):
-    if not isinstance(v, (list, tuple, dict)):
+    if not (isinstance(v, (list, tuple)) or cu.isdict(v)):
       return str(v)
 
   return data_rewrite(s, rwfn)

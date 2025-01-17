@@ -1,5 +1,7 @@
 import copy
 
+from . import core_utils as cu
+
 
 class Obj:
 
@@ -35,8 +37,8 @@ class Obj:
           vals.append(x)
 
         v = type(v)(vals)
-      elif isinstance(v, dict):
-        vd = dict()
+      elif cu.isdict(v):
+        vd = type(v)()
         for z, x in v.items():
           if isinstance(x, Obj):
             x = x.as_dict()

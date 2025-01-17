@@ -54,7 +54,7 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
 
     if dtype is None:
       return pd.read_csv(fd, **args)
-    if isinstance(dtype, dict):
+    if cu.isdict(dtype):
       dtype = {c: np.dtype(t) for c, t in dtype.items()}
     else:
       df_test = pd.read_csv(fd, nrows=rows_sample, **args)

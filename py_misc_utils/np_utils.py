@@ -4,6 +4,7 @@ import numpy as np
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 
 
 def diff_split(data, mask_fn, sort=True):
@@ -123,7 +124,7 @@ def is_sorted(data, descending=False):
 
 
 def astype(data, col, dtype):
-  if isinstance(dtype, dict):
+  if cu.isdict(dtype):
     cdtype = dtype.get(col)
   elif is_numeric(data.dtype):
     cdtype = dtype

@@ -2,12 +2,13 @@ import collections
 import gc
 
 from . import alog
+from . import core_utils as cu
 from . import inspect_utils as iu
 
 
 def _get_referred(obj):
   referred = []
-  if isinstance(obj, dict):
+  if cu.isdict(obj):
     for name, value in obj.items():
       referred.append((name, value))
   elif isinstance(obj, (list, tuple)):
