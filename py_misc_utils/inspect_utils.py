@@ -25,6 +25,30 @@ def cname(obj):
   return cls.__name__ if cls is not None else None
 
 
+_BUILTIN_NAMES = {'__builtin__', 'builtins'}
+
+def qual_name(obj, builtin_strip=False):
+  if (inspect.isclass(obj) or inspect.isfunction(obj) or
+      inspect.ismethod(obj) or inspect.ismodule(obj)):
+    ref = obj
+  else:
+    ref = obj.__class__
+
+  module = getattr(ref, '__module__', None)
+  name = getattr(ref, '__qualname__', None)
+  if name is None:
+    name = getattr(ref, '__name__', None)
+    tas.check_is_not_none(name, msg=f'Unable to reference name: {ref}')
+  if module is not None and not (builtin_strip and module in _BUILTIN_NAMES):
+    name = module + '.' + name
+
+  return name
+
+
+def is_subclass(cls, cls_group):
+  return inspect.isclass(cls) and issubclass(cls, cls_group)
+
+
 def _fn_lookup(frame, name):
   xns, xname = None, name
   while True:
@@ -142,26 +166,4 @@ def parent_coords(level=0):
   frame = tb.get_frame(level + 2)
 
   return frame.f_code.co_filename, frame.f_lineno
-
-
-def qual_name(obj):
-  if (inspect.isclass(obj) or inspect.isfunction(obj) or
-      inspect.ismethod(obj) or inspect.ismodule(obj)):
-    ref = obj
-  else:
-    ref = obj.__class__
-
-  module = getattr(ref, '__module__', None)
-  name = getattr(ref, '__qualname__', None)
-  if name is None:
-    name = getattr(ref, '__name__', None)
-    tas.check_is_not_none(name, msg=f'Unable to reference name: {ref}')
-  if module is not None and module != '__builtin__':
-    name = module + '.' + name
-
-  return name
-
-
-def is_subclass(cls, cls_group):
-  return inspect.isclass(cls) and issubclass(cls, cls_group)
 

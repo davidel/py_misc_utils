@@ -2,22 +2,11 @@ import pickle
 
 from . import alog
 from . import core_utils as cu
+from . import inspect_utils as iu
 
 
 def _root_module(modname):
   return modname.split('.', maxsplit=1)[0]
-
-
-def _obj_module(obj):
-  ref = getattr(obj, '__class__', obj)
-
-  return getattr(ref, '__module__', None)
-
-
-def _fqcname(obj):
-  cls = getattr(obj, '__class__', None)
-  if cls is not None:
-    return f'{cls.__module__}.{cls.__qualname__}'
 
 
 KNOWN_MODULES = {
@@ -33,7 +22,7 @@ def add_known_module(modname):
 
 
 def _needs_wrap(obj):
-  objmod = _obj_module(obj)
+  objmod = iu.moduleof(obj)
   if objmod is not None:
     if _root_module(objmod) in KNOWN_MODULES:
       return False
@@ -140,7 +129,7 @@ def unwrap(obj):
 class PickleWrap:
 
   def __init__(self, obj):
-    self._class = _fqcname(obj)
+    self._class = iu.qual_name(obj)
     self._data = pickle.dumps(obj)
 
   def wrapped_class(self):
