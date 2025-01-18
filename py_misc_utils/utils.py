@@ -37,25 +37,10 @@ def fname():
   return tb.get_frame(1).f_code.co_name
 
 
-def cname(obj):
-  cls = classof(obj)
-  return cls.__name__ if cls is not None else None
-
-
 def func_name(func):
   fname = getattr(func, '__name__', None)
 
   return fname if fname is not None else cname(func)
-
-
-def classof(obj):
-  return obj if inspect.isclass(obj) else getattr(obj, '__class__', None)
-
-
-def moduleof(obj):
-  cls = classof(obj)
-
-  return getattr(cls, '__module__', None) if cls is not None else None
 
 
 def infer_str(v):

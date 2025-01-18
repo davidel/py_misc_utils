@@ -9,6 +9,22 @@ from . import traceback as tb
 _NONE = object()
 
 
+def classof(obj):
+  return obj if inspect.isclass(obj) else getattr(obj, '__class__', None)
+
+
+def moduleof(obj):
+  cls = classof(obj)
+
+  return getattr(cls, '__module__', None) if cls is not None else None
+
+
+def cname(obj):
+  cls = classof(obj)
+
+  return cls.__name__ if cls is not None else None
+
+
 def _fn_lookup(frame, name):
   xns, xname = None, name
   while True:
