@@ -263,8 +263,8 @@ class RingBuffer:
   def to_numpy(self):
     return np.concatenate(tuple(self.iter_views()))
 
-  def data(self):
-    return np.array(self._data[: len(self)])
+  def data(self, dtype=None):
+    return np.array(self._data[: len(self)], dtype=dtype)
 
   def iter_views(self):
     if self._count <= self.capacity:
