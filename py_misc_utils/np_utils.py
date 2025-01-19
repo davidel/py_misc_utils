@@ -235,6 +235,11 @@ class RingBuffer:
     self._count = min(self._count, self.capacity, capacity)
     self.capacity = capacity
 
+  def select(self, indices):
+    indices = indices[indices < len(self)]
+    self._data = self._data[indices]
+    self._count = len(indices)
+
   def append(self, v):
     self._data[self._count % self.capacity] = v
     self._count += 1
