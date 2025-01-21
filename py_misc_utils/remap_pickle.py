@@ -17,13 +17,12 @@ class Unpickler(pickle.Unpickler):
     self._safe_modules = set(safe_modules) if safe_modules is not None else None
 
   def find_class(self, module, name):
-    if self._safe_modules is not None and module not in self._safe_modules:
-      alog.xraise(RuntimeError, f'Unsafe module: {module}')
-
     fqname = f'{module}.{name}'
     remap = self._remaps.get(fqname, fqname)
     if remap != fqname:
       alog.debug(f'Unpickle remapping: {fqname} -> {remap}')
+    elif self._safe_modules is not None and module not in self._safe_modules:
+      alog.xraise(RuntimeError, f'Unsafe module: {module}')
 
     return mu.import_module_names(remap)[0]
 
