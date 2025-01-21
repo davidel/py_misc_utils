@@ -1,6 +1,5 @@
 import io
 import pickle
-import re
 
 from . import alog
 from . import module_utils as mu
@@ -10,27 +9,17 @@ class Unpickler(pickle.Unpickler):
 
   def __init__(self, *args,
                remaps=None,
-               safe_globals=None,
+               safe_modules=None,
                **kwargs):
     super().__init__(*args, **kwargs)
     self._remaps = remaps or dict()
-    self._safe_globals = safe_globals
-
-  def _check_safe_class(self, fqname):
-    if self._safe_globals is not None:
-      match = None
-      for scrx in self._safe_globals:
-        match = re.match(scrx, fqname)
-        if match is not None:
-          break
-
-      if match is None:
-        alog.xraise(RuntimeError, f'Unsafe global: {fqname}')
+    self._safe_modules = set(safe_modules) if safe_modules is not None else None
 
   def find_class(self, module, name):
-    fqname = f'{module}.{name}'
-    self._check_safe_class(fqname)
+    if self._safe_modules is not None and module not in self._safe_modules:
+      alog.xraise(RuntimeError, f'Unsafe module: {module}')
 
+    fqname = f'{module}.{name}'
     remap = self._remaps.get(fqname, fqname)
     if remap != fqname:
       alog.debug(f'Unpickle remapping: {fqname} -> {remap}')
