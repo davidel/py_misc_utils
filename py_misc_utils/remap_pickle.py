@@ -1,5 +1,6 @@
 import io
 import pickle
+import re
 
 from . import alog
 from . import module_utils as mu
@@ -9,21 +10,26 @@ class Unpickler(pickle.Unpickler):
 
   def __init__(self, *args,
                remaps=None,
-               safe_modules=None,
+               safe_refs=None,
                **kwargs):
     super().__init__(*args, **kwargs)
     self._remaps = remaps or dict()
-    self._safe_modules = set(safe_modules) if safe_modules is not None else None
+    self._safe_refs = safe_refs
 
   def find_class(self, module, name):
     fqname = f'{module}.{name}'
     remap = self._remaps.get(fqname, fqname)
     if remap != fqname:
       alog.debug(f'Unpickle remapping: {fqname} -> {remap}')
-    elif self._safe_modules is not None:
-      root_module = module.split('.')[0]
-      if root_module not in self._safe_modules:
-        alog.xraise(RuntimeError, f'Unsafe module: {module}')
+    elif self._safe_refs is not None:
+      match = None
+      for srrx in self._safe_refs:
+        match = re.match(srrx, fqname)
+        if match is not None:
+          break
+
+      if match is None:
+        alog.xraise(RuntimeError, f'Unsafe reference: {fqname}')
 
     return mu.import_module_names(remap)[0]
 
