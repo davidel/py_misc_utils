@@ -1,6 +1,5 @@
 import io
 import pickle
-import sys
 
 from . import alog
 from . import module_utils as mu
@@ -44,17 +43,4 @@ def loads(data, *args, **kwargs):
 Pickler = pickle.Pickler
 dump = pickle.dump
 dumps = pickle.dumps
-
-
-_SAFE_MODULES = set()
-
-if hasattr(sys, 'stdlib_module_names'):
-  for mod in sys.stdlib_module_names:
-    _SAFE_MODULES.add(mod)
-if hasattr(sys, 'builtin_module_names'):
-  for mod in sys.builtin_module_names:
-    _SAFE_MODULES.add(mod)
-
-def safe_modules():
-  return set(_SAFE_MODULES)
 
