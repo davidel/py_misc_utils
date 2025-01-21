@@ -1,3 +1,4 @@
+import functools
 import importlib
 import importlib.util
 import inspect
@@ -134,21 +135,21 @@ def import_module(name_or_path,
   return module
 
 
+def _module_getter(dot_path, obj):
+  for name in dot_path.split('.'):
+    try:
+      obj = getattr(obj, name)
+    except AttributeError:
+      if inspect.ismodule(obj):
+        obj = importlib.import_module(obj.__name__ + '.' + name)
+      else:
+        raise
+
+  return obj
+
+
 def module_getter(dot_path):
-
-  def getter(obj):
-    for name in dot_path.split('.'):
-      try:
-        obj = getattr(obj, name)
-      except AttributeError:
-        if inspect.ismodule(obj):
-          obj = importlib.import_module(obj.__name__ + '.' + name)
-        else:
-          raise
-
-    return obj
-
-  return getter
+  return functools.partial(_module_getter, dot_path)
 
 
 def import_module_names(modname, names=None):
