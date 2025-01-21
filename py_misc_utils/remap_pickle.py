@@ -20,8 +20,10 @@ class Unpickler(pickle.Unpickler):
     remap = self._remaps.get(fqname, fqname)
     if remap != fqname:
       alog.debug(f'Unpickle remapping: {fqname} -> {remap}')
-    elif self._safe_modules is not None and module not in self._safe_modules:
-      alog.xraise(RuntimeError, f'Unsafe module: {module}')
+    elif self._safe_modules is not None:
+      root_module = module.split('.')[0]
+      if root_module not in self._safe_modules:
+        alog.xraise(RuntimeError, f'Unsafe module: {module}')
 
     return mu.import_module_names(remap)[0]
 
