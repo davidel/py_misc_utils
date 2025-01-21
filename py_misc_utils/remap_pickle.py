@@ -39,7 +39,7 @@ def loads(data, *args, **kwargs):
   return unpickler.load()
 
 
-# These are directly imported from the pickle module.
+# These are directly imported from the Python pickle module.
 Pickler = pickle.Pickler
 dump = pickle.dump
 dumps = pickle.dumps
