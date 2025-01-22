@@ -111,7 +111,7 @@ def _unwrap(obj, pickle_module):
       if wv is not v:
         unwrapped += 1
 
-      uwobj[k] = wv
+      state[k] = wv
 
     return cu.new_with(obj, **state) if unwrapped else obj
   else:
