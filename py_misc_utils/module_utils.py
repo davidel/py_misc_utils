@@ -169,3 +169,11 @@ def import_module_names(modname, names=None):
 def module_file(module):
   return getattr(module, '__file__', None)
 
+
+def clone_module(modname):
+  specs = importlib.util.find_spec(modname)
+  module = importlib.util.module_from_spec(specs)
+  specs.loader.exec_module(module)
+
+  return module
+

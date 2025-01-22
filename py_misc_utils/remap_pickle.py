@@ -43,9 +43,7 @@ def loads(data, *args, **kwargs):
 
 
 def make_module(**kwargs):
-  specs = importlib.util.find_spec('pickle')
-  module = importlib.util.module_from_spec(specs)
-  specs.loader.exec_module(module)
+  module = mu.clone_module('pickle')
 
   module.load = functools.partial(load, **kwargs)
   module.loads = functools.partial(loads, **kwargs)
