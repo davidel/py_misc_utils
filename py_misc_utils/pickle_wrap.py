@@ -30,12 +30,12 @@ def _needs_wrap(obj):
   return True
 
 
-def _wrap(obj):
+def _wrap(obj, pickle_module):
   wrapped = 0
   if isinstance(obj, (list, tuple)):
     wobj = []
     for v in obj:
-      wv = _wrap(v)
+      wv = _wrap(v, pickle_module)
       if wv is not v:
         wrapped += 1
 
@@ -45,10 +45,10 @@ def _wrap(obj):
   elif cu.isdict(obj):
     wobj = type(obj)()
     for k, v in obj.items():
-      wk = _wrap(k)
+      wk = _wrap(k, pickle_module)
       if wk is not k:
         wrapped += 1
-      wv = _wrap(v)
+      wv = _wrap(v, pickle_module)
       if wv is not v:
         wrapped += 1
 
@@ -56,13 +56,13 @@ def _wrap(obj):
 
     return wobj if wrapped else obj
   elif _needs_wrap(obj):
-    return PickleWrap(obj)
+    return PickleWrap(obj, pickle_module=pickle_module)
   elif isinstance(obj, PickleWrap):
     return obj
   elif hasattr(obj, '__dict__'):
     state = dict()
     for k, v in obj.__dict__.items():
-      wv = _wrap(v)
+      wv = _wrap(v, pickle_module)
       if wv is not v:
         wrapped += 1
 
@@ -73,12 +73,12 @@ def _wrap(obj):
     return obj
 
 
-def _unwrap(obj):
+def _unwrap(obj, pickle_module):
   unwrapped = 0
   if isinstance(obj, (list, tuple)):
     uwobj = []
     for v in obj:
-      wv = _unwrap(v)
+      wv = _unwrap(v, pickle_module)
       if wv is not v:
         unwrapped += 1
 
@@ -88,10 +88,10 @@ def _unwrap(obj):
   elif cu.isdict(obj):
     uwobj = type(obj)()
     for k, v in obj.items():
-      wk = _unwrap(k)
+      wk = _unwrap(k, pickle_module)
       if wk is not k:
         unwrapped += 1
-      wv = _unwrap(v)
+      wv = _unwrap(v, pickle_module)
       if wv is not v:
         unwrapped += 1
 
@@ -100,14 +100,14 @@ def _unwrap(obj):
     return uwobj if unwrapped else obj
   elif isinstance(obj, PickleWrap):
     try:
-      return obj.load()
+      return obj.load(pickle_module=pickle_module)
     except Exception as ex:
       alog.debug(f'Unable to reload pickle-wrapped data ({obj.wrapped_class()}): {ex}')
       return obj
   elif hasattr(obj, '__dict__'):
     state = dict()
     for k, v in obj.__dict__.items():
-      wv = _unwrap(v)
+      wv = _unwrap(v, pickle_module)
       if wv is not v:
         unwrapped += 1
 
@@ -118,23 +118,23 @@ def _unwrap(obj):
     return obj
 
 
-def wrap(obj):
-  return _wrap(obj)
+def wrap(obj, pickle_module=pickle):
+  return _wrap(obj, pickle_module)
 
 
-def unwrap(obj):
-  return _unwrap(obj)
+def unwrap(obj, pickle_module=pickle):
+  return _unwrap(obj, pickle_module)
 
 
 class PickleWrap:
 
-  def __init__(self, obj):
+  def __init__(self, obj, pickle_module=pickle):
     self._class = iu.qual_name(obj)
-    self._data = pickle.dumps(obj)
+    self._data = pickle_module.dumps(obj)
 
   def wrapped_class(self):
     return self._class
 
-  def load(self):
-    return pickle.loads(self._data)
+  def load(self, pickle_module=pickle):
+    return pickle_module.loads(self._data)
 

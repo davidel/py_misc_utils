@@ -1,5 +1,7 @@
+import functools
 import io
 import pickle
+import types
 
 from . import alog
 from . import module_utils as mu
@@ -39,8 +41,14 @@ def loads(data, *args, **kwargs):
   return unpickler.load()
 
 
-# These are directly imported from the Python pickle module.
-Pickler = pickle.Pickler
-dump = pickle.dump
-dumps = pickle.dumps
+def make_module(**kwargs):
+  module = types.SimpleNamespace()
+  for name, value in vars(pickle):
+    if not name.startswith('_'):
+      setattr(module, name, value)
+
+  module.load = functools.partial(load, **kwargs)
+  module.loads = functools.partial(loads, **kwargs)
+
+  return module
 
