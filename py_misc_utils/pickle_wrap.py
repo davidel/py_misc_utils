@@ -66,7 +66,7 @@ def _wrap(obj, pickle_module):
       if wv is not v:
         wrapped += 1
 
-      wobj[k] = wv
+      state[k] = wv
 
     return cu.new_with(obj, **state) if wrapped else obj
   else:
