@@ -43,9 +43,8 @@ def loads(data, *args, **kwargs):
 
 def make_module(**kwargs):
   module = types.SimpleNamespace()
-  for name, value in vars(pickle):
-    if not name.startswith('_'):
-      setattr(module, name, value)
+  for name, value in vars(pickle).items():
+    setattr(module, name, value)
 
   module.load = functools.partial(load, **kwargs)
   module.loads = functools.partial(loads, **kwargs)
