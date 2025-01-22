@@ -1,7 +1,8 @@
 import functools
+import importlib
+import importlib.util
 import io
 import pickle
-import types
 
 from . import alog
 from . import module_utils as mu
@@ -42,9 +43,9 @@ def loads(data, *args, **kwargs):
 
 
 def make_module(**kwargs):
-  module = types.SimpleNamespace()
-  for name, value in vars(pickle).items():
-    setattr(module, name, value)
+  specs = importlib.util.find_spec('pickle')
+  module = importlib.util.module_from_spec(specs)
+  specs.loader.exec_module(module)
 
   module.load = functools.partial(load, **kwargs)
   module.loads = functools.partial(loads, **kwargs)
