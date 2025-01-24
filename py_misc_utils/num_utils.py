@@ -48,3 +48,7 @@ def round_up(v, step):
 def round_down(v, step):
   return (v // step) * step
 
+
+def mix(a, b, gamma):
+  return a * gamma + b * (1.0 - gamma)
+
