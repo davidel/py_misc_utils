@@ -1,4 +1,5 @@
 from . import assert_checks as tas
+from . import num_utils as nu
 
 
 class MovingAverage:
@@ -12,7 +13,7 @@ class MovingAverage:
     if self.value is None:
       self.value = value
     else:
-      self.value = self.value * self._factor + value * (1.0 - self._factor)
+      self.value = nu.mix(self.value, value, self._factor)
 
     return self.value
 
