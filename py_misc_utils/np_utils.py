@@ -302,7 +302,7 @@ class RingBuffer:
 
 
 _NP_ARRAY_TYPECODES = {
-  np.bool: 'B',
+  getattr(np, 'bool', bool): 'B',
   np.int8: 'b',
   np.uint8: 'B',
   np.int16: 'h',
