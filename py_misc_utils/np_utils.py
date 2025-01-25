@@ -160,7 +160,10 @@ def normalize(data, axis=None):
   mean = np.mean(data, axis=axis)
   std = np.std(data, axis=axis)
 
-  std[np.where(std == 0.0)] = 1.0
+  if std.ndim > 0:
+    std[np.where(std == 0.0)] = 1.0
+  elif std == 0.0:
+    std = 1.0
 
   return (data - mean) / std
 
