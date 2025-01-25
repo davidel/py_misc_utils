@@ -156,6 +156,15 @@ def onehot(values, num_categories=None):
   return np.eye(num_categories)[values]
 
 
+def normalize(data, axis=None):
+  mean = np.mean(data, axis=axis)
+  std = np.std(data, axis=axis)
+
+  std[np.where(std == 0.0)] = 1.0
+
+  return (data - mean) / std
+
+
 def moving_average(data, window, include_current=True):
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')
