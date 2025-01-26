@@ -107,7 +107,9 @@ def fetch_args(func, locs, input_args=()):
       else:
         kwargs[n] = locs.get(n, p.default)
     else:
-      pv = locs.get(n, p.default)
+      pv = locs.get(n, _NONE)
+      if pv is _NONE or (pv is None and p.default is not inspect.Signature.empty):
+        pv = p.default
       if pv is not inspect.Signature.empty:
         kwargs[n] = pv
 
