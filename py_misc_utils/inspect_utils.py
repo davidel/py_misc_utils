@@ -97,6 +97,13 @@ def fetch_args(func, locs, input_args=()):
       elif args:
         alog.xraise(RuntimeError, f'Missing argument: {n}')
 
+  def kwargs_assign(kwargs, n, p):
+    pv = locs.get(n, _NONE)
+    if pv is _NONE or (pv is None and p.default is not inspect.Signature.empty):
+      pv = p.default
+    if pv is not inspect.Signature.empty:
+      kwargs[n] = pv
+
   args, kwargs = [], dict()
   for n, p in sig.parameters.items():
     if p.kind == p.POSITIONAL_ONLY:
@@ -105,13 +112,9 @@ def fetch_args(func, locs, input_args=()):
       if p.default is inspect.Signature.empty:
         args_append(args, n)
       else:
-        kwargs[n] = locs.get(n, p.default)
+        kwargs_assign(kwargs, n, p)
     else:
-      pv = locs.get(n, _NONE)
-      if pv is _NONE or (pv is None and p.default is not inspect.Signature.empty):
-        pv = p.default
-      if pv is not inspect.Signature.empty:
-        kwargs[n] = pv
+      kwargs_assign(kwargs, n, p)
 
   return args, kwargs
 
