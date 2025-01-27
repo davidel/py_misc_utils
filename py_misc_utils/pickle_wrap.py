@@ -54,7 +54,11 @@ def _needs_wrap(obj):
   objmod = iu.moduleof(obj)
   if objmod is not None:
     modname = _root_module(objmod)
-    if modname in KNOWN_MODULES or _module_libpath(modname) in _STDLIB_PATHS:
+    if modname in KNOWN_MODULES:
+      return False
+
+    lib_path = _module_libpath(modname)
+    if lib_path is None or lib_path in _STDLIB_PATHS:
       return False
 
   return True
