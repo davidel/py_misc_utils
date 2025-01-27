@@ -1,4 +1,7 @@
+import importlib
+import os
 import pickle
+import sys
 
 from . import alog
 from . import core_utils as cu
@@ -21,10 +24,37 @@ def add_known_module(modname):
   KNOWN_MODULES.add(_root_module(modname))
 
 
+def _module_origin(modname):
+  module = sys.modules.get(modname)
+  if module is None:
+    try:
+      module = importlib.import_module(modname)
+    except ModuleNotFoundError:
+      pass
+
+  if module is not None:
+    path = getattr(module, '__file__', None)
+    if path is None:
+      spec = getattr(module, '__spec__', None)
+      path = spec.origin if spec is not None else None
+
+    return path
+
+
+def _module_libpath(modname):
+  origin = _module_origin(modname)
+  if origin not in {None, 'built-in'}:
+    return os.path.dirname(origin)
+
+
+_STDLIB_MODULES = ('abc', 'copy', 'io', 'os', 'pickle', 'random', 'string')
+_STDLIB_PATHS = set(_module_libpath(m) for m in _STDLIB_MODULES)
+
 def _needs_wrap(obj):
   objmod = iu.moduleof(obj)
   if objmod is not None:
-    if _root_module(objmod) in KNOWN_MODULES:
+    modname = _root_module(objmod)
+    if modname in KNOWN_MODULES or _module_libpath(modname) in _STDLIB_PATHS:
       return False
 
   return True
@@ -55,20 +85,10 @@ def _wrap(obj, pickle_module):
       wobj[wk] = wv
 
     return wobj if wrapped else obj
-  elif _needs_wrap(obj):
-    return PickleWrap(obj, pickle_module=pickle_module)
   elif isinstance(obj, PickleWrap):
     return obj
-  elif hasattr(obj, '__dict__'):
-    state = dict()
-    for k, v in obj.__dict__.items():
-      wv = _wrap(v, pickle_module)
-      if wv is not v:
-        wrapped += 1
-
-      state[k] = wv
-
-    return cu.new_with(obj, **state) if wrapped else obj
+  elif _needs_wrap(obj):
+    return PickleWrap(obj, pickle_module=pickle_module)
   else:
     return obj
 
@@ -104,16 +124,6 @@ def _unwrap(obj, pickle_module):
     except Exception as ex:
       alog.debug(f'Unable to reload pickle-wrapped data ({obj.wrapped_class()}): {ex}')
       return obj
-  elif hasattr(obj, '__dict__'):
-    state = dict()
-    for k, v in obj.__dict__.items():
-      wv = _unwrap(v, pickle_module)
-      if wv is not v:
-        unwrapped += 1
-
-      state[k] = wv
-
-    return cu.new_with(obj, **state) if unwrapped else obj
   else:
     return obj
 
