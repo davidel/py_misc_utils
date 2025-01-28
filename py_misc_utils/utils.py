@@ -540,8 +540,10 @@ def parse_dict(data):
 
 
 def parse_args(in_args):
+  seq_args = comma_split(in_args) if isinstance(in_args, str) else in_args
+
   args, kwargs = [], dict()
-  for arg in in_args:
+  for arg in seq_args:
     parts = [x.strip() for x in arg.split('=', maxsplit=1)]
     if len(parts) == 2:
       kwargs[parts[0]] = yaml.safe_load(parts[1])
