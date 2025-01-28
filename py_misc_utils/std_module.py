@@ -26,7 +26,9 @@ def _module_origin(modname):
 def _module_libpath(modname):
   origin = _module_origin(modname)
   if origin not in {None, 'built-in'}:
-    return os.path.dirname(origin)
+    lib_path = os.path.dirname(origin)
+
+    return lib_path if lib_path else None
 
 
 # Some of the standard modules. Should be enough to get coverage of the
