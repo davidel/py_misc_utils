@@ -544,7 +544,7 @@ def parse_args(in_args):
 
   args, kwargs = [], dict()
   for arg in seq_args:
-    parts = [x.strip() for x in arg.split('=', maxsplit=1)]
+    parts = cu.separate(arg, '=')
     if len(parts) == 2:
       kwargs[parts[0]] = yaml.safe_load(parts[1])
     elif len(parts) == 1:

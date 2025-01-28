@@ -97,8 +97,12 @@ def dget(sdict, name, defval, dtype=None):
   return dtype(v) if v is not None and dtype is not None else v
 
 
+def separate(data, sep):
+  return tuple(x.strip() for x in data.split(sep, maxsplit=1))
+
+
 def root_module(modname):
-  return modname.split('.', maxsplit=1)[0]
+  return separate(modname, '.')[0]
 
 
 def ns_lookup(key, mappings):
