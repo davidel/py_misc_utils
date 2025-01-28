@@ -7,6 +7,7 @@ import sys
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import fs_utils as fsu
 from . import utils as ut
 
@@ -23,7 +24,7 @@ def split_module_name(name):
 
 
 def add_sys_path(path):
-  ut.append_if_missing(sys.path, path)
+  cu.append_if_missing(sys.path, path)
 
 
 def find_module_parent(path):

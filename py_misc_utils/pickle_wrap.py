@@ -6,10 +6,7 @@ import sys
 from . import alog
 from . import core_utils as cu
 from . import inspect_utils as iu
-
-
-def _root_module(modname):
-  return modname.split('.', maxsplit=1)[0]
+from . import std_module as stdm
 
 
 KNOWN_MODULES = {
@@ -17,48 +14,17 @@ KNOWN_MODULES = {
   'numpy',
   'pandas',
   'torch',
-  _root_module(__name__),
+  cu.root_module(__name__),
 }
 
 def add_known_module(modname):
-  KNOWN_MODULES.add(_root_module(modname))
-
-
-def _module_origin(modname):
-  module = sys.modules.get(modname)
-  if module is None:
-    try:
-      module = importlib.import_module(modname)
-    except ModuleNotFoundError:
-      pass
-
-  if module is not None:
-    path = getattr(module, '__file__', None)
-    if path is None:
-      spec = getattr(module, '__spec__', None)
-      path = spec.origin if spec is not None else None
-
-    return path
-
-
-def _module_libpath(modname):
-  origin = _module_origin(modname)
-  if origin not in {None, 'built-in'}:
-    return os.path.dirname(origin)
-
-
-_STDLIB_MODULES = ('abc', 'copy', 'io', 'os', 'pickle', 'random', 'string')
-_STDLIB_PATHS = set(_module_libpath(m) for m in _STDLIB_MODULES)
+  KNOWN_MODULES.add(cu.root_module(modname))
 
 def _needs_wrap(obj):
   objmod = iu.moduleof(obj)
   if objmod is not None:
-    modname = _root_module(objmod)
-    if modname in KNOWN_MODULES:
-      return False
-
-    lib_path = _module_libpath(modname)
-    if lib_path is None or lib_path in _STDLIB_PATHS:
+    modname = cu.root_module(objmod)
+    if modname in KNOWN_MODULES or stdm.is_std_module(modname):
       return False
 
   return True

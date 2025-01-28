@@ -126,11 +126,6 @@ def pop_kwargs(kwargs, names, args_key=None):
   return tuple(args)
 
 
-def append_if_missing(arr, elem):
-  if elem not in arr:
-    arr.append(elem)
-
-
 def resplit(csstr, sep):
   return sp.split(csstr, r'\s*' + sep + r'\s*')
 

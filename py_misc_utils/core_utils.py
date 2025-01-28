@@ -97,6 +97,10 @@ def dget(sdict, name, defval, dtype=None):
   return dtype(v) if v is not None and dtype is not None else v
 
 
+def root_module(modname):
+  return modname.split('.', maxsplit=1)[0]
+
+
 def ns_lookup(key, mappings):
   kparts = key.split('.')
   for ns in mappings:
@@ -121,6 +125,11 @@ def lindex(l, e, start=0, end=None):
     return l.index(e, start, end if end is not None else len(l))
   except ValueError:
     return -1
+
+
+def append_if_missing(arr, elem):
+  if elem not in arr:
+    arr.append(elem)
 
 
 def size_str(size):
