@@ -43,12 +43,12 @@ _STDLIB_MODULES = (
   'types',
 )
 _STDLIB_PATHS = set(filter(lambda x: x is not None,
-                           _module_libpath(m) for m in _STDLIB_MODULES))
+                           (_module_libpath(m) for m in _STDLIB_MODULES)))
 
 @functools.cache
 def is_std_module(modname):
   modname = cu.root_module(modname)
   lib_path = _module_libpath(modname)
 
-  return lib_path is None or lib_path in _STDLIB_PATHS:
+  return lib_path is None or lib_path in _STDLIB_PATHS
 
