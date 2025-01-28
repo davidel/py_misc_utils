@@ -542,7 +542,7 @@ def parse_dict(data):
 def parse_args(in_args):
   args, kwargs = [], dict()
   for arg in in_args:
-    parts = resplit(arg, '=')
+    parts = [x.strip() for x in arg.split('=', maxsplit=1)]
     if len(parts) == 2:
       kwargs[parts[0]] = yaml.safe_load(parts[1])
     elif len(parts) == 1:
