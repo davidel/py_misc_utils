@@ -3,9 +3,11 @@ import array
 import collections
 import copy
 import os
+import re
 import sys
 import threading
 import types
+import yaml
 
 _NONE = object()
 
@@ -95,6 +97,28 @@ def dget(sdict, name, defval, dtype=None):
     dtype = type(defval)
 
   return dtype(v) if v is not None and dtype is not None else v
+
+
+def to_type(v, vtype):
+  if isinstance(v, str):
+    if vtype in (list, tuple):
+      m = re.match(r'\s*\((.*)\)\s*$', v)
+      if m:
+        v = f'[{m.group(1)}]'
+      elif not re.match(r'\s*\[.*\]\s*$', v):
+        v = f'[{v}]'
+
+    v = yaml.safe_load(v)
+
+  return vtype(v)
+
+
+def cast(v, vtype):
+  return to_type(v, vtype) if v is not None else None
+
+
+def infer_value(v, vtype=None):
+  return yaml.safe_load(v) if vtype is None else to_type(v, vtype)
 
 
 def separate(data, sep):

@@ -43,10 +43,6 @@ def func_name(func):
   return fname if fname is not None else cname(func)
 
 
-def infer_str(v):
-  return infer_value(v) if isinstance(v, str) else v
-
-
 def _stri(obj, seen, float_fmt):
   oid = id(obj)
   sres = seen.get(oid, _NONE)
@@ -350,7 +346,7 @@ def getenv(name, dtype=None, defval=None):
   if env is None:
     env = defval
   if env is not None:
-    return to_type(env, dtype) if dtype is not None else env
+    return cu.to_type(env, dtype) if dtype is not None else env
 
 
 def env(name, defval, vtype=None):
@@ -364,7 +360,7 @@ def envs(*args, as_dict=False):
 def import_env(dest, *args):
   ivars = envs(*args, as_dict=True)
   for k, v in ivars.items():
-    dest[k] = infer_value(v)
+    dest[k] = cu.infer_value(v)
 
   return dest
 
@@ -517,22 +513,6 @@ def sleep_until(date, msg=None):
     if msg:
       alog.info(msg)
     time.sleep(date.timestamp() - now.timestamp())
-
-
-def to_type(v, vtype):
-  return vtype(yaml.safe_load(v)) if isinstance(v, str) else vtype(v)
-
-
-def to_bool(v):
-  return to_type(v, bool)
-
-
-def cast(v, vtype):
-  return to_type(v, vtype) if v is not None else None
-
-
-def infer_value(v, vtype=None):
-  return yaml.safe_load(v) if vtype is None else to_type(v, vtype)
 
 
 def parse_dict(data):

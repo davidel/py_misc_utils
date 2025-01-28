@@ -216,8 +216,13 @@ class Main:
         if typing.get_origin(ptype) == typing.Literal:
           choices = typing.get_args(ptype)
           ptype = type(choices[0])
+
+        type_cast = functools.partial(cu.to_type, vtype=ptype)
+      elif defval is not None:
+        ptype = type(defval)
+        type_cast = functools.partial(cu.to_type, vtype=ptype)
       else:
-        ptype = type(defval) if defval is not None else yaml.safe_load
+        ptype, type_cast = str, yaml.safe_load
 
       action = argparse.BooleanOptionalAction if ptype is bool else None
 
@@ -226,14 +231,14 @@ class Main:
         parser.add_argument(n,
                             metavar=n.upper(),
                             action=action,
-                            type=ptype,
+                            type=type_cast,
                             default=defval,
                             choices=choices,
                             help=help_str)
       else:
         parser.add_argument(f'--{n}',
                             action=action,
-                            type=ptype,
+                            type=type_cast,
                             default=defval,
                             choices=choices,
                             help=help_str)
