@@ -59,7 +59,19 @@ class RecordArray:
   @staticmethod
   def create(*args, names=None, fmt=None, endian='', asarray=False):
     if fmt is None:
-      fmt = 'f' * len(args)
+      fmt = ''
+      for arg in args:
+        if hasattr(arg, '__len__'):
+          value = arg[0]
+        else:
+          value = arg
+
+        item = getattr(value, 'item', None)
+        if callable(item):
+          value = item()
+
+        fmt += 'q' if isinstance(value, int) else 'd'
+
     elif len(fmt) == 1:
       fmt = fmt * len(args)
 
