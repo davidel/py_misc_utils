@@ -37,6 +37,10 @@ class RecordArray:
 
     self._data.extend(struct.pack(self._fmt, *values))
 
+  def __iter__(self):
+    for i in range(len(self)):
+      yield self[i]
+
   def __len__(self):
     return len(self._data) // self._recsize
 
