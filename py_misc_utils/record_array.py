@@ -13,7 +13,7 @@ class RecordArray:
 
   Field = collections.namedtuple('Field', 'fmt, size')
 
-  def __init__(self, fields, keepdim=False):
+  def __init__(self, fields, asarray=False):
     rfields, rfmt = dict(), ''
     for name, fmt in fields.items():
       m = re.match(r'(\d+)', fmt)
@@ -23,7 +23,7 @@ class RecordArray:
 
     self._rfields = rfields
     self._fmt = rfmt
-    self._keepdim = keepdim
+    self._asarray = asarray
     self._data = array.array('B')
     self._recsize = struct.calcsize(rfmt)
 
@@ -47,7 +47,7 @@ class RecordArray:
 
     rpos, result = 0, Record()
     for name, field in self._rfields.items():
-      if field.size == 1 and not self._keepdim:
+      if field.size == 1 and not self._asarray:
         setattr(result, name, values[rpos])
       else:
         setattr(result, name, values[rpos: rpos + field.size])
