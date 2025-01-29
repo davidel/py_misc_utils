@@ -56,3 +56,28 @@ class RecordArray:
 
     return result
 
+  @staticmethod
+  def create(*args, names=None, fmt=None, endian='', asarray=False):
+    if fmt is None:
+      fmt = 'f' * len(args)
+    elif len(fmt) == 1:
+      fmt = fmt * len(args)
+
+    ffmt = tuple(fmt)
+    if names is None:
+      names = tuple(f'f{i}' for i in range(len(args)))
+    elif isinstance(names, str):
+      names = tuple(f.strip() for f in names.split(','))
+
+    rfields = dict()
+    for i, arg in enumerate(args):
+      asize = len(arg) if hasattr(arg, '__len__') else 1
+      rfields[names[i]] = f'{asize}{ffmt[i]}' if asize > 1 else ffmt[i]
+
+    rarray = RecordArray(rfields, endian=endian, asarray=asarray)
+
+    rarray.append(*args)
+
+    return rarray
+
+
