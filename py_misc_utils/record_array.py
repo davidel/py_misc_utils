@@ -13,8 +13,8 @@ class RecordArray:
 
   Field = collections.namedtuple('Field', 'fmt, size')
 
-  def __init__(self, fields, asarray=False):
-    rfields, rfmt = dict(), ''
+  def __init__(self, fields, endian='', asarray=False):
+    rfields, rfmt = dict(), endian
     for name, fmt in fields.items():
       m = re.match(r'(\d+)', fmt)
       size = int(m.group(1)) if m else 1
