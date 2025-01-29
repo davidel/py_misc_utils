@@ -57,10 +57,10 @@ class RecordArray:
     return result
 
   @staticmethod
-  def create(*args, names=None, fmt=None, endian='', asarray=False):
+  def create(kwargs, fmt=None, endian='', asarray=False):
     if fmt is None:
       fmt = ''
-      for arg in args:
+      for arg in kwargs.values():
         if hasattr(arg, '__len__'):
           value = arg[0]
         else:
@@ -73,23 +73,18 @@ class RecordArray:
         fmt += 'q' if isinstance(value, int) else 'd'
 
     elif len(fmt) == 1:
-      fmt = fmt * len(args)
+      fmt = fmt * len(kwargs)
 
     ffmt = tuple(fmt)
-    if names is None:
-      names = tuple(f'f{i}' for i in range(len(args)))
-    elif isinstance(names, str):
-      names = tuple(f.strip() for f in names.split(','))
 
     rfields = dict()
-    for i, arg in enumerate(args):
+    for i, (name, arg) in enumerate(kwargs.items()):
       asize = len(arg) if hasattr(arg, '__len__') else 1
-      rfields[names[i]] = f'{asize}{ffmt[i]}' if asize > 1 else ffmt[i]
+      rfields[name] = f'{asize}{ffmt[i]}' if asize > 1 else ffmt[i]
 
     rarray = RecordArray(rfields, endian=endian, asarray=asarray)
 
-    rarray.append(*args)
+    rarray.append(*kwargs.values())
 
     return rarray
-
 
