@@ -75,12 +75,10 @@ class RecordArray:
     elif len(fmt) == 1:
       fmt = fmt * len(kwargs)
 
-    ffmt = tuple(fmt)
-
     rfields = dict()
     for i, (name, arg) in enumerate(kwargs.items()):
       asize = len(arg) if hasattr(arg, '__len__') else 1
-      rfields[name] = f'{asize}{ffmt[i]}' if asize > 1 else ffmt[i]
+      rfields[name] = f'{asize}{fmt[i]}' if asize > 1 else fmt[i]
 
     rarray = RecordArray(rfields, endian=endian, asarray=asarray)
 
