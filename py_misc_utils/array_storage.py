@@ -126,10 +126,7 @@ class ArrayStorage:
   def __getitem__(self, i):
     return {name: buffer[i] for name, buffer in self.data.items()}
 
-  def append(self, *args, **kwargs):
-    for name, value in args:
-      buffer = self._get_buffer(name, value)
-      buffer.append(value)
+  def append(self, **kwargs):
     for name, value in kwargs.items():
       buffer = self._get_buffer(name, value)
       buffer.append(value)

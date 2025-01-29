@@ -1,5 +1,3 @@
-import types
-
 import numpy as np
 
 from . import alog
@@ -88,11 +86,15 @@ def maybe_stack_slices(slices, axis=0):
 def to_numpy(data):
   if isinstance(data, np.ndarray):
     return data
-  npfn = getattr(data, 'to_numpy')
-  if npfn is not None:
+
+  npfn = getattr(data, 'to_numpy', None)
+  if callable(npfn):
     return npfn()
-  if isinstance(data, torch.Tensor):
-    return data.detach().cpu().numpy()
+
+  # This is PyTorch ...
+  npfn = getattr(data, 'numpy', None)
+  if callable(npfn):
+    return npfn(force=True)
 
   return np.array(data)
 
