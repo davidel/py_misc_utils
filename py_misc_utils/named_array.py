@@ -132,6 +132,9 @@ class NamedArray:
   def get_array(self, name):
     return self._fields[name].np_array()
 
+  def data(self):
+    return {field.name: field.np_array() for field in self._fieldseq}
+
   def to_numpy(self, dtype=None):
     for field in self._fieldseq:
       tas.check(field.fmt not in _NOT_NUMERIC,
@@ -173,10 +176,11 @@ class NamedArray:
     return self.to_numpy(dtype=dtype)
 
   def to_dataframe(self):
-    return pd.DataFrame(data=self.data())
+    df_data = dict()
+    for name, arr in self.data().items():
+      df_data[name] = arr if arr.ndim == 1 else arr.tolist()
 
-  def data(self):
-    return {field.name: field.np_array() for field in self._fieldseq}
+    return pd.DataFrame(data=df_data)
 
   @property
   def shape(self):
