@@ -12,16 +12,6 @@ from . import np_utils as npu
 _NOT_NUMERIC = 'xS'
 
 
-def _fast_extend(dest, src):
-  if isinstance(src, np.ndarray) and isinstance(dest, array.array):
-    nptype = np.dtype(dest.typecode)
-    if nptype != src.dtype:
-      src = src.astype(nptype)
-    dest.frombytes(src.tobytes())
-  else:
-    dest.extend(src)
-
-
 class Field:
 
   def __init__(self, name, data, size, fmt):
@@ -34,6 +24,26 @@ class Field:
     arr = np.array(self.data)
 
     return arr.reshape(-1, self.size) if self.size > 1 else arr
+
+  def append(self, arg):
+    if self.size == 1:
+      self.data.append(arg)
+    else:
+      assert self.size == len(arg), f'{self.name}({self.size}) vs. {len(arg)}'
+      self.data.extend(arg)
+
+  def extend(self, arg):
+    assert len(arg) % self.size == 0, f'{self.name}({self.size}) vs. {len(arg)}'
+    self.fast_extend(arg)
+
+  def fast_extend(self, arg):
+    if isinstance(arg, np.ndarray) and isinstance(self.data, array.array):
+      nptype = np.dtype(self.data.typecode)
+      if nptype != arg.dtype:
+        arg = arg.astype(nptype)
+      self.data.frombytes(arg.tobytes())
+    else:
+      self.data.extend(arg)
 
   def __len__(self):
     return len(self.data) // self.size
@@ -86,35 +96,24 @@ class NamedArray:
       for field, arg in zip(self._fieldseq, args):
         if field.fmt == 'S':
           arg = self._str_tbl.add(arg)
-        if field.size == 1:
-          field.data.append(arg)
-        else:
-          assert field.size == len(arg), f'{field.name}({field.size}) vs. {len(arg)}'
-          field.data.extend(arg)
+        field.append(arg)
     else:
       for field, arg in zip(self._fieldseq, args):
-        if field.size == 1:
-          field.data.append(arg)
-        else:
-          assert field.size == len(arg), f'{field.name}({field.size}) vs. {len(arg)}'
-          field.data.extend(arg)
+        field.append(arg)
 
   def extend(self, other):
     for field, ofield in zip(self._fieldseq, other._fieldseq):
-      _fast_extend(field.data, ofield.data)
+      field.fast_extend(ofield.data)
 
   def append_extend(self, *args):
     if self._has_strings:
       for field, arg in zip(self._fieldseq, args):
         if field.fmt == 'S':
           arg = [self._str_tbl.add(x) for x in arg]
-
-        assert len(arg) % field.size == 0, f'{field.name}({field.size}) vs. {len(arg)}'
-        _fast_extend(field.data, arg)
+        field.extend(arg)
     else:
       for field, arg in zip(self._fieldseq, args):
-        assert len(arg) % field.size == 0, f'{field.name}({field.size}) vs. {len(arg)}'
-        _fast_extend(field.data, arg)
+        field.extend(arg)
 
   def get_tuple_item(self, i):
     item = []
