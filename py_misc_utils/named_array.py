@@ -151,7 +151,7 @@ class NamedArray:
       fsize = len(field)
       if size is None:
         size = fsize
-      elif:
+      else:
         tas.check_eq(fsize, size,
                      msg=f'Unmatching size for "{field.name}": {fsize} vs. {size}')
 
