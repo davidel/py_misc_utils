@@ -45,6 +45,12 @@ class Field:
     else:
       self.data.extend(arg)
 
+  def stringify(self, str_tbl, arg):
+    if self.size == 1:
+      return str_tbl.add(arg)
+
+    return tuple(str_tbl.add(x) for x in arg)
+
   def __len__(self):
     return len(self.data) // self.size
 
@@ -112,7 +118,7 @@ class NamedArray:
     if self._has_strings:
       for field, arg in zip(self._fieldseq, args):
         if field.fmt == 'S':
-          arg = self._str_tbl.add(arg)
+          arg = field.stringify(self._str_tbl, arg)
         field.append(arg)
     else:
       for field, arg in zip(self._fieldseq, args):
@@ -126,11 +132,23 @@ class NamedArray:
     if self._has_strings:
       for field, arg in zip(self._fieldseq, args):
         if field.fmt == 'S':
-          arg = [self._str_tbl.add(x) for x in arg]
+          arg = field.stringify(self._str_tbl, arg)
         field.extend(arg)
     else:
       for field, arg in zip(self._fieldseq, args):
         field.extend(arg)
+
+  def kwappend(self, **kwargs):
+    if self._has_strings:
+      for name, field in self._fields.items():
+        arg = kwargs[name]
+        if field.fmt == 'S':
+          arg = field.stringify(self._str_tbl, arg)
+        field.append(arg)
+    else:
+      for name, field in self._fields.items():
+        arg = kwargs[name]
+        field.append(arg)
 
   def get_tuple_item(self, i):
     item = []
