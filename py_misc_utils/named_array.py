@@ -55,6 +55,18 @@ class Field:
       offset = i * self.size
       return self.data[offset: offset + self.size]
 
+  @staticmethod
+  def create(name, fmt):
+    m = re.match(r'(\d+)([a-zA-Z])', fmt)
+    if m:
+      size, efmt = int(m.group(1)), m.group(2)
+    else:
+      size, efmt = 1, fmt
+
+    data = array.array(efmt) if not efmt in _NOT_NUMERIC else []
+
+    return Field(name, data, size, efmt)
+
 
 class NamedArray:
 
@@ -70,26 +82,30 @@ class NamedArray:
 
       fnames = cnames
     else:
-      ffmt = re.findall(r'\d*[a-zA-Z]', fmt)
+      ffmt = re.findall(r'\d*[a-zA-Z]', fmt) if isinstance(fmt, str) else fmt
       tas.check_eq(len(fnames), len(ffmt),
-                   msg=f'Mismatching names and format sizes: {fnames} vs "{fmt}"')
+                   msg=f'Mismatching names and format sizes: {fnames} vs {ffmt}')
 
-    fields = dict()
-    for name, fmt in zip(fnames, ffmt):
-      m = re.match(r'(\d+)([a-zA-Z])', fmt)
-      if m:
-        size, efmt = int(m.group(1)), m.group(2)
-      else:
-        size, efmt = 1, fmt
-
-      data = array.array(efmt) if not efmt in _NOT_NUMERIC else []
-
-      fields[name] = Field(name, data, size, efmt)
-
-    self._fields = fields
-    self._fieldseq = tuple(fields.values())
+    self._fields = {name: Field.create(name, fmt) for name, fmt in zip(fnames, ffmt)}
+    self._fieldseq = tuple(self._fields.values())
     self._has_strings = any(field.fmt == 'S' for field in self._fieldseq)
     self._str_tbl = cu.StringTable()
+
+  def add_column(self, name, fmt, data):
+    tas.check(name not in self._fields, msg=f'Column "{name}" already exists')
+
+    field = Field.create(name, fmt)
+
+    if isinstance(data, np.ndarray):
+      data = data.flatten()
+
+    tas.check_eq(len(data), len(self) * field.size,
+                 msg=f'Invalid data size for column')
+
+    field.data.extend(data)
+
+    self._fields[name] = field
+    self._fieldseq += (field,)
 
   def append(self, *args):
     if self._has_strings:
