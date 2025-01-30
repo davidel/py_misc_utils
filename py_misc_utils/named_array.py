@@ -106,6 +106,7 @@ class NamedArray:
 
     self._fields[name] = field
     self._fieldseq += (field,)
+    self._has_strings |= field.fmt == 'S'
 
   def append(self, *args):
     if self._has_strings:
