@@ -89,14 +89,14 @@ class NamedArray:
         if field.size == 1:
           field.data.append(arg)
         else:
-          assert field.size == len(arg)
+          assert field.size == len(arg), f'{field.name}({field.size}) vs. {len(arg)}'
           field.data.extend(arg)
     else:
       for field, arg in zip(self._fieldseq, args):
         if field.size == 1:
           field.data.append(arg)
         else:
-          assert field.size == len(arg)
+          assert field.size == len(arg), f'{field.name}({field.size}) vs. {len(arg)}'
           field.data.extend(arg)
 
   def extend(self, other):
@@ -109,11 +109,11 @@ class NamedArray:
         if field.fmt == 'S':
           arg = [self._str_tbl.add(x) for x in arg]
 
-        assert len(arg) % field.size == 0
+        assert len(arg) % field.size == 0, f'{field.name}({field.size}) vs. {len(arg)}'
         _fast_extend(field.data, arg)
     else:
       for field, arg in zip(self._fieldseq, args):
-        assert len(arg) % field.size == 0
+        assert len(arg) % field.size == 0, f'{field.name}({field.size}) vs. {len(arg)}'
         _fast_extend(field.data, arg)
 
   def get_tuple_item(self, i):
