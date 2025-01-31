@@ -158,7 +158,7 @@ def _wrapped_main(mainfn, *args, **kwargs):
     _cleanup()
 
 
-def create_process(mainfn, args=None, kwargs=None, context=None):
+def create_process(mainfn, args=None, kwargs=None, context=None, daemon=None):
   if context is None:
     mpctx = multiprocessing
   elif isinstance(context, str):
@@ -172,7 +172,7 @@ def create_process(mainfn, args=None, kwargs=None, context=None):
   kwargs = _capture_parent_context(mpctx.get_start_method(), kwargs)
   target = functools.partial(_wrapped_main, mainfn, *args, **kwargs)
 
-  return mpctx.Process(target=target)
+  return mpctx.Process(target=target, daemon=daemon)
 
 
 # This is similar to Fire but brings up the app_main infrastructure.
