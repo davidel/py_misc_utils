@@ -61,9 +61,17 @@ class Field:
   def __getitem__(self, i):
     if self.size == 1:
       return self.data[i]
-    else:
+    elif isinstance(i, int):
       offset = i * self.size
+
       return self.data[offset: offset + self.size]
+    else:
+      start, stop, step = (x * self.size for x in i.indices(len(self)))
+      data = []
+      for n in range(start, stop, step):
+        data.append(self.data[start: start + self.size])
+
+      return data
 
   @staticmethod
   def create(name, fmt, str_tbl):
