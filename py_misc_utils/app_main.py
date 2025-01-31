@@ -97,22 +97,39 @@ def basic_main(mainfn, description='Basic Main'):
   main(parser, mainfn)
 
 
+_SETUP_FUNCTIONS = []
+
+def add_setupfn(fn):
+  _SETUP_FUNCTIONS.append(fn)
+
+
 _ARGS_KEY = 'main_args'
+_SETUPFN_KEY = 'setup_functions'
 
 def _wrap_procfn_parent(method, ctx):
   if method == 'spawn':
-    ctx.update({_ARGS_KEY: _ARGS})
+    ctx.update({
+      _ARGS_KEY: _ARGS,
+      _SETUPFN_KEY: _SETUP_FUNCTIONS,
+    })
 
   return ctx
 
 
 def _wrap_procfn_child(ctx):
-  global _ARGS
-
   if (args := ctx.pop(_ARGS_KEY, None)) is not None:
+    global _ARGS
+
     _ARGS = args
     init_modules = _get_init_modules()
     _config_modules(init_modules, args)
+
+  if (setup_functions := ctx.pop(_SETUPFN_KEY, None)) is not None:
+    global _SETUP_FUNCTIONS
+
+    _SETUP_FUNCTIONS = setup_functions
+    for setupfn in setup_functions:
+      setupfn()
 
   return ctx
 
