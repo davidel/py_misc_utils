@@ -14,6 +14,8 @@ _NOT_NUMERIC = 'xS'
 
 class Field:
 
+  __slots__ = ('name', 'data', 'size', 'fmt', 'str_tbl')
+
   def __init__(self, name, data, size, fmt, str_tbl):
     self.name = name
     self.data = data
