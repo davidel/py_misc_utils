@@ -121,10 +121,7 @@ class NamedArray:
     if isinstance(data, np.ndarray):
       data = data.flatten()
 
-    tas.check_eq(len(data), len(self) * field.size,
-                 msg=f'Invalid data size for column')
-
-    field.data.extend(data)
+    field.extend(data)
 
     self._fields[name] = field
     self._fieldseq += (field,)
