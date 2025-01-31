@@ -181,7 +181,7 @@ class NamedArray:
     if dtype is None:
       dtype = npu.infer_np_dtype(self.dtypes())
 
-    na = np.empty(len(self), dtype=dtype)
+    na = np.empty(self.shape, dtype=dtype)
     for i, field in enumerate(self._fieldseq):
       na[:, i] = field.data
 
