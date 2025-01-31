@@ -14,11 +14,12 @@ _NOT_NUMERIC = 'xS'
 
 class Field:
 
-  def __init__(self, name, data, size, fmt):
+  def __init__(self, name, data, size, fmt, str_tbl):
     self.name = name
     self.data = data
     self.size = size
     self.fmt = fmt
+    self.str_tbl = str_tbl
 
   def np_array(self):
     arr = np.array(self.data)
@@ -26,6 +27,9 @@ class Field:
     return arr.reshape(-1, self.size) if self.size > 1 else arr
 
   def append(self, arg):
+    if self.fmt == 'S':
+      arg = self.stringify(arg)
+
     if self.size == 1:
       self.data.append(arg)
     else:
@@ -34,9 +38,9 @@ class Field:
 
   def extend(self, arg):
     assert len(arg) % self.size == 0, f'{self.name}({self.size}) vs. {len(arg)}'
-    self.fast_extend(arg)
+    if self.fmt == 'S':
+      arg = self.stringify(arg)
 
-  def fast_extend(self, arg):
     if isinstance(arg, np.ndarray) and isinstance(self.data, array.array):
       nptype = np.dtype(self.data.typecode)
       if nptype != arg.dtype:
@@ -45,11 +49,11 @@ class Field:
     else:
       self.data.extend(arg)
 
-  def stringify(self, str_tbl, arg):
+  def stringify(self, arg):
     if self.size == 1:
-      return str_tbl.add(arg)
+      return self.str_tbl.add(arg)
 
-    return tuple(str_tbl.add(x) for x in arg)
+    return tuple(self.str_tbl.add(x) for x in arg)
 
   def __len__(self):
     return len(self.data) // self.size
@@ -62,7 +66,7 @@ class Field:
       return self.data[offset: offset + self.size]
 
   @staticmethod
-  def create(name, fmt):
+  def create(name, fmt, str_tbl):
     m = re.match(r'(\d+)([a-zA-Z])', fmt)
     if m:
       size, efmt = int(m.group(1)), m.group(2)
@@ -71,7 +75,7 @@ class Field:
 
     data = array.array(efmt) if not efmt in _NOT_NUMERIC else []
 
-    return Field(name, data, size, efmt)
+    return Field(name, data, size, efmt, str_tbl)
 
 
 class NamedArray:
@@ -92,15 +96,19 @@ class NamedArray:
       tas.check_eq(len(fnames), len(ffmt),
                    msg=f'Mismatching names and format sizes: {fnames} vs {ffmt}')
 
-    self._fields = {name: Field.create(name, fmt) for name, fmt in zip(fnames, ffmt)}
-    self._fieldseq = tuple(self._fields.values())
-    self._has_strings = any(field.fmt == 'S' for field in self._fieldseq)
-    self._str_tbl = cu.StringTable()
+    str_tbl = cu.StringTable()
+    fields = dict()
+    for name, fmt in zip(fnames, ffmt):
+      fields[name] = Field.create(name, fmt, str_tbl)
+
+    self._fields = fields
+    self._fieldseq = tuple(fields.values())
+    self._str_tbl = str_tbl
 
   def add_column(self, name, fmt, data):
     tas.check(name not in self._fields, msg=f'Column "{name}" already exists')
 
-    field = Field.create(name, fmt)
+    field = Field.create(name, fmt, self._str_tbl)
 
     if isinstance(data, np.ndarray):
       data = data.flatten()
@@ -112,43 +120,23 @@ class NamedArray:
 
     self._fields[name] = field
     self._fieldseq += (field,)
-    self._has_strings |= field.fmt == 'S'
 
   def append(self, *args):
-    if self._has_strings:
-      for field, arg in zip(self._fieldseq, args):
-        if field.fmt == 'S':
-          arg = field.stringify(self._str_tbl, arg)
-        field.append(arg)
-    else:
-      for field, arg in zip(self._fieldseq, args):
-        field.append(arg)
+    for field, arg in zip(self._fieldseq, args):
+      field.append(arg)
 
   def extend(self, other):
     for field, ofield in zip(self._fieldseq, other._fieldseq):
-      field.fast_extend(ofield.data)
+      field.extend(ofield.data)
 
   def append_extend(self, *args):
-    if self._has_strings:
-      for field, arg in zip(self._fieldseq, args):
-        if field.fmt == 'S':
-          arg = field.stringify(self._str_tbl, arg)
-        field.extend(arg)
-    else:
-      for field, arg in zip(self._fieldseq, args):
-        field.extend(arg)
+    for field, arg in zip(self._fieldseq, args):
+      field.extend(arg)
 
   def kwappend(self, **kwargs):
-    if self._has_strings:
-      for name, field in self._fields.items():
-        arg = kwargs[name]
-        if field.fmt == 'S':
-          arg = field.stringify(self._str_tbl, arg)
-        field.append(arg)
-    else:
-      for name, field in self._fields.items():
-        arg = kwargs[name]
-        field.append(arg)
+    for name, field in self._fields.items():
+      arg = kwargs[name]
+      field.append(arg)
 
   def get_tuple_item(self, i):
     item = []
