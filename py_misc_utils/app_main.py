@@ -99,8 +99,10 @@ def basic_main(mainfn, description='Basic Main'):
 
 _SETUP_FUNCTIONS = []
 
-def add_setupfn(fn):
-  _SETUP_FUNCTIONS.append(fn)
+def add_setupfn(setupfn, run=True):
+  if run:
+    setupfn()
+  _SETUP_FUNCTIONS.append(setupfn)
 
 
 _ARGS_KEY = 'main_args'
