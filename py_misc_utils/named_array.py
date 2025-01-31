@@ -69,7 +69,7 @@ class Field:
       start, stop, step = (x * self.size for x in i.indices(len(self)))
       data = []
       for n in range(start, stop, step):
-        data.append(self.data[start: start + self.size])
+        data.append(self.data[n: n + self.size])
 
       return data
 
