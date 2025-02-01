@@ -16,12 +16,14 @@ _NS = dict()
 
 
 def parent_switch():
-  ns = _NS.copy()
-  for name, var in ns.items():
+  ns = dict()
+  for var in _NS.values():
     if var.parent_fn is not None:
       data = var.parent_fn(var.data)
       if data is not var.data:
-        ns[name] = var._replace(data=data)
+        var = var._replace(data=data)
+
+    ns[var.name] = var
 
   return ns
 
@@ -29,12 +31,14 @@ def parent_switch():
 def child_switch(ns):
   global _NS
 
-  cns = ns.copy()
-  for name, var in cns.items():
+  cns = dict()
+  for var in ns.values():
     if var.child_fn is not None:
       data = var.child_fn(var.data)
       if data is not var.data:
-        cns[name] = var._replace(data=data)
+        var = var._replace(data=data)
+
+    cns[var.name] = var
 
   _NS = cns
 
@@ -43,14 +47,15 @@ def get(var, force=True):
   value = _NS.get(var.name)
   if value is None and force:
     value = var._replace(data=var.defval)
-    _NS[var.name] = value
+    _NS[value.name] = value
 
   return value.data
 
 
-def set(var, value):
+def set(var, data):
   prev_value = _NS.get(var.name)
-  _NS[var.name] = var._replace(data=value)
+  value = var._replace(data=data)
+  _NS[value.name] = value
 
   return prev_value.data if prev_value is not None else None
 
