@@ -137,16 +137,24 @@ def astype(data, col, dtype):
 
 
 def softmax(x):
-  e_x = np.exp(x - np.max(x))
+  e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
 
-  return e_x / e_x.sum()
+  return e_x / np.sum(e_x, axis=-1, keepdims=True)
 
 
 def categorical(un_probs, n=None):
   probs = softmax(un_probs)
-  values = np.random.choice(len(probs), size=n or 1, p=probs)
+  if probs.ndim == 1:
+    values = np.random.choice(len(probs), size=n or 1, p=probs)
 
-  return values[0] if n is None else values
+    return values[0] if n is None else values
+  else:
+    probs = np.reshape(probs, (-1, probs.shape[-1]))
+    values = []
+    for p in probs:
+      values.append(np.random.choice(len(p), size=n or 1, p=p))
+
+    return np.vstack(values)
 
 
 def onehot(values, num_categories=None):
