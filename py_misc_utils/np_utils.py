@@ -149,12 +149,14 @@ def categorical(un_probs, n=None):
 
     return values[0] if n is None else values
   else:
-    probs = np.reshape(probs, (-1, probs.shape[-1]))
+    fprobs = np.reshape(probs, (-1, probs.shape[-1]))
     values = []
-    for p in probs:
+    for p in fprobs:
       values.append(np.random.choice(len(p), size=n or 1, p=p))
 
-    return np.vstack(values)
+    catv = np.vstack(values)
+
+    return np.reshape(catv, tuple(probs.shape[: -1]) + (catv.shape[-1],))
 
 
 def onehot(values, num_categories=None):
