@@ -7,6 +7,7 @@
 # All data stored in the global namespace must be pickle-able.
 
 import collections
+import copy
 
 
 Var = collections.namedtuple('Var', 'name, parent_fn, child_fn, data, defval',
@@ -46,7 +47,7 @@ def child_switch(ns):
 def get(var, force=True):
   value = _NS.get(var.name)
   if value is None and force:
-    value = var._replace(data=var.defval)
+    value = var._replace(data=copy.copy(var.defval))
     _NS[value.name] = value
 
   return value.data if value is not None else None
