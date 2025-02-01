@@ -49,7 +49,7 @@ def get(var, force=True):
     value = var._replace(data=var.defval)
     _NS[value.name] = value
 
-  return value.data
+  return value.data if value is not None else None
 
 
 def set(var, data):
