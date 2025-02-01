@@ -10,6 +10,7 @@ import yaml
 from . import alog
 from . import cleanups
 from . import core_utils as cu
+from . import global_namespace as gns
 
 
 def _cleanup():
@@ -47,11 +48,16 @@ def _config_modules(init_modules, args):
     module.config_module(args)
 
 
-_ARGS = None
+def _child_setup_modules(args):
+  init_modules = _get_init_modules()
+  _config_modules(init_modules, args)
+
+  return args
+
+
+_ARGS = gns.Var('app_main.ARGS', child_fn=_child_setup_modules)
 
 def _main(parser, mainfn, args, rem_args):
-  global _ARGS
-
   if isinstance(mainfn, Main):
     mainfn.add_arguments(parser)
 
@@ -73,7 +79,7 @@ def _main(parser, mainfn, args, rem_args):
   else:
     parsed_args = parser.parse_args(args=args)
 
-  _ARGS = parsed_args
+  gns.set(_ARGS, parsed_args)
   _config_modules(init_modules, parsed_args)
 
   mainfn(parsed_args)
@@ -97,41 +103,39 @@ def basic_main(mainfn, description='Basic Main'):
   main(parser, mainfn)
 
 
-_SETUP_FUNCTIONS = []
+
+def _child_setup_functions(setup_functions):
+  for setupfn in setup_functions:
+    setupfn()
+
+  return setup_functions
+
+
+_SETUP_FUNCTIONS = gns.Var('app_main.SETUP_FUNCTIONS',
+                           child_fn=_child_setup_functions,
+                           defval=[])
 
 def add_setupfn(setupfn, run=True):
   if run:
     setupfn()
-  _SETUP_FUNCTIONS.append(setupfn)
+
+  setup_functions = gns.get(_SETUP_FUNCTIONS)
+  setup_functions.append(setupfn)
 
 
-_ARGS_KEY = 'main_args'
-_SETUPFN_KEY = 'setup_functions'
+_GNS_KEY = 'gns'
 
 def _wrap_procfn_parent(method, ctx):
   if method == 'spawn':
-    ctx.update({
-      _ARGS_KEY: _ARGS,
-      _SETUPFN_KEY: _SETUP_FUNCTIONS,
-    })
+    ctx.update({_GNS_KEY: gns.parent_switch()})
 
   return ctx
 
 
 def _wrap_procfn_child(ctx):
-  if (args := ctx.pop(_ARGS_KEY, None)) is not None:
-    global _ARGS
-
-    _ARGS = args
-    init_modules = _get_init_modules()
-    _config_modules(init_modules, args)
-
-  if (setup_functions := ctx.pop(_SETUPFN_KEY, None)) is not None:
-    global _SETUP_FUNCTIONS
-
-    _SETUP_FUNCTIONS = setup_functions
-    for setupfn in setup_functions:
-      setupfn()
+  parent_gns = ctx.pop(_GNS_KEY, None)
+  if parent_gns is not None:
+    gns.child_switch(parent_gns)
 
   return ctx
 
