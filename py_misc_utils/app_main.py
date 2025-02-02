@@ -126,7 +126,7 @@ def add_setupfn(setupfn, run=True):
 _GNS_KEY = 'gns'
 
 def _wrap_procfn_parent(method, ctx):
-  if method == 'spawn':
+  if method in {'spawn', 'forkserver'}:
     ctx.update({_GNS_KEY: gns.parent_switch()})
 
   return ctx
