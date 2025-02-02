@@ -7,7 +7,7 @@
 # All data stored in the global namespace must be pickle-able.
 
 import collections
-import copy
+import inspect
 import threading
 
 
@@ -51,7 +51,8 @@ def get(var, force=True):
   with _LOCK:
     value = _NS.get(var.name)
     if value is None and force:
-      value = var._replace(data=copy.copy(var.defval))
+      data = var.defval() if inspect.isfunction(var.defval) else var.defval
+      value = var._replace(data=data)
       _NS[value.name] = value
 
   return value.data if value is not None else None
