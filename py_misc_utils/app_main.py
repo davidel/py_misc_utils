@@ -144,12 +144,7 @@ _CONTEXT_KEY = '_parent_context'
 
 def _capture_parent_context(method, kwargs):
   ctx = dict()
-
   ctx = _wrap_procfn_parent(method, ctx)
-
-  from . import dynamod
-  ctx = dynamod.wrap_procfn_parent(method, ctx)
-
   if ctx:
     kwargs.update({_CONTEXT_KEY: ctx})
 
@@ -160,9 +155,6 @@ def _apply_child_context(kwargs):
   ctx = kwargs.pop(_CONTEXT_KEY, None)
   if ctx is not None:
     ctx = _wrap_procfn_child(ctx)
-
-    from . import dynamod
-    ctx = dynamod.wrap_procfn_child(ctx)
 
   return kwargs
 

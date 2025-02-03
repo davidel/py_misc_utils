@@ -5,6 +5,8 @@ import shutil
 import sys
 import threading
 
+from . import global_namespace as gns
+
 
 _MODROOT = 'pym'
 
@@ -32,26 +34,11 @@ def _create_mod_folder():
   return dpath
 
 
-_MOD_FOLDER = None
-_LOCK = threading.RLock()
-
-def _get_mod_folder(create=False):
-  global _MOD_FOLDER
-
-  with _LOCK:
-    if _MOD_FOLDER is None and create:
-      _MOD_FOLDER = _create_mod_folder()
-
-    return _MOD_FOLDER
-
-
 def _clone_mod_folder(src_path):
   # This copies the source folder into a new temporary one for the new process,
   # which will be in turn deleted once this exists.
   # We cannot point directly to the source folder since it will be removed once
   # the parent exists.
-  global _MOD_FOLDER
-
   path = _create_root()
   shutil.copytree(src_path, os.path.join(path, _MODNAME))
 
@@ -60,8 +47,13 @@ def _clone_mod_folder(src_path):
     sys.path.remove(src_root)
   sys.path.append(path)
 
-  _MOD_FOLDER = path
+  return path
 
+
+_LOCK = threading.RLock()
+_MOD_FOLDER = gns.Var('dynamod.MOD_FOLDER',
+                      child_fn=_clone_mod_folder,
+                      defval=_create_mod_folder)
 
 _HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 12))
 
@@ -72,7 +64,7 @@ def make_code_name(code):
 
 
 def create_module(name, code, overwrite=None):
-  path = _get_mod_folder(create=True)
+  path = gns.get(_MOD_FOLDER)
   mpath = os.path.join(path, *name.split('.')) + '.py'
 
   with _LOCK:
@@ -108,20 +100,4 @@ def module_name(name):
 def get_module(name):
   with _LOCK:
     return importlib.import_module(module_name(name))
-
-
-_FOLDER_KEY = 'dynamod_folder'
-
-def wrap_procfn_parent(method, kwargs):
-  kwargs.update({_FOLDER_KEY: _get_mod_folder()})
-
-  return kwargs
-
-
-def wrap_procfn_child(kwargs):
-  path = kwargs.pop(_FOLDER_KEY, None)
-  if path is not None:
-    _clone_mod_folder(path)
-
-  return kwargs
 
