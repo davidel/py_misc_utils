@@ -35,7 +35,7 @@ def parent_switch():
 def child_switch(ns):
   global _NS
 
-  cns = dict()
+  cns = _NS.copy()
   for var in ns.values():
     if var.child_fn is not None:
       data = var.child_fn(var.data)
