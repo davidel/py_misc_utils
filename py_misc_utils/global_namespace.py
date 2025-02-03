@@ -39,18 +39,19 @@ if os.name == 'posix':
 
 
 def parent_switch():
-  ns = dict()
+  pns = dict()
   with _LOCK:
     for var in _NS.values():
       if not var.fork_init:
         if var.parent_fn is not None:
           data = var.parent_fn(var.data)
           if data is not var.data:
-            var = var._replace(data=data)
+            var = None if data is None else var._replace(data=data)
 
-        ns[var.name] = var
+        if var is not None:
+          pns[var.name] = var
 
-  return ns
+  return pns
 
 
 def child_switch(ns):
@@ -61,9 +62,10 @@ def child_switch(ns):
     if var.child_fn is not None:
       data = var.child_fn(var.data)
       if data is not var.data:
-        var = var._replace(data=data)
+        var = None if data is None else var._replace(data=data)
 
-    cns[var.name] = var
+    if var is not None:
+      cns[var.name] = var
 
   _NS = cns
 
