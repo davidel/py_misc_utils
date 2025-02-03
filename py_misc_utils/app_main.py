@@ -55,7 +55,7 @@ def _child_setup_modules(args):
   return args
 
 
-_ARGS = gns.Var('app_main.ARGS', child_fn=_child_setup_modules)
+_ARGS = gns.Var(f'{__name__}.ARGS', child_fn=_child_setup_modules)
 
 def _main(parser, mainfn, args, rem_args):
   if isinstance(mainfn, Main):
@@ -111,7 +111,7 @@ def _child_setup_functions(setup_functions):
   return setup_functions
 
 
-_SETUP_FUNCTIONS = gns.Var('app_main.SETUP_FUNCTIONS',
+_SETUP_FUNCTIONS = gns.Var(f'{__name__}.SETUP_FUNCTIONS',
                            child_fn=_child_setup_functions,
                            defval=[])
 

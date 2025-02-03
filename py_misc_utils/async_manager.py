@@ -9,7 +9,7 @@ import numpy as np
 
 from . import app_main
 from . import cleanups
-from . import init_variables as ivar
+from . import global_namespace as gns
 from . import work_results as wres
 
 
@@ -155,7 +155,7 @@ class AsyncManager:
     return False
 
 
-class AsyncRunner(ivar.VarBase):
+class AsyncRunner:
 
   def __init__(self):
     self._loop = asyncio.new_event_loop()
@@ -175,10 +175,13 @@ class AsyncRunner(ivar.VarBase):
     return asyncio.run_coroutine_threadsafe(coro, self._loop)
 
 
-_VARID = ivar.varid(__name__, 'async_runner')
+
+_ASYNC_RUNNER = gns.Var(f'{__name__}.ASYNC_RUNNER',
+                        fork_init=True,
+                        defval=lambda: AsyncRunner())
 
 def _async_runner():
-  return ivar.get(_VARID, AsyncRunner)
+  return gns.get(_ASYNC_RUNNER)
 
 
 def run_async(coro):

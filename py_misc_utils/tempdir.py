@@ -3,11 +3,11 @@ import shutil
 import tempfile
 
 from . import cleanups
-from . import init_variables as ivar
+from . import global_namespace as gns
 from . import rnd_utils as rngu
 
 
-class _RootDir(ivar.VarBase):
+class _RootDir:
 
   def __init__(self):
     self._path = tempfile.mkdtemp()
@@ -20,10 +20,12 @@ class _RootDir(ivar.VarBase):
     return self._path
 
 
-_VARID = ivar.varid(__name__, 'tmproot')
+_ROOTDIR = gns.Var(f'{__name__}.ROOTDIR',
+                   fork_init=True,
+                   defval=lambda: _RootDir())
 
 def _root_dir():
-  return ivar.get(_VARID, _RootDir)
+  return gns.get(_ROOTDIR)
 
 
 def create():

@@ -3,10 +3,10 @@ import threading
 import traceback
 
 from . import alog
-from . import init_variables as ivar
+from . import global_namespace as gns
 
 
-class _Cleanups(ivar.VarBase):
+class _Cleanups:
 
   def __init__(self):
     self._lock = threading.Lock()
@@ -55,10 +55,12 @@ class _Cleanups(ivar.VarBase):
         alog.error(f'Exception while running cleanups: {e}\n{tb}')
 
 
-_VARID = ivar.varid(__name__, 'cleanups')
+_CLEANUPS = gns.Var(f'{__name__}.CLEANUPS',
+                    fork_init=True,
+                    defval=lambda: _Cleanups())
 
 def _cleanups():
-  return ivar.get(_VARID, _Cleanups)
+  return gns.get(_CLEANUPS)
 
 
 def register(fn, *args, **kwargs):
