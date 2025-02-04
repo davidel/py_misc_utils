@@ -66,6 +66,8 @@ def child_switch(ns):
 
     if var is not None:
       cns[var.name] = var
+    else:
+      cns.pop(var.name, None)
 
   _NS = cns
 
