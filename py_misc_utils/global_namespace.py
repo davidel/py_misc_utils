@@ -59,13 +59,14 @@ def child_switch(ns):
 
   cns = _NS.copy()
   for var in ns.values():
+    cvar = var
     if var.child_fn is not None:
       data = var.child_fn(var.data)
       if data is not var.data:
-        var = None if data is None else var._replace(data=data)
+        cvar = None if data is None else var._replace(data=data)
 
-    if var is not None:
-      cns[var.name] = var
+    if cvar is not None:
+      cns[cvar.name] = cvar
     else:
       cns.pop(var.name, None)
 
