@@ -11,7 +11,7 @@ class NoBreak:
     'TERM': signal.SIGTERM,
   }
 
-  def __init__(self, sigs=None, exit_trigger=True):
+  def __init__(self, sigs=None, exit_trigger=False):
     if sigs is None:
       self._signals = tuple(self.SIGMAP.values())
     else:
