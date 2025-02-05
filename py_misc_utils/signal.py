@@ -1,9 +1,12 @@
+import collections
 import signal as sgn
 import threading
 
 from . import core_utils as cu
 from . import traceback as tb
 
+
+_Handler = collections.namedtuple('Handler', 'handler, prio')
 
 _LOCK = threading.Lock()
 _HANDLERS = dict()
@@ -21,8 +24,8 @@ def _handler(sig, frame):
     handlers = _HANDLERS.get(sig, ())
     prev_handler = _PREV_HANDLERS.get(sig)
 
-  for prio, handler in handlers:
-    hres = handler(sig, frame)
+  for handler in handlers:
+    hres = handler.handler(sig, frame)
     if hres == HANDLED:
       return
 
@@ -43,7 +46,8 @@ def signal(sig, handler, prio=None):
 
   with _LOCK:
     handlers = _HANDLERS.get(sig, ())
-    _HANDLERS[sig] = tuple(sorted(handlers + ((prio, handler),), key=lambda h: h[0]))
+    handlers += (_Handler(handler, prio),)
+    _HANDLERS[sig] = tuple(sorted(handlers, key=lambda h: h.prio))
 
     if sig not in _PREV_HANDLERS:
       _PREV_HANDLERS[sig] = sgn.signal(sig, _handler)
@@ -52,16 +56,16 @@ def signal(sig, handler, prio=None):
 def unsignal(sig, uhandler):
   handlers, dropped = [], 0
   with _LOCK:
-    for prio, handler in _HANDLERS.get(sig, ()):
-      if handler != uhandler:
-        handlers.append((prio, handler))
+    for handler in _HANDLERS.get(sig, ()):
+      if handler.handler != uhandler:
+        handlers.append(handler)
       else:
         dropped += 1
 
-    _HANDLERS[sig] = tuple(handlers)
-
-    if not handlers and dropped:
-      sgn.signal(sig, _PREV_HANDLERS.pop(sig))
+    if dropped:
+      _HANDLERS[sig] = tuple(handlers)
+      if not handlers:
+        sgn.signal(sig, _PREV_HANDLERS.pop(sig))
 
   return dropped
 
