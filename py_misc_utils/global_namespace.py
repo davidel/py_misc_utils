@@ -6,6 +6,10 @@
 # have global data transfered to the child.
 # All data stored in the global namespace must be pickle-able, unless fork_init is
 # set to True.
+# If the fork_init attribute is True, it means the variables data must be cleared
+# within the child process, and not carried over (COW-ed) like it would happen when
+# using the fork(2) system call.
+# NOTE: This is a low level module which should have no explicit local dependencies.
 
 import collections
 import inspect
