@@ -126,7 +126,7 @@ def add_setupfn(setupfn, run=True):
 _GNS_KEY = 'gns'
 
 def _wrap_procfn_parent(method):
-  ctx = dict()
+  ctx = dict(method=method)
   ctx.update({_GNS_KEY: gns.parent_switch(method)})
 
   return ctx
@@ -144,8 +144,6 @@ _CONTEXT_KEY = '_parent_context'
 
 def _capture_parent_context(method, kwargs):
   pctx = _wrap_procfn_parent(method)
-  pctx.update(method=method)
-
   kwargs.update({_CONTEXT_KEY: pctx})
 
   return kwargs
