@@ -9,6 +9,7 @@
 
 import collections
 import inspect
+import multiprocessing
 import os
 import threading
 
@@ -38,11 +39,13 @@ if os.name == 'posix':
   os.register_at_fork(after_in_child=_child_fork)
 
 
-def parent_switch():
+def parent_switch(method):
+  assert method in multiprocessing.get_all_start_methods(), method
+
   pns = dict()
   with _LOCK:
     for var in _NS.values():
-      if not var.fork_init:
+      if not (method == 'fork' and var.fork_init):
         if var.parent_fn is not None:
           data = var.parent_fn(var.data)
           if data is not var.data:
@@ -54,8 +57,10 @@ def parent_switch():
   return pns
 
 
-def child_switch(ns):
+def child_switch(method, ns):
   global _NS
+
+  assert method in multiprocessing.get_all_start_methods(), method
 
   cns = _NS.copy()
   for var in ns.values():

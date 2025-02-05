@@ -127,34 +127,33 @@ _GNS_KEY = 'gns'
 
 def _wrap_procfn_parent(method):
   ctx = dict()
-  if method in {'spawn', 'forkserver'}:
-    ctx.update({_GNS_KEY: gns.parent_switch()})
+  ctx.update({_GNS_KEY: gns.parent_switch(method)})
 
   return ctx
 
 
-def _wrap_procfn_child(ctx):
-  parent_gns = ctx.pop(_GNS_KEY, None)
+def _wrap_procfn_child(method, pctx):
+  parent_gns = pctx.pop(_GNS_KEY, None)
   if parent_gns is not None:
-    gns.child_switch(parent_gns)
+    gns.child_switch(method, parent_gns)
 
-  return ctx
+  return pctx
 
 
 _CONTEXT_KEY = '_parent_context'
 
 def _capture_parent_context(method, kwargs):
-  ctx = _wrap_procfn_parent(method)
-  if ctx:
-    kwargs.update({_CONTEXT_KEY: ctx})
+  pctx = _wrap_procfn_parent(method)
+  pctx.update(method=method)
+
+  kwargs.update({_CONTEXT_KEY: pctx})
 
   return kwargs
 
 
 def _apply_child_context(kwargs):
-  ctx = kwargs.pop(_CONTEXT_KEY, None)
-  if ctx is not None:
-    ctx = _wrap_procfn_child(ctx)
+  pctx = kwargs.pop(_CONTEXT_KEY)
+  pctx = _wrap_procfn_child(pctx['method'], pctx)
 
   return kwargs
 
