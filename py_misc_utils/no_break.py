@@ -1,5 +1,6 @@
 import signal
 
+from . import core_utils as cu
 from . import signal as sgn
 
 
@@ -10,11 +11,16 @@ class NoBreak:
     'TERM': signal.SIGTERM,
   }
 
-  def __init__(self, sigs=None):
+  def __init__(self, sigs=None, exit_trigger=True):
     if sigs is None:
-      self._signals = (signal.SIGINT, signal.SIGTERM,)
+      self._signals = tuple(self.SIGMAP.values())
     else:
-      self._signals = tuple(self.SIGMAP[s] for s in sigs.split(','))
+      if isinstance(sigs, str):
+        sigs = cu.splitstrip(sigs, ',')
+
+      self._signals = tuple(self.SIGMAP[sig] for sig in sigs)
+
+    self._exit_trigger = exit_trigger
 
   def __enter__(self):
     self._signal_received = []
@@ -28,10 +34,13 @@ class NoBreak:
 
     return sgn.HANDLED
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, *exc):
     for sig in self._signals:
       sgn.unsignal(sig, self._handler)
 
-    for sig, frame in self._signal_received:
-      sgn.trigger(sig, frame)
+    if self._exit_trigger:
+      for sig, frame in self._signal_received:
+        sgn.trigger(sig, frame)
+
+    return False
 

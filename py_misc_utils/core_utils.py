@@ -1,4 +1,4 @@
-# This module is for APIs which has no local dependecies.
+# NOTE: This module is for APIs which has no local dependecies!
 import array
 import collections
 import copy
@@ -119,6 +119,10 @@ def cast(v, vtype):
 
 def infer_value(v, vtype=None):
   return yaml.safe_load(v) if vtype is None else to_type(v, vtype)
+
+
+def splitstrip(data, sep):
+  return tuple(s.strip() for s in data.split(sep))
 
 
 def separate(data, sep):

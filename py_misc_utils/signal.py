@@ -1,7 +1,7 @@
-import re
 import signal as sgn
 import threading
 
+from . import core_utils as cu
 from . import traceback as tb
 
 
@@ -70,7 +70,7 @@ class Signals:
 
   def __init__(self, sig, handler, prio=None):
     if isinstance(sig, str):
-      sig = [getattr(sgn, f'SIG{s.strip().upper()}') for s in re.split(r'\s*,\s*', sig)]
+      sig = [getattr(sgn, f'SIG{s.upper()}') for s in cu.splitstrip(sig, ',')]
     elif not isinstance(sig, (list, tuple)):
       sig = [sig]
     if not isinstance(handler, (list, tuple)):
