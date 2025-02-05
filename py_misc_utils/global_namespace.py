@@ -2,7 +2,7 @@
 # is used, WRT spawn/forkserver.  In the latter case the global context
 # accumulated by the running process is not pickled-through the child, so the new
 # process start with wiped out global namespace.
-# Using this API, together with the app_main.create_process(), it is possible to
+# Using this API, together with the multiprocessing.create_process(), it is possible to
 # have global data transfered to the child.
 # All data stored in the global namespace must be pickle-able, unless fork_init is
 # set to True.

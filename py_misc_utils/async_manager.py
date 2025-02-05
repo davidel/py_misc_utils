@@ -7,9 +7,9 @@ import threading
 
 import numpy as np
 
-from . import app_main
 from . import cleanups
 from . import global_namespace as gns
+from . import multiprocessing as mp
 from . import work_results as wres
 
 
@@ -65,7 +65,7 @@ class _Worker:
     self._wid = wid
     self._out_queue = out_queue
     self._in_queue = mpctx.Queue()
-    self._proc = app_main.create_process(self._run, context=mpctx)
+    self._proc = mp.create_process(self._run, context=mpctx)
     self._proc.start()
 
   def _run(self):
