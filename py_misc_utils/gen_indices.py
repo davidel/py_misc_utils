@@ -12,7 +12,7 @@ def generate(shape, idx):
     assert len(shape) == 1, f'{shape}'
 
     gens = [range(*idx.indices(shape[0]))]
-  elif isinstance(idx, (list, tuple, np.ndarray)):
+  elif isinstance(idx, (list, np.ndarray)):
     assert len(shape) == 1, f'{shape}'
 
     gens = [idx]
@@ -26,7 +26,7 @@ def generate(shape, idx):
         gens[i] = (tidx,)
       elif isinstance(tidx, slice):
         gens[i] = range(*tidx.indices(shape[i]))
-      elif isinstance(tidx, (list, tuple, np.ndarray)):
+      elif hasattr(tidx, '__iter__'):
         gens[i] = tidx
       elif isinstance(tidx, Ellipsis.__class__):
         eidx = i
@@ -39,7 +39,7 @@ def generate(shape, idx):
           gens[-i] = (tidx,)
         elif isinstance(tidx, slice):
           gens[-i] = range(*tidx.indices(shape[-i]))
-        elif isinstance(tidx, (list, tuple, np.ndarray)):
+        elif hasattr(tidx, '__iter__'):
           gens[-i] = tidx
         elif isinstance(tidx, Ellipsis.__class__):
           raise ValueError(f'Wrong index {idx} for shape {shape}')
