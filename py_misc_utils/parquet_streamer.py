@@ -19,6 +19,7 @@ class ParquetStreamer:
                num_workers=None,
                **kwargs):
     self._url = url
+    self._batch_size = batch_size
     self._load_columns = ut.value_or(load_columns, dict())
     self._rename_columns = ut.value_or(rename_columns, dict())
     self._num_workers = num_workers
