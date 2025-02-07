@@ -17,15 +17,16 @@ class DataCache:
     gfs.makedirs(cache_path, exist_ok=True)
 
     self._data_path = os.path.join(cache_path, fsid)
+    self._orig_data = None
     try:
       sres = gfs.stat(self._data_path)
       if max_age is None or time.time() > sres.st_ctime + max_age:
         with gfs.open(self._data_path, mode='rb') as fd:
           self._orig_data = pickle.load(fd)
-
-        self._data = self._orig_data
     except:
-      self._data = self._orig_data = None
+      pass
+
+    self._data = self._orig_data
 
   def data(self):
     return self._data
