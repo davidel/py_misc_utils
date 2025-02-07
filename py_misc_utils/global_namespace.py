@@ -49,7 +49,11 @@ def parent_switch(method):
   pns = dict()
   with _LOCK:
     for var in _NS.values():
-      if not (method == 'fork' and var.fork_init):
+      # Variables with fork_init=True are the ones that are supposed to be
+      # initialized in every process, and as such do not have to be carried over
+      # from the parent context. Also, fork_init=True variables might contain data
+      # which is not pickle-able, and carrying them over will fail.
+      if not var.fork_init:
         if var.parent_fn is not None:
           data = var.parent_fn(var.data)
           if data is not var.data:
@@ -66,7 +70,7 @@ def child_switch(method, ns):
 
   assert method in multiprocessing.get_all_start_methods(), method
 
-  cns = _NS.copy()
+  cns = dict()
   for var in ns.values():
     if var.child_fn is not None:
       data = var.child_fn(var.data)
