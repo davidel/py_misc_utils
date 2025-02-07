@@ -20,7 +20,7 @@ class DataCache:
     self._orig_data = None
     try:
       sres = gfs.stat(self._data_path)
-      if max_age is None or time.time() > sres.st_ctime + max_age:
+      if max_age is None or (sres.st_ctime + max_age) > time.time():
         with gfs.open(self._data_path, mode='rb') as fd:
           self._orig_data = pickle.load(fd)
     except:
