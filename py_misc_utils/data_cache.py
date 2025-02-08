@@ -6,9 +6,11 @@ import time
 from . import gfs
 
 
+_MAX_AGE = int(os.getenv('DATACACHE_MAX_AGE', 3600 * 24))
+
 class DataCache:
 
-  def __init__(self, data_id, cache_dir=None, max_age=None):
+  def __init__(self, data_id, cache_dir=None, max_age=_MAX_AGE):
     cache_dir = gfs.cache_dir(path=cache_dir)
 
     fsid = hashlib.sha1(data_id.encode()).hexdigest()
