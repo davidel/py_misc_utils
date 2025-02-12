@@ -19,6 +19,7 @@ from . import assert_checks as tas
 from . import core_utils as cu
 from . import file_overwrite as fow
 from . import gfs
+from . import inspect_utils as iu
 from . import mmap as mm
 from . import obj
 from . import split as sp
@@ -35,12 +36,6 @@ def pickle_proto():
 
 def fname():
   return tb.get_frame(1).f_code.co_name
-
-
-def func_name(func):
-  fname = getattr(func, '__name__', None)
-
-  return fname if fname is not None else cname(func)
 
 
 def _stri(obj, seen, float_fmt):
@@ -70,7 +65,7 @@ def _stri(obj, seen, float_fmt):
   elif hasattr(obj, '__dict__'):
     # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
     drepr = _stri(obj.__dict__, seen, float_fmt)
-    result = f'{cname(obj)}({drepr[1: -1]})'
+    result = f'{iu.cname(obj)}({drepr[1: -1]})'
   else:
     result = str(obj)
 
@@ -200,13 +195,13 @@ def fatal(msg, exc=RuntimeError):
 
 def assert_instance(msg, t, ta):
   if not isinstance(t, ta):
-    parts = [msg, f': {cname(t)} is not ']
+    parts = [msg, f': {iu.cname(t)} is not ']
     if isinstance(ta, (list, tuple)):
       parts.append('one of (')
-      parts.append(', '.join(cname(x) for x in ta))
+      parts.append(', '.join(iu.cname(x) for x in ta))
       parts.append(')')
     else:
-      parts.append(f'a {cname(ta)}')
+      parts.append(f'a {iu.cname(ta)}')
 
     alog.xraise(ValueError, ''.join(parts))
 

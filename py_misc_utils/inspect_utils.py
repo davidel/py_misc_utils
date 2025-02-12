@@ -25,6 +25,12 @@ def cname(obj):
   return cls.__name__ if cls is not None else None
 
 
+def func_name(func):
+  fname = getattr(func, '__name__', None)
+
+  return fname if fname is not None else cname(func)
+
+
 _BUILTIN_NAMES = {'__builtin__', 'builtins'}
 
 def qual_name(obj, builtin_strip=False):
