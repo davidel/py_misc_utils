@@ -28,6 +28,6 @@ class BufferedIterator:
       n += 1
 
   def __iter__(self):
-    return iter(self.generate())
+    return self.generate()
 
 

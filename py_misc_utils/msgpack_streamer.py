@@ -22,5 +22,5 @@ class MsgPackStreamer:
         yield recd
 
   def __iter__(self):
-    return iter(self.generate())
+    return self.generate()
 

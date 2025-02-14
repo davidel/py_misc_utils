@@ -108,5 +108,5 @@ class ArchiveStreamer:
       alog.xraise(RuntimeError, f'Unknown archive type "{specs.kind}": {self._url}')
 
   def __iter__(self):
-    return iter(self.generate())
+    return self.generate()
 

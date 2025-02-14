@@ -65,5 +65,5 @@ class ParquetStreamer:
             alog.verbose(f'Unable to create parquet entry ({recd}): {ex}')
 
   def __iter__(self):
-    return iter(self.generate())
+    return self.generate()
 
