@@ -46,7 +46,10 @@ class _Writer:
 class _Reader:
 
   def __init__(self, fd):
-    self.read = getattr(fd, 'read1', getattr(fd, 'readline', None))
+    self._read = getattr(fd, 'read1', getattr(fd, 'readline', None))
+
+  def read(self):
+    return self._read()
 
 
 def _lookup(tmpl_envs, key, defval=None):
