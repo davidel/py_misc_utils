@@ -21,7 +21,7 @@ class StreamedFile:
     self._size = 0
     self._completed = False
     self._closed = False
-    self._thread = threading.Thread(target=self._stream)
+    self._thread = threading.Thread(target=self._stream, daemon=True)
     self._thread.start()
 
   def _stream(self):
