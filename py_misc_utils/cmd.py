@@ -11,14 +11,22 @@ from . import signal as sgn
 from . import template_replace as tr
 
 
-def _sig_handler(proc, sig, frame):
-  alog.async_log(alog.WARNING,
-                 f'{signal.strsignal(sig)} received. Forwarding it to running ' \
-                 f'child {proc.pid} ...')
+class _SigHandler:
 
-  proc.send_signal(sig)
+  def __init__(self, proc):
+    self._proc = proc
+    self._sent = set()
 
-  return sgn.HANDLED
+  def __call__(self, sig, frame):
+    if sig not in self._sent:
+      self._sent.add(sig)
+      alog.async_log(alog.WARNING,
+                     f'{signal.strsignal(sig)} received. Forwarding it to running ' \
+                     f'child {proc.pid} ...')
+
+      self._proc.send_signal(sig)
+
+    return sgn.HANDLED
 
 
 def _lookup(tmpl_envs, key, defval=None):
@@ -50,7 +58,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   if readfn is None:
     readfn = getattr(proc.stdout, 'readline', None)
 
-  with sgn.Signals('INT, TERM', functools.partial(_sig_handler, proc)):
+  with sgn.Signals('INT, TERM', _SigHandler(proc)):
     while True:
       data = readfn()
       if data:
