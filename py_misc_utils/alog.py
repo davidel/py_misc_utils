@@ -299,7 +299,8 @@ def async_log(level, msg, *args, **kwargs):
 
       formatter = Formatter()
 
-      sys.stderr.write(formatter.format(record))
-      sys.stderr.write('\n')
-      sys.stderr.flush()
+      logfd = kwargs.pop('file', sys.stderr)
+      logfd.write(formatter.format(record))
+      logfd.write('\n')
+      logfd.flush()
 
