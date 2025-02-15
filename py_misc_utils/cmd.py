@@ -32,6 +32,29 @@ class _SigHandler:
     return sgn.HANDLED
 
 
+class _Writer:
+
+  def __init__(self, fd):
+    self._fd = fd
+    self._is_binary = fsu.is_binary(fd)
+
+  def write(self, data):
+    if self._is_binary:
+      if isinstance(data, str):
+        data = data.encode()
+    elif not isinstance(data, str):
+      data = data.decode()
+
+    self._fd.write(data)
+    self._fd.flush()
+
+
+class _Reader:
+
+  def __init__(self, fd):
+    self.read = getattr(fd, 'read1', getattr(fd, 'readline', None))
+
+
 def _lookup(tmpl_envs, key, defval=None):
   for env in tmpl_envs:
     value = env.get(key)
@@ -48,9 +71,6 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
     cmd = tr.template_replace(cmd, lookup_fn=functools.partial(_lookup, tmpl_envs))
     cmd = shlex.split(cmd)
 
-  outfd = outfd or sys.stdout
-  is_binary = fsu.is_binary(outfd)
-
   alog.debug(f'Running: {cmd}')
 
   proc = subprocess.Popen(cmd,
@@ -58,22 +78,13 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
                           stderr=subprocess.STDOUT,
                           **kwargs)
 
-  readfn = getattr(proc.stdout, 'read1', None)
-  if readfn is None:
-    readfn = getattr(proc.stdout, 'readline', None)
-
+  reader = _Reader(proc.stdout)
+  writer = _Writer(outfd or sys.stdout)
   with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=outfd)):
     while True:
-      data = readfn()
+      data = reader.read()
       if data:
-        if is_binary:
-          if isinstance(data, str):
-            data = data.encode()
-        elif not isinstance(data, str):
-          data = data.decode()
-
-        outfd.write(data)
-        outfd.flush()
+        writer.write(data)
       elif proc.poll() is not None:
         break
 
