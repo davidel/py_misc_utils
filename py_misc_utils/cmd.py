@@ -12,6 +12,10 @@ from . import template_replace as tr
 
 
 def _sig_handler(proc, sig, frame):
+  alog.async_log(alog.WARNING,
+                 f'{signal.strsignal(sig)} received. Forwarding it to running ' \
+                 f'child {proc.pid} ...')
+
   proc.send_signal(sig)
 
   return sgn.HANDLED

@@ -1,5 +1,6 @@
 import argparse
 import logging
+import math
 import os
 import sys
 import time
@@ -8,6 +9,7 @@ import types
 
 from . import call_limiter as cl
 from . import run_once as ro
+from . import traceback as tb
 
 
 DEBUG = logging.DEBUG
@@ -269,4 +271,33 @@ def xraise(e, msg, *args, **kwargs):
     error(msg, *args, **_nested_args(kwargs))
 
   raise e(msg)
+
+
+def async_log(level, msg, *args, **kwargs):
+  # This one cannot use the logging module as it could be called from signal
+  # handler asycnhronously. The logging.getLevelName() is safe since it is simply
+  # a dictionary lookup.
+  # Similarly, no other APIs taking locks can be caller from this context.
+  if level >= _LEVEL:
+    kwargs = logging_args(kwargs)
+    if kwargs is not None:
+      # Fake a logging record. Do not call logging APIs for that, for the same
+      # reasons cited above.
+      frame = tb.get_frame(n=1)
+      module = frame.f_globals.get('__name__', 'ASYNC').split('.')[-1]
+
+      now = time.time()
+      record = types.SimpleNamespace(
+        msg=msg,
+        args=args,
+        created=now,
+        msecs=math.modf(now)[0] * 1000,
+        levelno=level,
+        levelname=logging.getLevelName(level),
+        module=module,
+      )
+
+      formatter = Formatter()
+
+      print(formatter.format(record), file=sys.stderr)
 
