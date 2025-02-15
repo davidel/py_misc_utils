@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from . import alog
+from . import fs_utils as fsu
 from . import signal as sgn
 from . import template_replace as tr
 
@@ -48,6 +49,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
     cmd = shlex.split(cmd)
 
   outfd = outfd or sys.stdout
+  is_binary = fsu.is_binary(outfd)
 
   alog.debug(f'Running: {cmd}')
 
@@ -64,6 +66,12 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
     while True:
       data = readfn()
       if data:
+        if is_binary:
+          if isinstance(data, str):
+            data = data.encode()
+        elif not isinstance(data, str):
+          data = data.decode()
+
         outfd.write(data)
         outfd.flush()
       elif proc.poll() is not None:

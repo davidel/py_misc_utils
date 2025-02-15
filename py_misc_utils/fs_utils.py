@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import io
 import os
 import pathlib
 import shutil
@@ -18,6 +19,13 @@ def home():
 def maybe_remove(path):
   if os.path.exists(path):
     os.remove(path)
+
+
+def is_binary(fd):
+  if (mode := getattr(fd, 'mode', None)) is not None:
+    return 'b' in mode
+
+  return not isinstance(fd, io.TextIOBase)
 
 
 def link_or_copy(src_path, dest_path):
