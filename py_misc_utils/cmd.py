@@ -39,13 +39,7 @@ class _Writer:
     self._is_binary = fsu.is_binary(fd)
 
   def write(self, data):
-    if self._is_binary:
-      if isinstance(data, str):
-        data = data.encode()
-    elif not isinstance(data, str):
-      data = data.decode()
-
-    self._fd.write(data)
+    self._fd.write(data if self._is_binary else data.decode())
     self._fd.flush()
 
 
