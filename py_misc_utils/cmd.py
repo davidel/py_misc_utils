@@ -13,8 +13,9 @@ from . import template_replace as tr
 
 class _SigHandler:
 
-  def __init__(self, proc):
+  def __init__(self, proc, logfd=None):
     self._proc = proc
+    self._logfd = logfd
     self._sent = set()
 
   def __call__(self, sig, frame):
@@ -22,7 +23,8 @@ class _SigHandler:
       self._sent.add(sig)
       alog.async_log(alog.WARNING,
                      f'{signal.strsignal(sig)} received. Forwarding it to running ' \
-                     f'child {proc.pid} ...')
+                     f'child {proc.pid} ...',
+                     file=self._logfd)
 
       self._proc.send_signal(sig)
 
@@ -58,7 +60,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   if readfn is None:
     readfn = getattr(proc.stdout, 'readline', None)
 
-  with sgn.Signals('INT, TERM', _SigHandler(proc)):
+  with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=outfd)):
     while True:
       data = readfn()
       if data:
