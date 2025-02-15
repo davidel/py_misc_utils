@@ -35,12 +35,12 @@ class _SigHandler:
 class _Writer:
 
   def __init__(self, fd):
-    self._fd = fd
+    self.fd = fd
     self._is_binary = fsu.is_binary(fd)
 
   def write(self, data):
-    self._fd.write(data if self._is_binary else data.decode())
-    self._fd.flush()
+    self.fd.write(data if self._is_binary else data.decode())
+    self.fd.flush()
 
 
 class _Reader:
@@ -79,9 +79,10 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
 
   reader = _Reader(proc.stdout)
   writer = _Writer(outfd or sys.stdout)
-  with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=outfd or sys.stdout)):
+  with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=writer.fd)):
     while True:
       data = reader.read()
+      print(len(data))
       if data:
         writer.write(data)
       elif proc.poll() is not None:
