@@ -46,7 +46,9 @@ class _Writer:
 class _Reader:
 
   def __init__(self, fd):
-    self._read = getattr(fd, 'read1', getattr(fd, 'readline', None))
+    self._read = getattr(fd, 'read1', None)
+    if self._read is None:
+      self._read = getattr(fd, 'readline', None)
 
   def read(self):
     return self._read()
@@ -77,7 +79,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
 
   reader = _Reader(proc.stdout)
   writer = _Writer(outfd or sys.stdout)
-  with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=outfd)):
+  with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=outfd or sys.stdout)):
     while True:
       data = reader.read()
       if data:
