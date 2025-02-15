@@ -82,7 +82,7 @@ def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   with sgn.Signals('INT, TERM', _SigHandler(proc, logfd=writer.fd)):
     while True:
       data = reader.read()
-      print(len(data))
+      print(data)
       if data:
         writer.write(data)
       elif proc.poll() is not None:
