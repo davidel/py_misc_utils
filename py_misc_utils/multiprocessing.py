@@ -1,6 +1,7 @@
 import functools
 import gc
 import multiprocessing
+import signal
 import sys
 
 from . import alog
@@ -8,9 +9,27 @@ from . import cleanups
 from . import global_namespace as gns
 
 
-def cleanup():
+class TerminationError(Exception):
+  pass
+
+def _sig_handler(sig, frame):
+  if sig == signal.SIGINT:
+    raise KeyboardInterrupt()
+  elif sig == signal.SIGTERM:
+    raise TerminationError()
+
+
+def _signals_setup():
+  signal.signal(signal.SIGINT, _sig_handler)
+  signal.signal(signal.SIGTERM, _sig_handler)
+
+
+def _cleanup():
   cleanups.run()
   gc.collect()
+  # Ignore {INT, TERM} signals on exit.
+  signal.signal(signal.SIGINT, signal.SIG_IGN)
+  signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
 
 _GNS_KEY = 'gns'
@@ -46,9 +65,9 @@ def _apply_child_context(kwargs):
   return kwargs
 
 
-def _wrapped_procfn(procfn, *args, **kwargs):
+def procfn_wrap(procfn, *args, **kwargs):
   try:
-    kwargs = _apply_child_context(kwargs)
+    _signals_setup()
 
     return procfn(*args, **kwargs)
   except KeyboardInterrupt:
@@ -57,7 +76,13 @@ def _wrapped_procfn(procfn, *args, **kwargs):
     alog.exception(ex, exmsg=f'Exception while running process function')
     raise
   finally:
-    cleanup()
+    _cleanup()
+
+
+def _wrapped_procfn(procfn, *args, **kwargs):
+  kwargs = _apply_child_context(kwargs)
+
+  return procfn(*args, **kwargs)
 
 
 def create_process(procfn, args=None, kwargs=None, context=None, daemon=None):
@@ -72,7 +97,7 @@ def create_process(procfn, args=None, kwargs=None, context=None, daemon=None):
   kwargs = {} if kwargs is None else kwargs
 
   kwargs = _capture_parent_context(mpctx.get_start_method(), kwargs)
-  target = functools.partial(_wrapped_procfn, procfn, *args, **kwargs)
+  target = functools.partial(procfn_wrap, _wrapped_procfn, procfn, *args, **kwargs)
 
   return mpctx.Process(target=target, daemon=daemon)
 
