@@ -1,6 +1,7 @@
 import argparse
 import functools
 import inspect
+import signal
 import sys
 import typing
 import yaml
@@ -11,6 +12,30 @@ from . import global_namespace as gns
 from . import multiprocessing as mp
 
 
+class TerminationError(Exception):
+  pass
+
+
+def _sig_handler(sig, frame):
+  if sig == signal.SIGINT:
+    raise KeyboardInterrupt()
+  elif sig == signal.SIGTERM:
+    raise TerminationError()
+
+
+def _signals_setup():
+  signal.signal(signal.SIGINT, _sig_handler)
+  signal.signal(signal.SIGTERM, _sig_handler)
+
+
+def _cleanup(init_modules):
+  _cleanup_modules(init_modules)
+  mp.cleanup()
+  # Ignore {INT, TERM} signals on exit.
+  signal.signal(signal.SIGINT, signal.SIG_IGN)
+  signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
+
 def _get_init_modules():
   # Here is the place to import (import here to avoid cycling dependencies) and
   # call the get_main_config() API of modules which require setting up a
@@ -19,7 +44,8 @@ def _get_init_modules():
   # also has minimal dependencies which do not create issues).
   # Objects returned by the get_main_config() API must have a add_arguments(parser)
   # API to allow them to add command line arguments, and a config_module(args) API
-  # to configure themselves with the parsed arguments.
+  # to configure themselves with the parsed arguments. An optional cleanup_module()
+  # is allowed, to give the module a chance to cleanup when exiting the main function.
   # Example:
   #
   #   from . import foo
@@ -41,6 +67,12 @@ def _config_modules(init_modules, args):
     module.config_module(args)
 
 
+def _cleanup_modules(init_modules):
+  for module in init_modules:
+    if (cleanup_module := getattr(module, 'cleanup_module', None)) is not None:
+      cleanup_module()
+
+
 def _child_setup_modules(args):
   init_modules = _get_init_modules()
   _config_modules(init_modules, args)
@@ -50,11 +82,12 @@ def _child_setup_modules(args):
 
 _ARGS = gns.Var(f'{__name__}.ARGS', child_fn=_child_setup_modules)
 
-def _main(parser, mainfn, args, rem_args):
+def _main(parser, init_modules, mainfn, args, rem_args):
+  _signals_setup()
+
   if isinstance(mainfn, Main):
     mainfn.add_arguments(parser)
 
-  init_modules = _get_init_modules()
   _add_arguments(init_modules, parser)
 
   if rem_args:
@@ -79,13 +112,14 @@ def _main(parser, mainfn, args, rem_args):
 
 
 def main(parser, mainfn, args=None, rem_args=None):
+  init_modules = _get_init_modules()
   try:
-    _main(parser, mainfn, args, rem_args)
+    _main(parser, init_modules, mainfn, args, rem_args)
   except Exception as ex:
     alog.exception(ex, exmsg=f'Exception while running main function')
     raise
   finally:
-    mp.cleanup()
+    _cleanup(init_modules)
 
 
 def basic_main(mainfn, description='Basic Main'):
