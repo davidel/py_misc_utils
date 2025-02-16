@@ -42,15 +42,16 @@ def _mirrored_field(name):
   return f'_mirrored_{name}'
 
 
-def mirror_all(src, dest, excludes=None, name=None):
-  excludes = set(excludes or [])
+def mirror_all(src, dest, excludes=(), includes=(), name=None):
+  excludes = set(excludes)
   for attr in dir(dest):
     if not attr.startswith('_'):
       excludes.add(attr)
 
+  includes = set(includes)
   mirrored = []
   for attr in dir(src):
-    if not attr.startswith('_') and attr not in excludes:
+    if (not attr.startswith('_') or attr in includes) and attr not in excludes:
       setattr(dest, attr, getattr(src, attr))
       mirrored.append(attr)
 
