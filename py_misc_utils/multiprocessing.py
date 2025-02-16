@@ -70,7 +70,7 @@ def procfn_wrap(procfn, *args, **kwargs):
     _signals_setup()
 
     return procfn(*args, **kwargs)
-  except KeyboardInterrupt:
+  except (KeyboardInterrupt, TerminationError):
     sys.exit(1)
   except Exception as ex:
     alog.exception(ex, exmsg=f'Exception while running process function')
