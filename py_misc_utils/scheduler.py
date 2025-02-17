@@ -38,8 +38,8 @@ class Scheduler:
   def _run_event(self, event):
     try:
       event.action(*event.argument, **event.kwargs)
-    except Exception as e:
-      alog.exception(e, exmsg=f'Exception while running scheduled action')
+    except Exception as ex:
+      alog.exception(ex, exmsg=f'Exception while running scheduled action')
 
   def _run(self):
     while True:

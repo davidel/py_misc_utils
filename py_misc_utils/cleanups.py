@@ -1,17 +1,19 @@
 import atexit
+import collections
 import threading
-import traceback
 
 from . import alog
 from . import global_namespace as gns
 
+
+_Cleaner = collections.namedtuple('Cleaner', 'fn, args, kwargs')
 
 class _Cleanups:
 
   def __init__(self):
     self._lock = threading.Lock()
     self._nextid = 0
-    self._funcs = dict()
+    self._cleaners = dict()
 
     # The run() API is called from a "finally" clause of the multiprocessing module,
     # which is the preferred path since we know eveything is up at that time. But we
@@ -23,37 +25,36 @@ class _Cleanups:
   def register(self, fn, *args, **kwargs):
     with self._lock:
       cid = self._nextid
-      self._funcs[cid] = (fn, args, kwargs)
+      self._cleaners[cid] = _Cleaner(fn=fn, args=args, kwargs=kwargs)
       self._nextid += 1
 
     return cid
 
-  def unregister(self, cid, run=None):
+  def unregister(self, cid, run=False):
     with self._lock:
-      cfdata = self._funcs.pop(cid, None)
+      cleaner = self._cleaners.pop(cid, None)
 
-    if run is True and cfdata is not None:
-      fn, args, kwargs = cfdata
+    if cleaner is not None and run:
+      self._run_cleaner(fn, args, kwargs)
 
-      fn(*args, **kwargs)
+    return cleaner
 
-    return cfdata
+  def _run_cleaner(self, cleaner):
+    try:
+      cleaner.fn(*cleaner.args, **cleaner.kwargs)
+    except Exception as ex:
+      alog.exception(ex, exmsg=f'Exception while running cleanups')
 
   def run(self):
     with self._lock:
-      funcs = self._funcs
-      self._funcs = dict()
+      cleaners = self._cleaners
+      self._cleaners = dict()
 
     # Sort by reverse ID, which is reverse register order.
-    cids = sorted(funcs.keys(), reverse=True)
-    cfdata = [funcs[cid] for cid in cids]
+    cids = sorted(cleaners.keys(), reverse=True)
 
-    for fn, args, kwargs in cfdata:
-      try:
-        fn(*args, **kwargs)
-      except Exception as e:
-        tb = traceback.format_exc()
-        alog.error(f'Exception while running cleanups: {e}\n{tb}')
+    for cleaner in (cleaners[cid] for cid in cids):
+      self._run_cleaner(cleaner)
 
 
 _CLEANUPS = gns.Var(f'{__name__}.CLEANUPS',
@@ -75,7 +76,7 @@ def reg(fn):
   return fn
 
 
-def unregister(cid, run=None):
+def unregister(cid, run=False):
   return _cleanups().unregister(cid, run=run)
 
 
