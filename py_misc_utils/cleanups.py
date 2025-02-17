@@ -13,10 +13,11 @@ class _Cleanups:
     self._nextid = 0
     self._funcs = dict()
 
-    # The run() API is called from a "finally" clause of the app_main module, which
-    # is the preferred path since we know eveything is up at that time. But we also
-    # register an atexit callback for cases (like child prcesses) which do not end
-    # up going out the app_main path.
+    # The run() API is called from a "finally" clause of the multiprocessing module,
+    # which is the preferred path since we know eveything is up at that time. But we
+    # also register an atexit callback for cases (like child prcesses) which do not
+    # end up going out the multiprocessing path (although every child process using
+    # this library should be created with the multiprocessing.create_process() API).
     atexit.register(self.run)
 
   def register(self, fn, *args, **kwargs):
