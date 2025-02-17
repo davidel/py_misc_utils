@@ -276,13 +276,13 @@ def xraise(e, msg, *args, **kwargs):
 def async_log(level, msg, *args, **kwargs):
   # This one cannot use the logging module as it could be called from signal
   # handler asycnhronously. The logging.getLevelName() is safe since it is simply
-  # a dictionary lookup.
-  # Similarly, no other APIs taking locks can be caller from this context.
+  # a (lockless) dictionary lookup.
+  # Similarly, no other APIs taking locks can be called from this context.
   if level >= _LEVEL:
     kwargs = logging_args(kwargs)
     if kwargs is not None:
-      # Fake a logging record. Do not call logging APIs for that, for the same
-      # reasons cited above.
+      # Fake a logging record, filling up only the fields used by the Formatter.
+      # Do not call logging APIs for that, for the same reasons cited above.
       frame = tb.get_frame(n=1)
       module = frame.f_globals.get('__name__', 'ASYNC').split('.')[-1]
 
