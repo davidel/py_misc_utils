@@ -19,12 +19,12 @@ def _sig_handler(sig, frame):
     raise TerminationError()
 
 
-def _signals_setup():
+def _process_setup():
   signal.signal(signal.SIGINT, _sig_handler)
   signal.signal(signal.SIGTERM, _sig_handler)
 
 
-def _cleanup():
+def _process_cleanup():
   cleanups.run()
   gc.collect()
   # Ignore {INT, TERM} signals on exit.
@@ -67,7 +67,7 @@ def _apply_child_context(kwargs):
 
 def procfn_wrap(procfn, *args, **kwargs):
   try:
-    _signals_setup()
+    _process_setup()
 
     return procfn(*args, **kwargs)
   except (KeyboardInterrupt, TerminationError):
@@ -76,7 +76,7 @@ def procfn_wrap(procfn, *args, **kwargs):
     alog.exception(ex, exmsg=f'Exception while running process function')
     raise
   finally:
-    _cleanup()
+    _process_cleanup()
 
 
 def _wrapped_procfn(procfn, *args, **kwargs):
@@ -85,7 +85,7 @@ def _wrapped_procfn(procfn, *args, **kwargs):
   return procfn(*args, **kwargs)
 
 
-def create_process(procfn, args=None, kwargs=None, context=None, daemon=None):
+def create_process(procfn, args=(), kwargs=None, context=None, daemon=None):
   if context is None:
     mpctx = multiprocessing
   elif isinstance(context, str):
@@ -93,8 +93,7 @@ def create_process(procfn, args=None, kwargs=None, context=None, daemon=None):
   else:
     mpctx = context
 
-  args = () if args is None else args
-  kwargs = {} if kwargs is None else kwargs
+  kwargs = dict() if kwargs is None else kwargs.copy()
 
   kwargs = _capture_parent_context(mpctx.get_start_method(), kwargs)
   target = functools.partial(procfn_wrap, _wrapped_procfn, procfn, *args, **kwargs)
