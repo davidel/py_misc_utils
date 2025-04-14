@@ -52,7 +52,7 @@ class HandlerException(Exception):
     self.explain = explain
 
 
-class HTTPRequestHandler(http.server.CGIHTTPRequestHandler):
+class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   def _check_authorization(self, op, path):
     hauth = self.headers['Authorization']
