@@ -146,6 +146,21 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         explain=f'Internal error: {ex}\n')
 
 
+class ClassWrapper:
+
+  def __init__(self, cls, **kwargs):
+    self._cls = cls
+    self._kwargs = kwargs
+
+  def __call__(self, *args, **kwargs):
+    obj = self._cls.__new__(self._cls, *args, **kwargs)
+    obj.__dict__.update(self._kwargs)
+    obj.__dict__.update({k: v for k, v in vars(self).items() if not k.startswith('_')})
+    obj.__init__(*args, **kwargs)
+
+    return obj
+
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Simple HTTP Server For Testing')
   parser.add_argument('--bind', default='0.0.0.0',
@@ -159,10 +174,9 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  # Make a copy of the class, to allow adding the args (and also because the
+  # Wrap the handler class, to allow adding the args (and also because the
   # http.server.test() API plants data inside the class global namespace.
-  req_handler = copy.copy(HTTPRequestHandler)
-  req_handler._args = args
+  req_handler = ClassWrapper(HTTPRequestHandler, _args=args)
 
   http.server.test(HandlerClass=req_handler,
                    port=args.port,
