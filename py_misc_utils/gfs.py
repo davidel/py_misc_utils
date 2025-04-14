@@ -17,9 +17,6 @@ from . import mirror_from as mrf
 from . import run_once as ro
 
 
-FsPath = collections.namedtuple('FsPath', 'fs, path')
-
-
 class TempFile:
 
   def __init__(self, nsdir=None, nspath=None, **kwargs):
@@ -166,6 +163,8 @@ def get_proto(path):
 
   return m.group(1).lower() if m else _DEFAULT_LOCAL_PROTO
 
+
+FsPath = collections.namedtuple('FsPath', 'fs, path')
 
 def resolve_paths(*paths):
   resolved = []
