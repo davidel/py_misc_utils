@@ -1,4 +1,3 @@
-import array
 import collections
 import re
 
@@ -95,7 +94,7 @@ def split(data, split_rx, quote_ctx=None):
   skipper = _Skipper(qctx.quote_rx)
 
   sval = ord('\\')
-  pos, qstack, parts, seq = 0, [], [], array.array('B')
+  pos, qstack, parts, seq = 0, [], [], bytearray()
   while pos < len(bdata):
     if seq and seq[-1] == sval:
       seq.append(bdata[pos])
@@ -118,8 +117,8 @@ def split(data, split_rx, quote_ctx=None):
     else:
       kpos, is_split = _split_forward(bdata, pos, bsplit_rx, skipper, seq)
       if is_split:
-        parts.append(seq.tobytes())
-        seq = array.array('B')
+        parts.append(seq)
+        seq = bytearray()
       elif kpos < len(bdata):
         c = bdata[kpos]
         if (cc := qctx.map.get(c)) is not None:
@@ -130,7 +129,7 @@ def split(data, split_rx, quote_ctx=None):
 
   tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
   if seq or parts:
-    parts.append(seq.tobytes())
+    parts.append(seq)
 
   return tuple(p.decode() for p in parts) if isinstance(data, str) else tuple(parts)
 
