@@ -7,7 +7,8 @@ class OsFd:
     self._path = path
     self._flags = flags
     self._kwargs = kwargs
-    self._remove_on_error = remove_on_error or False
+    self._remove_on_error = (remove_on_error if remove_on_error is not None else
+                             not os.path.exists(path))
 
   def __enter__(self):
     self._fd = os.open(self._path, self._flags, **self._kwargs)
