@@ -148,16 +148,23 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 class ClassWrapper:
 
+  PRIVATE_ATTRIBUTES = {'_cls', '_kwargs'}
+
   def __init__(self, cls, **kwargs):
     self._cls = cls
     self._kwargs = kwargs
 
+  def __setattr__(self, name, value):
+    sdict = super().__getattribute__('__dict__')
+    sdict[name] = value
+    if name not in ClassWrapper.PRIVATE_ATTRIBUTES:
+      sdict['_kwargs'][name] = value
+
   def __call__(self, *args, **kwargs):
     obj = self._cls.__new__(self._cls, *args, **kwargs)
-    # Add ctor supplied data.
+    # Add ctor supplied data and data planted by the http.server.test() API
+    # (talking about bad API design).
     obj.__dict__.update(self._kwargs)
-    # Add data planted by the http.server.test() API (talking about bad API design).
-    obj.__dict__.update({k: v for k, v in vars(self).items() if not k.startswith('_')})
     obj.__init__(*args, **kwargs)
 
     return obj
