@@ -154,7 +154,9 @@ class ClassWrapper:
 
   def __call__(self, *args, **kwargs):
     obj = self._cls.__new__(self._cls, *args, **kwargs)
+    # Add ctor supplied data.
     obj.__dict__.update(self._kwargs)
+    # Add data planted by the http.server.test() API (talking about bad API design).
     obj.__dict__.update({k: v for k, v in vars(self).items() if not k.startswith('_')})
     obj.__init__(*args, **kwargs)
 
@@ -174,11 +176,13 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  # Wrap the handler class, to allow adding the args (and also because the
-  # http.server.test() API plants data inside the class global namespace.
+  # Wrap the handler and server classes, to allow adding the args (and also because
+  # the http.server.test() API plants data inside the class global namespace!
   req_handler = ClassWrapper(HTTPRequestHandler, _args=args)
+  server_class = ClassWrapper(http.server.ThreadingHTTPServer)
 
   http.server.test(HandlerClass=req_handler,
+                   ServerClass=server_class,
                    port=args.port,
                    bind=args.bind,
                    protocol=args.protocol)
