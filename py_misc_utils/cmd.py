@@ -24,7 +24,7 @@ class _SigHandler:
       self._sent.add(sig)
       alog.async_log(alog.WARNING,
                      f'{signal.strsignal(sig)} received. Forwarding it to running ' \
-                     f'child {proc.pid} ...',
+                     f'child {self._proc.pid} ...',
                      file=self._logfd)
 
       self._proc.send_signal(sig)
