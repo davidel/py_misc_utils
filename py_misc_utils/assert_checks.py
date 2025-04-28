@@ -82,6 +82,11 @@ def check_is_not_none(a, level=logging.ERROR, msg=None):
     _report_fail(level, '!=', a, 'None', msg=msg)
 
 
+def check_in(a, b, level=logging.ERROR, msg=None):
+  if a not in b:
+    _report_fail(level, 'in', a, b, msg=msg)
+
+
 def check_eq(a, b, level=logging.ERROR, msg=None):
   if not (a == b):
     _report_fail(level, '==', a, b, msg=msg)
