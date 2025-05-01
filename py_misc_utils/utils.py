@@ -430,25 +430,12 @@ def binary_reduce(parts, reduce_fn):
   return parts[0]
 
 
-def data_rewrite(v, rwfn):
-  rwv = rwfn(v)
-  if rwv is not None:
-    return rwv
-  elif isinstance(v, (list, tuple)):
-    vals = [data_rewrite(x, rwfn) for x in v]
-    return type(v)(vals)
-  elif cu.isdict(v):
-    return {data_rewrite(k, rwfn): data_rewrite(x, rwfn) for k, x in v.items()}
-  else:
-    return v
-
-
 def stringify(s):
   def rwfn(v):
     if not (isinstance(v, (list, tuple)) or cu.isdict(v)):
       return str(v)
 
-  return data_rewrite(s, rwfn)
+  return cu.data_rewrite(s, rwfn)
 
 
 def mlog(msg, level=alog.DEBUG):

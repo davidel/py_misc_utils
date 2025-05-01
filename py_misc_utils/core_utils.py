@@ -378,6 +378,59 @@ def get_property(obj, name, defval=None):
   return p() if callable(p) else p
 
 
+def data_rewrite(v, rwfn):
+  rwv = rwfn(v)
+  if rwv is not None:
+    return rwv
+  elif isinstance(v, (list, tuple)):
+    new_values, rewritten = [], False
+    for x in v:
+      new_obj = data_rewrite(x, rwfn)
+      new_values.append(new_obj)
+      rewritten = rewritten or new_obj is not x
+
+    return type(v)(new_values) if rewritten else v
+  elif isdict(v):
+    new_values, rewritten = [], False
+    for k, x in v.items():
+      new_k = data_rewrite(k, rwfn)
+      new_x = data_rewrite(x, rwfn)
+      new_values.append((new_k, new_x))
+      rewritten = rewritten or new_k is not k or new_x is not x
+
+    return type(v)(new_values) if rewritten else v
+  elif hasattr(v, '__dict__'):
+    new_values, rewritten = [], False
+    for k, x in v.__dict__.items():
+      new_k = data_rewrite(k, rwfn)
+      new_x = data_rewrite(x, rwfn)
+      new_values.append((new_k, new_x))
+      rewritten = rewritten or new_k is not k or new_x is not x
+
+    if rewritten:
+      new_obj = copy.copy(v)
+      new_obj.__dict__.update(**dict(new_values))
+
+      return new_obj
+
+    return v
+  else:
+    return v
+
+
+def recurse_apply(obj, name, fn):
+  if not fn(obj, name):
+    if isinstance(obj, (list, tuple)):
+      for i, v in enumerate(obj):
+        recurse_apply(v, f'{name}[{i}]', fn)
+    elif isdict(obj):
+      for k, v in obj.items():
+        recurse_apply(v, f'{name}.{k}', fn)
+    elif hasattr(obj, '__dict__'):
+      for k, v in obj.__dict__.items():
+        recurse_apply(v, f'{name}.{k}', fn)
+
+
 def compute_shape(data):
   sp = get_property(data, 'shape')
   if sp is not None:
