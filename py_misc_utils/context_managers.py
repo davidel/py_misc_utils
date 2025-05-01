@@ -61,3 +61,7 @@ class Pack(contextlib.ExitStack):
 def detach(obj):
   return obj.detach() if isinstance(obj, CtxManagerProxy) else obj
 
+
+def cond(value, ctxfn, *args, **kwargs):
+  return ctxfn(*args, **kwargs) if value else contextlib.nullcontext()
+
