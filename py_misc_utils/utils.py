@@ -140,9 +140,9 @@ def expand_strings(*args):
   return tuple(margs)
 
 
-def name_values(base_name, values, force_expand=False):
+def name_values(base_name, values):
   names = []
-  if isinstance(values, (list, tuple)) or force_expand:
+  if isinstance(values, (list, tuple)):
     if len(values) == 1:
       names.append((base_name, values[0]))
     else:
