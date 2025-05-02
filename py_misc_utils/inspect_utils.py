@@ -164,8 +164,8 @@ def get_fn_kwargs(args, func, prefix=None, roffset=None):
 def get_defaulted_params(func):
   sig = inspect.signature(func)
 
-  return [p for p in sig.parameters.values()
-          if p.default is not inspect.Signature.empty]
+  return tuple(p for p in sig.parameters.values()
+               if p.default is not inspect.Signature.empty)
 
 
 def parent_locals(level=0):
