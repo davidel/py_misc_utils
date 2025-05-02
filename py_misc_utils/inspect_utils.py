@@ -161,21 +161,11 @@ def get_fn_kwargs(args, func, prefix=None, roffset=None):
   return fnargs
 
 
-def get_arg_names(func, positional=True, kword=True):
+def get_defaulted_params(func):
   sig = inspect.signature(func)
 
-  names, in_kword = [], False
-  for n, p in sig.parameters.items():
-    in_kword = in_kword or p.default is not inspect.Signature.empty
-    is_positional = (p.kind == p.POSITIONAL_ONLY or
-                     (p.kind == p.POSITIONAL_OR_KEYWORD and not in_kword))
-
-    if is_positional and positional:
-      names.append(n)
-    elif in_kword and kword:
-      names.append(n)
-
-  return tuple(names)
+  return [p for p in sig.parameters.values()
+          if p.default is not inspect.Signature.empty]
 
 
 def parent_locals(level=0):
