@@ -167,11 +167,11 @@ def get_arg_names(func, positional=True, pos_or_kword=True, kword=True):
   names = []
   for n, p in sig.parameters.items():
     if p.kind == p.POSITIONAL_ONLY and positional:
-      args_append(n)
+      args.append(n)
     elif p.kind == p.POSITIONAL_OR_KEYWORD and pos_or_kword:
-      args_append(n)
+      args.append(n)
     elif p.kind == p.KEYWORD_ONLY and kword:
-      args_append(n)
+      args.append(n)
 
   return tuple(args)
 
