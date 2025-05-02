@@ -161,6 +161,21 @@ def get_fn_kwargs(args, func, prefix=None, roffset=None):
   return fnargs
 
 
+def get_arg_names(func, positional=True, pos_or_kword=True, kword=True):
+  sig = inspect.signature(func)
+
+  names = []
+  for n, p in sig.parameters.items():
+    if p.kind == p.POSITIONAL_ONLY and positional:
+      args_append(n)
+    elif p.kind == p.POSITIONAL_OR_KEYWORD and pos_or_kword:
+      args_append(n)
+    elif p.kind == p.KEYWORD_ONLY and kword:
+      args_append(n)
+
+  return tuple(args)
+
+
 def parent_locals(level=0):
   frame = tb.get_frame(level + 2)
 
