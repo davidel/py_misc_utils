@@ -10,6 +10,7 @@ import torch.utils.data as data_utils
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import utils as ut
 
 
@@ -29,7 +30,7 @@ def _load_stream_tensors(path):
     tas.check_eq(ext, '.npy')
 
     tid = int(tid)
-    stream_tensors = ut.idx_expand(stream_tensors, tid)
+    stream_tensors = cu.idx_expand(stream_tensors, tid)
 
     tpath = os.path.join(path, tname)
     stream_tensors[tid] = np.lib.format.open_memmap(tpath, mode='r')
@@ -43,7 +44,7 @@ def _load_tensors(path):
     spath = os.path.join(path, name)
     if re.match(r'\d+$', name) and os.path.isdir(spath):
       streamno = int(name)
-      tensors = ut.idx_expand(tensors, streamno, filler=())
+      tensors = cu.idx_expand(tensors, streamno, filler=())
       tensors[streamno] = _load_stream_tensors(spath)
 
   return tuple(tensors)

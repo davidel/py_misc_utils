@@ -56,7 +56,7 @@ def _stri(obj, seen, float_fmt):
     result = obj.decode()
   elif cu.is_namedtuple(obj):
     result = str(obj)
-  elif isinstance(obj, (tuple, list, types.GeneratorType)):
+  elif cu.is_sequence(obj):
     sl = ', '.join(_stri(x, seen, float_fmt) for x in obj)
 
     result = '[' + sl + ']' if isinstance(obj, list) else '(' + sl + ')'
@@ -132,7 +132,7 @@ def ws_split(data):
 def expand_strings(*args):
   margs = []
   for arg in args:
-    if isinstance(arg, (list, tuple, types.GeneratorType)):
+    if cu.is_sequence(arg):
       margs.extend(arg)
     else:
       margs.extend(comma_split(arg))
@@ -243,13 +243,6 @@ def sreplace(rex, data, mapfn, nmapfn=None, join=True):
   return ''.join(parts) if join else parts
 
 
-def idx_expand(data, idx, filler=None):
-  if idx >= len(data):
-    data = data + [filler] * (idx + 1 - len(data))
-
-  return data
-
-
 def as_sequence(v, t=tuple):
   if isinstance(t, (list, tuple)):
     for st in t:
@@ -261,7 +254,7 @@ def as_sequence(v, t=tuple):
   if isinstance(v, t):
     return v
 
-  return t(v) if isinstance(v, (list, tuple, types.GeneratorType)) else t([v])
+  return t(v) if cu.is_sequence(v) else t([v])
 
 
 def format(seq, fmt):

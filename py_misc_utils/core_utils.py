@@ -68,6 +68,23 @@ def enum_values(obj):
       yield k, v
 
 
+def idx_expand(data, idx, filler=None):
+  if idx >= len(data):
+    data = data + [filler] * (idx + 1 - len(data))
+
+  return data
+
+
+_SEQUENCE_TYPES = (list, tuple, types.GeneratorType)
+
+def is_sequence(v):
+  return isinstance(v, _SEQUENCE_TYPES)
+
+
+def expand(data, n):
+  return data if is_sequence(data) else (data,) * n
+
+
 def dmerge(*args):
   mdict = dict()
   for d in args:
