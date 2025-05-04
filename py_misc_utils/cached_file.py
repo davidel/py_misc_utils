@@ -311,7 +311,7 @@ class CachedFile:
     if self._block is None or boffset < 0 or boffset >= len(self._block):
       block_offset = (offset // self._block_size) * self._block_size
 
-      self._block = memoryview(self.cbf.read_block(block_offset))
+      self._block = self.cbf.read_block(block_offset)
       self._block_start = block_offset
       boffset = offset - block_offset
 
@@ -322,6 +322,11 @@ class CachedFile:
 
     return available if size < 0 else min(size, available)
 
+  def _block_view(self, start, end):
+    block = memoryview(self._block)
+
+    return block[start: end]
+
   def read(self, size=-1):
     rsize = self._max_size(size)
 
@@ -330,7 +335,7 @@ class CachedFile:
       boffset = self._ensure_buffer(self._offset)
 
       csize = min(rsize, len(self._block) - boffset)
-      parts.append(self._block[boffset: boffset + csize])
+      parts.append(self._block_view(boffset, boffset + csize))
       self._offset += csize
       rsize -= csize
 
@@ -344,7 +349,7 @@ class CachedFile:
       boffset = self._ensure_buffer(self._offset)
       csize = min(size, len(self._block) - boffset)
 
-      return self._block[boffset: boffset + csize].tobytes()
+      return self._block[boffset: boffset + csize]
 
     return b''
 
@@ -356,7 +361,7 @@ class CachedFile:
       boffset = self._ensure_buffer(self._offset)
 
       csize = min(rsize, len(self._block) - boffset)
-      cdata = self._block[boffset: boffset + csize]
+      cdata = self._block_view(boffset, boffset + csize)
       # Hmmm, a memoryview() should really have a find() API...
       m = re.search(b'\n', cdata)
       if m is not None:
