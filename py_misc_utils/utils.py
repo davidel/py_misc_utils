@@ -168,7 +168,7 @@ def config_to_string(cfg, **kwargs):
 
 
 def parse_config(cfg):
-  if not cfg.startswith('{'):
+  if not re.match(r'[\[\{]', cfg):
     # It must be either a dictionary in YAML format, or a valid path.
     with gfs.open(cfg, mode='r') as fd:
       data = fd.read()
