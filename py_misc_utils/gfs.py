@@ -158,6 +158,10 @@ def is_local_path(path):
   return is_local_proto(get_proto(path))
 
 
+def is_path(path):
+  return re.match(r'(\w+)://', path) is not None
+
+
 def get_proto(path):
   m = re.match(r'(\w+)://', path)
 
