@@ -317,11 +317,13 @@ class CachedFile:
 
     return boffset
 
+  def _max_size(self, size):
+    available = self.cbf.size() - self._offset
+
+    return available if size < 0 else min(size, available)
+
   def read(self, size=-1):
-    if size < 0:
-      rsize = self.cbf.size() - self._offset
-    else:
-      rsize = min(size, self.cbf.size() - self._offset)
+    rsize = self._max_size(size)
 
     parts = []
     while rsize > 0:
@@ -345,6 +347,27 @@ class CachedFile:
       return self._block[boffset: boffset + csize].tobytes()
 
     return b''
+
+  def readline(self, size=-1):
+    rsize = self._max_size(size)
+
+    parts = []
+    while rsize > 0:
+      boffset = self._ensure_buffer(self._offset)
+
+      csize = min(rsize, len(self._block) - boffset)
+      cdata = self._block[boffset: boffset + csize]
+      # Hmmm, a memoryview() should really have a find() API...
+      m = re.search(b'\n', cdata)
+      if m is not None:
+        parts.append(cdata[: m.start() + 1])
+        self._offset += m.start() + 1
+        break
+      else:
+        self._offset += csize
+        rsize -= csize
+
+    return b''.join(parts)
 
   def flush(self):
     pass
