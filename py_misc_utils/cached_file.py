@@ -334,7 +334,7 @@ class CachedFile:
       self._offset += csize
       rsize -= csize
 
-    return parts[0] if len(parts) == 1 else b''.join(parts)
+    return b''.join(parts)
 
   def read1(self, size=-1):
     return self.read(size=size)
@@ -367,7 +367,7 @@ class CachedFile:
         self._offset += csize
         rsize -= csize
 
-    return parts[0] if len(parts) == 1 else b''.join(parts)
+    return b''.join(parts)
 
   def flush(self):
     pass
