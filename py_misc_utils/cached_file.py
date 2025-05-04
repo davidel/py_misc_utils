@@ -369,8 +369,8 @@ class CachedFile:
 
 class CacheInterface:
 
-  def __init__(self, cache_dir=None):
-    self._cache_dir = cache_dir or _CACHE_DIR
+  def __init__(self, cache_dir):
+    self._cache_dir = cache_dir
 
   def _open(self, cfpath, url, meta, reader, close_fn=None, **kwargs):
     with lockf.LockFile(cfpath):

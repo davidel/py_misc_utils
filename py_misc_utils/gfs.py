@@ -344,11 +344,11 @@ def get_proto_fs(proto, **kwargs):
 def resolve_fs(path, **kwargs):
   proto = get_proto(path)
 
-  cachedir = chf.get_cache_dir(kwargs.pop('cache_dir', _CACHE_DIR))
+  cachedir = chf.get_cache_dir(kwargs.pop('cache_dir', cache_dir()))
 
   cache_iface = kwargs.pop('cache_iface', None)
   if cache_iface is None:
-    cache_iface = chf.CacheInterface(cache_dir=cachedir)
+    cache_iface = chf.CacheInterface(cachedir)
 
   fs = get_proto_fs(proto, cache_iface=cache_iface, cache_dir=cachedir, **kwargs)
 
