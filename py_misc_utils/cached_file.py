@@ -10,6 +10,7 @@ import yaml
 
 from . import alog
 from . import assert_checks as tas
+from . import core_utils as cu
 from . import file_overwrite as fow
 from . import fin_wrap as fw
 from . import fs_utils as fsu
@@ -468,6 +469,9 @@ def cleanup_cache(cache_dir, max_age=None, max_size=None):
         alog.info(f'Dropping cache for {cfs.meta.url} stored at {cfs.path}')
         with lockf.LockFile(cfs.path):
           CachedBlockFile.remove(cfs.path)
+
+    alog.debug0(f'Cache size was {cu.size_str(cache_size)} (size will be trimmed ' \
+                f'to {cu.size_str(max_size)})')
 
 
 def make_tag(**kwargs):
