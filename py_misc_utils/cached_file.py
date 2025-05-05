@@ -424,7 +424,10 @@ class CacheInterface:
   def as_local(self, url, meta, reader, **kwargs):
     cfile = self.open(url, meta, reader, **kwargs)
 
-    return cfile.cbf.cacheall()
+    local_path = cfile.cbf.cacheall()
+    tas.check_is_not_none(local_path, msg=f'Unable to materialize a local path: {url}')
+
+    return local_path
 
 
 def _get_cache_path(cache_dir, url):
