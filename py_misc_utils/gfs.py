@@ -287,6 +287,12 @@ def cache_dir(path=None):
   return fsu.normpath(path) if path else _CACHE_DIR
 
 
+def set_cache_dir(path):
+  global _CACHE_DIR
+
+  _CACHE_DIR = fsu.normpath(path)
+
+
 def find_mount(path):
   fs, fpath = resolve_fs(path)
 
