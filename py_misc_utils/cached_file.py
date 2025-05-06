@@ -273,7 +273,7 @@ class CachedFile:
 
   def __init__(self, cbf, block_size=None):
     fw.fin_wrap(self, 'cbf', cbf, finfn=cbf.close)
-    self._block_size = block_size or 16 * 1024**2
+    self._block_size = block_size or cbf.meta.block_size
     self._offset = 0
     self._block_start = 0
     self._block = None
@@ -406,8 +406,7 @@ class CacheInterface:
           alog.debug(f'Updating meta of {cfpath}: {xmeta} -> {meta}')
           CachedBlockFile.save_meta(cfpath, meta)
 
-      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta, close_fn=close_fn),
-                        block_size=meta.block_size)
+      return CachedFile(CachedBlockFile(cfpath, reader, meta=meta, close_fn=close_fn))
 
   def open(self, url, meta, reader, **kwargs):
     uncached = kwargs.pop('uncached', False)
