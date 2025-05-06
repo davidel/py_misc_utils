@@ -1,4 +1,5 @@
 from . import assert_checks as tas
+from . import core_utils as cu
 
 
 class Pipeline:
@@ -34,5 +35,7 @@ class Pipeline:
     return x
 
   def clone(self):
-    return Pipeline(*self._elems)
+    elems = [cu.clone_or_self(elem) for elem in self._elems]
+
+    return Pipeline(*elems)
 
