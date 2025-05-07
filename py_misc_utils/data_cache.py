@@ -10,12 +10,10 @@ _MAX_AGE = int(os.getenv('DATACACHE_MAX_AGE', 3600 * 24))
 
 class DataCache:
 
-  def __init__(self, data_id, cache_dir=None, max_age=_MAX_AGE):
-    cache_dir = gfs.cache_dir(path=cache_dir)
-
+  def __init__(self, data_id, max_age=_MAX_AGE):
     fsid = hashlib.sha1(data_id.encode()).hexdigest()
 
-    cache_path = os.path.join(cache_dir, 'data_cache')
+    cache_path = os.path.join(gfs.cache_dir(), 'data_cache')
     gfs.makedirs(cache_path, exist_ok=True)
 
     self._data_path = os.path.join(cache_path, fsid)
