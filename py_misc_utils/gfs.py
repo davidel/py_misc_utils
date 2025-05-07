@@ -283,8 +283,8 @@ def normpath(path):
 _CACHE_DIR = fsu.normpath(os.getenv('CACHE_DIR',
                                     os.path.join(fsu.home(), '.cache')))
 
-def cache_dir(path=None):
-  return fsu.normpath(path) if path else _CACHE_DIR
+def cache_dir():
+  return _CACHE_DIR
 
 
 def set_cache_dir(path):
