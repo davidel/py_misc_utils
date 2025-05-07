@@ -160,7 +160,11 @@ def is_local_path(path):
 
 def is_path(path):
   # It is a path is it contains a proto, or starts with '/', './' or '../'.
-  return re.match(r'(\w+)://|/|\.\.?/', path) is not None
+  return has_proto(path) or re.match(r'/|\.\.?/', path) is not None
+
+
+def has_proto(path):
+  return re.match(r'\w+://', path) is not None
 
 
 def get_proto(path):
