@@ -358,11 +358,11 @@ class CachedFile:
 
       csize = min(rsize, len(self._block) - boffset)
       cdata = self._block[boffset: boffset + csize]
-      # Hmmm, a memoryview() should really have a find() API...
-      m = re.search(b'\n', cdata)
-      if m is not None:
-        parts.append(cdata[: m.start() + 1])
-        self._offset += m.start() + 1
+
+      pos = cu.vfind(cdata, b'\n')
+      if pos >= 0:
+        parts.append(cdata[: pos + 1])
+        self._offset += pos + 1
         break
       else:
         self._offset += csize

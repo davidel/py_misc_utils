@@ -48,6 +48,13 @@ def denone(**kwargs):
   return {k: v for k, v in kwargs.items() if v is not None}
 
 
+def vfind(mem, b):
+  # Hmmm, a memoryview() should really have a find() API...
+  m = re.search(b, mem)
+
+  return m.start() if m is not None else -1
+
+
 def seqfirst(s):
   return next(iter(s))
 
