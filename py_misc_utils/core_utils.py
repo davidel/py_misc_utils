@@ -92,6 +92,27 @@ def expand(data, n):
   return data if is_sequence(data) else (data,) * n
 
 
+def range_split(n, split, minsize, reverse=False):
+  splits = list(range(0, n, split))
+  if len(splits) > 1 and (n - splits[-1]) < minsize:
+    splits.pop()
+
+  rsplits = []
+  for i, base in enumerate(splits):
+    top = splits[i + 1] if (i + 1) < len(splits) else n
+    rsplits.append((base, top))
+
+  return tuple(reversed(rsplits)) if reverse else tuple(rsplits)
+
+
+def partition(data, n):
+  parts = []
+  for i in range(n):
+    parts.append(tuple(data[j] for j in range(i, len(data), n)))
+
+  return tuple(parts)
+
+
 def dmerge(*args):
   mdict = dict()
   for d in args:

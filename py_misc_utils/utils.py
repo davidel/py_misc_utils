@@ -315,19 +315,6 @@ def unpack_n(l, n, defval=None):
   return tuple(l[:n] if len(l) >= n else l + [defval] * (n - len(l)))
 
 
-def range_split(n, split, minsize, reverse=False):
-  splits = list(range(0, n, split))
-  if len(splits) > 1 and (n - splits[-1]) < minsize:
-    splits.pop()
-
-  rsplits = []
-  for i, base in enumerate(splits):
-    top = splits[i + 1] if (i + 1) < len(splits) else n
-    rsplits.append((base, top))
-
-  return tuple(reversed(rsplits)) if reverse else tuple(rsplits)
-
-
 def getenv(name, dtype=None, defval=None):
   # os.getenv expects the default value to be a string, so cannot be passed in there.
   env = os.getenv(name, None)
