@@ -29,13 +29,41 @@ class Pipeline:
     return tuple(self._elems)
 
   def __call__(self, x):
+    y = x
     for elem in self._elems:
-      x = elem(x)
+      y = elem(y)
 
-    return x
+    return y
 
   def clone(self):
     elems = [cu.clone_or_self(elem) for elem in self._elems]
 
     return Pipeline(*elems)
+
+
+# The Pipeline can also be used with data which is returned as iterators, where
+# the is not a 1:1 mapping between input and output.
+# Think about a pipeline element which absorbs data, and return batches of it.
+# The non-iterator approach would not work as for many inputs, there are no ouputs
+# at all (till the batch size is reached).
+# When used in such fashion, pipeline elements whould inherit from IterElement and
+# implement the _process() API.
+class IterElement:
+
+  def __call__(self, data):
+    # Calls the _process() API making sure the input is an iterator.
+    return iter(self._process(cu.as_iterator(data)))
+
+
+# A simple IterElement that calls a function over the data. This is the same as
+# the standard Pipeline use, but with support for iterator based pipelines.
+class IterProcess(IterElement):
+
+  def __init__(self, proc_fn):
+    super().__init__()
+    self._proc_fn = proc_fn
+
+  def _process(self, data):
+    for value in data:
+      yield self._proc_fn(value)
 

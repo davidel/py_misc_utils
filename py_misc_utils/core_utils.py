@@ -113,6 +113,14 @@ def partition(data, n):
   return tuple(parts)
 
 
+def is_iterator(obj):
+  return hasattr(obj, '__iter__') and hasattr(obj, '__next__')
+
+
+def as_iterator(obj):
+  return obj if is_iterator(obj) else iter([obj])
+
+
 def dmerge(*args):
   mdict = dict()
   for d in args:
