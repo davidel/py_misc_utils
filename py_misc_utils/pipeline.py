@@ -59,11 +59,13 @@ class IterElement:
 # the standard Pipeline use, but with support for iterator based pipelines.
 class IterProcess(IterElement):
 
-  def __init__(self, proc_fn):
+  def __init__(self, proc_fn, *args, **kwargs):
     super().__init__()
     self._proc_fn = proc_fn
+    self._args = args
+    self._kwargs = kwargs
 
   def _process(self, data):
     for value in data:
-      yield self._proc_fn(value)
+      yield self._proc_fn(*self._args, value, **self._kwargs)
 
