@@ -52,7 +52,7 @@ class IterElement:
 
   def __call__(self, data):
     # Calls the _process() API making sure the input is an iterator.
-    return iter(self._process(cu.as_iterator(data)))
+    return self._process(cu.as_iterator(data))
 
 
 # A simple IterElement that calls a function over the data. This is the same as
