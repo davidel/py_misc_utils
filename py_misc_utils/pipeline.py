@@ -42,9 +42,10 @@ class Pipeline:
 
 
 # The Pipeline can also be used with data which is returned as iterators, where
-# the is not a 1:1 mapping between input and output.
-# Think about a pipeline element which absorbs data, and return batches of it.
-# The non-iterator approach would not work as for many inputs, there are no ouputs
+# there is not a 1:1 mapping between input and output.
+# Think about a pipeline element which absorbs data, and return batches of it (or
+# absorbs text and emits token indices).
+# The non-iterator approach would not work, as for many inputs there are no ouputs
 # at all (till the batch size is reached).
 # When used in such fashion, pipeline elements whould inherit from IterElement and
 # implement the _process() API.
