@@ -3,14 +3,11 @@ import signal as sgn
 import threading
 
 from . import core_utils as cu
+from . import global_namespace as gns
 from . import traceback as tb
 
 
 _Handler = collections.namedtuple('Handler', 'handler, prio')
-
-_LOCK = threading.Lock()
-_HANDLERS = dict()
-_PREV_HANDLERS = dict()
 
 MAX_PRIO = 0
 MIN_PRIO = 99
@@ -19,22 +16,70 @@ CALL_NEXT = 0
 HANDLED = 1
 
 
+class _SignalRegistry:
+
+  def __init__(self):
+    self.lock = threading.Lock()
+    self.handlers = dict()
+    self.prev_handlers = dict()
+
+  def signal(self, sig, handler, prio=None):
+    prio = STD_PRIO if prio is None else prio
+
+    with self.lock:
+      handlers = self.handlers.get(sig, ())
+      handlers += (_Handler(handler, prio),)
+      self.handlers[sig] = tuple(sorted(handlers, key=lambda h: h.prio))
+
+      if sig not in self.prev_handlers:
+        self.prev_handlers[sig] = sgn.signal(sig, _handler)
+
+  def unsignal(self, sig, uhandler):
+    handlers, dropped = [], 0
+    with self.lock:
+      for handler in self.handlers.get(sig, ()):
+        if handler.handler != uhandler:
+          handlers.append(handler)
+        else:
+          dropped += 1
+
+      if dropped:
+        self.handlers[sig] = tuple(handlers)
+        if not handlers:
+          sgn.signal(sig, self.prev_handlers.pop(sig))
+
+    return dropped
+
+  def sig_handler(self, sig, frame):
+    with self.lock:
+      handlers = self.handlers.get(sig, ())
+      prev_handler = self.prev_handlers.get(sig)
+
+    for handler in handlers:
+      hres = handler.handler(sig, frame)
+      if hres == HANDLED:
+        return
+
+    if callable(prev_handler):
+      prev_handler(sig, frame)
+    else:
+      handler = sgn.getsignal(sig)
+      if callable(handler):
+        handler(sig, frame)
+
+
+_SIGREG = gns.Var(f'{__name__}.SIGREG',
+                  fork_init=True,
+                  defval=lambda: _SignalRegistry())
+
+def _sig_registry():
+  return gns.get(_SIGREG)
+
+
 def _handler(sig, frame):
-  with _LOCK:
-    handlers = _HANDLERS.get(sig, ())
-    prev_handler = _PREV_HANDLERS.get(sig)
+  sreg = _sig_registry()
 
-  for handler in handlers:
-    hres = handler.handler(sig, frame)
-    if hres == HANDLED:
-      return
-
-  if callable(prev_handler):
-    prev_handler(sig, frame)
-  else:
-    handler = sgn.getsignal(sig)
-    if callable(handler):
-      handler(sig, frame)
+  sreg.sig_handler(sig, frame)
 
 
 def trigger(sig, frame=None):
@@ -42,32 +87,15 @@ def trigger(sig, frame=None):
 
 
 def signal(sig, handler, prio=None):
-  prio = STD_PRIO if prio is None else prio
+  sreg = _sig_registry()
 
-  with _LOCK:
-    handlers = _HANDLERS.get(sig, ())
-    handlers += (_Handler(handler, prio),)
-    _HANDLERS[sig] = tuple(sorted(handlers, key=lambda h: h.prio))
-
-    if sig not in _PREV_HANDLERS:
-      _PREV_HANDLERS[sig] = sgn.signal(sig, _handler)
+  sreg.signal(sig, handler, prio=prio)
 
 
 def unsignal(sig, uhandler):
-  handlers, dropped = [], 0
-  with _LOCK:
-    for handler in _HANDLERS.get(sig, ()):
-      if handler.handler != uhandler:
-        handlers.append(handler)
-      else:
-        dropped += 1
+  sreg = _sig_registry()
 
-    if dropped:
-      _HANDLERS[sig] = tuple(handlers)
-      if not handlers:
-        sgn.signal(sig, _PREV_HANDLERS.pop(sig))
-
-  return dropped
+  return sreg.unsignal(sig, uhandler)
 
 
 class Signals:
