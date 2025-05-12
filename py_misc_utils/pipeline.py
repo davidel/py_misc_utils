@@ -40,6 +40,18 @@ class Pipeline:
 
     return Pipeline(*elems)
 
+  def flush(self):
+    y = None
+    for elem in self._elems:
+      if y is not None:
+        y = elem(y)
+
+      flush_fn = getattr(elem, 'flush', None)
+      if flush_fn is not None:
+        y = flush_fn(y or ())
+
+    return y
+
 
 # The Pipeline can also be used with data which is returned as iterators, where
 # there is not a 1:1 mapping between input and output.
