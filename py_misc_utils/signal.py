@@ -68,9 +68,25 @@ class _SignalRegistry:
         handler(sig, frame)
 
 
+def _parent_fn(sreg):
+  return sreg.prev_handlers
+
+
+def _child_fn(prev_handlers):
+  for sig, prev_handler in prev_handlers.items():
+    sgn.signal(sig, prev_handler)
+
+  return _SignalRegistry()
+
+
+def _create_fn():
+  return _SignalRegistry()
+
+
 _SIGREG = gns.Var(f'{__name__}.SIGREG',
-                  fork_init=True,
-                  defval=lambda: _SignalRegistry())
+                  parent_fn=_parent_fn,
+                  child_fn=_child_fn,
+                  defval=_create_fn)
 
 def _sig_registry():
   return gns.get(_SIGREG)
