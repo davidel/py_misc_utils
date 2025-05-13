@@ -18,6 +18,12 @@ import os
 import threading
 
 
+# The parent_fn function is called (if present) before the creation of a new process,
+# within the parent, with the current value of the variable, and is supposed to be
+# returning the "state" of such variable. The state must be pickle-able.
+# The child_fn function is called (if present) after the creation of a new process,
+# within the child, to restore a variable from its state (the value of the new variable
+# should be returned).
 Var = collections.namedtuple(
   'Var',
   'name, parent_fn, child_fn, data, fork_init, defval',
