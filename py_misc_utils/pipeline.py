@@ -37,7 +37,7 @@ class Pipeline:
 
   def clone(self):
     # If a Pipeline elements has a state, it must implement the clone() API.
-    elems = [cu.maybe_call_dv(elem, 'clone', self) for elem in self._elems]
+    elems = [cu.maybe_call_dv(elem, 'clone', elem) for elem in self._elems]
 
     return Pipeline(*elems)
 
