@@ -52,6 +52,23 @@ class Pipeline:
 
     return y
 
+  def _try_call(self, name, *args, **kwargs):
+    for elem in self._elems:
+      cu.maybe_call(elem, name, *args, **kwargs)
+
+  def reset(self):
+    self._try_call('reset')
+
+
+# Exception thrown by members of iterative pipelines when they want to stop the
+# stream of data, signaling that nothing more will be allowed through it.
+# Returning an empty iterator/generator will not cut it, as this is a legal
+# return value in case of batching elements.
+# Think about a pipeline element which is a filter which should pass through the
+# first N samples, for example.
+class HaltedPipeline(Exception):
+  pass
+
 
 # The Pipeline can also be used with data which is returned as iterators, where
 # there is not a 1:1 mapping between input and output.

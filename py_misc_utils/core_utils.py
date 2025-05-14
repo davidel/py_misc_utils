@@ -232,13 +232,13 @@ def size_str(size):
 def maybe_call(obj, name, *args, **kwargs):
   fn = getattr(obj, name, None)
 
-  return fn(*args, **kwargs) if fn is not None else None
+  return fn(*args, **kwargs) if callable(fn) else None
 
 
 def maybe_call_dv(obj, name, defval, *args, **kwargs):
   fn = getattr(obj, name, None)
 
-  return fn(*args, **kwargs) if fn is not None else defval
+  return fn(*args, **kwargs) if callable(fn) else defval
 
 
 def unique(data):
