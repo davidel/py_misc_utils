@@ -36,7 +36,8 @@ class Pipeline:
     return y
 
   def clone(self):
-    elems = [cu.clone_or_self(elem) for elem in self._elems]
+    # If a Pipeline elements has a state, it must implement the clone() API.
+    elems = [cu.maybe_call_dv(elem, 'clone', self) for elem in self._elems]
 
     return Pipeline(*elems)
 
@@ -51,13 +52,6 @@ class Pipeline:
         y = flush_fn(y or ())
 
     return y
-
-  def _try_call(self, name, *args, **kwargs):
-    for elem in self._elems:
-      cu.maybe_call(elem, name, *args, **kwargs)
-
-  def reset(self):
-    self._try_call('reset')
 
 
 # Exception thrown by members of iterative pipelines when they want to stop the

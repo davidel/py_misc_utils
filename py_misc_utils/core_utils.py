@@ -354,12 +354,6 @@ def clone(obj):
   return clone_fn() if callable(clone_fn) else copy.copy(obj)
 
 
-def clone_or_self(obj):
-  clone_fn = getattr(obj, 'clone', None)
-
-  return clone_fn() if callable(clone_fn) else obj
-
-
 def is_namedtuple(obj):
   return isinstance(obj, tuple) and hasattr(obj, '_asdict') and hasattr(obj, '_fields')
 
