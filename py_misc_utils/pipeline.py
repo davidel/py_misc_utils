@@ -44,12 +44,11 @@ class Pipeline:
   def flush(self):
     y = None
     for elem in self._elems:
-      if y is not None:
-        y = elem(y)
-
       flush_fn = getattr(elem, 'flush', None)
       if flush_fn is not None:
         y = flush_fn(y or ())
+      elif y is not None:
+        y = elem(y)
 
     return y
 
