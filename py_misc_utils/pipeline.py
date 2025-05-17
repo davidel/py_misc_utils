@@ -16,11 +16,15 @@ class Pipeline:
   def __iter__(self):
     return iter(self._elems)
 
-  def add(self, elem):
+  def append(self, elem):
     tas.check(callable(elem), msg=f'Pipeline elements must be callable: {type(elem)}')
     self._elems.append(elem)
 
     return len(self._elems) - 1
+
+  def extend(self, elems):
+    for elem in elems:
+      self.append(elem)
 
   def pop(self, i=None):
     return self._elems.pop(i) if i is not None else self._elems.pop()
@@ -28,12 +32,26 @@ class Pipeline:
   def elems(self):
     return tuple(self._elems)
 
+  def _apply(self, elem, data):
+    if cu.is_iterator(data):
+      if isinstance(elem, IterElement):
+        return elem(data)
+      else:
+        return _iter_process(elem, data)
+    elif isinstance(elem, IterElement):
+      return elem([data])
+    else:
+      return elem(data)
+
   def __call__(self, x):
     y = x
     for elem in self._elems:
-      y = elem(y)
+      y = self._apply(elem, y)
 
     return y
+
+  def __repr__(self):
+    return '\n'.join(f'[{i}] {repr(elem)}' for i, elem in enumerate(self._elems))
 
   def clone(self):
     # If a Pipeline elements has a state, it must implement the clone() API.
@@ -48,7 +66,7 @@ class Pipeline:
       if flush_fn is not None:
         y = flush_fn(y or ())
       elif y is not None:
-        y = elem(y)
+        y = self._apply(elem, y)
 
     return y
 
@@ -69,26 +87,12 @@ class HaltedPipeline(Exception):
 # absorbs text and emits token indices).
 # The non-iterator approach would not work, as for many inputs there are no ouputs
 # at all (till the batch size is reached).
-# When used in such fashion, pipeline elements whould inherit from IterElement and
-# implement the _process() API.
+# When used in such fashion, pipeline elements whould inherit from IterElement.
 class IterElement:
-
-  def __call__(self, data):
-    # Calls the _process() API making sure the input is an iterator.
-    return self._process(cu.as_iterator(data))
+  pass
 
 
-# A simple IterElement that calls a function over the data. This is the same as
-# the standard Pipeline use, but with support for iterator based pipelines.
-class IterProcess(IterElement):
-
-  def __init__(self, proc_fn, *args, **kwargs):
-    super().__init__()
-    self._proc_fn = proc_fn
-    self._args = args
-    self._kwargs = kwargs
-
-  def _process(self, data):
-    for value in data:
-      yield self._proc_fn(*self._args, value, **self._kwargs)
+def _iter_process(elem, data):
+  for x in data:
+    yield elem(x)
 
