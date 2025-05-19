@@ -178,8 +178,15 @@ def splitstrip(data, sep):
   return tuple(s.strip() for s in data.split(sep))
 
 
-def separate(data, sep):
-  return tuple(x.strip() for x in data.split(sep, maxsplit=1))
+def separate(data, sep, reverse=False, filler=_NONE):
+  pos = data.rfind(sep) if reverse else data.find(sep)
+  if pos < 0:
+    if filler is not _NONE:
+      return data.strip(), filler
+    else:
+      return data.strip(),
+
+  return data[: pos].strip(), data[pos + 1:].strip()
 
 
 def root_module(modname):
