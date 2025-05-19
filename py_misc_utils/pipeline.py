@@ -63,7 +63,7 @@ class Pipeline:
     y = None
     for elem in self._elems:
       flush_fn = getattr(elem, 'flush', None)
-      if flush_fn is not None:
+      if callable(flush_fn):
         y = flush_fn(y or ())
       elif y is not None:
         y = self._apply(elem, y)
