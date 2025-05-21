@@ -317,9 +317,9 @@ def unpack_n(l, n, defval=None):
 
 def getenv(name, dtype=None, defval=None):
   # os.getenv expects the default value to be a string, so cannot be passed in there.
-  env = os.getenv(name, None)
+  env = os.getenv(name)
   if env is None:
-    env = defval
+    env = defval() if callable(defval) else defval
   if env is not None:
     return cu.to_type(env, dtype) if dtype is not None else env
 
