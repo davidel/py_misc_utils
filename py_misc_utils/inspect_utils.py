@@ -33,6 +33,18 @@ def func_name(func):
 
 _BUILTIN_NAMES = {'__builtin__', 'builtins'}
 
+def _qual_name(obj, builtin_strip=False):
+  module = getattr(obj, '__module__', None)
+  name = getattr(obj, '__qualname__', None)
+  if name is None:
+    name = getattr(obj, '__name__', None)
+    tas.check_is_not_none(name, msg=f'Unable to reference name: {obj}')
+  if module is not None and not (builtin_strip and module in _BUILTIN_NAMES):
+    name = module + '.' + name
+
+  return name
+
+
 def qual_name(obj, builtin_strip=False):
   if (inspect.isclass(obj) or inspect.isfunction(obj) or
       inspect.ismethod(obj) or inspect.ismodule(obj)):
@@ -40,15 +52,14 @@ def qual_name(obj, builtin_strip=False):
   else:
     ref = obj.__class__
 
-  module = getattr(ref, '__module__', None)
-  name = getattr(ref, '__qualname__', None)
-  if name is None:
-    name = getattr(ref, '__name__', None)
-    tas.check_is_not_none(name, msg=f'Unable to reference name: {ref}')
-  if module is not None and not (builtin_strip and module in _BUILTIN_NAMES):
-    name = module + '.' + name
+  return _qual_name(ref, builtin_strip=builtin_strip)
 
-  return name
+
+def qual_mro(obj, builtin_strip=False):
+  cls = obj if inspect.isclass(obj) else obj.__class__
+
+  for scls in cls.__mro__:
+    yield _qual_name(scls, builtin_strip=builtin_strip)
 
 
 def is_subclass(cls, cls_group):
