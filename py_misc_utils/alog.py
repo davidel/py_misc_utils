@@ -57,8 +57,9 @@ class Formatter(logging.Formatter):
       return time.strftime(datefmt, r.created)
 
     tstr = time.strftime('%Y%m%d %H:%M:%S', time.localtime(r.created))
+    usecs = math.modf(r.created)[0] * 1e6
 
-    return f'{tstr}.{r.msecs * 1000:06.0f}'
+    return f'{tstr}.{usecs:06.0f}'
 
   def make_header(self, r):
     tstr = self.formatTime(r)
