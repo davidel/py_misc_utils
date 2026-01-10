@@ -38,7 +38,7 @@ def fname():
   return tb.get_frame(1).f_code.co_name
 
 
-def _stri(obj, seen, float_fmt, dict_expand):
+def _stri(obj, seen, ffmt, dexp):
   oid = id(obj)
   sres = seen.get(oid, _NONE)
   if sres is None:
@@ -51,20 +51,20 @@ def _stri(obj, seen, float_fmt, dict_expand):
     obj_str = obj.replace('"', '\\"')
     result = f'"{obj_str}"'
   elif isinstance(obj, float):
-    result = f'{obj:{float_fmt}}'
+    result = f'{obj:{ffmt}}'
   elif isinstance(obj, bytes):
     result = obj.decode()
   elif cu.is_namedtuple(obj):
     result = str(obj)
   elif cu.is_sequence(obj):
-    sl = ', '.join(_stri(x, seen, float_fmt) for x in obj)
+    sl = ', '.join(_stri(x, seen, ffmt, dexp) for x in obj)
 
     result = '[' + sl + ']' if isinstance(obj, list) else '(' + sl + ')'
   elif cu.isdict(obj):
-    result = '{' + ', '.join(f'{k}={_stri(v, seen, float_fmt)}' for k, v in obj.items()) + '}'
-  elif dict_expand and hasattr(obj, '__dict__'):
+    result = '{' + ', '.join(f'{k}={_stri(v, seen, ffmt, dexp)}' for k, v in obj.items()) + '}'
+  elif dexp and hasattr(obj, '__dict__'):
     # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
-    drepr = _stri(obj.__dict__, seen, float_fmt)
+    drepr = _stri(obj.__dict__, seen, ffmt, dexp)
     result = f'{iu.cname(obj)}({drepr[1: -1]})'
   else:
     result = str(obj)
