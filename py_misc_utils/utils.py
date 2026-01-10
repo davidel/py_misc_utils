@@ -38,7 +38,7 @@ def fname():
   return tb.get_frame(1).f_code.co_name
 
 
-def _stri(obj, seen, float_fmt):
+def _stri(obj, seen, float_fmt, dict_expand):
   oid = id(obj)
   sres = seen.get(oid, _NONE)
   if sres is None:
@@ -62,7 +62,7 @@ def _stri(obj, seen, float_fmt):
     result = '[' + sl + ']' if isinstance(obj, list) else '(' + sl + ')'
   elif cu.isdict(obj):
     result = '{' + ', '.join(f'{k}={_stri(v, seen, float_fmt)}' for k, v in obj.items()) + '}'
-  elif hasattr(obj, '__dict__'):
+  elif dict_expand and hasattr(obj, '__dict__'):
     # Drop the braces around the __dict__ output, and use the "Classname(...)" format.
     drepr = _stri(obj.__dict__, seen, float_fmt)
     result = f'{iu.cname(obj)}({drepr[1: -1]})'
@@ -74,8 +74,8 @@ def _stri(obj, seen, float_fmt):
   return result
 
 
-def stri(l, float_fmt=None):
-  return _stri(l, dict(), float_fmt or '.3e')
+def stri(l, float_fmt=None, dict_expand=False):
+  return _stri(l, dict(), float_fmt or '.3e', dict_expand)
 
 
 def mget(d, *args, as_dict=False):
