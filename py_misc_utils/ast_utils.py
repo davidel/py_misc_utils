@@ -52,7 +52,7 @@ def ifize(node):
 
 def dump(node, indent=None):
   if indent is None:
-    indent = os.getenv('AST_INDENT', None)
+    indent = os.getenv('AST_INDENT')
     if indent is not None:
       indent = int(indent)
 
