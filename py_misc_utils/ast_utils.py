@@ -71,14 +71,3 @@ def static_eval(node, eval_globals, eval_locals, filename=None):
 
     return value
 
-
-class Tranformer(ast.NodeTransformer):
-
-  def __init__(self, trans_fn):
-    super().__init__()
-    self.trans_fn = trans_fn
-
-  def generic_visit(self, node):
-    super().generic_visit(node)
-    return self.trans_fn(node)
-
