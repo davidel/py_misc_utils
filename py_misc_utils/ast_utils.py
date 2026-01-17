@@ -21,6 +21,50 @@ def _ifize_stmt_list(slist):
     # If one branch of an IF ends with RETURN, and the other does not,
     # move the remaining of the statements after the IF, within the branch
     # which does not have the RETURN.
+    # Example (open 'else'), turns:
+    #
+    #   op1
+    #   if cond:
+    #     op2
+    #     return x
+    #   else:
+    #     op3
+    #   op4
+    #   return y
+    #
+    # Into:
+    #   op1
+    #   if cond:
+    #     op2
+    #     return x
+    #   else:
+    #     op3
+    #     op4
+    #     return y
+    #
+    # Example (open 'if'), turns:
+    #
+    #   op1
+    #   if cond:
+    #     op2
+    #   else:
+    #     op3
+    #     return x
+    #   op4
+    #   return y
+    #
+    # Into:
+    #   op1
+    #   if cond:
+    #     op2
+    #     op4
+    #     return y
+    #   else:
+    #     op3
+    #     return x
+    #
+    # IOW, it makes sure that if within an AST instruction list, the first IF (if any),
+    # will be the last instruction of the list.
     if _ends_with_return(ifnode.body):
       if not _ends_with_return(orelse):
         remlist = _ifize_stmt_list(slist[ni + 1:])
