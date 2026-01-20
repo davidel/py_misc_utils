@@ -27,7 +27,13 @@ from . import template_replace as tr
 from . import traceback as tb
 
 
-_NONE = object()
+class _None:
+
+  def __repr__(self):
+    return 'NONE'
+
+
+_NONE = _None()
 
 
 def pickle_proto():
