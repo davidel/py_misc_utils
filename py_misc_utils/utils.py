@@ -425,8 +425,7 @@ def stringify(s):
 
 
 def mlog(msg, level=alog.DEBUG):
-  if alog.level_active(level):
-    alog.log(level, msg() if callable(msg) else msg)
+  alog.log(level, msg)
 
 
 def seq_rewrite(seq, sd):
