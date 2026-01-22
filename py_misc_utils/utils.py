@@ -84,6 +84,26 @@ def stri(l, float_fmt=None, dict_expand=False):
   return _stri(l, dict(), float_fmt or '.3e', dict_expand)
 
 
+def repr_fmt(obj, *fields, repr_none=False, sep=', '):
+  parts = []
+  for fname in expand_strings(*fields):
+    rnone, xname = repr_none, fname
+
+    m = re.match(r'([!])?(\w+)\s*(=\s*(\w*))?', fname)
+    if m:
+      fname = m.group(2)
+      rnone = m.group(1) == '!'
+      xname = m.group(4)
+      if xname is None:
+        xname = fname
+
+    data = getattr(obj, fname, None)
+    if data is not None or rnone:
+      parts.append(f'{xname}={data}' if xname else str(data))
+
+  return sep.join(parts)
+
+
 def mget(d, *args, as_dict=False):
   margs = expand_strings(*args)
   if as_dict:
