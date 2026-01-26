@@ -160,7 +160,7 @@ def import_module_names(modname, names=None):
     names = [modname[npos + 1:]]
     modname = modname[: npos]
   else:
-    names = ut.expand_strings(name)
+    names = ut.expand_strings(names)
 
   module = importlib.import_module(modname)
 
