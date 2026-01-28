@@ -9,6 +9,7 @@ from . import alog
 from . import assert_checks as tas
 from . import core_utils as cu
 from . import fs_utils as fsu
+from . import inspect_utils as iu
 from . import utils as ut
 
 
@@ -165,6 +166,16 @@ def import_module_names(modname, names=None):
   module = importlib.import_module(modname)
 
   return tuple(module_getter(name)(module) for name in names)
+
+
+def rel_import_module(path,
+                      modname=None,
+                      install=None,
+                      add_syspath=None):
+  ppath, _ = iu.parent_coords()
+  ipath = os.path.abspath(os.path.join(os.path.dirname(ppath), f'{path}.py'))
+
+  return import_module(ipath, modname=modname, install=install, add_syspath=add_syspath)
 
 
 def module_file(module):
