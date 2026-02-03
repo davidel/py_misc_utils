@@ -444,10 +444,6 @@ def stringify(s):
   return cu.data_rewrite(s, rwfn)
 
 
-def mlog(msg, level=alog.DEBUG):
-  alog.log(level, msg)
-
-
 def seq_rewrite(seq, sd):
   return type(seq)(sd.get(s, s) for s in seq)
 
