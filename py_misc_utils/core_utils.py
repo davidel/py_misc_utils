@@ -193,6 +193,10 @@ def root_module(modname):
   return separate(modname, '.')[0]
 
 
+def parent_module(modname):
+  return separate(modname, '.', reverse=True)[0]
+
+
 def ns_lookup(key, mappings):
   kparts = key.split('.')
   for ns in mappings:
