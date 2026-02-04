@@ -359,6 +359,12 @@ def bisect_left(x, key, hi, lo=0):
   return lo
 
 
+def rewrited_exception(ex, msg):
+  xmsg = f'{ex}{msg}'
+
+  return ex.__class__(xmsg).with_traceback(ex.__traceback__)
+
+
 def clone(obj):
   clone_fn = getattr(obj, 'clone', None)
 
