@@ -522,15 +522,16 @@ def compute_shape(data):
 
 class RevGen:
 
-  def __init__(self, fmt=None):
+  def __init__(self, fmt=None, revbase=0):
     self._fmt = fmt or '{name}_{ver}'
+    self._revbase = revbase
     self._revdb = dict()
 
   def getver(self, name, defval=None):
     return self._revdb.get(name, defval)
 
   def newver(self, name):
-    ver = self._revdb.get(name, 0)
+    ver = self._revdb.get(name, self._revbase)
     self._revdb[name] = ver + 1
 
     return ver
