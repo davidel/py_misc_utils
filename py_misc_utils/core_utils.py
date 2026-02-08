@@ -2,6 +2,7 @@
 import array
 import collections
 import copy
+import inspect
 import os
 import re
 import sys
@@ -363,6 +364,23 @@ def rewrited_exception(ex, msg):
   xmsg = f'{ex}{msg}'
 
   return ex.__class__(xmsg).with_traceback(ex.__traceback__)
+
+
+def obj_from_dict(cls, data):
+  args, kwargs = [], dict()
+  slots = getattr(cls, '__slots__', None)
+  if slots is not None:
+    kwargs = {k: data.get(k) for k in slots}
+  else:
+    sig = inspect.signature(cls)
+
+    for n, p in sig.parameters.items():
+      if p.kind == p.POSITIONAL_ONLY:
+        args.append(data.get(n))
+      else:
+        kwargs[n] = data.get(n)
+
+  return cls(*args, **kwargs)
 
 
 def clone(obj):
