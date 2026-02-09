@@ -47,5 +47,5 @@ def template_replace(st, vals=None, lookup_fn=None, delim=None, misses_ok=None):
   if lookup_fn is None:
     lookup_fn = _dict_lookup_fn(vals, delim, misses_ok)
 
-  return Template(st).substitute(_FnDict(lookup_fn))
+  return Template(st).safe_substitute(_FnDict(lookup_fn))
 
