@@ -532,3 +532,14 @@ def state_update(path, **kwargs):
 
   return state
 
+
+def copy_inplace(dest, src):
+  obj_dict = getattr(dest, '__dict__', None)
+  if obj_dict is not None:
+    obj_dict.update(src.__dict__)
+  else:
+    for slot in iu.class_slots(dest):
+      setattr(dest, slot, getattr(src, slot, None))
+
+  return dest
+
