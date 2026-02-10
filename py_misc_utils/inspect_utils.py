@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import sys
 import types
 
@@ -195,4 +196,10 @@ def parent_coords(level=0):
   frame = tb.get_frame(level + 2)
 
   return frame.f_code.co_filename, frame.f_lineno
+
+
+def class_slots(cls):
+  slots = itertools.chain.from_iterable(getattr(mcls, '__slots__', []) for mcls in cls.__mro__)
+
+  return tuple(slots)
 
