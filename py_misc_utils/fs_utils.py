@@ -164,6 +164,13 @@ def du(path, follow_symlinks=None, visited=None):
   return size
 
 
+def find_path(name, paths, checkfn=os.path.exists):
+  for path in paths:
+    cpath = os.path.join(path, name)
+    if checkfn(cpath):
+      return cpath
+
+
 _TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
 
 def temp_path(nspath=None, nsdir=None, rndsize=_TMPFN_RNDSIZE):
