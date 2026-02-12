@@ -11,8 +11,8 @@ class OrderedSet:
       self.add(value)
 
   def add(self, value):
-    n = self._data.get(value, self)
-    if n is self:
+    n = self._data.get(value)
+    if n is None:
       self._data[value] = n = self._seqno
       self._seqno += 1
 
