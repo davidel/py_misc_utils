@@ -176,6 +176,13 @@ def rel_import_module(path, ppath,
   return import_module(ipath, modname=modname, install=install, add_syspath=add_syspath)
 
 
+def maybe_import(modname, package=None):
+  try:
+    return importlib.import_module(modname, package=package)
+  except:
+    alog.spam(f'Unable to load module "{modname}" in package "{package}"')
+
+
 def module_file(module):
   return getattr(module, '__file__', None)
 
