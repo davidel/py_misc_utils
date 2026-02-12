@@ -37,7 +37,7 @@ class OrderedSet:
     return len(self._data)
 
   def values(self):
-    return sorted(self._data.keys(), key=lambda x: self._data[x])
+    return (y[0] for y in sorted(self._data.items(), key=lambda x: x[1]))
 
   def __iter__(self):
     return iter(self.values())
