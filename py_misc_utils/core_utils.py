@@ -464,6 +464,14 @@ def enum_dict_values(ddict, name):
       yield ivalue
 
 
+def enum_unique(data, skip=None):
+  uskip = set(skip or ())
+  for x in data:
+    if x not in uskip:
+      uskip.add(x)
+      yield x
+
+
 def get_property(obj, name, defval=None):
   p = getattr(obj, name, _NONE)
   if p is _NONE:

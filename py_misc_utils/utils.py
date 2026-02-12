@@ -452,13 +452,6 @@ def dfetch(d, *args):
   return tuple(d[n] for n in args)
 
 
-def enum_set(l, s, present):
-  ss = set(s) if not isinstance(s, set) else s
-  for x in l:
-    if present == (x in ss):
-      yield x
-
-
 def numel(t):
   sp = cu.get_property(t, 'shape')
 
