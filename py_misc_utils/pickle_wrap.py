@@ -20,6 +20,7 @@ KNOWN_MODULES = {
 def add_known_module(modname):
   KNOWN_MODULES.add(cu.root_module(modname))
 
+
 def _needs_wrap(obj):
   objmod = iu.moduleof(obj)
   if objmod is not None:
