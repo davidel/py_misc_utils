@@ -261,6 +261,14 @@ def unique(data):
   return udata
 
 
+def enum_max(cls):
+  return max(x for x in cls)
+
+
+def enum_bits(cls):
+  return enum_max(cls).bit_length()
+
+
 def signature(v):
   if isdict(v):
     vdata = dict()
