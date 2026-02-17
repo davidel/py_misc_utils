@@ -2,6 +2,8 @@ import ast
 import logging
 import os
 
+from . import alog
+
 
 def _ends_with_return(slist):
   return slist and isinstance(slist[-1], ast.Return)
@@ -106,12 +108,14 @@ def dump(node, indent=None):
 def static_eval(node, eval_globals, eval_locals, filename=None):
   if isinstance(node, ast.stmt):
     mod = ast.Module(body=[node], type_ignores=[])
-    cmod = compile(mod, filename=filename or 'static_eval', mode='exec')
+    cmod = compile(mod, filename=filename or '<ast_eval>', mode='exec')
     exec(cmod, eval_globals, eval_locals)
   elif isinstance(node, ast.expr):
     expr = ast.Expression(body=node)
-    cexpr = compile(expr, filename=filename or 'static_eval', mode='eval')
+    cexpr = compile(expr, filename=filename or '<ast_eval>', mode='eval')
     value = eval(cexpr, eval_globals, eval_locals)
 
     return value
+  else:
+    alog.xraise(ValueError, f'Invalid AST node: {dump(node)}')
 
