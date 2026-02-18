@@ -1,5 +1,26 @@
-# pyproject.toml
+[project]
+name = "py_misc_utils"
+dynamic = [
+  "authors",
+  "description",
+  "version",
+  "dependencies",
+  "optional-dependencies",
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Developers",
+]
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/davidel/py_misc_utils"
+Issues = "https://github.com/davidel/py_misc_utils/issues"
+Repository = "https://github.com/davidel/py_misc_utils.git"
+
 [build-system]
-# XXX: If your project needs other packages to build properly, add them to this list.
 requires = ["setuptools >= 42.0.0"]
 build-backend = "setuptools.build_meta"

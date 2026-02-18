@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(name='py_misc_utils',
       version='0.2',
-      description='Miscellaneous Utility APIs',
+      description='A collection of Python utility APIs',
       author='Davide Libenzi',
       packages=find_packages(),
       package_data={
