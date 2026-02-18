@@ -13,6 +13,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
   "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
 ]
 license-files = ["LICEN[CS]E*"]
 
