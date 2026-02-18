@@ -1,5 +1,5 @@
 [project]
-name = "py_misc_utils"
+name = "python_misc_utils"
 dynamic = [
   "authors",
   "description",
