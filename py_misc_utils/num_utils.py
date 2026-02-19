@@ -41,6 +41,12 @@ def sign_extend(value, nbits):
   return (value & (sign - 1)) - (value & sign)
 
 
+def ffs(n, nmax):
+  nnorm = n & (-n)
+
+  return nnorm.bit_length() - 1
+
+
 def round_up(v, step):
   return ((v + step - 1) // step) * step
 
