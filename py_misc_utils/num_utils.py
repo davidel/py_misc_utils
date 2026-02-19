@@ -41,7 +41,7 @@ def sign_extend(value, nbits):
   return (value & (sign - 1)) - (value & sign)
 
 
-def ffs(n, nmax):
+def ffs(n):
   nnorm = n & (-n)
 
   return nnorm.bit_length() - 1
