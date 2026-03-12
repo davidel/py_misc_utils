@@ -170,6 +170,10 @@ def normalize(data, axis=None):
   return (data - mean) / std
 
 
+def hasher(value):
+  return hash((value.dtype, tuple(value.shape), value.tobytes()))
+
+
 def moving_average(data, window, include_current=True):
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')
