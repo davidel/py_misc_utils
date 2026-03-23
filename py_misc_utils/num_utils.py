@@ -66,3 +66,7 @@ def perfect_power(value, base):
 
   return vlog if base ** vlog == value else None
 
+
+def address_bits(size):
+  return (size - 1).bit_length()
+
