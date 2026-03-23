@@ -1,3 +1,5 @@
+import math
+
 
 def prime_factors(n):
   i = 2
@@ -57,4 +59,10 @@ def round_down(v, step):
 
 def mix(a, b, gamma):
   return a * gamma + b * (1.0 - gamma)
+
+
+def perfect_power(value, base):
+  vlog = round(math.log(value, base))
+
+  return vlog if base ** vlog == value else None
 
