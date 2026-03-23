@@ -68,5 +68,5 @@ def perfect_power(value, base):
 
 
 def address_bits(size):
-  return (size - 1).bit_length()
+  return (size - 1).bit_length() if size > 1 else 1
 
