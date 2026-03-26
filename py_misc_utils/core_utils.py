@@ -427,6 +427,21 @@ def make_ntuple(ntc, args):
   return ntc._make(targs)
 
 
+def make_enum(name, fields, base=0):
+  enfields = re.split(r'\s*,\s*', fields) if isinstance(fields, str) else fields
+
+  cls = types.new_class(name)
+  enum = cls()
+  for i, fname in enumerate(enfields):
+    setattr(enum, fname, base + i)
+
+  setattr(enum, '_first', base)
+  setattr(enum, '_last', base + len(enfields) - 1)
+  setattr(enum, '_count', len(enfields))
+
+  return enum
+
+
 class StringTable:
 
   def __init__(self):
