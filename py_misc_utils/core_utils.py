@@ -432,12 +432,17 @@ def make_enum(name, fields, base=0):
 
   cls = types.new_class(name)
   enum = cls()
+
+  values = dict()
   for i, fname in enumerate(enfields):
     setattr(enum, fname, base + i)
+    values[fname] = base + i
 
   setattr(enum, '_first', base)
   setattr(enum, '_last', base + len(enfields) - 1)
   setattr(enum, '_count', len(enfields))
+  setattr(enum, '_values', values)
+  setattr(enum, '_names', {evalue: fname for fname, evalue in values.items()})
 
   return enum
 
