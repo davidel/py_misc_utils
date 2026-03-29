@@ -427,24 +427,34 @@ def make_ntuple(ntc, args):
   return ntc._make(targs)
 
 
+class _EnumBase:
+
+  def __init__(self, fields, base=0):
+    enfields = re.split(r'\s*,\s*', fields) if isinstance(fields, str) else fields
+
+    values = dict()
+    for i, fname in enumerate(enfields):
+      setattr(self, fname, base + i)
+      values[fname] = base + i
+
+    self._first = base
+    self._last = base + len(enfields) - 1
+    self._values = values
+    self._names = {evalue: fname for fname, evalue in values.items()}
+
+  def __len__(self):
+    return len(self._values)
+
+  def __repr__(self):
+    fields = [f'{k}={v}' for k, v in self._values.items()]
+
+    return self.__class__.__name__ + '(' + ', '.join(fields) + ')'
+
+
 def make_enum(name, fields, base=0):
-  enfields = re.split(r'\s*,\s*', fields) if isinstance(fields, str) else fields
+  cls = types.new_class(name, bases=(_EnumBase,))
 
-  cls = types.new_class(name)
-  enum = cls()
-
-  values = dict()
-  for i, fname in enumerate(enfields):
-    setattr(enum, fname, base + i)
-    values[fname] = base + i
-
-  setattr(enum, '_first', base)
-  setattr(enum, '_last', base + len(enfields) - 1)
-  setattr(enum, '_count', len(enfields))
-  setattr(enum, '_values', values)
-  setattr(enum, '_names', {evalue: fname for fname, evalue in values.items()})
-
-  return enum
+  return cls(fields, base=base)
 
 
 class StringTable:
