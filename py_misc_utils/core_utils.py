@@ -432,10 +432,22 @@ class _EnumBase:
   def __init__(self, fields, base=0):
     enfields = re.split(r'\s*,\s*', fields) if isinstance(fields, str) else fields
 
-    values = dict()
-    for i, fname in enumerate(enfields):
-      setattr(self, fname, base + i)
-      values[fname] = base + i
+    next_id, values = base, dict()
+    for field in enfields:
+      if isinstance(field, (list, tuple)):
+        fname, fvalue = field
+      else:
+        m = re.match(r'(\w+)\s*=\s*(\d+)', field)
+        if m:
+          fname, fvalue = m.group(1), int(m.group(2))
+        else:
+          fname, fvalue = field, next_id
+
+      assert fvalue >= next_id, f'{fvalue} < {next_id}'
+
+      setattr(self, fname, fvalue)
+      values[fname] = fvalue
+      next_id = max(fvalue, next_id) + 1
 
     self._first = base
     self._last = base + len(enfields) - 1
