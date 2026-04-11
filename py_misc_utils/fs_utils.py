@@ -205,3 +205,13 @@ def atomic_write(path, mode='wb', create_parents=False):
     else:
       os.replace(tpath, path)
 
+
+@contextlib.contextmanager
+def cwd(path):
+  cpath = os.getcwd()
+  os.chdir(path)
+  try:
+    yield path
+  finally:
+    os.chdir(cpath)
+
