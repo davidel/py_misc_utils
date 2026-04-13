@@ -34,6 +34,16 @@ def _dict_lookup_fn(vals, delim, misses_ok):
   return lookup_fn
 
 
+def defval_lookup(vals, default):
+
+  def lookup_fn(key, defval=None):
+    value = vals.get(key, defval)
+
+    return default if value is None else value
+
+  return lookup_fn
+
+
 def template_replace(st, vals=None, lookup_fn=None, delim=None, misses_ok=None):
   delim = delim or '$'
   misses_ok = False if misses_ok is None else misses_ok
