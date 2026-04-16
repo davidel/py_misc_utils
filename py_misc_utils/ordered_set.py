@@ -45,6 +45,9 @@ class OrderedSet:
   def __contains__(self, value):
     return value in self._data
 
+  def copy(self):
+    return copy.copy(self)
+
   def union(self, *others):
     nos = copy.copy(self)
     for other in others:
