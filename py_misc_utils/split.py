@@ -87,7 +87,7 @@ _QUOTE_CTX = make_context(_QUOTE_MAP)
 
 _Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
 
-def split(data, split_rx, quote_ctx=None):
+def split(data, split_rx, quote_ctx=None, unescape=False):
   qctx = quote_ctx or _QUOTE_CTX
 
   bdata, bsplit_rx = _to_bytes(data, split_rx)
@@ -97,7 +97,11 @@ def split(data, split_rx, quote_ctx=None):
   pos, qstack, parts, seq = 0, [], [], bytearray()
   while pos < len(bdata):
     if seq and seq[-1] == sval:
-      seq.append(bdata[pos])
+      if unescape:
+        seq[-1] = bdata[pos]
+      else:
+        seq.append(bdata[pos])
+
       pos += 1
     elif qstack:
       m = re.search(qctx.quote_sprx, bdata[pos:])

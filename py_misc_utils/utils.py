@@ -143,16 +143,16 @@ def pop_kwargs(kwargs, names, args_key=None):
   return tuple(args)
 
 
-def resplit(csstr, sep):
-  return sp.split(csstr, r'\s*' + sep + r'\s*')
+def resplit(csstr, sep, unescape=False):
+  return sp.split(csstr, r'\s*' + sep + r'\s*', unescape=unescape)
 
 
-def comma_split(csstr):
-  return sp.split(csstr, r'\s*,\s*')
+def comma_split(csstr, unescape=False):
+  return sp.split(csstr, r'\s*,\s*', unescape=unescape)
 
 
-def ws_split(data):
-  return sp.split(data, r'\s+')
+def ws_split(data, unescape=False):
+  return sp.split(data, r'\s+', unescape=unescape)
 
 
 def expand_strings(*args):
