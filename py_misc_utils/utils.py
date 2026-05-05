@@ -294,7 +294,7 @@ def value_or(v, defval):
 
 
 def dict_rget(sdict, path, defval=None, sep='/'):
-  dpath = re.split(rf'\s*{sep}\s*', path.strip(sep)) if isinstance(path, str) else path
+  dpath = path.strip(sep).split(sep) if isinstance(path, str) else path
 
   result = sdict
   for key in dpath:
@@ -307,7 +307,7 @@ def dict_rget(sdict, path, defval=None, sep='/'):
 
 
 def dict_rset(sdict, path, value, sep='/', extend=False):
-  dpath = re.split(rf'\s*{sep}\s*', path.strip(sep)) if isinstance(path, str) else path
+  dpath = path.strip(sep).split(sep) if isinstance(path, str) else path
 
   dest = sdict
   for skey in dpath[: -1]:
