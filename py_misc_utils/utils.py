@@ -294,16 +294,41 @@ def value_or(v, defval):
 
 
 def dict_rget(sdict, path, defval=None, sep='/'):
-  if not isinstance(path, (list, tuple)):
-    path = path.strip(sep).split(sep)
+  dpath = re.split(rf'\s*{sep}\s*', path.strip(sep)) if isinstance(path, str) else path
 
   result = sdict
-  for key in path:
+  for key in dpath:
     if not cu.isdict(result):
       return defval
+
     result = result.get(key, defval)
 
   return result
+
+
+def dict_rset(sdict, path, value, sep='/', extend=False):
+  dpath = re.split(rf'\s*{sep}\s*', path.strip(sep)) if isinstance(path, str) else path
+
+  dest = sdict
+  for skey in dpath[: -1]:
+    subd = dest.get(skey)
+    if subd is None:
+      subd = dict()
+      dest[skey] = subd
+    else:
+      tas.check(cu.isdict(subd), msg=f'Not a folder (dict): {skey} = {type(subd)}')
+
+    dest = subd
+
+  skey = dpath[-1]
+  if not extend:
+    dest[skey] = value
+  else:
+    xvalue = dest.get(skey)
+    if xvalue is None:
+      dest[skey] = value
+    else:
+      xvalue.extend(value)
 
 
 def make_index_dict(vals):
