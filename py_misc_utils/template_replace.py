@@ -44,6 +44,16 @@ def defval_lookup(vals, default):
   return lookup_fn
 
 
+def attr_lookup(obj, default):
+
+  def lookup_fn(key, defval=None):
+    value = getattr(obj, key, defval)
+
+    return default if value is None else value
+
+  return lookup_fn
+
+
 def template_replace(st, vals=None, lookup_fn=None, delim=None, misses_ok=None):
   delim = delim or '$'
   misses_ok = False if misses_ok is None else misses_ok
