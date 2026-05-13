@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='python_misc_utils',
-      version='0.29',
+      version='0.30',
       description='A collection of Python utility APIs',
       author='Davide Libenzi',
       packages=find_packages(),
