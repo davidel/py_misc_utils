@@ -38,8 +38,10 @@ def defval_lookup(vals, default):
 
   def lookup_fn(key, defval=None):
     value = vals.get(key, defval)
+    if value is None:
+      return f'${key}' if default is None else default
 
-    return default if value is None else value
+    return value
 
   return lookup_fn
 
@@ -48,8 +50,10 @@ def attr_lookup(obj, default):
 
   def lookup_fn(key, defval=None):
     value = getattr(obj, key, defval)
+    if value is None:
+      return f'${key}' if default is None else default
 
-    return default if value is None else value
+    return value
 
   return lookup_fn
 
