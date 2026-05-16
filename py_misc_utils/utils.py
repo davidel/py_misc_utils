@@ -97,7 +97,7 @@ def repr_fmt(obj, *fields, repr_none=False, sep=', '):
       if xname is None:
         xname = fname
 
-    data = getvar(obj, fname)
+    data = getattr(obj, fname, None)
     if data is not None or rnone:
       parts.append(f'{xname}={data}' if xname else str(data))
 
