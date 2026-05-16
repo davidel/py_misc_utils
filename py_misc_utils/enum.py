@@ -25,7 +25,7 @@ class _EnumBase:
       next_id = max(fvalue, next_id) + 1
 
     self._first = base
-    self._last = base + len(enfields) - 1
+    self._last = max(base, next_id - 1)
     self._values = values
     self._names = {evalue: fname for fname, evalue in values.items()}
 
