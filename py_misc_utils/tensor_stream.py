@@ -14,7 +14,7 @@ from . import core_utils as cu
 from . import utils as ut
 
 
-_STATE_FILE = 'state.pkl'
+_STATE_FILE = 'tensor_stream_state.pkl'
 
 
 def _check_shapes(prev_shape, new_shape):
@@ -163,6 +163,12 @@ class Reader:
     if os.path.exists(state_path):
       with open(state_path, mode='rb') as f:
         self.state = pickle.load(f)
+
+  @classmethod
+  def is_stream_folder(cls, path):
+    state_path = os.path.join(path, _STATE_FILE)
+
+    return os.path.exists(state_path)
 
   @property
   def dtype(self):
