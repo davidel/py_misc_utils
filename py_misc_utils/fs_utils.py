@@ -127,13 +127,15 @@ def normpath(path):
 
 def subst_path(path, ref_path):
   spath = os.path.abspath(ref_path)
+  dpath = os.path.dirname(spath)
   fname = os.path.basename(spath)
   name, ext = os.path.splitext(fname)
 
   path_template = string.Template(path)
 
   return path_template.substitute(B=fname,
-                                  D=os.path.dirname(spath),
+                                  D=dpath,
+                                  R=os.path.join(dpath, fname),
                                   N=name,
                                   X=ext)
 
