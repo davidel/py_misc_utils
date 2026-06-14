@@ -4,6 +4,7 @@ import io
 import os
 import pathlib
 import shutil
+import string
 import tempfile
 
 from . import alog
@@ -122,6 +123,19 @@ def normpath(path):
   path = os.path.abspath(path)
 
   return os.path.normpath(path)
+
+
+def subst_path(path, ref_path):
+  spath = os.path.abspath(ref_path)
+  fname = os.path.basename(spath)
+  name, ext = os.path.splitext(fname)
+
+  path_template = string.Template(path)
+
+  return path_template.substitute(B=fname,
+                                  D=os.path.dirname(spath),
+                                  N=name,
+                                  X=ext)
 
 
 def localfs_mount(path):
