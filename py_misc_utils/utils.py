@@ -507,7 +507,7 @@ def sreplace(rex, data, mapfn, nmapfn=None, join=True):
   Returns:
     The rewritten string, or the list of its parts when join is False.
   """
-  nmapfn = nmapfn if nmapfn is not None else ident
+  nmapfn = nmapfn if nmapfn is not None else cu.ident
 
   lastpos, parts = 0, []
   for m in re.finditer(rex, data):

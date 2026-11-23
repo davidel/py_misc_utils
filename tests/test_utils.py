@@ -57,3 +57,28 @@ def test_value_or_substitutes_only_none_values():
   assert pyu.value_or(0, 5) == 0
   assert pyu.value_or('', 'x') == ''
   assert pyu.value_or(False, True) is False
+
+
+def test_sreplace_rewrites_matches_and_keeps_unmatched_text():
+  """sreplace() passes matched groups to mapfn and keeps other text.
+
+  The default nmapfn is the identity function; this also guards a
+  regression where the default path raised NameError because the
+  identity helper was referenced unqualified.
+  """
+  assert pyu.sreplace(r'(\d+)', 'a12b34c', lambda m: f'<{m}>') == 'a<12>b<34>c'
+  # A match covering the whole string produces no unmatched parts.
+  assert pyu.sreplace(r'(\d+)', '12', lambda m: f'<{m}>') == '<12>'
+  # With no match, the data goes through unchanged.
+  assert pyu.sreplace(r'x', 'abc', lambda m: m) == 'abc'
+
+
+def test_sreplace_applies_nmapfn_to_unmatched_parts():
+  """sreplace() applies nmapfn to the non-matching text when provided."""
+  parts = pyu.sreplace(r'(\d+)',
+                       'a12b34c',
+                       lambda m: f'<{m}>',
+                       nmapfn=str.upper,
+                       join=False)
+
+  assert parts == ['A', '<12>', 'B', '<34>', 'C']
