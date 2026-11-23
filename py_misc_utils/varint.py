@@ -25,7 +25,9 @@ def varint_encode(v, encbuf):
   if isinstance(v, (int, np.integer)):
     tas.check_ge(v, 0, msg=f'Cannot encode negative values: {v}')
 
-    cv = v
+    # Unsigned numpy dtypes overflow when masked with the signed ~0x7f
+    # pattern, so work on a plain Python integer throughout.
+    cv = int(v)
     while (cv & ~0x7f) != 0:
       encbuf.append(0x80 | (cv & 0x7f))
       cv >>= 7

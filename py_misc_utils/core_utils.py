@@ -30,7 +30,10 @@ import re
 import sys
 import threading
 import types
+
 import yaml
+
+from . import assert_checks as tas
 
 _NONE = object()
 
@@ -703,6 +706,9 @@ def equal_signature(a, b, subcls=True):
         return False
 
     return True
+
+  a = a if isinstance(a, type) else signature(a)
+  b = b if isinstance(b, type) else signature(b)
 
   return issubclass(a, b) or issubclass(b, a) if subcls else a == b
 

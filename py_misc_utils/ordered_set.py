@@ -101,11 +101,25 @@ class OrderedSet:
     """Check if a value is in the set."""
     return value in self._data
 
+  def __copy__(self):
+    """Copy protocol implementation: clone the internal state.
+
+    Returns:
+      New OrderedSet with the same elements and order, holding its own
+      internal state.
+    """
+    nos = OrderedSet()
+    nos._data = self._data.copy()
+    nos._seqno = self._seqno
+
+    return nos
+
   def copy(self):
     """Create a shallow copy of the ordered set.
 
     Returns:
-      New OrderedSet with the same elements and order.
+      New OrderedSet with the same elements and order, holding its own
+      internal state.
     """
     return copy.copy(self)
 

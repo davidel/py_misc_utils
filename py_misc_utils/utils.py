@@ -262,7 +262,8 @@ def resplit(csstr, sep, unescape=False):
     unescape: If True, remove escape characters from the parts.
 
   Returns:
-    A list of the non-empty parts of the string.
+    A tuple of the parts of the string. Empty parts between separators
+    are preserved.
   """
   return sp.split(csstr, r'\s*' + sep + r'\s*', unescape=unescape)
 
@@ -275,7 +276,8 @@ def comma_split(csstr, unescape=False):
     unescape: If True, remove escape characters from the parts.
 
   Returns:
-    A list of the non-empty parts of the string.
+    A tuple of the parts of the string. Empty parts between separators
+    are preserved.
   """
   return sp.split(csstr, r'\s*,\s*', unescape=unescape)
 
@@ -288,7 +290,8 @@ def ws_split(data, unescape=False):
     unescape: If True, remove escape characters from the parts.
 
   Returns:
-    A list of the non-empty parts of the string.
+    A tuple of the parts of the string. Empty parts between separators
+    are preserved.
   """
   return sp.split(data, r'\s+', unescape=unescape)
 
