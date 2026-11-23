@@ -151,6 +151,10 @@ def _get_shapes(tensors):
         _check_shapes(shape, tensor.shape)
         shape[0] += len(tensor)
 
+    if shape is None:
+      # An empty stream - the stream folder holds no chunk file.
+      shape = [0]
+
     if shapes and shapes[0][0] != shape[0]:
       alog.xraise(
           RuntimeError,
