@@ -31,6 +31,14 @@ class StateBase:
 
   Subclasses override _get_state/_set_state to customize serialization and
   use _store_state/_load_state to contribute class-namespaced extra state.
+
+  Note:
+    State entries contributed via _store_state live in the __SB_STATE__
+    instance attribute, which is not part of the state dictionary
+    returned by the default _get_state. For such entries to be persisted,
+    either call _store_state before to_state() serializes the object, or
+    override _get_state to merge the __SB_STATE__ contents (e.g. with
+    state.update(self.__dict__)) into the returned dictionary.
   """
 
   def _get_state(self, state):

@@ -110,6 +110,9 @@ def get_size(obj):
     obj: Any Python object.
 
   Returns:
-    The estimated total memory size in bytes.
+    The estimated total memory size in bytes. Note that the contents of
+    strings and bytes are not traversed (they are size-aware leaf types),
+    and objects handled by a registered size function are not recursed
+    into.
   """
   return _get_size(obj, set())

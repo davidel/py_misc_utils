@@ -1,9 +1,10 @@
 """Index generation utilities for multi-dimensional array iteration.
 
 This module provides generate(), which converts an index specification (int,
-slice, list, ndarray, tuple, or Ellipsis) into an iterator over index tuples
-for a given array shape. It handles all common NumPy-style indexing patterns
-including integer indexing, slicing, fancy indexing, and ellipsis expansion.
+slice, list, ndarray, or tuple) into an iterator over index tuples
+for a given array shape. It handles common NumPy-style indexing patterns
+including integer indexing, slicing, fancy indexing, and ellipsis expansion
+(Ellipsis is supported inside tuple specifications only).
 """
 
 import itertools
@@ -20,7 +21,7 @@ def generate(shape, idx):
   - slice: Selects a range along one axis (requires 1-D shape)
   - list/np.ndarray: Fancy indexing along one axis (requires 1-D shape)
   - tuple: Multi-axis indexing, mixing ints, slices, arrays, and Ellipsis
-  - Ellipsis: Expands to fill remaining dimensions with full ranges
+    (Ellipsis expands to fill remaining dimensions with full ranges)
 
   Args:
     shape: Tuple of integers representing the array shape.

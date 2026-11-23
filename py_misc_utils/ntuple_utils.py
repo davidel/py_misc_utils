@@ -25,8 +25,9 @@ def extend(base_nt, name, fields, defaults=None):
     name: Name of the new namedtuple type.
     fields: Field specification, as a space/comma separated string or an
       iterable of field names.
-    defaults: Optional dict of field name to default value for the new
-      fields, or an object with a get(field, default) method.
+    defaults: Optional sequence of default values applied to the rightmost
+      new fields, following the collections.namedtuple defaults semantics:
+      the last len(defaults) fields get the given values in order.
 
   Returns:
     A new namedtuple type with the base and the extra fields.

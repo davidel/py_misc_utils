@@ -33,7 +33,7 @@ def compute_seed(seed):
   elif isinstance(seed, str):
     seed = binascii.crc32(seed.encode())
   else:
-    seed = binascii.crc32(struct.pack('=Q', hash(seed)))
+    seed = binascii.crc32(struct.pack('=Q', hash(seed) & 0xFFFFFFFFFFFFFFFF))
 
   return seed
 

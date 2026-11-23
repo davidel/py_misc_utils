@@ -13,16 +13,22 @@ class MovingAverage:
   """Maintain an exponentially weighted moving average of values.
 
   Attributes:
-    _factor: Smoothing factor between 0 and 1. Higher values weight recent
-      values more heavily.
+    _factor: Smoothing factor between 0 and 1. Higher values weight the
+      running average more (and recent values less).
     value: The current moving average value.
   """
 
   def __init__(self, factor, init=None):
     """Initialize the moving average with a smoothing factor.
 
+    The average is blended as value = old * factor + new * (1 - factor),
+    so a factor of 0.0 always adopts the latest observation, while a
+    factor of 1.0 keeps the running value unchanged (and an average
+    initialized with None stays None forever).
+
     Args:
-      factor: Smoothing factor between 0.0 and 1.0.
+      factor: Smoothing factor between 0.0 and 1.0 (inclusive on both
+        ends).
       init: Optional initial value for the average.
     """
     tas.check(factor >= 0.0 and factor <= 1.0, msg=f'Invalid factor: {factor:.4e}')
