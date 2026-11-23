@@ -25,3 +25,13 @@ Repository = "https://github.com/davidel/py_misc_utils.git"
 [build-system]
 requires = ["setuptools >= 42.0.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = [
+  "tests",
+]
+addopts = '-q --strict-markers -m "not needs_network"'
+markers = [
+  "slow: long-running tests (kept on by default, deselect with -m 'not slow')",
+  "needs_network: tests that require real internet access (deselected by default)",
+]

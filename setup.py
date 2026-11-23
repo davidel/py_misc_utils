@@ -28,6 +28,13 @@ setup(name='python_misc_utils',
               'google-cloud-storage',
               'pyarrow',
           ],
+          'test': [
+              'msgpack',
+              'moto',
+              'pyftpdlib',
+              'pytest',
+              'pytest-cov',
+          ],
       },
       )
 
