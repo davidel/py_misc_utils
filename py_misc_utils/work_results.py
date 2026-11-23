@@ -8,6 +8,7 @@ re-raise it as if the work was executed locally.
 """
 import contextlib
 import hashlib
+import importlib
 import os
 import pickle
 
@@ -20,6 +21,13 @@ class WorkException:
   Some exceptions cannot be pickled, so the held exception is verified
   to survive a pickle round-trip: if not, a generic Exception holding
   its string representation is stored instead.
+
+  The type of the held exception is tracked as an importable
+  (module, qualname) reference, so that the holder itself stays
+  picklable even when the exception class is local or dynamically
+  created. In that case the reported type degrades to Exception - the
+  most precise claim which can be transported - and is_instance() stays
+  consistent with the exception actually re-raised by do_raise().
 
   Arbitrary attributes - set from the kwargs - can be attached to the
   exception holder, to be transported along the exception.
@@ -36,12 +44,24 @@ class WorkException:
     # (or it can be serialized, and failed to be deserialized for missing arguments).
     # In such cases we write a generic exception with the string representation of
     # the original one.
-    self._ex_type = type(exception)
+    excls = type(exception)
+    try:
+      # The type reference must be transportable on its own: local or
+      # dynamically created classes cannot be referenced by name, in
+      # which case only the generic Exception type can be claimed.
+      pickle.loads(pickle.dumps(excls))
+      self._ex_type = excls
+      self._ex_type_ref = (excls.__module__,
+                           getattr(excls, '__qualname__', excls.__name__))
+    except Exception:  # noqa: BLE001 - degrade on any pickle failure
+      self._ex_type = Exception
+      self._ex_type_ref = ('builtins', 'Exception')
+
     try:
       self._ex_data = pickle.dumps(exception)
       pickle.loads(self._ex_data)
-    except:
-      self._ex_data = pickle.dumps(Exception(repr(exception)))
+    except Exception:  # noqa: BLE001 - degrade on any pickle failure
+      self._ex_data = pickle.dumps(Exception(f'{excls.__name__}: {exception}'))
 
     for k, v in kwargs.items():
       setattr(self, k, v)
@@ -51,6 +71,26 @@ class WorkException:
 
     raise self.exception()
 
+  def _resolve_type(self):
+    """Resolves the importable type reference into the actual class.
+
+    Holders pickled before the (module, qualname) reference was
+    introduced carry only the _ex_type class object: for those, the
+    stored object is used as-is.
+
+    Returns:
+      The exception type the holder claims to represent.
+    """
+    ref = getattr(self, '_ex_type_ref', None)
+    if ref is None:
+      return self._ex_type
+
+    exmod, exname = ref
+    try:
+      return getattr(importlib.import_module(exmod), exname)
+    except (ImportError, AttributeError):
+      return Exception
+
   def is_instance(self, *types):
     """Checks the type of the held exception.
 
@@ -58,10 +98,12 @@ class WorkException:
       *types: The exception types to check.
 
     Returns:
-      True if the type of the held exception matches any of the given
-      ones.
+      True if the type of the held exception matches - or derives
+      from - any of the given ones.
     """
-    return any(t == self._ex_type for t in types)
+    cls = self._resolve_type()
+
+    return any(issubclass(cls, t) for t in types)
 
   def exception(self):
     """Returns the held exception.
@@ -116,7 +158,7 @@ def enum_ready(path):
   """
   with os.scandir(path) as rit:
     for dentry in rit:
-      yield rit.name, rit.path
+      yield dentry.name, dentry.path
 
 
 _ERROR_TAG = b'#@$ERROR$@#\n'
@@ -193,7 +235,7 @@ def raise_if_error(data):
   return data
 
 
-def load_work(wpath, path=None, workid=None):
+def load_work(wpath=None, path=None, workid=None):
   """Loads a work result - without raising its error, if any.
 
   Args:
