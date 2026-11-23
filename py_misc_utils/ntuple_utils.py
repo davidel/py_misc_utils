@@ -1,3 +1,10 @@
+"""Extensions for namedtuple types.
+
+This module provides utilities to derive an extended namedtuple from an
+existing one, adding new fields while preserving the original fields and
+their defaults.
+"""
+
 import collections
 import re
 
@@ -5,6 +12,25 @@ from . import assert_checks as tas
 
 
 def extend(base_nt, name, fields, defaults=None):
+  """Create a new namedtuple type extending an existing one.
+
+  The new type preserves the base fields (in order, with their defaults)
+  and appends the extra fields. Fields can be added with or without
+  defaults; adding a defaulted field after fields without defaults is
+  rejected, since the resulting namedtuple would not be constructible
+  positionally.
+
+  Args:
+    base_nt: Base namedtuple type to extend.
+    name: Name of the new namedtuple type.
+    fields: Field specification, as a space/comma separated string or an
+      iterable of field names.
+    defaults: Optional dict of field name to default value for the new
+      fields, or an object with a get(field, default) method.
+
+  Returns:
+    A new namedtuple type with the base and the extra fields.
+  """
   if isinstance(fields, str):
     fields = re.split(r'\s*[ ,]\s*', fields)
 
@@ -33,6 +59,6 @@ def extend(base_nt, name, fields, defaults=None):
                 msg=f'Field already exists: {field} in {ext_fields}')
       ext_fields.append(field)
 
-  return collections.namedtuple(name, tuple(ext_fields + ext_def_fields),
+  return collections.namedtuple(name,
+                                tuple(ext_fields + ext_def_fields),
                                 defaults=tuple(ext_defaults))
-

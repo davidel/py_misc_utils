@@ -1,11 +1,22 @@
+"""Framework-agnostic Numpy-like array adapter for ML libraries.
+
+This module allows code to operate on arrays interchangeably from Numpy,
+PyTorch, JAX, and Tensorflow. Each available framework is registered with
+check and conversion functions, and resolve() normalizes a set of arguments
+to the arrays of the highest-priority framework (selected via the NPML_ORDER
+and NPML_DEFAULT environment variables).
+
+If a framework is not installed, it is simply skipped at import time.
+"""
+
 import collections
 import os
-
 
 _MODULES = dict()
 
 
 def _register_attr(mod, name, attr):
+  """Set an attribute on a registered module, guarding against overrides."""
   xa = getattr(mod, name, None)
   if xa is not None:
     raise RuntimeError(f'Attribute "{name}" already exists: {xa}')
@@ -14,6 +25,16 @@ def _register_attr(mod, name, attr):
 
 
 def _register(name, mod, checkfn, fromfn, attrs):
+  """Register a framework module with its check and conversion functions.
+
+  Args:
+    name: Framework name (e.g. 'np', 'torch', 'jax', 'tf').
+    mod: The module object whose arrays are instances of this framework.
+    checkfn: Function returning True if an array belongs to the framework.
+    fromfn: Function converting an array of another framework to this one.
+    attrs: Dictionary of helper attributes to set on the module, such as
+      item() and tolist() accessors.
+  """
   _MODULES[name] = mod
   mod.__npml_name = name
   mod.__npml_check = checkfn
@@ -24,6 +45,7 @@ def _register(name, mod, checkfn, fromfn, attrs):
 
 
 def _parse_priorities():
+  """Compute a framework-name to priority map from the NPML_ORDER variable."""
   prefs = os.getenv('NPML_ORDER', 'torch,np,jax,tf').split(',')
 
   return {mod: len(prefs) - i for i, mod in enumerate(prefs)}
@@ -43,14 +65,12 @@ try:
   def _np_check(t):
     return isinstance(t, np.ndarray)
 
-  _register('np', np, _np_check, _np_from,
-            {
-              'item': lambda t: t.item(),
-              'tolist': lambda t: t.tolist(),
-            })
+  _register('np', np, _np_check, _np_from, {
+      'item': lambda t: t.item(),
+      'tolist': lambda t: t.tolist(),
+  })
 except ImportError:
   np = None
-
 
 # PyTorch
 try:
@@ -71,14 +91,12 @@ try:
   def _torch_check(t):
     return isinstance(t, torch.Tensor)
 
-  _register('torch', torch, _torch_check, _torch_from,
-            {
-              'item': lambda t: t.item(),
-              'tolist': lambda t: t.tolist(),
-            })
+  _register('torch', torch, _torch_check, _torch_from, {
+      'item': lambda t: t.item(),
+      'tolist': lambda t: t.tolist(),
+  })
 except ImportError:
   torch = None
-
 
 # JAX
 try:
@@ -92,23 +110,23 @@ try:
   def _jax_from(mod, t, tref):
     if mod is not None:
       if mod is torch:
-        return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)), _jaxdev(tref))
+        return jax.device_put(jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(t)),
+                              _jaxdev(tref))
       if mod is tfnp:
-        return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)), _jaxdev(tref))
+        return jax.device_put(jax_dlpack.from_dlpack(tf_dlpack.to_dlpack(t)),
+                              _jaxdev(tref))
 
     return jax.device_put(jaxnp.asarray(t), _jaxdev(tref))
 
   def _jax_check(t):
     return isinstance(t, jax.Array)
 
-  _register('jax', jaxnp, _jax_check, _jax_from,
-            {
-              'item': lambda t: t.item(),
-              'tolist': lambda t: t.tolist(),
-            })
+  _register('jax', jaxnp, _jax_check, _jax_from, {
+      'item': lambda t: t.item(),
+      'tolist': lambda t: t.tolist(),
+  })
 except ImportError:
   jaxnp = None
-
 
 # Tensorflow
 try:
@@ -132,34 +150,54 @@ try:
     return tf.is_tensor(t)
 
   tfnp.experimental_enable_numpy_behavior()
-  _register('tf', tfnp, _tf_check, _tf_from,
-            {
-              'item': lambda t: t.item(),
-              'tolist': lambda t: t.tolist(),
-            })
+  _register('tf', tfnp, _tf_check, _tf_from, {
+      'item': lambda t: t.item(),
+      'tolist': lambda t: t.tolist(),
+  })
 except ImportError:
   tfnp = None
-
 
 _DEFAULT_MODULE = os.getenv('NPML_DEFAULT', 'np')
 
 if _DEFAULT_MODULE not in _MODULES:
   raise RuntimeError(f'Unable to find default Numpy ML module: {_DEFAULT_MODULE}')
 
-
 _MODULES_PRIORITY = _parse_priorities()
-_MODULES_SEQ = tuple(_MODULES[x] for x in sorted(list(_MODULES.keys()),
-                                                 key=lambda m: _MODULES_PRIORITY.get(m, -1),
-                                                 reverse=True))
+_MODULES_SEQ = tuple(_MODULES[x] for x in sorted(
+    list(_MODULES.keys()), key=lambda m: _MODULES_PRIORITY.get(m, -1), reverse=True))
 
 
 def _get_module(t):
+  """Return the registered module owning a value.
+
+  Args:
+    t: Value to check against the registered framework check functions.
+
+  Returns:
+    The module whose check function accepts the value, or None.
+  """
   for mod in _MODULES_SEQ:
     if mod.__npml_check(t):
       return mod
 
 
 def resolve(*args):
+  """Normalize arguments to the arrays of the highest-priority framework.
+
+  Each argument is checked against the registered frameworks. The framework
+  with the highest priority (as per NPML_ORDER) having at least one argument
+  becomes the target, and every argument belonging to a different framework
+  is converted to it using the framework conversion function.
+
+  Args:
+    *args: Arrays from any of the supported frameworks (or other objects,
+      which are passed through unchanged).
+
+  Returns:
+    A tuple with the resolved target module and the tuple of converted
+    arguments. If no argument matches any framework, the default module
+    (NPML_DEFAULT) is returned together with the original arguments.
+  """
   mods = []
   tprio, tmod, tref = -1, None, None
   for i, t in enumerate(args):
@@ -181,4 +219,3 @@ def resolve(*args):
       rargs[i] = tmod.__npml_from(mod, args[i], tref)
 
   return tmod, tuple(rargs)
-

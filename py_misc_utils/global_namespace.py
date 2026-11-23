@@ -1,15 +1,18 @@
-# When using multiprocessing, there are two distinct behaviours if fork start method
-# is used, WRT spawn/forkserver.  In the latter case the global context
-# accumulated by the running process is not pickled-through the child, so the new
-# process start with wiped out global namespace.
-# Using this API, together with the multiprocessing.create_process(), it is possible to
-# have global data transfered to the child.
-# All data stored in the global namespace must be pickle-able, unless fork_init is
-# set to True.
-# If the fork_init attribute is True, it means the variables data must be cleared
-# within the child process, and not carried over (COW-ed) like it would happen when
-# using the fork(2) system call.
-# NOTE: This is a low level module which should have no explicit local dependencies.
+"""Global namespace management for multiprocessing.
+
+This module provides a thread-safe global namespace that can be transferred
+across multiprocessing boundaries. It handles the differences between
+fork and spawn/forkserver start methods by allowing custom parent/child
+callbacks for state serialization.
+
+Key concepts:
+- Var: Named variable with optional parent_fn (serialize) and child_fn (deserialize)
+- fork_init: If True, variable is reinitialized in child (not pickled from parent)
+- parent_switch(): Called in parent before process creation to capture state
+- child_switch(): Called in child after process creation to restore state
+
+All data must be pickle-able unless fork_init=True.
+"""
 
 import collections
 import inspect
@@ -17,23 +20,26 @@ import multiprocessing
 import os
 import threading
 
-
 # The parent_fn function is called (if present) before the creation of a new process,
 # within the parent, with the current value of the variable, and is supposed to be
 # returning the "state" of such variable. The state must be pickle-able.
 # The child_fn function is called (if present) after the creation of a new process,
 # within the child, to restore a variable from its state (the value of the new variable
 # should be returned).
-Var = collections.namedtuple(
-  'Var',
-  'name, parent_fn, child_fn, data, fork_init, defval',
-  defaults=(None, None, None, False, None))
+Var = collections.namedtuple('Var',
+                             'name, parent_fn, child_fn, data, fork_init, defval',
+                             defaults=(None, None, None, False, None))
 
 _NS = dict()
 _LOCK = threading.RLock()
 
 
 def _child_fork():
+  """Handle fork() by filtering fork_init variables.
+
+  Called via os.register_at_fork(after_in_child) on POSIX systems.
+  Preserves only variables with fork_init=False.
+  """
   global _NS, _LOCK
 
   cns = dict()
@@ -50,6 +56,17 @@ if os.name == 'posix':
 
 
 def parent_switch(method):
+  """Capture global namespace state for transfer to child process.
+
+  Called in the parent process before creating a new process using
+  spawn/forkserver methods.
+
+  Args:
+    method: Multiprocessing start method ('spawn', 'forkserver', etc.).
+
+  Returns:
+    Dictionary mapping variable names to Var instances with serialized data.
+  """
   assert method in multiprocessing.get_all_start_methods(), method
 
   pns = dict()
@@ -72,6 +89,14 @@ def parent_switch(method):
 
 
 def child_switch(method, ns):
+  """Restore global namespace state in child process.
+
+  Called in the child process after creation using spawn/forkserver methods.
+
+  Args:
+    method: Multiprocessing start method.
+    ns: Dictionary of Var instances returned by parent_switch().
+  """
   global _NS
 
   assert method in multiprocessing.get_all_start_methods(), method
@@ -90,6 +115,15 @@ def child_switch(method, ns):
 
 
 def get(var, force=True):
+  """Get a variable's value from the global namespace.
+
+  Args:
+    var: Var instance to retrieve.
+    force: If True, create with default value if not present (default: True).
+
+  Returns:
+    The variable's data, or None if not found and force=False.
+  """
   with _LOCK:
     value = _NS.get(var.name)
     if value is None and force:
@@ -101,10 +135,18 @@ def get(var, force=True):
 
 
 def set(var, data):
+  """Set a variable's value in the global namespace.
+
+  Args:
+    var: Var instance to set.
+    data: New data value.
+
+  Returns:
+    Previous data value, or None if not previously set.
+  """
   with _LOCK:
     prev_value = _NS.get(var.name)
     value = var._replace(data=data)
     _NS[value.name] = value
 
   return prev_value.data if prev_value is not None else None
-

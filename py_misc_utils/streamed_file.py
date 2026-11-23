@@ -1,3 +1,12 @@
+"""A file-like object backed by a streaming response.
+
+This module provides :class:`StreamedFile`, which wraps a streaming iterable
+response into a seekable, readable file-like interface backed by a temporary
+file. Data is consumed from the stream in a background thread, allowing reads
+to proceed as data arrives, with proper blocking semantics for reads ahead of
+the stream position.
+"""
+
 import os
 import tempfile
 import threading
@@ -8,8 +17,30 @@ from . import fin_wrap as fw
 
 
 class StreamedFile:
+  """A seekable, readable file-like object fed by a streaming response.
+
+  The stream is consumed by a background daemon thread into a temp file.
+  Reads block until the requested data is available or the stream completes
+  or the file is closed.
+
+  Attributes:
+    _resp: The source iterable of data chunks.
+    _lock: Protects internal state.
+    _cond: Condition variable for blocking reads.
+    _tempfile: The backing temporary file.
+    _offset: The current read position.
+    _size: The total bytes written so far.
+    _completed: Whether the stream is fully consumed.
+    _closed: Whether the file has been closed.
+    _thread: The background streaming thread.
+  """
 
   def __init__(self, resp):
+    """Initialize the StreamedFile from a streaming response.
+
+    Args:
+      resp: An iterable yielding data chunks (e.g. a response stream).
+    """
     self._resp = resp
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
@@ -25,6 +56,7 @@ class StreamedFile:
     self._thread.start()
 
   def _stream(self):
+    """Consume the response stream, writing data to the backing temp file."""
     for data in self._resp:
       with self._lock:
         self._tempfile.seek(self._size)
@@ -39,11 +71,13 @@ class StreamedFile:
       self._cond.notify_all()
 
   def _wait_completed(self):
+    """Block until the stream is fully consumed or the file is closed."""
     with self._lock:
       while not (self._completed or self._closed):
         self._cond.wait()
 
   def close(self):
+    """Close the file, waiting for the streaming thread to finish."""
     with self._lock:
       self._closed = True
       while not self._completed:
@@ -61,9 +95,23 @@ class StreamedFile:
 
   @property
   def closed(self):
+    """Whether the file is closed.
+
+    Returns:
+      True if the file has been closed.
+    """
     return self._tempfile is None
 
   def seek(self, pos, whence=os.SEEK_SET):
+    """Move the file position indicator.
+
+    Args:
+      pos: The position to seek to.
+      whence: The reference point (SEEK_SET, SEEK_CUR, or SEEK_END).
+
+    Returns:
+      The new absolute offset.
+    """
     if whence == os.SEEK_SET:
       offset = pos
     elif whence == os.SEEK_CUR:
@@ -86,9 +134,24 @@ class StreamedFile:
     return offset
 
   def tell(self):
+    """Return the current file position.
+
+    Returns:
+      The current offset.
+    """
     return self._offset
 
   def _read(self, offset, size, adj_offset):
+    """Read data at offset, blocking until the data is available.
+
+    Args:
+      offset: The absolute offset to read from.
+      size: The number of bytes to read.
+      adj_offset: If True, advance the current position after reading.
+
+    Returns:
+      The bytes read.
+    """
     while not (self._completed or self._closed or
                (size >= 0 and self._size >= offset + size)):
       self._cond.wait()
@@ -106,39 +169,100 @@ class StreamedFile:
     return data
 
   def read(self, size=-1):
+    """Read up to size bytes from the current position.
+
+    Args:
+      size: Number of bytes to read; -1 to read all available.
+
+    Returns:
+      The bytes read.
+    """
     with self._lock:
       return self._read(self._offset, size, True)
 
   def read1(self, size=-1):
+    """Read up to size bytes (alias for read).
+
+    Args:
+      size: Number of bytes to read.
+
+    Returns:
+      The bytes read.
+    """
     return self.read(size=size)
 
   def peek(self, size=0):
+    """Return bytes from the current position without advancing it.
+
+    Args:
+      size: Maximum number of bytes to peek.
+
+    Returns:
+      The peeked bytes (may be fewer than requested).
+    """
     with self._lock:
       size = min(size, max(1, self._size - self._offset))
 
       return self._read(self._offset, size, False) if size > 0 else b''
 
   def pread(self, offset, size):
+    """Read bytes at an absolute offset without changing the position.
+
+    Args:
+      offset: The absolute offset to read from.
+      size: Number of bytes to read.
+
+    Returns:
+      The bytes read.
+    """
     with self._lock:
       return self._read(offset, size, False)
 
   def flush(self):
+    """No-op; flushing is not applicable to this read-only file."""
     pass
 
   def readable(self):
+    """Whether the file is readable.
+
+    Returns:
+      True if the file is not closed.
+    """
     return not self.closed
 
   def seekable(self):
+    """Whether the file is seekable.
+
+    Returns:
+      True if the file is not closed.
+    """
     return not self.closed
 
   def writable(self):
+    """Whether the file is writable.
+
+    Returns:
+      Always False for StreamedFile.
+    """
     return False
 
   def __enter__(self):
+    """Return the file itself when entering a context.
+
+    Returns:
+      The StreamedFile instance.
+    """
     return self
 
   def __exit__(self, *exc):
+    """Close the file when exiting a context.
+
+    Args:
+      *exc: Exception information if an exception occurred.
+
+    Returns:
+      False (exceptions are not suppressed).
+    """
     self.close()
 
     return False
-

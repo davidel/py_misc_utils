@@ -1,3 +1,10 @@
+"""Object reference tracking and leak detection utilities.
+
+This module provides :func:`track_objects` which scans all objects tracked by
+the garbage collector, identifies which objects are tracked by a given tracker
+callable, and produces a report of reference chains that keep objects alive.
+"""
+
 import collections
 import gc
 
@@ -7,6 +14,14 @@ from . import inspect_utils as iu
 
 
 def _get_referred(obj):
+  """Return the named references held by obj.
+
+  Args:
+    obj: The object to inspect.
+
+  Returns:
+    A tuple of (name, referent) pairs describing what obj references.
+  """
   referred = []
   if cu.isdict(obj):
     for name, value in obj.items():
@@ -22,6 +37,20 @@ def _get_referred(obj):
 
 
 def _get_tracking_references(obj, tracked_by, max_references=None):
+  """Trace reference chains that keep obj alive.
+
+  Starting from obj, follows references backward through objects that
+  reference it, building a chain of referrers up to max_references.
+
+  Args:
+    obj: The object to trace references for.
+    tracked_by: A mapping of object id to list of (referrer_name, referrer_obj).
+    max_references: Maximum number of reference chains to collect.
+
+  Returns:
+    A tuple of (qualified_name, reference_path) pairs for each tracked
+    reference chain.
+  """
   max_references = max_references or 8
 
   references = []
@@ -47,6 +76,20 @@ def _get_tracking_references(obj, tracked_by, max_references=None):
 
 
 def track_objects(tracker, max_references=None):
+  """Scan garbage-collected objects and report those tracked by tracker.
+
+  Runs gc.collect(), enumerates all GC-tracked objects, builds reference
+  maps, and invokes tracker.track(obj) for each object. Returns a report
+  of objects and their reference chains sorted by priority.
+
+  Args:
+    tracker: An object with a track(obj) method returning (priority, info)
+      or None if the object should not be tracked.
+    max_references: Maximum number of reference chains to report per object.
+
+  Returns:
+    A newline-separated string report of tracked objects and references.
+  """
   gc.collect()
 
   gc_objs = gc.get_objects()
@@ -69,8 +112,7 @@ def track_objects(tracker, max_references=None):
       if (trackres := tracker.track(obj)) is not None:
         prio, info = trackres
 
-        refs = _get_tracking_references(obj, tracked_by,
-                                        max_references=max_references)
+        refs = _get_tracking_references(obj, tracked_by, max_references=max_references)
 
         treport = [info]
         for r in refs:
@@ -85,4 +127,3 @@ def track_objects(tracker, max_references=None):
     sreport.extend(r[1])
 
   return '\n'.join(sreport)
-

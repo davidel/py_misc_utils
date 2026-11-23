@@ -1,3 +1,12 @@
+"""Dynamically generate a wrapper class with rich comparison operators based on a key field.
+
+This module provides the :func:`key_wrap` function which creates a new class
+that stores a designated key attribute and implements all standard comparison
+methods (__lt__, __le__, __gt__, __ge__, __eq__, __ne__) and __hash__ based
+on that key. The generated class also includes a custom __repr__ that displays
+the key value prominently.
+"""
+
 from . import utils as ut
 
 _KW_TEMPLATE = '''
@@ -38,9 +47,18 @@ class $CLASS:
 
 
 def key_wrap(cname, key_name):
+  """Generate a wrapper class that compares instances by a designated key attribute.
+
+  Args:
+    cname: The name to give the generated class.
+    key_name: The attribute name used as the key for comparisons and hashing.
+
+  Returns:
+    A newly created class whose instances compare by key_name and expose all
+    remaining kwargs as instance attributes.
+  """
   replaces = dict(CLASS=cname, KEY=key_name)
 
   results, = ut.compile(_KW_TEMPLATE, cname, vals=replaces)
 
   return results
-

@@ -1,3 +1,13 @@
+"""SciKit-Learn utilities for preprocessing pipelines and weighted KNN.
+
+This module provides transformer factories (e.g. :class:`Quantizer`),
+:func:`parse_transform` for spec-based transformer construction, and
+:class:`TransformPipeline` for composing transformers. It also provides
+:class:`WeighedKNNClassifier` implementing sample-weighted KNN
+classification/probability estimation, plus fit/predict helpers handling
+single- vs multi-output target shapes.
+"""
+
 import os
 
 import numpy as np
@@ -14,8 +24,27 @@ from . import utils as pyu
 
 
 class Quantizer:
+  """Uniform quantization transformer scaling data into symmetric integer bins.
+
+  Normalizes data by mean and std_k*std, rounds to integer bins, and clips
+  to the range [-nbins, nbins].
+
+  Attributes:
+    _nbins: The number of bins on each side of zero.
+    _std_k: The std multiplier used for scaling.
+    _eps: Minimum std value to avoid division by zero.
+    _mean: Column means computed during fit.
+    _std: Column stds computed during fit.
+  """
 
   def __init__(self, nbins=3, std_k=2.0, eps=1e-6):
+    """Initialize the Quantizer.
+
+    Args:
+      nbins: Number of bins on each side of zero (default: 3).
+      std_k: Std multiplier used for scaling (default: 2.0).
+      eps: Minimum std value to avoid division by zero (default: 1e-6).
+    """
     self._nbins = nbins
     self._std_k = std_k
     self._eps = eps
@@ -23,6 +52,15 @@ class Quantizer:
     self._std = None
 
   def fit(self, X, *args):
+    """Compute column means and stds from X.
+
+    Args:
+      X: Input data array.
+      *args: Ignored; present for sklearn transformer compatibility.
+
+    Returns:
+      The fitted Quantizer instance.
+    """
     self._mean = np.mean(X, axis=0, keepdims=True)
     std = np.std(X, axis=0, keepdims=True)
     self._std = np.where(std > self._eps, std, self._eps)
@@ -30,35 +68,64 @@ class Quantizer:
     return self
 
   def transform(self, X):
+    """Quantize X into integer bins in [-nbins, nbins].
+
+    Args:
+      X: Input data array.
+
+    Returns:
+      The quantized array.
+    """
     q = np.round(self._nbins * (X - self._mean) / (self._std_k * self._std))
 
     return np.clip(q, -self._nbins, self._nbins)
 
   def fit_transform(self, X, *args):
+    """Fit the Quantizer on X and return the transformed data.
+
+    Args:
+      X: Input data array.
+      *args: Ignored; present for sklearn transformer compatibility.
+
+    Returns:
+      The quantized array.
+    """
     return self.fit(X).transform(X)
 
 
 _TRANSFORMERS = {
-  'QTZ': Quantizer,
-  'STD_SCALE': sklearn.preprocessing.StandardScaler,
-  'MIN_MAX': sklearn.preprocessing.MinMaxScaler,
-  'MAX_ABS': sklearn.preprocessing.MaxAbsScaler,
-  'ROBUST': sklearn.preprocessing.RobustScaler,
-  'QUANT': sklearn.preprocessing.QuantileTransformer,
-  'POWER': sklearn.preprocessing.PowerTransformer,
-  'NORM': sklearn.preprocessing.Normalizer,
-  'PCA': sklearn.decomposition.PCA,
-  'FICA': sklearn.decomposition.FastICA,
-  'INCPCA': sklearn.decomposition.IncrementalPCA,
-  'KBINDIS': sklearn.preprocessing.KBinsDiscretizer,
-  'POLYF': sklearn.preprocessing.PolynomialFeatures,
-  'PWR': sklearn.preprocessing.PowerTransformer,
-  'SPLN': sklearn.preprocessing.SplineTransformer,
-  'GRPRJ': sklearn.random_projection.GaussianRandomProjection,
-  'SRPRJ': sklearn.random_projection.SparseRandomProjection,
+    'QTZ': Quantizer,
+    'STD_SCALE': sklearn.preprocessing.StandardScaler,
+    'MIN_MAX': sklearn.preprocessing.MinMaxScaler,
+    'MAX_ABS': sklearn.preprocessing.MaxAbsScaler,
+    'ROBUST': sklearn.preprocessing.RobustScaler,
+    'QUANT': sklearn.preprocessing.QuantileTransformer,
+    'POWER': sklearn.preprocessing.PowerTransformer,
+    'NORM': sklearn.preprocessing.Normalizer,
+    'PCA': sklearn.decomposition.PCA,
+    'FICA': sklearn.decomposition.FastICA,
+    'INCPCA': sklearn.decomposition.IncrementalPCA,
+    'KBINDIS': sklearn.preprocessing.KBinsDiscretizer,
+    'POLYF': sklearn.preprocessing.PolynomialFeatures,
+    'PWR': sklearn.preprocessing.PowerTransformer,
+    'SPLN': sklearn.preprocessing.SplineTransformer,
+    'GRPRJ': sklearn.random_projection.GaussianRandomProjection,
+    'SRPRJ': sklearn.random_projection.SparseRandomProjection,
 }
 
+
 def parse_transform(trs_spec):
+  """Create a transformer instance from a spec string.
+
+  The spec format is 'NAME' or 'NAME:cfg', where cfg is a config string
+  parsed via pyu.parse_config.
+
+  Args:
+    trs_spec: The transformer spec string (e.g. 'QTZ', 'PCA:n=2').
+
+  Returns:
+    A configured transformer instance.
+  """
   trs, *spec = trs_spec.split(':', 1)
   spec_cfg = pyu.parse_config(spec[0]) if spec else dict()
 
@@ -71,8 +138,20 @@ def parse_transform(trs_spec):
 
 
 class TransformPipeline:
+  """A sequence of transformers applied in order to input data.
+
+  Supports adding transformers, partial_fit/full-fit, and transform.
+
+  Attributes:
+    _transformers: The list of transformer instances.
+  """
 
   def __init__(self, transformers):
+    """Initialize the pipeline from a list of transformers or spec strings.
+
+    Args:
+      transformers: A list of transformer instances or spec strings.
+    """
     self._transformers = []
     for trs in transformers or []:
       if isinstance(trs, str):
@@ -81,20 +160,49 @@ class TransformPipeline:
 
   @property
   def transformers(self):
+    """Return the list of transformers in the pipeline.
+
+    Returns:
+      A tuple of transformer instances.
+    """
     return tuple(self._transformers)
 
   @property
   def supports_partial_fit(self):
+    """Whether all transformers support partial_fit.
+
+    Returns:
+      True if every transformer has a partial_fit method.
+    """
     return all([hasattr(trs, 'partial_fit') for trs in self._transformers])
 
   @property
   def supports_fit(self):
+    """Whether the pipeline supports full fit.
+
+    Returns:
+      True if the pipeline has at most one transformer (fit is not
+      distributed correctly across multiple transformers).
+    """
     return len(self._transformers) <= 1
 
   def add(self, transformer):
+    """Append a transformer to the pipeline.
+
+    Args:
+      transformer: The transformer instance or spec string to add.
+    """
     self._transformers.append(transformer)
 
   def transform(self, x):
+    """Apply all transformers in order to x.
+
+    Args:
+      x: Input data array.
+
+    Returns:
+      The transformed data.
+    """
     tx = x
     for trs in self._transformers:
       tx = trs.transform(tx)
@@ -102,6 +210,14 @@ class TransformPipeline:
     return tx
 
   def fit_transform(self, x):
+    """Fit and transform x through all transformers in order.
+
+    Args:
+      x: Input data array.
+
+    Returns:
+      The transformed data.
+    """
     tx = x
     for trs in self._transformers:
       tx = trs.fit_transform(tx)
@@ -109,6 +225,14 @@ class TransformPipeline:
     return tx
 
   def fit(self, x):
+    """Fit all transformers on x (only valid for single-transformer pipelines).
+
+    Args:
+      x: Input data array.
+
+    Returns:
+      The pipeline itself.
+    """
     tas.check(self.supports_fit,
               msg=f'Only pipelines with a single transformer can call fit()')
     for trs in self._transformers:
@@ -117,6 +241,14 @@ class TransformPipeline:
     return self
 
   def partial_fit_transform(self, x):
+    """Partial-fit all transformers on x and return the transformed data.
+
+    Args:
+      x: Input data array.
+
+    Returns:
+      The transformed data.
+    """
     tx = x
     for trs in self._transformers:
       trs.partial_fit(tx)
@@ -126,6 +258,20 @@ class TransformPipeline:
 
 
 def fit(m, x, y, **kwargs):
+  """Fit a model, normalizing single-output 2D targets to 1D.
+
+  Some sklearn models (e.g. KNeighborsClassifier) require 1D (N,) targets
+  for single-output problems rather than (N, 1) tensors.
+
+  Args:
+    m: The model to fit.
+    x: Input features.
+    y: Target values.
+    **kwargs: Additional keyword arguments passed to m.fit.
+
+  Returns:
+    The fitted model.
+  """
   shape = y.shape
   # Some SciKit Learn models (ie. KNeighborsClassifier/KNeighborsRegressor) although
   # supporting multi-output targets, insist on special casing the 1-output case
@@ -137,6 +283,19 @@ def fit(m, x, y, **kwargs):
 
 
 def predict(m, x, **kwargs):
+  """Predict targets, normalizing single-output results to 2D.
+
+  Some sklearn models emit 1D (N,) vectors for single-output problems;
+  this reshapes them to (N, 1) for consistency.
+
+  Args:
+    m: The fitted model.
+    x: Input features.
+    **kwargs: Additional keyword arguments passed to m.predict.
+
+  Returns:
+    The predicted targets, always with ndim >= 2.
+  """
   y = m.predict(x, **kwargs)
 
   # Some SciKit Learn models (ie. KNeighborsClassifier/KNeighborsRegressor) although
@@ -146,8 +305,28 @@ def predict(m, x, **kwargs):
 
 
 def predict_proba(m, x, classes=None):
+  """Predict class probabilities, optionally extracting specific classes.
+
+  Args:
+    m: The fitted model.
+    x: Input features.
+    classes: Optional list of class indices to extract per output. If None,
+      return the model's probabilities unchanged.
+
+  Returns:
+    The probability array(s), filtered to requested classes if provided.
+  """
 
   def extract_probs(p, cls):
+    """Extract probability columns for requested class indices.
+
+    Args:
+      p: The probability array.
+      cls: A list of class indices.
+
+    Returns:
+      The concatenated probability columns.
+    """
     preds = [p[:, c].reshape(-1, 1) for c in cls]
     return np.concatenate(preds, axis=-1)
 
@@ -162,6 +341,20 @@ def predict_proba(m, x, classes=None):
 
 
 def _get_weights(dist, weights):
+  """Compute neighbor weights from distances, as per the sklearn policy.
+
+  Args:
+    dist: 2D array of distances between each sample and its neighbors.
+    weights: Weighting policy: None or 'uniform' for equal weights,
+      'distance' for inverse-distance weights, or a callable taking the
+      distances and returning the weights.
+
+  Returns:
+    The array of weights for the neighbors.
+
+  Raises:
+    ValueError: When the policy is not recognized.
+  """
   if weights in (None, "uniform"):
     return np.ones_like(dist)
   elif weights == "distance":
@@ -191,18 +384,54 @@ def _get_weights(dist, weights):
 
 
 class WeighedKNNClassifier:
+  """KNN classifier supporting per-sample weights in the neighborhood vote.
+
+  When no sample weights are provided the operations are simply delegated
+  to sklearn.neighbors.KNeighborsClassifier; otherwise the weighted mode
+  of the neighbor labels drives the predictions.
+
+  Args:
+    **kwargs: Keyword arguments forwarded to KNeighborsClassifier.
+  """
 
   def __init__(self, **kwargs):
+    """Initialize the classifier, wrapping a KNeighborsClassifier.
+
+    Args:
+      **kwargs: Keyword arguments forwarded to KNeighborsClassifier.
+    """
+    # Per-sample weights provided at fit time, when any.
     self._sample_weight = None
     self._neigh = sklearn.neighbors.KNeighborsClassifier(**kwargs)
 
   def fit(self, X, y, sample_weight=None):
+    """Fit the classifier, recording the per-sample weights.
+
+    Args:
+      X: Input features.
+      y: Target values.
+      sample_weight: Optional per-sample weights used to weight the
+        neighbors during prediction.
+
+    Returns:
+      The fitted classifier.
+    """
     self._sample_weight = sample_weight
     self._neigh.fit(X, y)
 
     return self
 
   def _prepare_predict(self, X):
+    """Collect the prediction inputs of the weighted vote.
+
+    Args:
+      X: Input features.
+
+    Returns:
+      A namespace object with the neighbor distances and indices, the
+      target values and classes normalized to 2D, the neighbor weights
+      and the per-sample weights aligned to the targets.
+    """
     neigh_dist, neigh_ind = self._neigh.kneighbors(X)
 
     classes = self._neigh.classes_
@@ -223,6 +452,15 @@ class WeighedKNNClassifier:
                            sample_weight=sample_weight)
 
   def predict(self, X):
+    """Predict the class labels of the samples.
+
+    Args:
+      X: Input features.
+
+    Returns:
+      The predicted labels, weighted by the sample weights when they
+      were provided at fit time.
+    """
     if self._sample_weight is None:
       return self._neigh.predict(X)
 
@@ -231,7 +469,8 @@ class WeighedKNNClassifier:
     y_pred = np.empty((len(X), len(pp.classes)), dtype=pp.classes[0].dtype)
     for k, k_classes in enumerate(pp.classes):
       weights = pp.sample_weight[pp.neigh_ind, k] * pp.cweights
-      mode, _ = sklearn.utils.extmath.weighted_mode(pp.y[pp.neigh_ind, k], weights,
+      mode, _ = sklearn.utils.extmath.weighted_mode(pp.y[pp.neigh_ind, k],
+                                                    weights,
                                                     axis=1)
 
       mode = np.asarray(mode.ravel(), dtype=np.intp)
@@ -243,6 +482,16 @@ class WeighedKNNClassifier:
     return y_pred
 
   def predict_proba(self, X):
+    """Predict the class probabilities of the samples.
+
+    Args:
+      X: Input features.
+
+    Returns:
+      The class probabilities accumulated from the weighted neighbor
+      votes when sample weights were provided at fit time, or the
+      probabilities of the wrapped classifier otherwise.
+    """
     if self._sample_weight is None:
       return self._neigh.predict_proba(X)
 
@@ -267,4 +516,3 @@ class WeighedKNNClassifier:
       probabilities = probabilities[0]
 
     return probabilities
-

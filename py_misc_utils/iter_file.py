@@ -1,3 +1,10 @@
+"""File-like object for iterating over data blocks with seek support.
+
+This module provides IterFile, a read-only file-like wrapper that presents
+an iterable of data blocks as a single seekable stream. It maintains an
+internal index of block offsets for efficient random access.
+"""
+
 import bisect
 import os
 
@@ -6,8 +13,30 @@ from . import assert_checks as tas
 
 
 class IterFile:
+  """Read-only file-like wrapper over an iterable of data blocks.
+
+  Presents an iterable of data blocks as a single seekable byte stream.
+  Maintains an internal index of block offsets for efficient random access
+  and buffering.
+
+  Attributes:
+    _blocks: Tuple of data blocks.
+    _offsets: Tuple of cumulative byte offsets for each block.
+    _size: Total size in bytes of all blocks.
+    _offset: Current read position.
+    _block: The currently buffered memoryview block (or None).
+    _block_offset: The starting byte offset of the currently buffered block.
+  """
 
   def __init__(self, data_gen):
+    """Initialize the IterFile from a data generator.
+
+    Reads all blocks from data_gen, building an internal offset index for
+    seeking. The entire dataset is held in memory as a tuple of blocks.
+
+    Args:
+      data_gen: An iterable yielding bytes-like blocks of data.
+    """
     offset, blocks, offsets = 0, [], []
     for block in data_gen:
       blocks.append(block)
@@ -24,13 +53,33 @@ class IterFile:
     self._block_offset = 0
 
   def close(self):
+    """Close the stream, releasing all block references."""
     self._blocks = None
 
   @property
   def closed(self):
+    """Check if the stream is closed.
+
+    Returns:
+      True if the stream has been closed, False otherwise.
+    """
     return self._blocks is None
 
   def seek(self, pos, whence=os.SEEK_SET):
+    """Set the current read position.
+
+    Args:
+      pos: The position to seek to.
+      whence: Reference point (os.SEEK_SET, os.SEEK_CUR, or os.SEEK_END).
+        Defaults to os.SEEK_SET.
+
+    Returns:
+      The new absolute position.
+
+    Raises:
+      ValueError: If whence is invalid.
+      AssertionError: If the resulting offset is out of range.
+    """
     if whence == os.SEEK_SET:
       offset = pos
     elif whence == os.SEEK_CUR:
@@ -48,9 +97,25 @@ class IterFile:
     return offset
 
   def tell(self):
+    """Return the current read position.
+
+    Returns:
+      The current byte offset.
+    """
     return self._offset
 
   def _ensure_buffer(self, offset):
+    """Ensure the internal block buffer covers the given offset.
+
+    Loads the block containing the offset into self._block if not already
+    buffered.
+
+    Args:
+      offset: The byte offset to ensure is buffered.
+
+    Returns:
+      The byte offset within the current block.
+    """
     boffset = offset - self._block_offset
     if self._block is None or boffset < 0 or boffset >= len(self._block):
       pos = bisect.bisect(self._offsets, offset) - 1
@@ -66,6 +131,15 @@ class IterFile:
     return boffset
 
   def read(self, size=-1):
+    """Read up to size bytes from the current position.
+
+    Args:
+      size: Number of bytes to read. If negative, read to end of stream.
+        Defaults to -1.
+
+    Returns:
+      The bytes read (may be fewer than requested at EOF).
+    """
     if size < 0:
       rsize = self._size - self._offset
     else:
@@ -76,42 +150,85 @@ class IterFile:
       boffset = self._ensure_buffer(self._offset)
 
       csize = min(rsize, len(self._block) - boffset)
-      parts.append(self._block[boffset: boffset + csize])
+      parts.append(self._block[boffset:boffset + csize])
       self._offset += csize
       rsize -= csize
 
     return b''.join(parts)
 
   def read1(self, size=-1):
+    """Read up to size bytes (same as read()).
+
+    Args:
+      size: Number of bytes to read. Defaults to -1.
+
+    Returns:
+      The bytes read.
+    """
     return self.read(size=size)
 
   def peek(self, size=0):
+    """Peek at up to size bytes without advancing the position.
+
+    Args:
+      size: Number of bytes to peek. Defaults to 0.
+
+    Returns:
+      The peeked bytes, or b'' if size is 0.
+    """
     if size > 0:
       boffset = self._ensure_buffer(self._offset)
       csize = min(size, len(self._block) - boffset)
 
-      return self._block[boffset: boffset + csize].tobytes()
+      return self._block[boffset:boffset + csize].tobytes()
 
     return b''
 
   def flush(self):
+    """No-op flush (read-only stream)."""
     pass
 
   def readable(self):
+    """Check if the stream is readable.
+
+    Returns:
+      True if the stream is not closed, False otherwise.
+    """
     return not self.closed
 
   def seekable(self):
+    """Check if the stream supports seeking.
+
+    Returns:
+      True if the stream is not closed, False otherwise.
+    """
     return not self.closed
 
   def writable(self):
+    """Check if the stream supports writing.
+
+    Returns:
+      False (read-only stream).
+    """
     return False
 
   def __enter__(self):
+    """Enter the context manager.
+
+    Returns:
+      self.
+    """
     return self
 
   def __exit__(self, *exc):
+    """Exit the context manager, closing the stream.
+
+    Args:
+      *exc: Exception info (unused).
+
+    Returns:
+      False, to not suppress exceptions.
+    """
     self.close()
 
     return False
-
-

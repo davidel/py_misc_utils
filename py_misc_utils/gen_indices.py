@@ -1,9 +1,39 @@
+"""Index generation utilities for multi-dimensional array iteration.
+
+This module provides generate(), which converts an index specification (int,
+slice, list, ndarray, tuple, or Ellipsis) into an iterator over index tuples
+for a given array shape. It handles all common NumPy-style indexing patterns
+including integer indexing, slicing, fancy indexing, and ellipsis expansion.
+"""
+
 import itertools
 
 import numpy as np
 
 
 def generate(shape, idx):
+  """Generate an iterator over index tuples for a multi-dimensional array shape.
+
+  Converts an index specification into an iterator that yields tuples of indices,
+  handling all common NumPy-style indexing patterns:
+  - int: Selects a single element along one axis (requires 1-D shape)
+  - slice: Selects a range along one axis (requires 1-D shape)
+  - list/np.ndarray: Fancy indexing along one axis (requires 1-D shape)
+  - tuple: Multi-axis indexing, mixing ints, slices, arrays, and Ellipsis
+  - Ellipsis: Expands to fill remaining dimensions with full ranges
+
+  Args:
+    shape: Tuple of integers representing the array shape.
+    idx: Index specification. Can be an int, slice, list, numpy array, tuple,
+      or Ellipsis.
+
+  Returns:
+    An itertools.product iterator yielding index tuples.
+
+  Raises:
+    AssertionError: If a 1-D-only index type is used with a multi-D shape.
+    ValueError: If the index specification is invalid for the given shape.
+  """
   if isinstance(idx, int):
     assert len(shape) == 1, f'{shape}'
 
@@ -51,4 +81,3 @@ def generate(shape, idx):
     raise ValueError(f'Wrong index {idx} for shape {shape}')
 
   return itertools.product(*gens)
-

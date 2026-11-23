@@ -1,3 +1,19 @@
+"""Quote-aware string splitting utilities.
+
+This module provides functions for splitting strings while respecting quoted
+sections and escaped characters. It supports custom quote maps, nesting rules,
+and unescaping, making it suitable for parsing shell-like or configuration
+syntax.
+
+Classes:
+  _Skipper: Tracks quote positions during forward scanning.
+  SplitContext: Named tuple holding quote mapping and regex patterns.
+
+Functions:
+  _chars_regex, _specials_regex, _split_forward, make_context, _to_bytes,
+  split, unquote
+"""
+
 import collections
 import re
 
@@ -5,12 +21,31 @@ from . import assert_checks as tas
 
 
 class _Skipper:
+  """Tracks quote positions during forward scanning.
+
+  The skipper advances through data, identifying where quoted sections begin
+  so that split operations do not break on delimiters inside quotes.
+  """
 
   def __init__(self, quote_rx):
+    """Initialize the skipper with the quote matcher.
+
+    Args:
+      quote_rx: Regular expression matching a quoted section.
+    """
     self.quote_rx = quote_rx
     self.next_pos = 0
 
   def skip(self, data, pos):
+    """Advances to the next quote boundary from the given position.
+
+    Args:
+      data: The byte string to scan.
+      pos: The current position within data.
+
+    Returns:
+      The position of the next quote boundary, or end of data if none found.
+    """
     next_pos = self.next_pos - pos
     if next_pos <= 0:
       m = re.search(self.quote_rx, data)
@@ -21,6 +56,14 @@ class _Skipper:
 
 
 def _chars_regex(chars):
+  """Builds a regex pattern matching any of the given characters.
+
+  Args:
+    chars: An iterable of characters to match.
+
+  Returns:
+    A compiled regex pattern matching any single character in ``chars``.
+  """
   rexs = bytearray(b'[\\')
   for c in sorted(chars):
     rexs.extend((ord('\\'), c))
@@ -31,10 +74,32 @@ def _chars_regex(chars):
 
 
 def _specials_regex(qmap):
+  """Builds a regex pattern for all special characters in a quote map.
+
+  Args:
+    qmap: A dictionary mapping opening quote characters to closing ones.
+
+  Returns:
+    A compiled regex pattern matching any quote opener or closer.
+  """
   return _chars_regex(set(tuple(qmap.keys()) + tuple(qmap.values())))
 
 
 def _split_forward(data, pos, split_rx, skipper, seq):
+  """Scans forward from pos, finding the next split point or quote boundary.
+
+  Args:
+    data: The byte string to scan.
+    pos: The starting position.
+    split_rx: A compiled regex pattern for split delimiters.
+    skipper: A _Skipper instance tracking quote boundaries.
+    seq: A bytearray to accumulate matched content into.
+
+  Returns:
+    A tuple ``(new_pos, is_split)`` where ``new_pos`` is the position after
+    the split point or quote boundary, and ``is_split`` is True if a split
+    delimiter was found.
+  """
   pdata = data[pos:]
 
   xm = re.search(split_rx, pdata)
@@ -48,14 +113,24 @@ def _split_forward(data, pos, split_rx, skipper, seq):
     seq_pos = next_pos = skip_pos
     xm = None
 
-  seq.extend(pdata[: seq_pos])
+  seq.extend(pdata[:seq_pos])
 
   return pos + next_pos, xm is not None
 
 
 SplitContext = collections.namedtuple('SplitContext', 'map, quote_rx, quote_sprx')
 
+
 def make_context(quote_map):
+  """Creates a SplitContext from a quote mapping dictionary.
+
+  Args:
+    quote_map: A dict mapping opening quote characters to closing characters.
+
+  Returns:
+    A ``SplitContext`` namedtuple with compiled regex patterns for quote
+    detection.
+  """
   bmap = {ord(k): ord(v) for k, v in quote_map.items()}
 
   return SplitContext(map=bmap,
@@ -64,6 +139,15 @@ def make_context(quote_map):
 
 
 def _to_bytes(data, split_rx):
+  """Converts data and split_rx to bytes/memoryview for processing.
+
+  Args:
+    data: A string or bytes object to split.
+    split_rx: A string or compiled regex pattern for the split delimiter.
+
+  Returns:
+    A tuple ``(memoryview, compiled_regex)`` suitable for byte-level scanning.
+  """
   if isinstance(data, str):
     data = data.encode()
   if isinstance(split_rx, str):
@@ -75,19 +159,37 @@ def _to_bytes(data, split_rx):
 
 
 _QUOTE_MAP = {
-  '"': '"',
-  "'": "'",
-  '`': '`',
-  '(': ')',
-  '{': '}',
-  '[': ']',
-  '<': '>',
+    '"': '"',
+    "'": "'",
+    '`': '`',
+    '(': ')',
+    '{': '}',
+    '[': ']',
+    '<': '>',
 }
 _QUOTE_CTX = make_context(_QUOTE_MAP)
 
 _Quote = collections.namedtuple('Quote', 'closec, pos, nest_ok')
 
+
 def split(data, split_rx, quote_ctx=None, unescape=False):
+  """Splits data while respecting quoted sections and escaped characters.
+
+  Args:
+    data: A string or bytes object to split.
+    split_rx: A string or compiled regex pattern for the split delimiter.
+    quote_ctx: An optional SplitContext defining quote characters. Defaults
+      to a context with common quote pairs (\"'\", \"'\", \"\`\", \"()\", \"{}\",
+      \"[]\", \"<>\").
+    unescape: If True, backslash-escaped characters are unescaped during
+      splitting.
+
+  Returns:
+    A tuple of parts (strings if input was str, bytes if input was bytes).
+
+  Raises:
+    RuntimeError: If quotes are unmatched at the end of the data.
+  """
   qctx = quote_ctx or _QUOTE_CTX
 
   bdata, bsplit_rx = _to_bytes(data, split_rx)
@@ -108,7 +210,7 @@ def split(data, split_rx, quote_ctx=None, unescape=False):
       if not m:
         break
 
-      seq.extend(bdata[pos: pos + m.start()])
+      seq.extend(bdata[pos:pos + m.start()])
       pos += m.start()
       c = bdata[pos]
       tq = qstack[-1]
@@ -131,7 +233,9 @@ def split(data, split_rx, quote_ctx=None, unescape=False):
         kpos += 1
       pos = max(kpos, pos + 1)
 
-  tas.check_eq(len(qstack), 0, msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
+  tas.check_eq(len(qstack),
+               0,
+               msg=f'Unmatched quotes during split: "{data}"\n  {qstack}')
   if seq or parts:
     parts.append(seq)
 
@@ -139,13 +243,26 @@ def split(data, split_rx, quote_ctx=None, unescape=False):
 
 
 def unquote(data, quote_map=None):
+  """Removes matching quotes from the beginning and end of a string.
+
+  If the string starts and ends with a matching quote pair, the quotes are
+  removed and any escaped occurrences of the closing quote are unescaped.
+
+  Args:
+    data: The string to unquote.
+    quote_map: An optional dict mapping opening quotes to closing quotes.
+      Defaults to the module-level ``_QUOTE_MAP``.
+
+  Returns:
+    The string with surrounding quotes removed, or the original string if no
+    matching quote pair is found.
+  """
   if len(data) >= 2:
     quote_map = quote_map or _QUOTE_MAP
     cc = quote_map.get(data[0])
     if cc == data[-1]:
-      udata = data[1: -1]
+      udata = data[1:-1]
 
       return re.sub(rf'\\{cc}', rf'{cc}', udata) if cc == data[0] else udata
 
   return data
-

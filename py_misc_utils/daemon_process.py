@@ -1,3 +1,15 @@
+"""Daemon process management.
+
+This module provides the machinery to start and stop long-running
+background processes (daemons): a process is identified by name, holding
+a PID file - protected by a lock file - and its start can be performed
+either by double-forking (DaemonPosix) or via the multiprocessing API
+(DaemonCompat).
+
+The Daemon alias selects the implementation - defaulting to the
+multiprocessing one where available - and can be forced to the posix
+one via the DAEMON_MODE environment variable.
+"""
 import atexit
 import collections
 import functools
@@ -16,14 +28,15 @@ from . import lockfile as lockf
 from . import osfd
 from . import packet as pkt
 
-
 DaemonResult = collections.namedtuple(
-  'DaemonResult',
-  'pid, msg, exclass',
-  defaults=(-1, None, None),
+    'DaemonResult',
+    'pid, msg, exclass',
+    defaults=(-1, None, None),
 )
 
+
 def _get_pids_dir():
+  """Returns the folder holding the daemon PID files."""
   pidsdir = os.path.join(tempfile.gettempdir(), '.pids')
   os.makedirs(pidsdir, exist_ok=True)
 
@@ -32,28 +45,51 @@ def _get_pids_dir():
 
 _PIDS_DIR = _get_pids_dir()
 
+
 def _get_pidfile(name):
+  """Returns the PID file path of a named daemon."""
   return os.path.join(_PIDS_DIR, f'{name}.pid')
 
 
 def _term_handler(sig, frame):
+  """Terminates the daemon process upon SIGINT/SIGTERM delivery."""
   sys.exit(sig)
 
 
 class DaemonBase:
+  """A base class implementing the daemon PID file management.
+
+  The PID file - locked via a lock file - holds the PID of the running
+  daemon, and it is removed when the daemon stops.
+  """
 
   def __init__(self, name):
+    """Creates a daemon manager.
+
+    Args:
+      name: The daemon name - identifying its PID file.
+    """
     self._name = name
     self._pidfile = _get_pidfile(name)
 
   def _write_result(self, wpipe, **kwargs):
+    """Writes a daemon-start result over a pipe."""
     dres = DaemonResult(**kwargs)
     pkt.write_packet(wpipe, pickle.dumps(dres))
 
   def _read_result(self, rpipe):
+    """Reads a daemon-start result from a pipe."""
     return pickle.loads(pkt.read_packet(rpipe))
 
   def _delpid(self, pid=None):
+    """Removes the daemon PID file, if the recorded PID matches.
+
+    Args:
+      pid: An optional PID the PID file must hold to be removed.
+
+    Returns:
+      True if the PID file has been removed.
+    """
     with self._lockfile():
       if pid is None or (xpid := self._readpid()) == pid:
         try:
@@ -66,6 +102,15 @@ class DaemonBase:
       return False
 
   def _writepid(self, pid):
+    """Records the daemon PID into the PID file.
+
+    Args:
+      pid: The daemon PID.
+
+    Raises:
+      FileExistsError: If a running daemon is already recorded in the
+        PID file.
+    """
     with self._lockfile():
       xpid = self._readpid()
       if xpid is not None:
@@ -75,10 +120,12 @@ class DaemonBase:
         os.remove(self._pidfile)
 
       # Use mode=0o660 to make sure only allowed users can access the PID file.
-      with osfd.OsFd(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o660) as fd:
+      with osfd.OsFd(self._pidfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                     mode=0o660) as fd:
         os.write(fd, f'{pid}\n'.encode())
 
   def _readpid(self):
+    """Reads the daemon PID recorded in the PID file - if any."""
     try:
       with osfd.OsFd(self._pidfile, os.O_RDONLY) as fd:
         return int(fsu.readall(fd).strip())
@@ -86,15 +133,22 @@ class DaemonBase:
       pass
 
   def getpid(self):
+    """Returns the PID of the running daemon - if any.
+
+    Returns:
+      The daemon PID, or None if the daemon is not running.
+    """
     with self._lockfile():
       pid = self._readpid()
 
       return pid if pid is None or self._runnning_pid(pid) else None
 
   def _lockfile(self):
+    """Returns the lock file protecting the PID file."""
     return lockf.LockFile(self._pidfile)
 
   def _runnning_pid(self, pid):
+    """Checks whether a PID belongs to a live - non-zombie - process."""
     try:
       proc = psutil.Process(pid)
 
@@ -103,6 +157,13 @@ class DaemonBase:
       return False
 
   def _killpid(self, pid, kill_timeout=None):
+    """Terminates a process, killing it if it does not exit in time.
+
+    Args:
+      pid: The PID of the process to terminate.
+      kill_timeout: An optional number of seconds to wait between the
+        terminate() and kill() calls - 1 second by default.
+    """
     try:
       proc = psutil.Process(pid)
       proc.terminate()
@@ -112,6 +173,15 @@ class DaemonBase:
       pass
 
   def _setup_daemon(self, wpipe):
+    """Sets up the daemon process context - and records its PID.
+
+    Detaches the process from the controlling terminal, redirects
+    stdin/stdout/stderr to /dev/null, registers the PID file cleanup
+    upon exit, and reports the daemon PID back over the pipe.
+
+    Args:
+      wpipe: The pipe descriptor the daemon-start result is written to.
+    """
     # This 2nd os.setsid() makes the daemon a process group, so with can kill the
     # whole group, if required. We do this only on systems that supports it.
     if os.name == 'posix':
@@ -140,6 +210,14 @@ class DaemonBase:
     self._write_result(wpipe, pid=pid)
 
   def stop(self, kill_timeout=None):
+    """Stops the running daemon - if any.
+
+    Args:
+      kill_timeout: An optional number of seconds passed to _killpid().
+
+    Returns:
+      True if a running daemon has been stopped.
+    """
     with self._lockfile():
       pid = self._readpid()
       if pid is not None:
@@ -151,8 +229,17 @@ class DaemonBase:
 
 
 class DaemonPosix(DaemonBase):
+  """A daemon manager based on the classic posix double-fork approach."""
 
   def _daemonize(self):
+    """Double-forks the process to create the daemon.
+
+    The parent waits for the daemonization result over a pipe, raising
+    an error if the daemon setup failed.
+
+    Returns:
+      The daemon PID in the parent process, 0 in the daemon process.
+    """
     rpipe, wpipe = os.pipe()
     os.set_inheritable(wpipe, True)
 
@@ -181,6 +268,15 @@ class DaemonPosix(DaemonBase):
       sys.exit(1)
 
   def start(self, target):
+    """Starts the daemon, running a target function.
+
+    Args:
+      target: The function to be executed by the daemon process.
+
+    Returns:
+      The daemon PID in the parent process, 0 in the daemon process - in
+      which case target() is executed before exiting.
+    """
     pid = self.getpid()
     if pid is None:
       if (pid := self._daemonize()) == 0:
@@ -191,15 +287,32 @@ class DaemonPosix(DaemonBase):
 
 
 class DaemonCompat(DaemonBase):
+  """A daemon manager based on the multiprocessing API.
+
+  Used on systems where the multiprocessing process bookkeeping can be
+  altered to prevent the daemon from being killed at parent exit - and
+  therefore needs no double-fork.
+  """
 
   def _write_result(self, wpipe, **kwargs):
+    """Writes a daemon-start result over a multiprocessing pipe."""
     dres = DaemonResult(**kwargs)
     wpipe.send(pickle.dumps(dres))
 
   def _read_result(self, rpipe):
+    """Reads a daemon-start result from a multiprocessing pipe."""
     return pickle.loads(rpipe.recv())
 
   def _boostrap(self, target, wpipe):
+    """The daemon process entry point.
+
+    Sets up the daemon context and runs the target function, exiting the
+    process upon completion.
+
+    Args:
+      target: The function to be executed by the daemon process.
+      wpipe: The pipe descriptor the daemon-start result is written to.
+    """
     try:
       os.chdir('/')
       if os.name == 'posix':
@@ -214,6 +327,17 @@ class DaemonCompat(DaemonBase):
     sys.exit(0)
 
   def _start_daemon(self, target):
+    """Starts the daemon process via the multiprocessing API.
+
+    The daemon process is removed from the parent multiprocessing child
+    bookkeeping, so that it is not killed at parent exit.
+
+    Args:
+      target: The function to be executed by the daemon process.
+
+    Returns:
+      The daemon PID.
+    """
     mps = multiprocessing.get_context(method=os.getenv('DAEMON_MP_CONTEXT'))
     rpipe, wpipe = mps.Pipe()
     proc = mps.Process(target=self._boostrap, args=(target, wpipe))
@@ -233,6 +357,14 @@ class DaemonCompat(DaemonBase):
     return dres.pid
 
   def start(self, target):
+    """Starts the daemon, running a target function.
+
+    Args:
+      target: The function to be executed by the daemon process.
+
+    Returns:
+      The daemon PID.
+    """
     pid = self.getpid()
     if pid is None:
       pid = self._start_daemon(target)
@@ -249,4 +381,3 @@ if HAS_MP_CHILDREN and os.getenv('DAEMON_MODE') != 'posix':
   Daemon = DaemonCompat
 else:
   Daemon = DaemonPosix
-

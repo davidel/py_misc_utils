@@ -1,3 +1,11 @@
+"""AST manipulation helpers.
+
+This module provides helpers to manipulate Python ASTs: ifize() moves
+statements following an IF into the IF branch not ending with a return -
+making control flow linear for code generators - plus an AST dump
+utility honoring an environment-driven indentation and a static AST
+evaluator executing statements/expressions.
+"""
 import ast
 import logging
 import os
@@ -6,10 +14,18 @@ from . import alog
 
 
 def _ends_with_return(slist):
+  """Checks whether a statement list ends with a return statement."""
   return slist and isinstance(slist[-1], ast.Return)
 
 
 def _ifize_stmt_list(slist):
+  """Moves the statements following an IF into its open branch.
+
+  If one branch of the first IF of a statement list ends with a RETURN,
+  and the other does not, the statements following the IF are moved
+  within the branch which does not end with the RETURN - recursively
+  processing the moved statements.
+  """
   ni = None
   for i, node in enumerate(slist):
     if isinstance(node, ast.If):
@@ -72,17 +88,26 @@ def _ifize_stmt_list(slist):
         remlist = _ifize_stmt_list(slist[ni + 1:])
         orelse.extend(remlist)
         ifnode.orelse = orelse
-        slist = slist[: ni + 1]
+        slist = slist[:ni + 1]
 
     elif _ends_with_return(orelse):
       remlist = _ifize_stmt_list(slist[ni + 1:])
       ifnode.body.extend(remlist)
-      slist = slist[: ni + 1]
+      slist = slist[:ni + 1]
 
   return slist
 
 
 def ifize(node):
+  """Normalizes an AST so that each IF terminates its statement list.
+
+  Recursively rearranges all the statement lists held by an AST,
+  applying the _ifize_stmt_list() transformation.
+
+  Args:
+    node: The AST node to transform - e.g. a module or a function
+      definition.
+  """
   for field, value in ast.iter_fields(node):
     if isinstance(value, list):
       for lvalue in value:
@@ -97,6 +122,17 @@ def ifize(node):
 
 
 def dump(node, indent=None):
+  """Returns the string representation of an AST node.
+
+  Args:
+    node: The AST node to dump.
+    indent: An optional indentation of the dumped fields. If None, the
+      AST_INDENT environment variable is used - if set - and the
+      one-line ast.dump() representation otherwise.
+
+  Returns:
+    The dumped AST node.
+  """
   if indent is None:
     indent = os.getenv('AST_INDENT')
     if indent is not None:
@@ -106,6 +142,18 @@ def dump(node, indent=None):
 
 
 def static_eval(node, eval_globals, eval_locals, filename=None):
+  """Evaluates an AST statement or expression.
+
+  Args:
+    node: The AST node to evaluate: a statement or an expression.
+    eval_globals: The globals used to evaluate the node.
+    eval_locals: The locals used to evaluate the node.
+    filename: An optional filename used to compile the node.
+
+  Returns:
+    The evaluation result of expression nodes. Statement nodes return
+    no value - their effects are applied to the given globals/locals.
+  """
   if isinstance(node, ast.stmt):
     mod = ast.Module(body=[node], type_ignores=[])
     cmod = compile(mod, filename=filename or '<ast_eval>', mode='exec')
@@ -118,4 +166,3 @@ def static_eval(node, eval_globals, eval_locals, filename=None):
     return value
   else:
     alog.xraise(ValueError, f'Invalid AST node: {dump(node)}')
-

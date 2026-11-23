@@ -1,3 +1,11 @@
+"""Application entry-point infrastructure.
+
+This module provides the main() entry point wiring command-line argument
+parsing to a main function, the configuration of the library modules
+requiring command line setup - like alog - and the Main decorator which
+auto-generates the command line arguments from the signature of the
+decorated main function.
+"""
 import argparse
 import functools
 import inspect
@@ -12,6 +20,12 @@ from . import multiprocessing as mp
 
 
 def _get_init_modules():
+  """Collect the init modules configuring themselves from command line.
+
+  Returns:
+    A tuple of module config objects, each exposing add_arguments()
+    and config_module() APIs.
+  """
   # Here is the place to import (import here to avoid cycling dependencies) and
   # call the get_main_config() API of modules which require setting up a
   # command line and configuring themselves with the parsed arguments.
@@ -32,16 +46,19 @@ def _get_init_modules():
 
 
 def _add_arguments(init_modules, parser):
+  """Adds the arguments of the init modules to a command line parser."""
   for module in init_modules:
     module.add_arguments(parser)
 
 
 def _config_modules(init_modules, args):
+  """Configures the init modules with the parsed arguments."""
   for module in init_modules:
     module.config_module(args)
 
 
 def _child_setup_modules(args):
+  """Configures the init modules in a forked child process."""
   init_modules = _get_init_modules()
   _config_modules(init_modules, args)
 
@@ -50,7 +67,17 @@ def _child_setup_modules(args):
 
 _ARGS = gns.Var(f'{__name__}.ARGS', child_fn=_child_setup_modules)
 
+
 def _main(parser, mainfn, args, rem_args):
+  """Parse command line arguments and run the main function.
+
+  Args:
+    parser: The command line parser to use.
+    mainfn: The main function to run.
+    args: An optional list of command line arguments to parse.
+    rem_args: An optional attribute name the arguments following a '--'
+      separator are stored into - as a tuple.
+  """
   if isinstance(mainfn, Main):
     mainfn.add_arguments(parser)
 
@@ -63,7 +90,7 @@ def _main(parser, mainfn, args, rem_args):
     ddpos = cu.lindex(xargs, '--')
     if ddpos >= 0:
       rargs = xargs[ddpos + 1:]
-      xargs = xargs[: ddpos]
+      xargs = xargs[:ddpos]
     else:
       rargs = []
 
@@ -79,18 +106,50 @@ def _main(parser, mainfn, args, rem_args):
 
 
 def main(parser, mainfn, args=None, rem_args=None):
+  """Runs a main function with a command line parser.
+
+  The init modules are configured with the parsed arguments - and the
+  Main-decorated main functions add their own arguments to the parser -
+  before the main function is invoked.
+
+  The parsed arguments are stored in the process global namespace, so
+  that they are available to forked child processes as well.
+
+  Args:
+    parser: The command line parser to use.
+    mainfn: The main function to run: either a plain callable taking the
+      parsed arguments, or a Main-decorated function.
+    args: An optional list of command line arguments to parse - the
+      process arguments by default.
+    rem_args: An optional attribute name the arguments following a '--'
+      separator are stored into - as a tuple.
+  """
   mp.procfn_wrap(_main, parser, mainfn, args, rem_args)
 
 
 def basic_main(mainfn, description='Basic Main'):
+  """Runs a main function with a basic command line parser.
+
+  Args:
+    mainfn: The main function to run.
+    description: The description of the command line parser.
+  """
   parser = argparse.ArgumentParser(
-    description=description,
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+      description=description,
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
   )
   main(parser, mainfn)
 
 
 def _child_setup_functions(setup_functions):
+  """Run the registered setup functions in a forked child process.
+
+  Args:
+    setup_functions: The list of registered setup functions.
+
+  Returns:
+    The setup_functions list.
+  """
   for setupfn in setup_functions:
     setupfn()
 
@@ -101,7 +160,15 @@ _SETUP_FUNCTIONS = gns.Var(f'{__name__}.SETUP_FUNCTIONS',
                            child_fn=_child_setup_functions,
                            defval=[])
 
+
 def add_setupfn(setupfn, run=True):
+  """Registers a setup function run by forked child processes.
+
+  Args:
+    setupfn: The setup function to register.
+    run: Whether the setup function is run also in the registering
+      process - it is always run in the forked children.
+  """
   if run:
     setupfn()
 
@@ -122,13 +189,42 @@ def add_setupfn(setupfn, run=True):
 #   app_main.main(parser, my_main, ...)
 #
 class Main:
+  """A decorator auto-generating command line arguments.
+
+  Decorating a function with Main makes its parameters become command
+  line arguments: parameters with a default value generate --name
+  options - with type and default derived from the default value -
+  while the ones without it generate positional arguments.
+
+  Parameters annotated with a typing.Literal get the literal values as
+  their choices, bool parameters get a BooleanOptionalAction action, and
+  the parameters without type information get YAML-parsed values.
+
+  Use as:
+
+    @app_main.Main
+    def my_main(arg, ..., kwarg=17, ...):
+      ...
+
+    if __name__ == '__main__':
+      parser = argparse.ArgumentParser(...)
+      ...
+      app_main.main(parser, my_main, ...)
+  """
 
   def __init__(self, func):
+    """Decorates a main function."""
     self._func = func
     self._sig = inspect.signature(func)
     functools.update_wrapper(self, func)
 
   def __call__(self, parsed_args):
+    """Invokes the decorated function with the parsed arguments.
+
+    Args:
+      parsed_args: The parsed command line arguments - whose attributes
+        are matched - by name - to the decorated function parameters.
+    """
     args, kwargs = [], {}
     for n, p in self._sig.parameters.items():
       pv = getattr(parsed_args, n, None)
@@ -140,6 +236,11 @@ class Main:
     return self._func(*args, **kwargs)
 
   def add_arguments(self, parser):
+    """Adds the command line arguments of the decorated function.
+
+    Args:
+      parser: The command line parser to add the arguments to.
+    """
     fname = self._func.__name__
 
     for n, p in self._sig.parameters.items():
@@ -176,4 +277,3 @@ class Main:
                             default=defval,
                             choices=choices,
                             help=help_str)
-

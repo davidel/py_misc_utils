@@ -1,3 +1,11 @@
+"""Archive-like streaming of data files.
+
+This module provides ArchiveStreamer, an iterator over the data files of
+an archive: besides the classic zip and tar (with optional compression)
+formats, parquet and msgpack files are streamed as well - with each
+record generating a set of UID.ENTITY-named entries, similar to what a
+Web Dataset would expect.
+"""
 import collections
 import hashlib
 import os
@@ -10,19 +18,36 @@ from . import gfs
 from . import img_utils as imgu
 from . import utils as ut
 
+ArchiveSpecs = collections.namedtuple('ArchiveSpecs',
+                                      'kind, compression, base_path, purl')
+# Archive type specs: kind (zip/tar/parquet/msgpack), compression
+# (zero or one of gz/xz/bz2), base_path (the URL without archive and
+# compression extensions) and purl (the parsed URL).
 
-ArchiveSpecs = collections.namedtuple('ArchiveSpecs', 'kind, compression, base_path, purl')
 ArchiveEntry = collections.namedtuple('ArchiveEntry', 'name, data')
-
+# An archive data file: its name and content (as bytes).
 
 _EXT_COMPRESSION = {
-  'gz': 'gz',
-  'xz': 'xz',
-  'bz2': 'bz2',
-  'bzip2': 'bz2',
+    'gz': 'gz',
+    'xz': 'xz',
+    'bz2': 'bz2',
+    'bzip2': 'bz2',
 }
 
+
 def parse_specs(url):
+  """Parses an archive URL into its archive specs.
+
+  Args:
+    url: The archive URL - with its archive-type extension, optionally
+      followed by a compression extension.
+
+  Returns:
+    The ArchiveSpecs of the archive.
+
+  Raises:
+    AssertionError: If the archive type extension cannot be inferred.
+  """
   usplit = gfs.splitext(url)
 
   compression = _EXT_COMPRESSION.get(usplit.ext)
@@ -39,15 +64,29 @@ def parse_specs(url):
 
 
 class ArchiveStreamer:
+  """An iterator over the data files of an archive.
+
+  Supported archive types: zip, tar (optionally compressed with
+  gz/xz/bz2), parquet and msgpack files.
+  """
 
   def __init__(self, url, **kwargs):
+    """Creates an archive streamer.
+
+    Args:
+      url: The archive URL.
+      **kwargs: Keyword arguments passed to the archive accessors - like
+        the fetch options of the remote filesystems.
+    """
     self._url = url
     self._kwargs = kwargs
 
   def _url_uid(self, url):
-    return hashlib.sha1(url.encode()).hexdigest()[: 8]
+    """Returns the unique id - a hash - of an URL."""
+    return hashlib.sha1(url.encode()).hexdigest()[:8]
 
   def _generate_zip(self, specs):
+    """Generates the entries of a zip archive."""
     # The ZIP format requires random access (specifically, the file list is at EOF)
     # so it is better to cache the file locally before opening.
     with gfs.open_local(self._url, mode='rb', **self._kwargs) as stream:
@@ -58,6 +97,7 @@ class ArchiveStreamer:
           yield ArchiveEntry(name=zinfo.filename, data=data)
 
   def _generate_tar(self, specs):
+    """Generates the entries of a - possibly compressed - tar archive."""
     with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
       tfile = tarfile.open(mode=f'r|{specs.compression or ""}', fileobj=stream)
       for tinfo in tfile:
@@ -65,6 +105,7 @@ class ArchiveStreamer:
         yield ArchiveEntry(name=tinfo.name, data=data)
 
   def _generate_parquet(self, specs):
+    """Generates the entries of a parquet file."""
     # Keep the import dependency local, to make it required only if parquet is used.
     from . import parquet_streamer as pqs
 
@@ -80,6 +121,7 @@ class ArchiveStreamer:
         yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
 
   def _generate_msgpack(self, specs):
+    """Generates the entries of a msgpack file."""
     # Keep the import dependency local, to make it required only if parquet is used.
     from . import msgpack_streamer as mps
 
@@ -95,6 +137,12 @@ class ArchiveStreamer:
         yield ArchiveEntry(name=f'{ruid}.{name}', data=data)
 
   def generate(self):
+    """Generates the data files of the archive.
+
+    Returns:
+      A generator yielding ArchiveEntry objects - one per data file -
+      whose kind is selected by the archive URL extension.
+    """
     specs = parse_specs(self._url)
     if specs.kind == 'zip':
       yield from self._generate_zip(specs)
@@ -108,5 +156,6 @@ class ArchiveStreamer:
       alog.xraise(RuntimeError, f'Unknown archive type "{specs.kind}": {self._url}')
 
   def __iter__(self):
-    return self.generate()
+    """Returns the archive data files generator."""
 
+    return self.generate()

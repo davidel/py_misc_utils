@@ -1,3 +1,12 @@
+"""HTTP(S) FileSystem implementation using requests.
+
+This module provides HttpFs, a FileSystem backend for http:// and https://
+URLs. Reads are served through the block-cache machinery using Range
+requests when the server supports them, while writes are staged locally and
+uploaded with a single PUT request when the file is closed. Directory
+listing is parsed from the anchor links of an HTML index page.
+"""
+
 import functools
 import hashlib
 import io
@@ -22,8 +31,21 @@ from .. import writeback_file as wbf
 
 
 class HttpReader:
+  """Reader fetching data from an HTTP server through a requests session."""
 
   def __init__(self, url, session=None, head=None, req_kwargs=None, chunk_size=None):
+    """Resolve the request parameters and detect Range-request support.
+
+    Args:
+      url: URL of the file to read.
+      session: requests.Session used for the requests; a new session is
+        created when missing.
+      head: Already fetched HEAD response; when missing a HEAD request is
+        issued to populate it.
+      req_kwargs: Keyword arguments for every request, such as headers
+        and authentication.
+      chunk_size: Size of the chunks read when streaming whole files.
+    """
     session = session if session is not None else requests.Session()
     req_kwargs = req_kwargs or dict()
     if head is None:
@@ -31,6 +53,7 @@ class HttpReader:
 
     allow_ranges = hu.support_ranges(head.headers)
 
+    # Request parameters and detected capabilities of the remote resource.
     self._url = url
     self._session = session
     self._req_kwargs = req_kwargs
@@ -40,6 +63,17 @@ class HttpReader:
 
   @classmethod
   def tag(cls, head):
+    """Build a cache tag from an HTTP HEAD response.
+
+    The ETag header is preferred; size and last-modified time are used as
+    a fallback when the server does not provide an ETag.
+
+    Args:
+      head: HEAD response for the URL.
+
+    Returns:
+      The cache tag for the URL.
+    """
     tag = hu.etag(head.headers)
     if tag is None:
       mtime = hu.last_modified(head.headers)
@@ -49,9 +83,23 @@ class HttpReader:
     return tag
 
   def support_blocks(self):
+    """Return True if the server supports Range requests."""
     return self._support_blocks
 
   def read_block(self, bpath, offset, size):
+    """Read data into a local cache file.
+
+    When the server supports Range requests a single ranged GET of size
+    bytes is issued, otherwise the whole file is streamed into the cache.
+
+    Args:
+      bpath: Local path of the cache file to write the contents to.
+      offset: Offset in the file where reading starts.
+      size: Number of bytes to read.
+
+    Returns:
+      The number of bytes written into the cache file.
+    """
     if self._support_blocks and offset != chf.CachedBlockFile.WHOLE_OFFSET:
       with osfd.OsFd(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440) as wfd:
         size = min(size, self._size - offset)
@@ -77,6 +125,13 @@ class HttpReader:
 
 
 class HttpFs(fsb.FsBase):
+  """FileSystem implementation for http:// and https:// URLs.
+
+  A single requests session is shared by all the operations, configured
+  with the constructor keyword arguments such as headers or authentication.
+  Writes are staged into a temporary file and uploaded on close through a
+  PUT request, so writeback semantics apply.
+  """
 
   mimetypes.init()
 
@@ -84,11 +139,20 @@ class HttpFs(fsb.FsBase):
   IDS = (ID, 'https')
 
   def __init__(self, cache_iface=None, **kwargs):
+    """Initialize the backend with a shared requests session.
+
+    Args:
+      cache_iface: Optional cache interface customizing the caching of
+        the remote contents.
+      **kwargs: Keyword arguments forwarded to the session requests,
+        such as headers and authentication.
+    """
     super().__init__(cache_iface=cache_iface, **kwargs)
     self._req_kwargs = hu.filter_request_args(kwargs)
     self._session = requests.Session()
 
   def _exists(self, url):
+    """Return True if a HEAD request for the URL does not return an error."""
     try:
       hu.info(url, mod=self._session, **self._req_kwargs)
 
@@ -97,6 +161,14 @@ class HttpFs(fsb.FsBase):
       return False
 
   def _make_reader(self, url):
+    """Create a reader and metadata for the remote resource.
+
+    Args:
+      url: URL of the file to access.
+
+    Returns:
+      A tuple with the HttpReader and the cache Meta describing the file.
+    """
     head = hu.info(url, mod=self._session, **self._req_kwargs)
 
     tag = HttpReader.tag(head)
@@ -111,6 +183,15 @@ class HttpFs(fsb.FsBase):
     return reader, meta
 
   def stat(self, url):
+    """Stat a URL from the headers of a HEAD request.
+
+    Args:
+      url: URL to stat.
+
+    Returns:
+      The DirEntry built from the content-length, last-modified and ETag
+      headers.
+    """
     head = hu.info(url, mod=self._session, **self._req_kwargs)
 
     length = hu.content_length(head.headers)
@@ -128,6 +209,20 @@ class HttpFs(fsb.FsBase):
                         st_mtime=mtime)
 
   def open(self, url, mode, **kwargs):
+    """Open a URL for reading or writing.
+
+    Read modes are served through the block-cache interface, while write
+    modes stage the data into a temporary file uploaded with a PUT
+    request when the stream is closed.
+
+    Args:
+      url: URL to open.
+      mode: Open mode string.
+      **kwargs: Extra keyword arguments forwarded to the cache interface.
+
+    Returns:
+      A file-like object, wrapped into a TextIOWrapper in text modes.
+    """
     if self.read_mode(mode):
       reader, meta = self._make_reader(url)
       cfile = self._cache_iface.open(url, meta, reader, **kwargs)
@@ -146,9 +241,24 @@ class HttpFs(fsb.FsBase):
       return io.TextIOWrapper(wbfile) if self.text_mode(mode) else wbfile
 
   def remove(self, url):
+    """Remove a URL with a DELETE request.
+
+    Args:
+      url: URL of the resource to remove.
+    """
     self._session.delete(url, **self._req_kwargs)
 
   def rename(self, src_url, dest_url):
+    """Rename a URL downloading and re-uploading its contents.
+
+    Since HTTP has no rename operation, the contents are downloaded from
+    the source and uploaded to the destination, then the source is
+    removed.
+
+    Args:
+      src_url: URL of the source resource.
+      dest_url: URL of the destination resource.
+    """
     # There is no "rename" in HTTP ...
     with self._download_file(src_url) as fd:
       self._upload_file(dest_url, fd)
@@ -156,18 +266,32 @@ class HttpFs(fsb.FsBase):
     self.remove(src_url)
 
   def mkdir(self, url, mode=None):
+    """No-op since HTTP has no directories."""
     pass
 
   def makedirs(self, url, mode=None, exist_ok=None):
+    """No-op since HTTP has no directories."""
     pass
 
   def rmdir(self, url):
+    """No-op since HTTP has no directories."""
     pass
 
   def rmtree(self, url, ignore_errors=None):
+    """No-op since HTTP has no directories."""
     pass
 
   def list(self, url):
+    """Enumerate the entries linked from an HTML directory page.
+
+    Args:
+      url: URL of the directory page to enumerate.
+
+    Yields:
+      A DirEntry for every relative anchor of the page, as returned by
+      stat() on the linked URL. Absolute or unknown links are ignored and
+      entries which cannot be statted are skipped with a debug log.
+    """
     resp = self._session.get(url, **self._req_kwargs)
     resp.raise_for_status()
 
@@ -187,6 +311,12 @@ class HttpFs(fsb.FsBase):
           alog.debug(f'Unable to stat URL {lurl}: {ex}')
 
   def _upload_data_gen(self, url, data_gen):
+    """Upload data with a PUT request, guessing the content type.
+
+    Args:
+      url: Destination URL of the upload.
+      data_gen: Iterable of bytes chunks to upload.
+    """
     ctype, cencoding = mimetypes.guess_type(url, strict=False)
 
     headers = self._req_kwargs.get('headers', dict()).copy()
@@ -198,10 +328,25 @@ class HttpFs(fsb.FsBase):
     self._session.put(url, headers=headers, data=data_gen)
 
   def _upload_file(self, url, stream):
+    """Rewind a stream and upload its contents to the given URL.
+
+    Args:
+      url: Destination URL of the upload.
+      stream: Seekable file-like object with the contents to upload.
+    """
     stream.seek(0)
     self._upload_data_gen(url, fsu.enum_chunks(stream))
 
   def _iterate_chunks(self, url, chunk_size=None):
+    """Stream the contents of a URL as chunks.
+
+    Args:
+      url: URL to download.
+      chunk_size: Size of the chunks yielded; defaults to 16 MiB.
+
+    Yields:
+      The downloaded contents as bytes chunks.
+    """
     chunk_size = chunk_size or 16 * 1024**2
 
     resp = self._session.get(url, stream=True, **self._req_kwargs)
@@ -211,6 +356,15 @@ class HttpFs(fsb.FsBase):
       yield data
 
   def _download_file(self, url, chunk_size=None):
+    """Download the contents of a URL into a temporary file.
+
+    Args:
+      url: URL to download.
+      chunk_size: Size of the chunks read while downloading.
+
+    Returns:
+      A seekable temporary file with the downloaded contents.
+    """
     with cm.Wrapper(tempfile.TemporaryFile()) as ftmp:
       for data in self._iterate_chunks(url, chunk_size=chunk_size):
         ftmp.v.write(data)
@@ -218,24 +372,58 @@ class HttpFs(fsb.FsBase):
       return ftmp.detach()
 
   def put_file(self, url, data_gen):
+    """Upload data chunks to a URL.
+
+    Args:
+      url: Destination URL of the upload.
+      data_gen: Iterable of bytes chunks to upload.
+    """
     self._upload_data_gen(url, data_gen)
 
   def get_file(self, url):
+    """Read the contents of a URL as chunks.
+
+    Args:
+      url: URL to read.
+
+    Yields:
+      The file contents as bytes chunks.
+    """
     for data in self._iterate_chunks(url):
       yield data
 
   def as_local(self, url, **kwargs):
+    """Return a local file with the contents of a URL.
+
+    Args:
+      url: URL of the file to access.
+      **kwargs: Extra keyword arguments forwarded to the cache interface.
+
+    Returns:
+      The path of the local file, downloaded through the cache interface.
+    """
     reader, meta = self._make_reader(url)
 
     return self._cache_iface.as_local(url, meta, reader, **kwargs)
 
   def link(self, src_url, dest_url):
+    """Copy the resource, since HTTP has no hard link support.
+
+    Args:
+      src_url: URL of the source resource.
+      dest_url: URL of the destination resource.
+    """
     # There is not link support in HTTP.
     self.copyfile(src_url, dest_url)
 
   def symlink(self, src_url, dest_url):
+    """Copy the resource, since HTTP has no symbolic link support.
+
+    Args:
+      src_url: URL of the source resource.
+      dest_url: URL of the destination resource.
+    """
     self.link(src_url, dest_url)
 
 
 FILE_SYSTEMS = (HttpFs,)
-
