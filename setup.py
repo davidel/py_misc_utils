@@ -18,6 +18,8 @@ setup(name='python_misc_utils',
           'numpy',
           'pandas',
           'psutil',
+          'pytz',
+          'python-dateutil',
           'pyyaml',
       ],
       extras_require={
