@@ -3,7 +3,7 @@ name = "python_misc_utils"
 version = "0.30"
 description = "A collection of Python utility APIs"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
@@ -33,6 +33,10 @@ fs = [
   "pyarrow",
 ]
 test = [
+  "beautifulsoup4",
+  "coverage",
+  "ftputil",
+  "httpx",
   "msgpack",
   "moto",
   "pyftpdlib",
@@ -61,4 +65,7 @@ addopts = '-q --strict-markers -m "not needs_network"'
 markers = [
   "slow: long-running tests (kept on by default, deselect with -m 'not slow')",
   "needs_network: tests that require real internet access (deselected by default)",
+]
+filterwarnings = [
+  "ignore:In ftputil 6.0.0, the default file path encoding will change",
 ]

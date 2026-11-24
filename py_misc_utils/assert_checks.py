@@ -39,8 +39,8 @@ def _get_caller_info(n_back):
   return f'{caller.filename}:{caller.lineno}'
 
 
-def _report_fail(level, op, *args, **kwargs):
-  """Logs a check failure message and raises an AssertionError.
+def _report_fail(level, op, *args, exception=AssertionError, **kwargs):
+  """Logs a check failure message and raises an exception.
 
   Args:
     level: The logging level used to log the failure message.
@@ -48,11 +48,12 @@ def _report_fail(level, op, *args, **kwargs):
       function checks, or an operator string - like '==' - for value
       checks.
     *args: The values involved in the failed check.
+    exception: The exception class to raise (default: AssertionError).
     **kwargs: The failure description ('msg'), and - for function checks -
       the expected result ('res') and its operator ('res_op').
 
   Raises:
-    AssertionError: Always.
+    exception: Always (default AssertionError).
   """
   fmsg = kwargs.get('msg')
   cinfo = _get_caller_info(2)
@@ -76,25 +77,26 @@ def _report_fail(level, op, *args, **kwargs):
 
   logging.log(level, msg)
 
-  raise AssertionError(msg)
+  raise exception(msg)
 
 
-def check(a, level=logging.ERROR, msg=None):
+def check(a, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is true.
 
   Args:
     a: The value to check.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is not true.
+    exception: If the value is not true.
   """
   if not a:
-    _report_fail(level, None, msg=msg)
+    _report_fail(level, None, msg=msg, exception=exception)
 
 
-def check_fn(fn, *args, level=logging.ERROR, msg=None):
+def check_fn(fn, *args, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a predicate function returns a true value.
 
   Args:
@@ -102,15 +104,21 @@ def check_fn(fn, *args, level=logging.ERROR, msg=None):
     *args: The arguments to pass to the predicate function.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the predicate function returns a false value.
+    exception: If the predicate function returns a false value.
   """
   if not fn(*args):
-    _report_fail(level, fn, *args, msg=msg)
+    _report_fail(level, fn, *args, msg=msg, exception=exception)
 
 
-def check_fnres_eq(res, fn, *args, level=logging.ERROR, msg=None):
+def check_fnres_eq(res,
+                   fn,
+                   *args,
+                   level=logging.ERROR,
+                   msg=None,
+                   exception=AssertionError):
   """Checks that a function returns an expected result.
 
   Args:
@@ -119,16 +127,21 @@ def check_fnres_eq(res, fn, *args, level=logging.ERROR, msg=None):
     *args: The arguments to pass to the function.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the function result differs from the expected
-      result.
+    exception: If the function result differs from the expected result.
   """
   if not (fn(*args) == res):
-    _report_fail(level, fn, *args, res=res, res_op='==', msg=msg)
+    _report_fail(level, fn, *args, res=res, res_op='==', msg=msg, exception=exception)
 
 
-def check_fnres_ne(res, fn, *args, level=logging.ERROR, msg=None):
+def check_fnres_ne(res,
+                   fn,
+                   *args,
+                   level=logging.ERROR,
+                   msg=None,
+                   exception=AssertionError):
   """Checks that a function does not return a given result.
 
   Args:
@@ -137,45 +150,48 @@ def check_fnres_ne(res, fn, *args, level=logging.ERROR, msg=None):
     *args: The arguments to pass to the function.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the function result equals the given result.
+    exception: If the function result equals the given result.
   """
   if fn(*args) == res:
-    _report_fail(level, fn, *args, res=res, res_op='!=', msg=msg)
+    _report_fail(level, fn, *args, res=res, res_op='!=', msg=msg, exception=exception)
 
 
-def check_is_none(a, level=logging.ERROR, msg=None):
+def check_is_none(a, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is None.
 
   Args:
     a: The value to check.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is not None.
+    exception: If the value is not None.
   """
   if a is not None:
-    _report_fail(level, '==', a, 'None', msg=msg)
+    _report_fail(level, '==', a, 'None', msg=msg, exception=exception)
 
 
-def check_is_not_none(a, level=logging.ERROR, msg=None):
+def check_is_not_none(a, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is not None.
 
   Args:
     a: The value to check.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is None.
+    exception: If the value is None.
   """
   if a is None:
-    _report_fail(level, '!=', a, 'None', msg=msg)
+    _report_fail(level, '!=', a, 'None', msg=msg, exception=exception)
 
 
-def check_in(a, b, level=logging.ERROR, msg=None):
+def check_in(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is contained in a container.
 
   Args:
@@ -183,15 +199,16 @@ def check_in(a, b, level=logging.ERROR, msg=None):
     b: The container which must contain the value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is not contained in the container.
+    exception: If the value is not contained in the container.
   """
   if a not in b:
-    _report_fail(level, 'in', a, b, msg=msg)
+    _report_fail(level, 'in', a, b, msg=msg, exception=exception)
 
 
-def check_eq(a, b, level=logging.ERROR, msg=None):
+def check_eq(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that two values are equal.
 
   Args:
@@ -199,15 +216,16 @@ def check_eq(a, b, level=logging.ERROR, msg=None):
     b: The second value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the values are not equal.
+    exception: If the values are not equal.
   """
   if not (a == b):
-    _report_fail(level, '==', a, b, msg=msg)
+    _report_fail(level, '==', a, b, msg=msg, exception=exception)
 
 
-def check_ne(a, b, level=logging.ERROR, msg=None):
+def check_ne(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that two values are different.
 
   Args:
@@ -215,15 +233,16 @@ def check_ne(a, b, level=logging.ERROR, msg=None):
     b: The second value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the values are equal.
+    exception: If the values are equal.
   """
   if not (a != b):
-    _report_fail(level, '!=', a, b, msg=msg)
+    _report_fail(level, '!=', a, b, msg=msg, exception=exception)
 
 
-def check_le(a, b, level=logging.ERROR, msg=None):
+def check_le(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is less than, or equal to, another one.
 
   Args:
@@ -231,15 +250,16 @@ def check_le(a, b, level=logging.ERROR, msg=None):
     b: The reference value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is greater than the reference value.
+    exception: If the value is greater than the reference value.
   """
   if not (a <= b):
-    _report_fail(level, '<=', a, b, msg=msg)
+    _report_fail(level, '<=', a, b, msg=msg, exception=exception)
 
 
-def check_ge(a, b, level=logging.ERROR, msg=None):
+def check_ge(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is greater than, or equal to, another one.
 
   Args:
@@ -247,15 +267,16 @@ def check_ge(a, b, level=logging.ERROR, msg=None):
     b: The reference value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is less than the reference value.
+    exception: If the value is less than the reference value.
   """
   if not (a >= b):
-    _report_fail(level, '>=', a, b, msg=msg)
+    _report_fail(level, '>=', a, b, msg=msg, exception=exception)
 
 
-def check_lt(a, b, level=logging.ERROR, msg=None):
+def check_lt(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is less than another one.
 
   Args:
@@ -263,15 +284,16 @@ def check_lt(a, b, level=logging.ERROR, msg=None):
     b: The reference value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is not less than the reference value.
+    exception: If the value is not less than the reference value.
   """
   if not (a < b):
-    _report_fail(level, '<', a, b, msg=msg)
+    _report_fail(level, '<', a, b, msg=msg, exception=exception)
 
 
-def check_gt(a, b, level=logging.ERROR, msg=None):
+def check_gt(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is greater than another one.
 
   Args:
@@ -279,9 +301,10 @@ def check_gt(a, b, level=logging.ERROR, msg=None):
     b: The reference value.
     level: The logging level used to log the failure message.
     msg: An optional failure description added to the failure message.
+    exception: The exception class to raise (default: AssertionError).
 
   Raises:
-    AssertionError: If the value is not greater than the reference value.
+    exception: If the value is not greater than the reference value.
   """
   if not (a > b):
-    _report_fail(level, '>', a, b, msg=msg)
+    _report_fail(level, '>', a, b, msg=msg, exception=exception)
