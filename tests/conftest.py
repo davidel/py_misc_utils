@@ -49,6 +49,14 @@ class _RouterHandler(http.server.BaseHTTPRequestHandler):
     """Serve GET requests."""
     self._dispatch()
 
+  def do_PUT(self):
+    """Serve PUT requests (the route callable may consume the body)."""
+    self._dispatch()
+
+  def do_DELETE(self):
+    """Serve DELETE requests."""
+    self._dispatch()
+
   def log_message(self, format, *args):
     """Keep the test output clean: do not log each served request."""
     # Silence is intentional: see Ruff PIE790 decision in the plan file.
