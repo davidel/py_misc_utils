@@ -277,7 +277,7 @@ def fit(m, x, y, **kwargs):
   # supporting multi-output targets, insist on special casing the 1-output case
   # requiring the 1D (N,) vector instead of a (N, 1) tensor.
   if len(shape) == 2 and shape[-1] == 1:
-    y = np.squeeze(pyu.to_numpy(y), axis=-1)
+    y = np.squeeze(np.asarray(y), axis=-1)
 
   return m.fit(x, y, **kwargs)
 
