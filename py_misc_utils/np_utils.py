@@ -127,18 +127,19 @@ def infer_np_dtype(dtypes):
   """
   dtype = None
   for t in dtypes:
-    if dtype is None or t == np.float64:
-      dtype = t
-    elif t == np.float32:
-      if dtype.itemsize > t.itemsize:
-        dtype = np.float64
+    td = np.dtype(t)
+    if dtype is None or td == np.dtype(np.float64):
+      dtype = td
+    elif td == np.dtype(np.float32):
+      if dtype.itemsize > td.itemsize:
+        dtype = np.dtype(np.float64)
       else:
-        dtype = t
-    elif dtype != np.float64:
-      if dtype == np.float32 and t.itemsize > dtype.itemsize:
-        dtype = np.float64
-      elif t.itemsize > dtype.itemsize:
-        dtype = t
+        dtype = td
+    elif dtype != np.dtype(np.float64):
+      if dtype == np.dtype(np.float32) and td.itemsize > dtype.itemsize:
+        dtype = np.dtype(np.float64)
+      elif td.itemsize > dtype.itemsize:
+        dtype = td
 
   return dtype if dtype is not None else np.float32
 
