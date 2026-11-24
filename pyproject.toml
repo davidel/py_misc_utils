@@ -1,12 +1,7 @@
 [project]
 name = "python_misc_utils"
-dynamic = [
-  "authors",
-  "description",
-  "version",
-  "dependencies",
-  "optional-dependencies",
-]
+version = "0.30"
+description = "A collection of Python utility APIs"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -16,6 +11,34 @@ classifiers = [
 ]
 license-files = ["LICEN[CS]E*"]
 license = "Apache-2.0"
+dependencies = [
+  "numpy",
+  "pandas",
+  "psutil",
+  "pytz",
+  "python-dateutil",
+  "pyyaml",
+]
+
+[[project.authors]]
+name = "Davide Libenzi"
+email = "davide.libenzi@gmail.com"
+
+[project.optional-dependencies]
+fs = [
+  "boto3",
+  "bs4",
+  "ftputil",
+  "google-cloud-storage",
+  "pyarrow",
+]
+test = [
+  "msgpack",
+  "moto",
+  "pyftpdlib",
+  "pytest",
+  "pytest-cov",
+]
 
 [project.urls]
 Homepage = "https://github.com/davidel/py_misc_utils"
@@ -25,6 +48,9 @@ Repository = "https://github.com/davidel/py_misc_utils.git"
 [build-system]
 requires = ["setuptools >= 42.0.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["py_misc_utils*"]
 
 [tool.pytest.ini_options]
 testpaths = [
