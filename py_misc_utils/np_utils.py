@@ -627,8 +627,9 @@ class RingBuffer:
 
     return self._data[idx]
 
-  def __array__(self, dtype=None):
+  def __array__(self, dtype=None, copy=None):
     """Enable direct conversion to numpy array via np.array(buffer)."""
+    tas.check_ne(copy, False, msg='RingBuffer cannot provide a copy=False view')
     arr = self.to_numpy()
 
     return arr if dtype is None else arr.astype(dtype)

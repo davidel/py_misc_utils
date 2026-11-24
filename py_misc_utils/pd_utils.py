@@ -376,7 +376,7 @@ def dataframe_column_rewrite(df, name, fn):
     df[name] = fn(data.to_numpy())
   elif df.index.name == name:
     nvalues = fn(df.index.to_numpy())
-    df.index = type(df.index)(data=nvalues, name=df.index.name)
+    df.index = pd.Index(nvalues, name=df.index.name)
   else:
     alog.xraise(RuntimeError, f'No column or index named "{name}"')
 
@@ -397,7 +397,7 @@ def correlate(df, col, top_n=None):
   scorr = ccorr.sort_values(key=lambda x: abs(x), ascending=False)
   top_n = len(scorr) if top_n is None else min(top_n, len(scorr))
 
-  return tuple([(scorr.index[i], scorr[i]) for i in range(top_n)])
+  return tuple([(name, scorr[name]) for name in scorr.index[:top_n]])
 
 
 def type_convert_dataframe(df, types):
@@ -459,4 +459,5 @@ def datetime_to_epoch(data):
   Returns:
     A pandas Series of epoch seconds with fractional part.
   """
-  return (pd.to_datetime(data) - datetime.datetime(1970, 1, 1)).dt.total_seconds()
+  ts = pd.Series(pd.to_datetime(data))
+  return (ts - datetime.datetime(1970, 1, 1)).dt.total_seconds()
