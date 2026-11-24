@@ -557,4 +557,7 @@ class Dataset(data_utils.Dataset):
     Returns:
       A tuple of torch tensors - one per stream - holding the sample data.
     """
-    return tuple([torch.from_numpy(x) for x in self.reader.get_slices(i, size=1)])
+    return tuple([
+        torch.from_numpy(np.array(x, copy=True))
+        for x in self.reader.get_slices(i, size=1)
+    ])

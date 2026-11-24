@@ -179,7 +179,7 @@ def split(data, split_rx, quote_ctx=None, unescape=False):
     data: A string or bytes object to split.
     split_rx: A string or compiled regex pattern for the split delimiter.
     quote_ctx: An optional SplitContext defining quote characters. Defaults
-      to a context with common quote pairs (\"'\", \"'\", \"\`\", \"()\", \"{}\",
+      to a context with common quote pairs (\"'\", \"'\", \"`\", \"()\", \"{}\",
       \"[]\", \"<>\").
     unescape: If True, backslash-escaped characters are unescaped during
       splitting.

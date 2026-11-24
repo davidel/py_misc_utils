@@ -89,8 +89,10 @@ class VirtArray(collections.abc.Sequence):
 
     return npa.astype(dtype) if dtype is not None else npa
 
-  def __array__(self, dtype=None):
+  def __array__(self, dtype=None, copy=None):
     """Support numpy conversion protocols by materializing the array."""
+    if copy is False:
+      raise ValueError("VirtArray cannot provide a copy=False view")
     return self.to_numpy(dtype=dtype)
 
   def shuffle(self, rng=None):
