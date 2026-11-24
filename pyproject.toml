@@ -39,11 +39,17 @@ test = [
   "httpx",
   "msgpack",
   "moto",
+  "pillow",
   "pyftpdlib",
   "pytest",
   "pytest-cov",
+  "requests",
+  "scikit-learn",
 ]
 torch = ["torch"]
+all = [
+  "python_misc_utils[fs,test,torch]",
+]
 
 [project.urls]
 Homepage = "https://github.com/davidel/py_misc_utils"

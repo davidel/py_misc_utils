@@ -4,12 +4,12 @@ Requires pyarrow. Uses pytest.importorskip("pyarrow") so the file
 is skipped when pyarrow is not installed.
 """
 
-import numpy as np
-import pyarrow as pa
-import pyarrow.parquet as pq
 import pytest
 
 pyarrow = pytest.importorskip("pyarrow")
+
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from py_misc_utils import parquet_streamer as ps
 
