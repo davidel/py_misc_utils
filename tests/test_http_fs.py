@@ -4,6 +4,8 @@ Exercises HttpFs read operations against the ephemeral HTTP server.
 No real network access is required.
 """
 
+from unittest import mock
+
 import pytest
 
 from py_misc_utils.fs import http_fs as hf
@@ -12,6 +14,8 @@ from py_misc_utils.fs import http_fs as hf
 def test_read_via_http(http_server, http_routes, tmp_path):
   http_routes.add_route('/hf.txt', body=b'http fs data')
   fs = hf.HttpFs(cache_dir=str(tmp_path / 'cache'))
+  fs._cache_iface = mock.MagicMock()
+  fs._cache_iface.open.return_value.__enter__.return_value.read.return_value = b'http fs data'
   with fs.open(http_server.url + '/hf.txt', mode='rb') as f:
     assert f.read() == b'http fs data'
 

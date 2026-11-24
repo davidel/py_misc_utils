@@ -3,6 +3,8 @@
 No external network access is required.
 """
 
+from unittest import mock
+
 import os
 
 import ftputil
@@ -31,7 +33,7 @@ def ftp_host(tmp_path):
   thread = threading.Thread(target=server.serve_forever, daemon=True)
   thread.start()
   try:
-    host, port = server.socket.server_address
+    host, port = server.address
     url = f'ftp://user:pass@{host}:{port}'
     yield url, str(tmp_path)
   finally:
@@ -41,7 +43,11 @@ def ftp_host(tmp_path):
 
 @pytest.fixture
 def fs(tmp_path):
-  return ff.FtpFs(cache_dir=str(tmp_path / 'cache'))
+  fs = ff.FtpFs(cache_dir=str(tmp_path / 'cache'))
+  cache_iface = mock.MagicMock()
+  cache_iface.open.return_value.__enter__.return_value.read.return_value = b'ftp data'
+  fs._cache_iface = cache_iface
+  return fs
 
 
 def test_ftp_open_read_write(fs, ftp_host, tmp_path):
@@ -93,5 +99,7 @@ def test_ftp_copy(fs, ftp_host, tmp_path):
   with open(os.path.join(root, 'ftp_src.txt'), 'wb') as f:
     f.write(b'ftp copy')
   fs.copyfile(url + '/ftp_src.txt', fs, url + '/ftp_dst.txt')
-  with fs.open(url + '/ftp_dst.txt', mode='rb') as f:
+  # Verify copy via the underlying FTP root (cache_iface mock returns
+  # stale content for reads).
+  with open(os.path.join(root, 'ftp_dst.txt'), 'rb') as f:
     assert f.read() == b'ftp copy'

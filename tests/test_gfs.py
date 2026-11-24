@@ -78,7 +78,7 @@ def test_temp_file(tmp_path):
   tf = gfs.TempFile(nsdir=str(tmp_path), prefix='tf_', suffix='.tmp',
                     mode='wb')
   tf.open()
-  path = tf.path
+  path = tf._path
   with open(path, 'wb') as f:
     f.write(b'temp content')
   assert os.path.exists(path)
