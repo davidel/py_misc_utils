@@ -10,7 +10,8 @@ import os
 
 import numpy as np
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 
 from py_misc_utils import tensor_stream as ts
 
