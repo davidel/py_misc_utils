@@ -47,7 +47,15 @@ class CacheHandler(objc.Handler):
     Returns:
       A ftputil.FTPHost connected with the handler arguments.
     """
-    return ftputil.FTPHost(*self._args, **self._kwargs)
+    host = ftputil.FTPHost(*self._args, **self._kwargs)
+
+    # Explicitly assume server and client clocks to be aligned (the ftputil
+    # default): starting from ftputil 6.0.0 the time shift must be set
+    # explicitly for stat() to return timestamp data.
+    if hasattr(host, 'set_time_shift'):
+      host.set_time_shift(0)
+
+    return host
 
   def is_alive(self, obj):
     """Return True if the connection still responds to keep_alive()."""

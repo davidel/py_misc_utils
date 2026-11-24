@@ -67,5 +67,11 @@ markers = [
   "needs_network: tests that require real internet access (deselected by default)",
 ]
 filterwarnings = [
+  # ftputil 5.x warns about the upcoming encoding change in 6.0.0; the
+  # remote filesystems used in tests are ASCII/UTF-8 safe.
   "ignore:In ftputil 6.0.0, the default file path encoding will change",
+  # pyftpdlib still imports asyncore/asynchat, which warn on import; the
+  # warning cannot be avoided from our side (fixed in newer pyftpdlib).
+  "ignore:The asyncore module is deprecated",
+  "ignore:The asynchat module is deprecated",
 ]
