@@ -1,7 +1,8 @@
 """Tests for py_misc_utils.msgpack_streamer."""
 
-import msgpack
 import pytest
+
+msgpack = pytest.importorskip("msgpack")
 
 from py_misc_utils import msgpack_streamer as ms
 
