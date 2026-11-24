@@ -51,9 +51,32 @@ def _module_libpath(modname):
   """
   origin = _module_origin(modname)
   if origin not in {None, 'built-in'}:
-    lib_path = os.path.dirname(origin)
+    return os.path.dirname(origin)
 
-    return lib_path if lib_path else None
+
+def _stdlib_root(lib_path, stdlib_paths):
+  """Resolve a module directory to its stdlib root directory - if any.
+
+  Args:
+    lib_path: The directory containing a module, as returned by
+      _module_libpath().
+    stdlib_paths: The set of known stdlib root directories.
+
+  Returns:
+    The ancestor directory of lib_path which is a member of stdlib_paths,
+    or None if lib_path is not below any of them.
+  """
+  while lib_path:
+    if lib_path in stdlib_paths:
+      return lib_path
+
+    parent = os.path.dirname(lib_path)
+    if parent == lib_path:
+      break
+
+    lib_path = parent
+
+  return None
 
 
 # Some of the standard modules. Should be enough to get coverage of the
@@ -87,5 +110,7 @@ def is_std_module(modname):
   """
   modname = cu.root_module(modname)
   lib_path = _module_libpath(modname)
+  if lib_path is None:
+    return True
 
-  return lib_path is None or lib_path in _STDLIB_PATHS
+  return _stdlib_root(lib_path, _STDLIB_PATHS) is not None
