@@ -82,7 +82,7 @@ class Field:
     """
     assert len(arg) % self.size == 0, f'{self.name}({self.size}) vs. {len(arg)}'
     if self.fmt == 'S':
-      arg = self.stringify(arg)
+      arg = [self.str_tbl.add(x) for x in arg]
 
     if isinstance(arg, np.ndarray) and isinstance(self.data, array.array):
       nptype = np.dtype(self.data.typecode)
