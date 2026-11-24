@@ -64,9 +64,13 @@ def _stdlib_root(lib_path, stdlib_paths):
 
   Returns:
     The ancestor directory of lib_path which is a member of stdlib_paths,
-    or None if lib_path is not below any of them.
+    or None if lib_path is not below any of them, or if lib_path is located
+    inside a package installation directory (site-packages / dist-packages).
   """
   while lib_path:
+    if os.path.basename(lib_path) in _NON_STDLIB_DIR_NAMES:
+      return None
+
     if lib_path in stdlib_paths:
       return lib_path
 
@@ -94,6 +98,12 @@ _STDLIB_MODULES = (
 )
 _STDLIB_PATHS = set(
     filter(lambda x: x is not None, (_module_libpath(m) for m in _STDLIB_MODULES)))
+
+# Package installation directories. They can be nested inside the standard
+# library directory (e.g. <prefix>/lib/pythonX.Y/site-packages), so any
+# module found below them must be classified as third-party even when one
+# of their ancestors is a stdlib directory.
+_NON_STDLIB_DIR_NAMES = frozenset(('site-packages', 'dist-packages'))
 
 
 @functools.cache
