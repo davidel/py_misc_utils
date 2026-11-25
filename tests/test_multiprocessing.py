@@ -138,3 +138,16 @@ def test_capture_parent_context_injects_kwargs():
   out = mp_utils._capture_parent_context(method, kwargs)
   assert '_parent_context' in out
   assert isinstance(out['_parent_context'], dict)
+
+
+@pytest.mark.slow
+def test_context_string_creates_process():
+  if 'fork' not in multiprocessing.get_all_start_methods():
+    pytest.skip('fork not available')
+  q = multiprocessing.get_context('fork').Queue()
+  p = mp_utils.create_process(lambda: q.put('ctx-str'), context='fork')
+  p.start()
+  got = q.get(timeout=10.0)
+  p.join(timeout=10.0)
+  assert p.exitcode == 0
+  assert got == 'ctx-str'
