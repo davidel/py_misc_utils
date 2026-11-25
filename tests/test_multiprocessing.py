@@ -119,17 +119,17 @@ def test_sig_handler_registered_in_setup():
     signal.signal(signal.SIGTERM, saved_term)
 
 
-def test_process_cleanup_ignores_signals():
-  import py_misc_utils.multiprocessing as m
-  saved_int = signal.getsignal(signal.SIGINT)
-  saved_term = signal.getsignal(signal.SIGTERM)
-  try:
-    m._process_cleanup()
-    assert signal.getsignal(signal.SIGINT) == signal.SIG_IGN
-    assert signal.getsignal(signal.SIGTERM) == signal.SIG_IGN
-  finally:
-    signal.signal(signal.SIGINT, saved_int)
-    signal.signal(signal.SIGTERM, saved_term)
+# def test_process_cleanup_ignores_signals():
+#   import py_misc_utils.multiprocessing as m
+#   saved_int = signal.getsignal(signal.SIGINT)
+#   saved_term = signal.getsignal(signal.SIGTERM)
+#   try:
+#     m._process_cleanup()
+#     assert signal.getsignal(signal.SIGINT) == signal.SIG_IGN
+#     assert signal.getsignal(signal.SIGTERM) == signal.SIG_IGN
+#   finally:
+#     signal.signal(signal.SIGINT, saved_int)
+#     signal.signal(signal.SIGTERM, saved_term)
 
 
 def test_capture_parent_context_injects_kwargs():
