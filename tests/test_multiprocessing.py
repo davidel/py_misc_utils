@@ -8,20 +8,11 @@ import signal
 
 import pytest
 
-from py_misc_utils import global_namespace as gns
 from py_misc_utils import multiprocessing as mp_utils
 
 
-@pytest.fixture()
-def clean_ns():
-  saved = dict(gns._NS)
-  yield
-  gns._NS.clear()
-  gns._NS.update(saved)
-
-
 @pytest.mark.slow
-def test_create_process_returns_unstarted(clean_ns):
+def test_create_process_returns_unstarted():
   p = mp_utils.create_process(lambda: None)
   assert isinstance(p, multiprocessing.Process)
   assert p.pid is None
@@ -32,7 +23,7 @@ def test_create_process_returns_unstarted(clean_ns):
 
 
 @pytest.mark.slow
-def test_create_process_daemon_flag(clean_ns):
+def test_create_process_daemon_flag():
   p = mp_utils.create_process(lambda: None, daemon=True)
   assert p.daemon is True
   p.start()
@@ -41,7 +32,7 @@ def test_create_process_daemon_flag(clean_ns):
 
 
 @pytest.mark.slow
-def test_create_process_args_kwargs(clean_ns):
+def test_create_process_args_kwargs():
   q = multiprocessing.get_context('fork').Queue()
 
   def fn(a, b, c=None):
@@ -56,7 +47,7 @@ def test_create_process_args_kwargs(clean_ns):
 
 
 @pytest.mark.slow
-def test_procfn_normal_return_exitcode_zero(clean_ns):
+def test_procfn_normal_return_exitcode_zero():
   p = mp_utils.create_process(lambda: 42)
   p.start()
   p.join(timeout=10.0)
@@ -64,7 +55,7 @@ def test_procfn_normal_return_exitcode_zero(clean_ns):
 
 
 @pytest.mark.slow
-def test_termination_error_exitcode_one(clean_ns):
+def test_termination_error_exitcode_one():
 
   def fn():
     raise mp_utils.TerminationError()
@@ -76,7 +67,7 @@ def test_termination_error_exitcode_one(clean_ns):
 
 
 @pytest.mark.slow
-def test_keyboard_interrupt_exitcode_one(clean_ns):
+def test_keyboard_interrupt_exitcode_one():
 
   def fn():
     raise KeyboardInterrupt()
@@ -88,7 +79,7 @@ def test_keyboard_interrupt_exitcode_one(clean_ns):
 
 
 @pytest.mark.slow
-def test_generic_exception_nonzero_exit(clean_ns):
+def test_generic_exception_nonzero_exit():
 
   def fn():
     raise ValueError('kaboom')
@@ -150,7 +141,7 @@ def test_capture_parent_context_injects_kwargs():
 
 
 @pytest.mark.slow
-def test_context_string_creates_process(clean_ns):
+def test_context_string_creates_process():
   if 'fork' not in multiprocessing.get_all_start_methods():
     pytest.skip('fork not available')
   q = multiprocessing.get_context('fork').Queue()

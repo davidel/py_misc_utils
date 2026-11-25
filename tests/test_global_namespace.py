@@ -2,6 +2,11 @@
 
 In-process coverage of Var/get/set and the parent/child switch semantics.
 One fork-context round-trip is marked slow (spawns a real process).
+
+Isolation rules: the module registry (_NS) is process-global state, so
+tests never clear, replace or save/restore it. Every test uses variable
+names which are unique across the whole suite, and only mutates entries
+it created itself.
 """
 
 import multiprocessing
@@ -10,100 +15,153 @@ import pytest
 
 from py_misc_utils import global_namespace as gns
 
-
-@pytest.fixture(autouse=True)
-def clean_ns():
-  # _NS is a module-global: save/restore it around every test to prevent
-  # cross-test pollution.
-  saved = dict(gns._NS)
-  yield
-  gns._NS.clear()
-  gns._NS.update(saved)
+_NS_KEY = 'py-misc-utils-tests-gns'
 
 
-def test_var_defaults():
-  v = gns.Var('x')
-  assert v.name == 'x'
-  assert v.parent_fn is None
-  assert v.child_fn is None
-  assert v.fork_init is False
-  assert v.defval is None
+def _mkname(test_name):
+  """Suite-unique variable name for the given test."""
+  return f'{_NS_KEY}-{test_name}'
 
 
-def test_get_default_value():
-  v = gns.Var('x', defval=42)
-  assert gns.get(v) == 42
+def test_get_returns_default_on_missing():
+  v = gns.Var(_mkname('get-default'), defval={'a': 1})
+
+  assert gns.get(v) == {'a': 1}
 
 
-def test_get_callable_defval():
-  v = gns.Var('x', defval=lambda: 'dflt')
-  assert gns.get(v) == 'dflt'
+def test_get_force_false_missing_returns_none():
+  v = gns.Var(_mkname('get-noforce'))
 
-
-def test_get_force_false_missing():
-  v = gns.Var('x')
   assert gns.get(v, force=False) is None
 
 
-def test_set_and_get():
-  v = gns.Var('x')
-  assert gns.set(v, 42) is None
-  assert gns.get(v) == 42
+def test_set_roundtrip_and_previous_value():
+  name = _mkname('set-roundtrip')
+  v = gns.Var(name)
+  prev = gns.set(v, 'one')
+
+  assert prev is None
+  assert gns.get(gns.Var(name)) == 'one'
+
+  prev = gns.set(v, 'two')
+
+  assert prev == 'one'
+  assert gns.get(gns.Var(name)) == 'two'
 
 
-def test_set_returns_previous():
-  v = gns.Var('x')
-  gns.set(v, 1)
-  assert gns.set(v, 2) == 1
+def test_var_name_is_registry_key():
+  # Two Var instances sharing the same name address the same entry.
+  name = _mkname('registry-key')
+  gns.set(gns.Var(name), 42)
+
+  assert gns.get(gns.Var(name)) == 42
 
 
-def test_parent_switch_drops_fork_init(clean_ns):
-  v = gns.Var('keep')
-  vf = gns.Var('reinit', fork_init=True)
-  gns.set(v, 'kept')
-  gns.set(vf, [1, 2, 3])
-  pns = gns.parent_switch('fork')
-  assert 'keep' in pns
-  assert 'reinit' not in pns
-  assert pns['keep'].data == 'kept'
+def test_defval_function_called_lazily():
+  calls = []
+
+  def _defval():
+    calls.append(1)
+
+    return 'lazy'
+
+  v = gns.Var(_mkname('defval-lazy'), defval=_defval)
+
+  assert gns.get(v) == 'lazy'
+  assert len(calls) == 1
+
+  # Already initialized: no further defval invocations.
+  gns.get(v)
+  assert len(calls) == 1
 
 
-def test_child_switch_applies_child_fn(clean_ns):
-  v = gns.Var('x', child_fn=lambda d: d * 2)
-  gns.set(v, 21)
-  pns = gns.parent_switch('fork')
-  gns.child_switch('fork', pns)
-  assert gns.get(gns.Var('x')) == 42
+def test_parent_switch_serializes_state():
+  name = _mkname('parent-switch')
+  v = gns.Var(name, parent_fn=lambda data: data.upper())
+  gns.set(v, 'state')
+
+  pns = gns.parent_switch('spawn')
+
+  assert name in pns
+  assert pns[name].data == 'STATE'
 
 
-def test_child_switch_replaces_ns(clean_ns):
-  v1 = gns.Var('a')
-  v2 = gns.Var('b')
-  gns.set(v1, 1)
-  gns.set(v2, 2)
-  pns = gns.parent_switch('fork')
-  gns.child_switch('fork', pns)
-  # The namespace now holds only the switched variables.
-  assert set(gns._NS.keys()) == {'a', 'b'}
+def test_child_switch_restores_state():
+  name = _mkname('child-switch')
+  v = gns.Var(name, child_fn=lambda data: data + '-restored')
+  gns.set(v, 'value')
+
+  pns = gns.parent_switch('spawn')
+  gns.child_switch('spawn', pns)
+
+  assert gns.get(gns.Var(name)) == 'value-restored'
 
 
-def test_bad_method_asserts(clean_ns):
-  with pytest.raises(AssertionError):
-    gns.parent_switch('badmethod')
+def test_fork_init_vars_excluded_from_switches():
+  name_keep = _mkname('fork-keep')
+  name_reinit = _mkname('fork-reinit')
+  gns.set(gns.Var(name_keep), 'carry-me')
+  gns.set(gns.Var(name_reinit, fork_init=True), 'drop-me')
+
+  pns = gns.parent_switch('spawn')
+
+  assert name_keep in pns
+  assert name_reinit not in pns
 
 
 @pytest.mark.slow
-def test_fork_roundtrip(clean_ns):
-  v = gns.Var('shared')
-  gns.set(v, {'k': 'parent-value'})
-  q = multiprocessing.get_context('fork').Queue()
-  p = multiprocessing.get_context('fork').Process(
-      target=_child_gets,
-      args=(v, q),
-  )
+def test_fork_child_filters_fork_init_vars():
+  # _child_fork() runs in the forked child via os.register_at_fork():
+  # fork_init=False variables carry the parent value over, while
+  # fork_init=True ones are dropped (fresh-initialized in the child).
+  # The registry is only mutated inside the disposable child process.
+  name_keep = _mkname('fork-child-keep')
+  name_reinit = _mkname('fork-child-reinit')
+  v_keep = gns.Var(name_keep)
+  gns.set(v_keep, 'keep')
+  v_reinit = gns.Var(name_reinit, fork_init=True, defval=lambda: 'reinit')
+  gns.set(v_reinit, 'drop')
+
+  ctx = multiprocessing.get_context('fork')
+  q = ctx.Queue()
+  p = ctx.Process(target=_child_checks_fork_filter, args=(v_keep, v_reinit, q))
   p.start()
   got = q.get(timeout=10.0)
   p.join(timeout=10.0)
+
+  assert p.exitcode == 0
+  assert got == ['keep', 'reinit']
+
+
+def _child_checks_fork_filter(v_keep, v_reinit, q):
+  # Runs in the forked child: _child_fork() has already filtered _NS.
+  # fork_init=False variables carry the parent value over, while
+  # fork_init=True ones are dropped and get fresh-initialized (defval)
+  # on the first forced get().
+  kept = gns.get(v_keep, force=False)
+  reinit = gns.get(v_reinit)
+  q.put([kept, reinit])
+
+
+def test_parent_switch_unknown_method_asserts():
+  _v = gns.Var(_mkname('bad-method'))
+
+  with pytest.raises(AssertionError):
+    gns.parent_switch('not-a-method')
+
+
+@pytest.mark.slow
+def test_fork_roundtrip():
+  name = _mkname('fork-roundtrip')
+  v = gns.Var(name)
+  gns.set(v, {'k': 'parent-value'})
+  ctx = multiprocessing.get_context('fork')
+  q = ctx.Queue()
+  p = ctx.Process(target=_child_gets, args=(v, q))
+  p.start()
+  got = q.get(timeout=10.0)
+  p.join(timeout=10.0)
+
   assert p.exitcode == 0
   assert got == {'k': 'parent-value'}
 

@@ -147,22 +147,38 @@ class Cache:
       FinWrapper containing the object.
     """
     with self._lock:
-      cqueue, obj = self._cache[name], None
-      if cqueue:
-        entry = cqueue.popleft()
-        if not entry.handler.is_alive(entry.obj):
-          entry.handler.close(obj)
-          obj = None
-        else:
-          obj = entry.obj
-          alog.debug(f'Cache Hit: name={name} obj={obj}')
+      cqueue = self._cache[name]
 
-      if obj is None:
-        obj = handler.create()
+    obj, closes = None, []
+    while obj is None:
+      with self._lock:
+        entry = cqueue.popleft() if cqueue else None
 
-      finfn = functools.partial(self._release, name, handler, obj)
+      if entry is None:
+        break
 
-      return fw.FinWrapper(obj, finfn)
+      if entry.handler.is_alive(entry.obj):
+        obj = entry.obj
+        alog.debug(f'Cache Hit: name={name} obj={obj}')
+      else:
+        closes.append(entry)
+
+    # Handler calls can perform blocking I/O (e.g. FTP connect/close), so
+    # they must run without holding the cache lock: a weakref finalizer
+    # needing the lock from the peer thread of that same I/O would
+    # deadlock the whole process.
+    for entry in closes:
+      alog.debug(f'Cache Close: name={entry.name} obj={entry.obj}')
+      entry.handler.close(entry.obj)
+
+    if obj is None:
+      # Still no lock held: concurrent get() calls may each create an
+      # object, the pool simply absorbs the surplus on release.
+      obj = handler.create()
+
+    finfn = functools.partial(self._release, name, handler, obj)
+
+    return fw.FinWrapper(obj, finfn)
 
 
 _CACHE = Cache()

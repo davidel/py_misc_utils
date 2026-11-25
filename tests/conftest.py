@@ -19,6 +19,11 @@ import threading
 
 import pytest
 
+# Cap the idle timeout of surplus executor workers (default 5s): short
+# tasks in the tests must not wait the full default before the workers
+# exit, which would add dead time to every run.
+os.environ.setdefault('EXECUTOR_IDLE_TIMEOUT', '1')
+
 
 class _RouterHandler(http.server.BaseHTTPRequestHandler):
   """Request handler dispatching requests through the server route table."""

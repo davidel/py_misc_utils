@@ -204,15 +204,11 @@ def test_executor_wait_for_idle_false_with_pending_task():
     _shutdown(ex)
 
 
-def test_common_executor_singleton_identity(monkeypatch):
-  """common_executor() returns the same instance across calls."""
-  monkeypatch.setattr(xe, '_EXECUTOR', None)
+def test_common_executor_singleton_identity():
+  """common_executor() returns the same instance across calls.
 
-  try:
-    ex1 = xe.common_executor()
-    ex2 = xe.common_executor()
-
-    assert ex1 is ex2
-  finally:
-    ex1.shutdown()
-    monkeypatch.setattr(xe, '_EXECUTOR', None)
+  The executor is a process-wide singleton (the scheduler uses it), so
+  the test only observes the identity contract - it must never patch,
+  replace or shut down the global instance.
+  """
+  assert xe.common_executor() is xe.common_executor()
