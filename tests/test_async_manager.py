@@ -161,13 +161,18 @@ def test_async_runner_runs_coroutine_and_stops():
   async def never():
     await asyncio.sleep(0)
 
-  fut2 = runner.run(never())
+  coro = never()
+  fut2 = runner.run(coro)
 
   try:
     fut2.result(timeout=1)
     raise AssertionError('run() after stop() unexpectedly completed')
   except concurrent.futures.TimeoutError:
     pass
+  finally:
+    # The dead loop never scheduled the coroutine; close it so it is not
+    # reported as never awaited.
+    coro.close()
 
 
 def test_run_async_uses_global_runner():

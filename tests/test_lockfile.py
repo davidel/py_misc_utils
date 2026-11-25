@@ -14,6 +14,7 @@ Acquire is always paired with a release (directly or as a context manager), so
 the tests leave the lock directory as they found it.
 """
 
+import contextlib
 import subprocess
 import sys
 import time
@@ -56,25 +57,35 @@ def _lock(name):
   return plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05)
 
 
-def _hold(name):
-  """Start a child process holding the lock on name and return it."""
-  proc = subprocess.Popen(
-      [sys.executable, '-c', _HOLD_LOCK.format(name=name)],
-      stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE,
-      text=True)
-  assert proc.stdout.readline().strip() == 'HELD'
+@contextlib.contextmanager
+def _held_lock(name):
+  """Hold the lock on name from a real child process for the block duration.
 
-  return proc
+  The child releases the lock when the block exits normally. Pipes are always
+  closed and the child is always reaped, so a failing assertion cannot leave
+  file descriptors or a stray process behind.
+  """
+  proc = subprocess.Popen([sys.executable, '-c', _HOLD_LOCK.format(name=name)],
+                          stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE,
+                          text=True)
+  try:
+    assert proc.stdout.readline().strip() == 'HELD'
 
+    yield proc
 
-def _stop(proc):
-  """Let the holding child release its lock, then reap it."""
-  proc.stdin.write('\n')
-  proc.stdin.flush()
+    proc.stdin.write('\n')
+    proc.stdin.flush()
 
-  assert proc.stdout.readline().strip() == 'RELEASED'
-  assert proc.wait() == 0
+    assert proc.stdout.readline().strip() == 'RELEASED'
+    assert proc.wait() == 0
+  finally:
+    if proc.poll() is None:
+      proc.kill()
+      proc.wait()
+
+    proc.stdin.close()
+    proc.stdout.close()
 
 
 @pytest.fixture
@@ -127,35 +138,33 @@ def test_second_instance_cannot_acquire_held_lock(lockname):
 def test_release_by_other_process_is_rejected(lockname):
   """A process that does not own the lock cannot release it."""
   name = lockname('owner')
-  proc = _hold(name)
-  try:
+
+  with _held_lock(name):
     assert not _lock(name).release()
-  finally:
-    _stop(proc)
 
 
 def test_lock_held_by_live_process_blocks_until_timeout(lockname):
   """A lock held by a live process is not taken before the timeout elapses."""
   name = lockname('live-holder')
-  proc = _hold(name)
-  try:
+
+  with _held_lock(name):
     started = time.time()
     assert not _lock(name).acquire(timeout=0.3)
     assert time.time() - started >= 0.3
-  finally:
-    _stop(proc)
 
 
 def test_dead_holder_lock_is_overridden(lockname):
   """A lock left behind by a dead process is taken over on acquire()."""
   name = lockname('dead-holder')
 
-  proc = subprocess.Popen(
-      [sys.executable, '-c', _DIE_WITH_LOCK.format(name=name)],
-      stdout=subprocess.PIPE,
-      text=True)
-  assert proc.stdout.readline().strip() == 'HELD'
-  assert proc.wait() == 0
+  proc = subprocess.Popen([sys.executable, '-c', _DIE_WITH_LOCK.format(name=name)],
+                          stdout=subprocess.PIPE,
+                          text=True)
+  try:
+    assert proc.stdout.readline().strip() == 'HELD'
+    assert proc.wait() == 0
+  finally:
+    proc.stdout.close()
 
   lf = _lock(name)
   assert lf.acquire(timeout=5)

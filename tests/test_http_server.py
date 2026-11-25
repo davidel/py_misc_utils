@@ -13,6 +13,7 @@ calling the private _sanitize_path()/_read_stream() helpers directly.
 """
 
 import base64
+import contextlib
 import http.client
 import http.server
 import os
@@ -25,6 +26,15 @@ from types import SimpleNamespace
 import pytest
 
 from py_misc_utils import http_server as hsrv
+
+
+def _request(req):
+  """Perform req, closing the response (including error responses)."""
+  with pytest.raises(urllib.error.HTTPError) as excinfo, \
+         contextlib.closing(urllib.request.urlopen(req, timeout=5)):
+    pass
+
+  return excinfo.value
 
 
 def _make_handler(docroot, auth):
@@ -84,10 +94,9 @@ def test_put_requires_authorization(auth_server):
                                data=b'payload',
                                method='PUT')
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 401
+  assert excinfo.code == 401
 
 
 def test_put_unconfigured_auth(plain_server):
@@ -97,10 +106,9 @@ def test_put_unconfigured_auth(plain_server):
                                method='PUT',
                                headers={'Authorization': 'Bearer foobar'})
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 403
+  assert excinfo.code == 403
 
 
 def test_put_bearer_ok_and_readback(auth_server):
@@ -126,10 +134,9 @@ def test_put_bearer_bad_token(auth_server):
                                method='PUT',
                                headers={'Authorization': f'Bearer {token}'})
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 403
+  assert excinfo.code == 403
 
 
 def test_put_basic_ok(auth_server):
@@ -155,10 +162,9 @@ def test_put_basic_bad_password(auth_server):
                                method='PUT',
                                headers={'Authorization': f'Basic {creds}'})
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 403
+  assert excinfo.code == 403
 
 
 def test_put_unsupported_auth_type(auth_server):
@@ -169,10 +175,9 @@ def test_put_unsupported_auth_type(auth_server):
                                method='PUT',
                                headers={'Authorization': f'Digest {blob}'})
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 403
+  assert excinfo.code == 403
 
 
 def test_put_traversal_rejected(auth_server):
@@ -183,10 +188,9 @@ def test_put_traversal_rejected(auth_server):
                                method='PUT',
                                headers={'Authorization': f'Bearer {token}'})
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 403
+  assert excinfo.code == 403
 
 
 def test_delete(auth_server):
@@ -209,10 +213,9 @@ def test_delete(auth_server):
   with urllib.request.urlopen(req, timeout=5) as resp:
     assert resp.status == 200
 
-  with pytest.raises(urllib.error.HTTPError) as excinfo:
-    urllib.request.urlopen(req, timeout=5)
+  excinfo = _request(req)
 
-  assert excinfo.value.code == 500
+  assert excinfo.code == 500
 
 
 def test_put_chunked_upload(auth_server):

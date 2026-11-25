@@ -29,15 +29,26 @@ def ftp_host(temp_path):
   server = FTPServer(('127.0.0.1', 0), handler)
   server.max_cons = 256
   server.max_cons_per_ip = 256
-  thread = threading.Thread(target=server.serve_forever, daemon=True)
+
+  # Serve on a short poll timeout so the loop notices the stop event promptly;
+  # serve_forever()'s own timeout parameter bounds each poll separately.
+  stop = threading.Event()
+
+  def _serve():
+    while not stop.wait(0.01):
+      server.serve_forever(timeout=0.01, blocking=False, handle_exit=False)
+
+  thread = threading.Thread(target=_serve, daemon=True)
   thread.start()
   try:
     host, port = server.address
     url = f'ftp://user:pass@{host}:{port}'
     yield url, temp_path
   finally:
+    stop.set()
     server.close_all()
-    thread.join(timeout=0)
+    thread.join(timeout=5)
+    assert not thread.is_alive()
 
 
 @pytest.fixture
