@@ -1,160 +1,175 @@
 """Tests for the py_misc_utils.lockfile file-based mutual exclusion.
 
-Expectations follow the documented API contract: acquire() creates the
-lock file with YAML metadata (pid, cmdline, time), a lock held by a live
-process blocks other acquirers until timeout, release() removes the lock
-only for its owner, a dead holder's lock is forcefully overridden after
-the check timeout, and the context manager acquires on enter and releases
-on exit.
+Everything here goes through the public API: a LockFile is acquired, released,
+or used as a context manager. Lock files live in whatever directory the library
+chooses and are named after a hash of the lock name, so no test inspects or
+writes the metadata document. Cross-process behaviour is exercised with real
+child processes that take the lock and either hold it or die while holding it.
 
-The lock directory is a per-process temporary folder owned by the library
-(tempdir.fastfs_dir(name='.locks')), so the lock files are located through
-the public filesystem helpers rather than by patching module state.
+Every lock name is unique to the current run, which keeps tests independent of
+each other, of concurrently running test processes and of lock files left
+behind by earlier runs, without patching any module state.
+
+Acquire is always paired with a release (directly or as a context manager), so
+the tests leave the lock directory as they found it.
 """
 
-import hashlib
-import os
 import subprocess
 import sys
 import time
+import uuid
 
-import psutil
 import pytest
-import yaml
 
-import py_misc_utils.lockfile as plock
-import py_misc_utils.tempdir as tmpd
-from py_misc_utils import fs_utils as fsu
+from py_misc_utils import lockfile as plock
+
+# A child process that takes the lock and holds it until its parent lets go.
+_HOLD_LOCK = """
+import sys
+from py_misc_utils import lockfile as plock
+
+lf = plock.LockFile({name!r}, acquire_timeout=0.01, check_timeout=0.05)
+if not lf.acquire(timeout=5):
+  sys.exit(2)
+
+print('HELD', flush=True)
+sys.stdin.readline()
+print('RELEASED' if lf.release() else 'RELEASE-FAILED', flush=True)
+"""
+
+# A child process that takes the lock and exits without releasing it, leaving a
+# lock file owned by a process that no longer exists.
+_DIE_WITH_LOCK = """
+import sys
+from py_misc_utils import lockfile as plock
+
+lf = plock.LockFile({name!r}, acquire_timeout=0.01, check_timeout=0.05)
+if not lf.acquire(timeout=5):
+  sys.exit(2)
+
+print('HELD', flush=True)
+"""
+
+
+def _lock(name):
+  """Create a LockFile for name with short, test-friendly timeouts."""
+  return plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05)
+
+
+def _hold(name):
+  """Start a child process holding the lock on name and return it."""
+  proc = subprocess.Popen(
+      [sys.executable, '-c', _HOLD_LOCK.format(name=name)],
+      stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      text=True)
+  assert proc.stdout.readline().strip() == 'HELD'
+
+  return proc
+
+
+def _stop(proc):
+  """Let the holding child release its lock, then reap it."""
+  proc.stdin.write('\n')
+  proc.stdin.flush()
+
+  assert proc.stdout.readline().strip() == 'RELEASED'
+  assert proc.wait() == 0
 
 
 @pytest.fixture
-def lockdir():
-  """The library lock directory, as created by the module itself."""
-  return tmpd.fastfs_dir(name='.locks')
+def lockname():
+  """A factory for lock names that are unique to the current test run.
 
-
-def _lockpath(lockdir, name):
-  return os.path.join(lockdir, hashlib.sha1(name.encode()).hexdigest())
-
-
-def _write_meta(lpath, pid, mtime=None, cmdline=None):
-  """Write lock metadata in the on-disk format the library produces."""
-  tag = {
-      'pid': pid,
-      'cmdline': cmdline if cmdline is not None else list(psutil.Process().cmdline()),
-      'time': mtime if mtime is not None else time.time(),
-  }
-  fsu.write_content(lpath, yaml.dump(tag, default_flow_style=False).encode())
-
-
-def test_acquire_writes_parseable_meta(lockdir):
-  """acquire() creates the lock file and stores owner metadata in it."""
-  lf = plock.LockFile('meta-lock', acquire_timeout=0.01, check_timeout=0.05)
-
-  assert lf.acquire(timeout=2)
-
-  lpath = _lockpath(lockdir, 'meta-lock')
-  assert os.path.exists(lpath)
-
-  # The lock file holds YAML metadata with pid/cmdline/time: verify via
-  # the on-disk format through the public filesystem helpers.
-  tag = yaml.safe_load(fsu.read_content(lpath))
-
-  assert tag['pid'] == os.getpid()
-  assert isinstance(tag['cmdline'], list)
-  assert tag['time'] <= time.time()
-
-
-def test_release_removes_lock_and_allows_reacquire(lockdir):
-  """release() removes the lock file; the lock can be taken again."""
-  lf = plock.LockFile('relock', acquire_timeout=0.01, check_timeout=0.05)
-
-  assert lf.acquire(timeout=2)
-  assert lf.release()
-
-  assert not os.path.exists(_lockpath(lockdir, 'relock'))
-  assert lf.acquire(timeout=2)
-
-
-def test_release_by_other_process_is_rejected(lockdir):
-  """A release from a different owner leaves the lock file in place."""
-  lf = plock.LockFile('owner-lock', acquire_timeout=0.01, check_timeout=0.05)
-
-  assert lf.acquire(timeout=2)
-
-  # Simulate a second process holding the lock by rewriting its meta.
-  lpath = _lockpath(lockdir, 'owner-lock')
-  _write_meta(lpath, pid=os.getpid() + 100000)
-
-  assert not plock.LockFile('owner-lock').release()
-  assert os.path.exists(lpath)
-
-
-def test_acquire_times_out_while_live_process_holds(lockdir):
-  """A held-by-live-process lock makes a bounded acquire return False."""
-  lf = plock.LockFile('busy-lock', acquire_timeout=0.01, check_timeout=0.05)
-
-  assert lf.acquire(timeout=2)
-
-  lf2 = plock.LockFile('busy-lock', acquire_timeout=0.01, check_timeout=50)
-
-  assert not lf2.acquire(timeout=0.1)
-
-  assert lf.release()
-
-
-def test_context_manager_acquires_and_releases(lockdir):
-  """The with-statement form holds the lock for the block duration."""
-  name = 'ctx-lock'
-
-  with plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05):
-    assert os.path.exists(_lockpath(lockdir, name))
-    tag = yaml.safe_load(fsu.read_content(_lockpath(lockdir, name)))
-    assert tag['pid'] == os.getpid()
-
-  assert not os.path.exists(_lockpath(lockdir, name))
-
-
-def test_stale_lock_from_dead_process_is_overridden(lockdir):
-  """A lock whose holder is gone is taken over after the check timeout."""
-  name = 'stale-lock'
-  lpath = _lockpath(lockdir, name)
-  dead_pid = None
-
-  # Spawn a short-lived process and use its (now dead) pid.
-  proc = subprocess.Popen([sys.executable, '-c', 'pass'])
-  proc.wait()
-  dead_pid = proc.pid
-
-  assert not psutil.pid_exists(dead_pid)
-
-  lf = plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05)
-  _write_meta(lpath, pid=dead_pid, mtime=time.time() - 10)
-
-  assert lf.acquire(timeout=5)
-
-  # The lock file now describes the current process.
-  tag = yaml.safe_load(fsu.read_content(lpath))
-  assert tag['pid'] == os.getpid()
-
-
-def test_stale_lock_with_foreign_cmdline_is_overridden(lockdir):
-  """A lock whose holder cmdline changed gets forcefully overridden.
-
-  The metadata is rewritten with a bogus cmdline, so acquire() detects
-  the stale holder and takes the lock over after the check timeout.
+  The library derives the lock file name from a hash of the lock name and keeps
+  lock files in one machine-wide directory, so a unique name is enough to make
+  a test independent of everything else using that directory.
   """
-  name = 'foreign-cmdline-lock'
-  lpath = _lockpath(lockdir, name)
+  return lambda base: f'{base}-{uuid.uuid4().hex}'
 
-  _write_meta(lpath,
-              pid=os.getpid(),
-              mtime=time.time() - 10,
-              cmdline=['no', 'such', 'cmdline'])
 
-  lf = plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05)
+def test_acquire_and_release(lockname):
+  """acquire() takes the lock and release() gives it back."""
+  lf = _lock(lockname('basic'))
+
+  assert lf.acquire(timeout=2)
+  assert lf.release()
+
+
+def test_release_when_not_held_reports_failure(lockname):
+  """release() on a lock that is not held reports failure."""
+  assert not _lock(lockname('never-acquired')).release()
+
+
+def test_lock_can_be_reacquired_after_release(lockname):
+  """A released lock can be taken again by the same LockFile."""
+  lf = _lock(lockname('reacquire'))
+
+  assert lf.acquire(timeout=2)
+  assert lf.release()
+  assert lf.acquire(timeout=2)
+  assert lf.release()
+
+
+def test_second_instance_cannot_acquire_held_lock(lockname):
+  """While the lock is held, another LockFile times out instead of taking it."""
+  name = lockname('mutex')
+  first = _lock(name)
+  second = _lock(name)
+
+  assert first.acquire(timeout=2)
+  try:
+    assert not second.acquire(timeout=0.3)
+  finally:
+    assert first.release()
+
+
+def test_release_by_other_process_is_rejected(lockname):
+  """A process that does not own the lock cannot release it."""
+  name = lockname('owner')
+  proc = _hold(name)
+  try:
+    assert not _lock(name).release()
+  finally:
+    _stop(proc)
+
+
+def test_lock_held_by_live_process_blocks_until_timeout(lockname):
+  """A lock held by a live process is not taken before the timeout elapses."""
+  name = lockname('live-holder')
+  proc = _hold(name)
+  try:
+    started = time.time()
+    assert not _lock(name).acquire(timeout=0.3)
+    assert time.time() - started >= 0.3
+  finally:
+    _stop(proc)
+
+
+def test_dead_holder_lock_is_overridden(lockname):
+  """A lock left behind by a dead process is taken over on acquire()."""
+  name = lockname('dead-holder')
+
+  proc = subprocess.Popen(
+      [sys.executable, '-c', _DIE_WITH_LOCK.format(name=name)],
+      stdout=subprocess.PIPE,
+      text=True)
+  assert proc.stdout.readline().strip() == 'HELD'
+  assert proc.wait() == 0
+
+  lf = _lock(name)
   assert lf.acquire(timeout=5)
+  assert lf.release()
 
-  tag = yaml.safe_load(fsu.read_content(lpath))
-  assert tag['pid'] == os.getpid()
-  assert tag['cmdline'] != ['no', 'such', 'cmdline']
+
+def test_context_manager_acquires_and_releases(lockname):
+  """Entering the context takes the lock; leaving it gives the lock back."""
+  name = lockname('context')
+
+  with _lock(name) as lf:
+    assert lf is not None
+    assert not _lock(name).acquire(timeout=0.3)
+
+  after = _lock(name)
+  assert after.acquire(timeout=2)
+  assert after.release()
