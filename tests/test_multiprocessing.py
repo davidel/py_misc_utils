@@ -125,12 +125,14 @@ def test_sig_handler_registered_in_setup():
 def test_create_process_sigterm_exits_cleanly():
   # create_process installs signal handlers in child processes.
   # SIGTERM is converted to TerminationError by the handler, causing clean exit.
-  def fn():
+  def fn(q):
+    q.put('ready')
     time.sleep(30)
 
-  p = mp_utils.create_process(fn)
+  q = multiprocessing.get_context('fork').Queue()
+  p = mp_utils.create_process(fn, args=(q,))
   p.start()
-  time.sleep(0.2)
+  assert q.get(timeout=10.0) == 'ready'
   os.kill(p.pid, signal.SIGTERM)
   p.join(timeout=10.0)
   assert p.exitcode == 1
