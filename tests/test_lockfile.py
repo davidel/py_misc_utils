@@ -19,6 +19,7 @@ import pytest
 import yaml
 
 import py_misc_utils.lockfile as plock
+from py_misc_utils import fs_utils as fsu
 
 
 @pytest.fixture
@@ -43,8 +44,7 @@ def _write_meta(lpath, pid, mtime=None):
       'cmdline': plock._CMDLINE,
       'time': mtime if mtime is not None else time.time(),
   }
-  with open(lpath, 'wb') as fd:
-    fd.write(yaml.dump(tag, default_flow_style=False).encode())
+  fsu.write_content(lpath, yaml.dump(tag, default_flow_style=False).encode())
 
 
 def test_acquire_writes_parseable_meta(lockdir):

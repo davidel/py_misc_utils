@@ -41,8 +41,7 @@ def test_std_open_streams():
 def test_std_open_local_file(tmp_path):
   """std_open falls through to gfs.open: raw file object, no mode -> error."""
   path = os.path.join(tmp_path, 'f.txt')
-  with open(path, 'wb') as f:
-    f.write(b'data')
+  fsu.write_content(path, b'data')
 
   with pytest.raises(TypeError):
     gfs.std_open(path)
@@ -210,8 +209,7 @@ def test_copy_remove(tmp_path):
   """copy() duplicates a file; remove() deletes paths."""
   src = os.path.join(tmp_path, 'src.txt')
   dst = os.path.join(tmp_path, 'dst.txt')
-  with open(src, 'wb') as f:
-    f.write(b'copyme')
+  fsu.write_content(src, b'copyme')
 
   gfs.copy(src, dst)
   with open(dst, 'rb') as f:
@@ -225,8 +223,7 @@ def test_replace(tmp_path):
   """replace() moves a file across paths."""
   src = os.path.join(tmp_path, 'mv.txt')
   dst = os.path.join(tmp_path, 'moved.txt')
-  with open(src, 'wb') as f:
-    f.write(b'move')
+  fsu.write_content(src, b'move')
 
   gfs.replace(src, dst)
 
@@ -239,8 +236,7 @@ def test_symlink_same_fs(tmp_path):
   """symlink() creates a link within the same filesystem."""
   src = os.path.join(tmp_path, 'real.txt')
   lnk = os.path.join(tmp_path, 'link.txt')
-  with open(src, 'wb') as f:
-    f.write(b'linked')
+  fsu.write_content(src, b'linked')
 
   gfs.symlink(src, lnk)
 
@@ -251,8 +247,7 @@ def test_symlink_same_fs(tmp_path):
 def test_link_across_fs_rejected(tmp_path):
   """link/symlink across filesystems raise an AssertionError."""
   src = os.path.join(tmp_path, 'f.txt')
-  with open(src, 'wb') as f:
-    f.write(b'x')
+  fsu.write_content(src, b'x')
 
   with pytest.raises(AssertionError):
     gfs.link(src, 's3://bucket/key')
@@ -260,11 +255,9 @@ def test_link_across_fs_rejected(tmp_path):
 
 def test_enumerate_files(tmp_path):
   """enumerate_files yields names, or (name, DirEntry) with return_stats."""
-  with open(os.path.join(tmp_path, 'a.txt'), 'wb') as f:
-    f.write(b'a')
+  fsu.write_content(os.path.join(tmp_path, 'a.txt'), b'a')
   os.makedirs(os.path.join(tmp_path, 'sub'))
-  with open(os.path.join(tmp_path, 'sub', 'b.txt'), 'wb') as f:
-    f.write(b'b')
+  fsu.write_content(os.path.join(tmp_path, 'sub', 'b.txt'), b'b')
 
   names = list(gfs.enumerate_files(str(tmp_path)))
 
@@ -278,10 +271,8 @@ def test_enumerate_files(tmp_path):
 
 def test_enumerate_files_regex(tmp_path):
   """The matcher argument filters entries (regex match)."""
-  with open(os.path.join(tmp_path, 'keep.txt'), 'wb') as f:
-    f.write(b'k')
-  with open(os.path.join(tmp_path, 'drop.log'), 'wb') as f:
-    f.write(b'd')
+  fsu.write_content(os.path.join(tmp_path, 'keep.txt'), b'k')
+  fsu.write_content(os.path.join(tmp_path, 'drop.log'), b'd')
 
   entries = list(
       gfs.enumerate_files(str(tmp_path), matcher=gfs.RegexMatcher(r'.*\.txt')))
@@ -293,10 +284,8 @@ def test_is_same_fs(tmp_path):
   """is_same_fs compares protocol+host of path-holding entries."""
   a = os.path.join(tmp_path, 'a.txt')
   b = os.path.join(tmp_path, 'b.txt')
-  with open(a, 'wb') as f:
-    f.write(b'a')
-  with open(b, 'wb') as f:
-    f.write(b'b')
+  fsu.write_content(a, b'a')
+  fsu.write_content(b, b'b')
 
   ea, eb = gfs.stat(a), gfs.stat(b)
 

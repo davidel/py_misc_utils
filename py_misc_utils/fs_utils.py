@@ -2,8 +2,9 @@
 
 This module collects general purpose filesystem helpers: path
 manipulation and normalization, file checks and copies, atomic file
-writes, temporary (unique) paths, directory size computation and file
-search over a list of folders.
+writes, content read/write (read_content/write_content), temporary
+(unique) paths, directory size computation and file search over a list
+of folders.
 """
 import contextlib
 import functools
@@ -160,6 +161,47 @@ def readall(fd):
     os.lseek(fd, 0, os.SEEK_SET)
 
     return os.read(fd, sres.st_size)
+
+
+def read_content(path, binary=True):
+  """Reads the whole content of a file.
+
+  Args:
+    path: The file path to read (string).
+    binary: If True (default), returns the raw bytes content.
+      Otherwise returns the content decoded as UTF-8 str.
+
+  Returns:
+    The whole file content, as bytes if binary=True, else as str.
+  """
+  if binary:
+    with open(path, 'rb') as f:
+      return f.read()
+  else:
+    with open(path, 'r', encoding='utf-8') as f:
+      return f.read()
+
+
+def write_content(path, data, binary=True):
+  """Writes data to a file.
+
+  Args:
+    path: The file path to write to (string).
+    data: The data to write. If binary=True, data is written as bytes
+      (a str argument is encoded as UTF-8). If binary=False, data is
+      written as str (a bytes argument is decoded as UTF-8).
+    binary: If True (default), writes bytes; otherwise writes str.
+  """
+  if binary:
+    if isinstance(data, str):
+      data = data.encode('utf-8')
+    with open(path, 'wb') as f:
+      f.write(data)
+  else:
+    if isinstance(data, bytes):
+      data = data.decode('utf-8')
+    with open(path, 'w', encoding='utf-8') as f:
+      f.write(data)
 
 
 def stat(path):

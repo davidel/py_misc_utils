@@ -19,8 +19,7 @@ from py_misc_utils import osfd
 def test_maybe_remove(tmp_path):
   """maybe_remove deletes an existing file and ignores missing ones."""
   path = os.path.join(tmp_path, 'gone.txt')
-  with open(path, 'wb') as f:
-    f.write(b'x')
+  fsu.write_content(path, b'x')
 
   fsu.maybe_remove(path)
   assert not os.path.exists(path)
@@ -43,8 +42,7 @@ def test_is_binary():
 def test_link_or_copy(tmp_path):
   """link_or_copy links (hard or symlink) and reads back the content."""
   src = os.path.join(tmp_path, 'src.txt')
-  with open(src, 'wb') as f:
-    f.write(b'linked-data')
+  fsu.write_content(src, b'linked-data')
   dst = os.path.join(tmp_path, 'dst.txt')
 
   assert fsu.link_or_copy(src, dst) == dst
@@ -78,6 +76,39 @@ def test_readall_path_and_fd(tmp_path):
 
   with osfd.OsFd(path, os.O_RDONLY) as fd:
     assert fsu.readall(fd) == b'all-content'
+
+
+def test_read_content(tmp_path):
+  """read_content returns bytes by default, or str when binary=False."""
+  path = os.path.join(tmp_path, 'data.bin')
+  fsu.write_content(path, b'hello-bytes')
+
+  assert fsu.read_content(path) == b'hello-bytes'
+  assert fsu.read_content(path, binary=True) == b'hello-bytes'
+
+  text_path = os.path.join(tmp_path, 'data.txt')
+  fsu.write_content(text_path, 'hello-text', binary=False)
+  assert fsu.read_content(text_path, binary=False) == 'hello-text'
+
+
+def test_write_content_binary_and_text(tmp_path):
+  """write_content accepts str/bytes and normalizes based on binary flag."""
+  path = os.path.join(tmp_path, 'mixed.bin')
+  fsu.write_content(path, 'str-as-bytes', binary=True)
+  assert fsu.read_content(path) == b'str-as-bytes'
+
+  text_path = os.path.join(tmp_path, 'mixed.txt')
+  fsu.write_content(text_path, b'bytes-as-str', binary=False)
+  assert fsu.read_content(text_path, binary=False) == 'bytes-as-str'
+
+
+def test_write_content_roundtrip(tmp_path):
+  """Written content reads back identically in both modes."""
+  for binary in (True, False):
+    path = os.path.join(tmp_path, f'rt{int(binary)}')
+    payload = b'\x00\x01\x02payload' if binary else 'unicode: ☃'
+    fsu.write_content(path, payload, binary=binary)
+    assert fsu.read_content(path, binary=binary) == payload
 
 
 def test_safe_rmtree(tmp_path):

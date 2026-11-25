@@ -7,6 +7,7 @@ import os
 
 import pytest
 
+from py_misc_utils import fs_utils as fsu
 from py_misc_utils.fs import file_fs as ff
 
 
@@ -49,8 +50,7 @@ def test_list(fs, tmp_path):
 
 def test_remove(fs, tmp_path):
   path = str(tmp_path / 'ff_remove.txt')
-  with open(path, 'wb') as f:
-    f.write(b'remove me')
+  fsu.write_content(path, b'remove me')
   fs.remove(path)
   assert not fs.exists(path)
 
@@ -58,8 +58,7 @@ def test_remove(fs, tmp_path):
 def test_copy(fs, tmp_path):
   src = str(tmp_path / 'ff_src.txt')
   dst = str(tmp_path / 'ff_dst.txt')
-  with open(src, 'wb') as f:
-    f.write(b'copy me')
+  fsu.write_content(src, b'copy me')
   fs.copyfile(src, fs, dst)
   with open(dst, 'rb') as f:
     assert f.read() == b'copy me'

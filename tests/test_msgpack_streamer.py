@@ -2,14 +2,15 @@
 
 import pytest
 
+from py_misc_utils import fs_utils as fsu
+
 msgpack = pytest.importorskip("msgpack")
 
 from py_misc_utils import msgpack_streamer as ms
 
 
 def _write(path, records):
-  with open(path, 'wb') as f:
-    f.writelines(msgpack.packb(recd) for recd in records)
+  fsu.write_content(path, b''.join(msgpack.packb(recd) for recd in records))
 
 
 def test_roundtrip(tmp_path):

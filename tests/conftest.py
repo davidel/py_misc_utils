@@ -19,6 +19,8 @@ import threading
 
 import pytest
 
+from py_misc_utils import fs_utils as fsu
+
 # Cap the idle timeout of surplus executor workers (default 5s): short
 # tasks in the tests must not wait the full default before the workers
 # exit, which would add dead time to every run.
@@ -148,8 +150,7 @@ def make_text_file(tmp_path):
 
   def _make(name='file.txt', content='hello world\n'):
     path = os.path.join(tmp_path, name)
-    with open(path, 'w') as f:
-      f.write(content)
+    fsu.write_content(path, content, binary=False)
     return path
 
   return _make
@@ -164,8 +165,7 @@ def make_gzip_file(tmp_path):
     with gzip.GzipFile(fileobj=buf, mode='wb') as fgz:
       fgz.write(content)
     path = os.path.join(tmp_path, name)
-    with open(path, 'wb') as f:
-      f.write(buf.getvalue())
+    fsu.write_content(path, buf.getvalue())
     return path
 
   return _make
