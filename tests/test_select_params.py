@@ -341,8 +341,14 @@ def test_score_slice_sequential_and_pool_agree():
   assert par == seq
 
 
-def test_fetch_scores_batches_and_saves_status(temp_path, monkeypatch):
-  """_fetch_scores() evaluates in scores_x_run chunks, saving after each."""
+def test_fetch_scores_batches_and_saves_status(temp_path):
+  """_fetch_scores() evaluates in scores_x_run chunks, saving after each.
+
+  The batch boundaries and the per-batch persistence are both observed
+  from the public side: the score function is a caller-supplied input and
+  it is invoked between batches, so snapshotting the status file from
+  within it shows what had been persisted before each point was scored.
+  """
   sel = sp.Selector({'a': [1, 2, 3], 'b': [10, 20]})
   sel.pts = [
       _mkpt(i, [a, b])
@@ -350,27 +356,25 @@ def test_fetch_scores_batches_and_saves_status(temp_path, monkeypatch):
   ]
 
   calls = []
-  saves = []
+  persisted = []
+
+  status_path = os.path.join(temp_path, 'status.pkl')
 
   def score_fn(a, b):
     calls.append((a, b))
+    saved = (sp.Selector.load_status(status_path).processed_scores
+             if os.path.exists(status_path) else None)
+    persisted.append(saved)
 
     return a * 100 + b
 
-  orig_save = sp.Selector.save_status
-
-  def counting_save(self, path):
-    saves.append(path)
-    orig_save(self, path)
-
-  monkeypatch.setattr(sp.Selector, 'save_status', counting_save)
-
-  status_path = os.path.join(temp_path, 'status.pkl')
   sel._fetch_scores(score_fn, n_jobs=1, scores_x_run=2, status_path=status_path)
 
   # 5 points in chunks of 2 -> 3 batches.
-  assert len(saves) == 3
-  assert len(calls) == 5
+  assert calls == [(1, 10), (2, 10), (3, 10), (1, 20), (2, 20)]
+  # Nothing saved during the first batch; then 2 and 4 points were on disk,
+  # i.e. a save happened after each completed batch (and only then).
+  assert persisted == [None, None, 2, 2, 4]
   assert sel.processed_scores == 5
   assert len(sel.current_scores) == 5
   assert sel.current_scores == [110.0, 210.0, 310.0, 120.0, 220.0]
