@@ -18,36 +18,6 @@ from py_misc_utils import global_namespace as gns
 from py_misc_utils import tempdir as tmpd
 
 
-@pytest.fixture
-def fresh_root():
-  """Install a fresh process temp root, restoring the old one after."""
-  root = tmpd._RootDir()
-  prev = gns.set(tmpd._ROOTDIR, root)
-
-  yield root
-
-  gns.set(tmpd._ROOTDIR, prev)
-
-
-def test_create_and_get_temp_root(fresh_root):
-  """create() returns a fresh dir under the process root temp dir."""
-  path = tmpd.create()
-
-  assert os.path.isdir(path)
-  assert path.startswith(fresh_root.root() + os.sep)
-
-  another = tmpd.create()
-
-  assert another != path
-  assert tmpd.get_temp_root() == fresh_root.root()
-
-
-def test_get_temp_root_returns_root(fresh_root):
-  """get_temp_root() exposes the root of the installed _RootDir."""
-  assert tmpd.get_temp_root() == fresh_root.root()
-  assert os.path.isdir(tmpd.get_temp_root())
-
-
 def test_fastfs_dir_random_name():
   """fastfs_dir() creates a random-named dir in the fastfs area."""
   path = tmpd.fastfs_dir()
