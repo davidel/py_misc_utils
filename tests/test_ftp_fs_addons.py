@@ -48,7 +48,7 @@ def ftp_host(tmp_path):
     yield url, str(tmp_path)
   finally:
     server.close_all()
-    thread.join(timeout=5)
+    thread.join(timeout=0)
 
 
 def test_ftp_rename(fs, ftp_host):

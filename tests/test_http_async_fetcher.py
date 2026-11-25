@@ -16,7 +16,7 @@ def test_http_fetch_url_single(http_server, http_routes, tmp_path):
   http_routes.add_route('/single', body=b'async single')
   work = str(tmp_path / 'work')
   os.makedirs(work, exist_ok=True)
-  fetcher = haf.HttpAsyncFetcher(path=work)
+  fetcher = haf.HttpAsyncFetcher(num_workers=2, path=work)
   fetcher.start()
   try:
     fetcher.enqueue(http_server.url + '/single')
@@ -32,7 +32,7 @@ def test_http_fetch_url_404(http_server, http_routes, tmp_path):
   http_routes.clear_routes()
   work = str(tmp_path / 'work')
   os.makedirs(work, exist_ok=True)
-  fetcher = haf.HttpAsyncFetcher(path=work)
+  fetcher = haf.HttpAsyncFetcher(num_workers=2, path=work)
   fetcher.start()
   try:
     fetcher.enqueue(http_server.url + '/missing')
@@ -67,7 +67,7 @@ def test_http_async_fetcher_context_manager(http_server, http_routes, tmp_path):
   http_routes.add_route('/ctx', body=b'ctx async')
   work = str(tmp_path / 'work')
   os.makedirs(work, exist_ok=True)
-  with haf.HttpAsyncFetcher(path=work) as fetcher:
+  with haf.HttpAsyncFetcher(num_workers=2, path=work) as fetcher:
     fetcher.enqueue(http_server.url + '/ctx')
     results = list(fetcher.iter_results())
     assert len(results) == 1
@@ -81,7 +81,7 @@ def test_http_async_fetcher_max_results(http_server, http_routes, tmp_path):
   http_routes.add_route('/z', body=b'z\n')
   work = str(tmp_path / 'work')
   os.makedirs(work, exist_ok=True)
-  fetcher = haf.HttpAsyncFetcher(path=work)
+  fetcher = haf.HttpAsyncFetcher(num_workers=2, path=work)
   fetcher.start()
   try:
     urls = [http_server.url + '/x', http_server.url + '/y', http_server.url + '/z']
@@ -95,7 +95,7 @@ def test_http_async_fetcher_max_results(http_server, http_routes, tmp_path):
 def test_http_async_fetcher_shutdown_idempotent(tmp_path):
   work = str(tmp_path / 'work')
   os.makedirs(work, exist_ok=True)
-  fetcher = haf.HttpAsyncFetcher(path=work)
+  fetcher = haf.HttpAsyncFetcher(num_workers=2, path=work)
   fetcher.start()
   fetcher.shutdown()
   fetcher.shutdown()  # Should not raise.
