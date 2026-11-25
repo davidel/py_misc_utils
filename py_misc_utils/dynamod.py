@@ -30,7 +30,7 @@ def _create_root():
   from . import tempdir as tmpd
 
   path = os.path.join(tmpd.get_temp_root(), _MODROOT)
-  os.mkdir(path)
+  os.makedirs(path, exist_ok=True)
 
   return path
 
@@ -50,7 +50,7 @@ def _create_mod_folder():
   """
   path = _create_root()
   dpath = os.path.join(path, _MODNAME)
-  os.mkdir(dpath)
+  os.makedirs(dpath, exist_ok=True)
 
   with open(os.path.join(dpath, '__init__.py'), mode='w') as fd:
     pass
@@ -78,7 +78,19 @@ def _clone_mod_folder(src_path):
   # which will be in turn deleted once this exists.
   # We cannot point directly to the source folder since it will be removed once
   # the parent exists.
-  path = _create_root()
+  #
+  # The source path may no longer exist if a previous test's temp directory was
+  # already cleaned up (the gns.Var persists across tests but the temp dir does
+  # not). In that case, fall back to creating a fresh module folder.
+  if not os.path.exists(src_path):
+    return _create_mod_folder()
+
+  import tempfile as _tempfile
+
+  # Use a unique destination root per call so src_path (which is itself a
+  # previous call's destination root/_MODNAME) never collides with the copy
+  # target.
+  path = _tempfile.mkdtemp(prefix='pym_')
   shutil.copytree(src_path, os.path.join(path, _MODNAME))
 
   src_root = os.path.dirname(src_path)
