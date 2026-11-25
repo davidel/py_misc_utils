@@ -34,10 +34,6 @@ class BreakControl:
   Registers itself with a global SIGINT handler on open() and unregisters on
   close(). Tracks whether a break signal has been received and the frame at
   which it occurred. Multiple instances can be active at once.
-
-  Attributes:
-    _hit: bool, True if a break signal has been received.
-    _frame: The stack frame where the break was received, or None.
   """
 
   def __init__(self):

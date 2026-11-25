@@ -14,13 +14,6 @@ class FileOverwrite:
   Writes to a temporary file in the destination directory, then replaces the
   destination file on exit. If an exception occurs, the temp file is cleaned
   up and the original file is left untouched.
-
-  Attributes:
-    _dest: The destination file path.
-    _path: The filesystem path of the destination, or None.
-    _mode: The file open mode (e.g. 'w', 'wb').
-    _kwargs: Additional keyword arguments passed to TempFile.
-    _tmpfile: The TempFile instance created on enter, or None.
   """
 
   def __init__(self, dest, mode='w', **kwargs):

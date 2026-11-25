@@ -218,10 +218,6 @@ class Signals:
 
   Registers handlers for one or more signals on __enter__ and removes them
   on __exit__.
-
-  Attributes:
-    _sigs: Tuple of (sig, handler) pairs.
-    _prio: The priority used for registration.
   """
 
   def __init__(self, sig, handler, prio=None):

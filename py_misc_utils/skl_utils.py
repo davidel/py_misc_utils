@@ -28,13 +28,6 @@ class Quantizer:
 
   Normalizes data by mean and std_k*std, rounds to integer bins, and clips
   to the range [-nbins, nbins].
-
-  Attributes:
-    _nbins: The number of bins on each side of zero.
-    _std_k: The std multiplier used for scaling.
-    _eps: Minimum std value to avoid division by zero.
-    _mean: Column means computed during fit.
-    _std: Column stds computed during fit.
   """
 
   def __init__(self, nbins=3, std_k=2.0, eps=1e-6):
@@ -141,9 +134,6 @@ class TransformPipeline:
   """A sequence of transformers applied in order to input data.
 
   Supports adding transformers, partial_fit/full-fit, and transform.
-
-  Attributes:
-    _transformers: The list of transformer instances.
   """
 
   def __init__(self, transformers):

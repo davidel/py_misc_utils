@@ -22,9 +22,6 @@ class DynLoader:
   imports them, and stores them in an ordered dictionary keyed by module name.
   Modules can optionally expose a MODULE_NAME attribute to override the derived
   name.
-
-  Attributes:
-    _modules: OrderedDict mapping module name strings to imported module objects.
   """
 
   def __init__(self, modname=None, path=None, postfix=''):

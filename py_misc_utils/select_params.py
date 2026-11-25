@@ -135,19 +135,6 @@ class Selector:
   Uses a combination of random seeding, delta-based local search around the best
   points, and additional random exploration to efficiently search a high-dimensional
   parameter space. Scores are evaluated in parallel using multiprocessing.
-
-  Attributes:
-    nparams: Dict mapping parameter names to sorted numpy arrays of values.
-    processed: Set of processed index byte strings to avoid re-evaluation.
-    scores_db: Defaultdict mapping parameter names to lists of observed values.
-    best_score: The best score found so far, or None if none evaluated yet.
-    best_idx: The index array corresponding to the best score.
-    best_param: The parameter dict corresponding to the best score.
-    pid_scores: Dict mapping point IDs to their best scores.
-    blanks: Counter for consecutive non-improving iterations.
-    skeys: Sorted list of parameter name strings.
-    space: List of integers, the number of values per parameter.
-    pts: List of Point namedtuples awaiting evaluation.
     cpid: Counter for assigning point IDs.
     current_scores: List of scores from the current batch.
     processed_scores: Count of scores processed so far.

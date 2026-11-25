@@ -102,9 +102,6 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
   Extends SimpleHTTPRequestHandler to add bearer and basic authentication
   checking for PUT and DELETE operations. OPTIONS is supported for CORS
   preflight requests.
-
-  Attributes:
-    _args: The parsed command-line arguments containing auth configuration.
   """
 
   def _check_authorization(self, op, path):
@@ -231,10 +228,6 @@ class ClassWrapper:
   When called, creates a new instance with the wrapped class and updates its
   __dict__ with the stored kwargs before calling __init__. Also intercepts
   __setattr__ to store attribute assignments in _kwargs.
-
-  Attributes:
-    _cls: The wrapped class.
-    _kwargs: Dict of keyword arguments to inject into instances.
 
   PRIVATE_ATTRIBUTES: Set of attribute names that are not stored in _kwargs.
   """

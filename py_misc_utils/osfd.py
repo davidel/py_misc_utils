@@ -15,12 +15,6 @@ class OsFd:
   closed when exiting the context. Optionally removes the file if an error
   occurs and the file did not previously exist.
 
-  Attributes:
-    _path: The filesystem path to open.
-    _flags: Flags passed to os.open.
-    _kwargs: Additional keyword arguments for os.open.
-    _remove_on_error: Whether to remove the file on error if it was newly
-      created.
   """
 
   def __init__(self, path, flags, remove_on_error=None, **kwargs):

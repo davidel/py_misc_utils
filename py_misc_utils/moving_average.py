@@ -13,10 +13,8 @@ class MovingAverage:
   """Maintain an exponentially weighted moving average of values.
 
   Attributes:
-    _factor: Smoothing factor between 0 and 1. Higher values weight the
-      running average more (and recent values less).
     value: The current moving average value.
-  """
+"""
 
   def __init__(self, factor, init=None):
     """Initialize the moving average with a smoothing factor.

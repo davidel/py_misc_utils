@@ -20,9 +20,6 @@ class NoBreak:
 
   Attributes:
     SIGMAP: Dict mapping signal name strings to signal module constants.
-    _signals: Tuple of signal numbers this instance handles.
-    _exit_trigger: bool, whether to re-trigger received signals on exit.
-    _signal_received: List of (sig, frame) tuples received during the context.
   """
 
   SIGMAP = {

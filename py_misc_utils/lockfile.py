@@ -58,12 +58,6 @@ class LockFile:
   Uses O_CREAT | O_EXCL to atomically create a lock file. If the lock is held
   by a process that no longer exists or whose command line has changed, the
   lock can be forcefully overridden after a check timeout interval.
-
-  Attributes:
-    _name: The logical name of this lock.
-    _lockfile: Filesystem path to the lock file.
-    _acquire_timeout: Base sleep interval between acquire attempts (seconds).
-    _check_timeout: Interval between stale-lock checks (seconds).
   """
 
   def __init__(self, name, acquire_timeout=None, check_timeout=None):

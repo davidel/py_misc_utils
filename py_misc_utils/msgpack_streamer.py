@@ -15,11 +15,6 @@ from . import utils as ut
 
 class MsgPackStreamer:
   """Stream MessagePack-encoded records from a file or URL.
-
-  Attributes:
-    _url: The file path or URL to read from.
-    _rename_columns: Mapping of old column names to new column names.
-    _kwargs: Additional keyword arguments passed to gfs.open.
   """
 
   def __init__(self, url, rename_columns=None, **kwargs):

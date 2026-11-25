@@ -166,12 +166,7 @@ def unwrap(obj, pickle_module=pickle):
 
 
 class PickleWrap:
-  """A lazily-loaded pickle container for objects from unloaded modules.
-
-  Attributes:
-    _class: The qualified class name of the wrapped object.
-    _data: The pickled bytes of the wrapped object.
-  """
+  """A lazily-loaded pickle container for objects from unloaded modules."""
 
   # Pickled qualified class name and data of the wrapped object.
 

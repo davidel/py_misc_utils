@@ -15,16 +15,6 @@ from . import weak_call as wcall
 
 class PeriodicTask:
   """Run a callable periodically on a scheduler.
-
-  Attributes:
-    _name: Human-readable name for the task.
-    _periodic_fn: A WeakCall wrapping the callable to run.
-    _period: Interval in seconds between runs.
-    _scheduler: The scheduler used to schedule runs.
-    _stop_on_error: Whether to stop the task on exception.
-    _lock: Protects scheduler event state.
-    _event: The currently scheduled scheduler event, or None.
-    _completed_event: Signaled when the current run completes.
   """
 
   def __init__(self, name, periodic_fn, period, scheduler=None, stop_on_error=None):

@@ -18,14 +18,6 @@ class IterFile:
   Presents an iterable of data blocks as a single seekable byte stream.
   Maintains an internal index of block offsets for efficient random access
   and buffering.
-
-  Attributes:
-    _blocks: Tuple of data blocks.
-    _offsets: Tuple of cumulative byte offsets for each block.
-    _size: Total size in bytes of all blocks.
-    _offset: Current read position.
-    _block: The currently buffered memoryview block (or None).
-    _block_offset: The starting byte offset of the currently buffered block.
   """
 
   def __init__(self, data_gen):

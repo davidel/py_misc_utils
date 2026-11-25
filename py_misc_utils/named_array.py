@@ -164,11 +164,6 @@ class NamedArray:
   Fields are defined by name=format pairs (e.g. 'id=i name=S value=f').
   Supports appending rows, extending from other NamedArrays, conversion to
   numpy arrays and pandas DataFrames.
-
-  Attributes:
-    _fields: Mapping of field name to Field instance.
-    _fieldseq: Ordered tuple of Field instances.
-    _str_tbl: Shared string table for string columns.
   """
 
   def __init__(self, names, fmt=None):

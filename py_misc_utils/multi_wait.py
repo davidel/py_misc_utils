@@ -11,12 +11,6 @@ import threading
 
 class MultiWait:
   """A barrier that waits for a configurable number of signals before releasing.
-
-  Attributes:
-    _count: The number of signals required to release waiting threads.
-    _sigcount: The current count of received signals.
-    _lock: Protects access to the signal count.
-    _cond: Condition variable used to block and release waiting threads.
   """
 
   def __init__(self, count):

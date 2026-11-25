@@ -24,11 +24,6 @@ class _Cleanups:
   Each registration receives a unique integer ID. Cleanups can be unregistered
   by ID, optionally executed before removal. All registered cleanups can be
   executed at once via run().
-
-  Attributes:
-    _lock: threading.Lock protecting access to _cleaners and _nextid.
-    _nextid: Integer counter for assigning unique cleanup IDs.
-    _cleaners: Dict mapping integer IDs to _Cleaner namedtuples.
   """
 
   def __init__(self):

@@ -12,10 +12,7 @@ class InfixOp:
   Allows using binary operators (|, <<, >>) as infix notation for calling
   functions. For example, `InfixOp(add) | 5` creates an operator that adds 5
   to its operand.
-
-  Attributes:
-    _opfn: The underlying binary function to wrap.
-  """
+"""
 
   def __init__(self, opfn):
     """Initialize with a binary function.

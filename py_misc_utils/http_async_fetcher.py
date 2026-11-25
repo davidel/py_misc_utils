@@ -60,15 +60,6 @@ class HttpAsyncFetcher:
   Provides a context manager that enqueues URLs for async fetching, tracks
   pending requests, and yields results as they complete. Uses AsyncManager
   for concurrent execution and fin_wrap for automatic cleanup.
-
-  Attributes:
-    _ctor_path: The constructor-provided path (or None for temp dir).
-    _path: The current working path for storing results.
-    _num_workers: Number of concurrent worker tasks.
-    _http_args: Default keyword arguments for HTTP requests.
-    _mpctx: Multiprocessing context for the async manager.
-    _async_manager: The AsyncManager instance managing concurrent work.
-    _pending: Set of URLs currently being fetched.
   """
 
   def __init__(self, path=None, num_workers=None, http_args=None, mpctx=None):

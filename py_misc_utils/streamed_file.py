@@ -22,17 +22,6 @@ class StreamedFile:
   The stream is consumed by a background daemon thread into a temp file.
   Reads block until the requested data is available or the stream completes
   or the file is closed.
-
-  Attributes:
-    _resp: The source iterable of data chunks.
-    _lock: Protects internal state.
-    _cond: Condition variable for blocking reads.
-    _tempfile: The backing temporary file.
-    _offset: The current read position.
-    _size: The total bytes written so far.
-    _completed: Whether the stream is fully consumed.
-    _closed: Whether the file has been closed.
-    _thread: The background streaming thread.
   """
 
   def __init__(self, resp):

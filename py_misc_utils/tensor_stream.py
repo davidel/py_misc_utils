@@ -301,11 +301,6 @@ class Reader:
   A reader gives random access to the tensors stored in a tensor stream
   folder, optionally applying per-stream transformation functions to the
   data being read.
-
-  Attributes:
-    shape: A tuple of shapes - one per stream.
-    num_streams: The number of streams stored in the tensor stream folder.
-    state: The state object persisted by the writer, if any.
   """
 
   def __init__(self, path, transforms=None):

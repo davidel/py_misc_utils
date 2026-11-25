@@ -19,12 +19,6 @@ class _EnumBase:
   Example:
     Color = _EnumBase('RED, GREEN=5, BLUE')
     # Color.RED == 0, Color.GREEN == 5, Color.BLUE == 6
-
-  Attributes:
-    _first: The first (base) value assigned.
-    _last: The last value assigned.
-    _values: Dict mapping field names to their integer values.
-    _names: Dict mapping integer values to field names.
   """
 
   def __init__(self, fields, base=0):

@@ -23,10 +23,6 @@ class BufferedIterator:
   up to buffer_size. Once full, new items replace existing ones at a
   pseudorandom position. Each yielded IterData includes the item, the count
   of items seen so far, and the number of items left in the buffer.
-
-  Attributes:
-    _data: The source iterable.
-    _buffer_size: Maximum number of items to keep in the buffer.
   """
 
   def __init__(self, data, buffer_size):

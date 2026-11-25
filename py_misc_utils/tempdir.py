@@ -17,10 +17,6 @@ from . import rnd_utils as rngu
 
 class _RootDir:
   """Per-process root temporary directory cleaned up on exit.
-
-  Attributes:
-    _path: The root temporary directory path.
-    _cid: The cleanup registration id for removing the root dir.
   """
 
   def __init__(self):

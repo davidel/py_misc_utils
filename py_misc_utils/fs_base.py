@@ -32,10 +32,6 @@ class FsBase(abc.ABC):
   some operations, while declaring abstract methods that subclasses must
   implement: stat, open, remove, rename, mkdir, makedirs, rmdir, rmtree,
   list, put_file, get_file, as_local, link, symlink.
-
-  Attributes:
-    _cache_iface: Optional cache interface for the filesystem.
-    _kwargs: Additional keyword arguments passed to the constructor.
   """
 
   def __init__(self, cache_iface=None, **kwargs):

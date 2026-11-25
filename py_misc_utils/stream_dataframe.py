@@ -22,10 +22,6 @@ WriteField = collections.namedtuple('WriteField', 'dtype')
 
 class StreamDataWriter:
   """Write named, typed columns to a tensor stream file.
-
-  Attributes:
-    _writer: The underlying tensor stream Writer.
-    _fields: Ordered mapping of field name to WriteField.
   """
 
   def __init__(self, fields, path):
@@ -94,11 +90,6 @@ class StreamDataWriter:
 
 class StreamDataReader:
   """Read named, typed columns from a tensor stream file.
-
-  Attributes:
-    _reader: The underlying tensor stream Reader.
-    _fields: Ordered mapping of field name to WriteField.
-    _fields_id: Mapping of field name to field index.
   """
 
   def __init__(self, path):
@@ -230,13 +221,6 @@ class StreamSortedScan:
   """Scan records of a stream in sorted order by a key field.
 
   Uses an LRU cache of slices for efficient repeated access.
-
-  Attributes:
-    _slice_size: Number of records per cached slice.
-    _max_slices: Maximum number of cached slices.
-    _reader: The underlying StreamDataReader.
-    _slices: Ordered cache mapping slice start to slice data.
-    _indices: Sorted record indices to scan.
   """
 
   def __init__(self,

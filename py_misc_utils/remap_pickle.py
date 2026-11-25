@@ -15,13 +15,7 @@ from . import module_utils as mu
 
 
 class Unpickler(pickle.Unpickler):
-  """A pickle.Unpickler that remaps class names and filters unsafe references.
-
-  Attributes:
-    _remaps: Mapping of fully-qualified names to remapped names.
-    _safe_refs: Optional set of allowed fully-qualified names. If set, any
-      reference not in the whitelist raises a RuntimeError.
-  """
+  """A pickle.Unpickler that remaps class names and filters unsafe references."""
 
   def __init__(self, *args, remaps=None, safe_refs=None, **kwargs):
     """Initialize the Unpickler with remapping and safety configuration.
