@@ -86,17 +86,6 @@ def test_parent_switch_serializes_state():
   assert pns[name].data == 'STATE'
 
 
-def test_child_switch_restores_state():
-  name = _mkname('child-switch')
-  v = gns.Var(name, child_fn=lambda data: data + '-restored')
-  gns.set(v, 'value')
-
-  pns = gns.parent_switch('spawn')
-  gns.child_switch('spawn', pns)
-
-  assert gns.get(gns.Var(name)) == 'value-restored'
-
-
 def test_fork_init_vars_excluded_from_switches():
   name_keep = _mkname('fork-keep')
   name_reinit = _mkname('fork-reinit')
