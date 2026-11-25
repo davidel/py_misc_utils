@@ -147,9 +147,10 @@ def make_text_file(tmp_path):
   """Factory creating temporary text files with a known content."""
 
   def _make(name='file.txt', content='hello world\n'):
-    path = tmp_path / name
-    path.write_text(content)
-    return str(path)
+    path = os.path.join(tmp_path, name)
+    with open(path, 'w') as f:
+      f.write(content)
+    return path
 
   return _make
 
@@ -162,9 +163,10 @@ def make_gzip_file(tmp_path):
     buf = io.BytesIO()
     with gzip.GzipFile(fileobj=buf, mode='wb') as fgz:
       fgz.write(content)
-    path = tmp_path / name
-    path.write_bytes(buf.getvalue())
-    return str(path)
+    path = os.path.join(tmp_path, name)
+    with open(path, 'wb') as f:
+      f.write(buf.getvalue())
+    return path
 
   return _make
 
@@ -176,9 +178,9 @@ def make_pickle_file(tmp_path):
   def _make(name='file.pkl', obj=None):
     if obj is None:
       obj = {'key': [1, 2, 3]}
-    path = tmp_path / name
+    path = os.path.join(tmp_path, name)
     with open(path, 'wb') as fpt:
       pickle.dump(obj, fpt)
-    return str(path)
+    return path
 
   return _make

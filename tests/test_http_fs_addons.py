@@ -6,6 +6,7 @@ operations, link/symlink degenerating to copies, put_file/get_file,
 as_local and write-through-open (staged PUT on close).
 """
 
+import os
 from unittest import mock
 
 import pytest
@@ -16,7 +17,7 @@ from py_misc_utils.fs import http_fs as hf
 @pytest.fixture
 def fs(tmp_path):
   """HttpFs with a mocked cache interface (no local caching side effects)."""
-  hfs = hf.HttpFs(cache_dir=str(tmp_path / 'cache'))
+  hfs = hf.HttpFs(cache_dir=os.path.join(tmp_path, 'cache'))
   hfs._cache_iface = mock.MagicMock()
   return hfs
 
@@ -167,7 +168,7 @@ def test_as_local(fs, http_server, http_routes, tmp_path):
   """as_local downloads the URL through the (mocked) cache interface."""
   http_routes.add_route('/local.bin', body=b'local-copy')
 
-  local_path = str(tmp_path / 'local-out.bin')
+  local_path = os.path.join(tmp_path, 'local-out.bin')
   fs._cache_iface.as_local.return_value = local_path
 
   lpath = fs.as_local(http_server.url + '/local.bin')

@@ -7,6 +7,8 @@ Tests cover content access across the view, length, read-only
 descriptor is already closed at that point).
 """
 
+import os
+
 import pytest
 
 from py_misc_utils import mmap as mmu
@@ -14,11 +16,12 @@ from py_misc_utils import mmap as mmu
 
 def test_file_view_contents(tmp_path):
   """The view exposes the full file content and length."""
-  path = tmp_path / 'data.bin'
+  path = os.path.join(tmp_path, 'data.bin')
   payload = b'0123456789' * 100
-  path.write_bytes(payload)
+  with open(path, 'wb') as f:
+    f.write(payload)
 
-  view = mmu.file_view(str(path))
+  view = mmu.file_view(path)
 
   assert len(view) == len(payload)
   assert bytes(view[:10]) == b'0123456789'
@@ -27,10 +30,11 @@ def test_file_view_contents(tmp_path):
 
 def test_file_view_readonly(tmp_path):
   """The view is read-only: writes raise."""
-  path = tmp_path / 'data.bin'
-  path.write_bytes(b'hello')
+  path = os.path.join(tmp_path, 'data.bin')
+  with open(path, 'wb') as f:
+    f.write(b'hello')
 
-  view = mmu.file_view(str(path))
+  view = mmu.file_view(path)
 
   with pytest.raises(TypeError):
     view[0] = 65
@@ -38,10 +42,11 @@ def test_file_view_readonly(tmp_path):
 
 def test_file_view_alive_after_close(tmp_path):
   """The view stays valid after file_view() returned (fd already closed)."""
-  path = tmp_path / 'data.bin'
-  path.write_bytes(b'abcdef')
+  path = os.path.join(tmp_path, 'data.bin')
+  with open(path, 'wb') as f:
+    f.write(b'abcdef')
 
-  view = mmu.file_view(str(path))
+  view = mmu.file_view(path)
 
   # The fd is closed inside file_view(); the mmap must survive via the
   # memoryview buffer protocol reference.
@@ -50,8 +55,9 @@ def test_file_view_alive_after_close(tmp_path):
 
 def test_file_view_empty_file(tmp_path):
   """Mapping an empty file raises ValueError (mmap restriction)."""
-  path = tmp_path / 'empty.bin'
-  path.write_bytes(b'')
+  path = os.path.join(tmp_path, 'empty.bin')
+  with open(path, 'wb') as f:
+    f.write(b'')
 
   with pytest.raises(ValueError):
-    mmu.file_view(str(path))
+    mmu.file_view(path)

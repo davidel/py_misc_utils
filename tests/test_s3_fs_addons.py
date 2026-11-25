@@ -6,6 +6,7 @@ through the real (unmocked) cache interface, tag/mtime metadata mapping
 and the non-existent-object stat behavior.
 """
 
+import os
 from unittest import mock
 
 import boto3
@@ -34,7 +35,7 @@ def s3_env(monkeypatch):
 @pytest.fixture
 def fs(tmp_path):
   """S3Fs with a mocked cache interface."""
-  sfs = sf.S3Fs(cache_dir=str(tmp_path / 'cache'))
+  sfs = sf.S3Fs(cache_dir=os.path.join(tmp_path, 'cache'))
   sfs._cache_iface = mock.MagicMock()
   return sfs
 
@@ -101,7 +102,7 @@ def test_s3_as_local(s3_env, fs, tmp_path):
   """as_local materializes the object through the cache interface."""
   s3_env.put_object(Bucket='test-bucket', Key='loc.bin', Body=b'local-copy')
 
-  local_path = str(tmp_path / 'out.bin')
+  local_path = os.path.join(tmp_path, 'out.bin')
   fs._cache_iface.as_local.return_value = local_path
 
   got = fs.as_local('s3://test-bucket/loc.bin')

@@ -86,7 +86,7 @@ def test_prepare_meta_cid_hash():
 
 def test_tree_create_load_validate_remove(tmp_path):
   """create() builds the tree + META; load/validate roundtrip; remove() drops it."""
-  path = str(tmp_path / 'entry')
+  path = os.path.join(tmp_path, 'entry')
   meta = chf.CachedBlockFile.prepare_meta(_meta(tag='v1', size=5), url='u1')
 
   chf.CachedBlockFile.create(path, meta)
@@ -103,12 +103,12 @@ def test_tree_create_load_validate_remove(tmp_path):
 
 def test_validate_missing_tree(tmp_path):
   """validate() returns None for a missing/incomplete cache tree."""
-  assert chf.CachedBlockFile.validate(str(tmp_path / 'nope')) is None
+  assert chf.CachedBlockFile.validate(os.path.join(tmp_path, 'nope')) is None
 
 
 def test_whole_file_fetch_and_cacheall(tmp_path):
   """A non-blocking reader fetches the whole file; cacheall links it read-only."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   content = b'whole-file-content'
   reader = StubReader(content, support_blocks=False)
   iface = chf.CacheInterface(cache_dir)
@@ -126,7 +126,7 @@ def test_whole_file_fetch_and_cacheall(tmp_path):
 
 def test_block_based_reads(tmp_path):
   """A blocking reader fetches only the blocks actually read."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   content = bytes(range(256))
   reader = StubReader(content, block_size=64)
   iface = chf.CacheInterface(cache_dir)
@@ -141,7 +141,7 @@ def test_block_based_reads(tmp_path):
 
 def test_block_reads_reuse_cache(tmp_path):
   """Already-fetched blocks are not re-fetched by new CachedFile opens."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   content = b'x' * 200
   reader = StubReader(content)
   iface = chf.CacheInterface(cache_dir)
@@ -158,7 +158,7 @@ def test_block_reads_reuse_cache(tmp_path):
 
 def test_cachedfile_seek_peek_pread(tmp_path):
   """CachedFile implements seek/peek/pread with position preservation."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   content = bytes(range(100))
   iface = chf.CacheInterface(cache_dir)
 
@@ -174,7 +174,7 @@ def test_cachedfile_seek_peek_pread(tmp_path):
 
 def test_cachedfile_eof_and_flags(tmp_path):
   """Reads past EOF return short data; flags follow the closed state."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   iface = chf.CacheInterface(cache_dir)
 
   cfile = iface.open('http://x/data.bin', _meta(tag='v1'), StubReader(b'abc'))
@@ -191,7 +191,7 @@ def test_cachedfile_eof_and_flags(tmp_path):
 
 def test_entry_recreated_on_tag_change(tmp_path):
   """A changed content tag rebuilds the cache entry with the new cid."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   iface = chf.CacheInterface(cache_dir)
   url = 'http://x/data.bin'
 
@@ -210,7 +210,7 @@ def test_missing_meta_entry_fails_to_rebuild(tmp_path):
   the rename onto the still-existing entry folder fails with ENOTEMPTY.
   Reported as a library finding (rebuild path broken), not worked around.
   """
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   reader = StubReader(b'payload')
   iface = chf.CacheInterface(cache_dir)
   meta = _meta(tag='v1')
@@ -227,7 +227,7 @@ def test_missing_meta_entry_fails_to_rebuild(tmp_path):
 
 def test_uncached_mode(tmp_path):
   """uncached=True materializes the file into a temp dir, freed on close."""
-  iface = chf.CacheInterface(str(tmp_path / 'cache'))
+  iface = chf.CacheInterface(os.path.join(tmp_path, 'cache'))
 
   cfile = iface.open('http://x/data.bin',
                      _meta(tag='v1'),
@@ -245,7 +245,7 @@ def test_uncached_mode(tmp_path):
 
 def test_as_local(tmp_path):
   """as_local() returns a local path holding the full content."""
-  iface = chf.CacheInterface(str(tmp_path / 'cache'))
+  iface = chf.CacheInterface(os.path.join(tmp_path, 'cache'))
 
   lpath = iface.as_local('http://x/data.bin', _meta(tag='v1'),
                          StubReader(b'local-content'))
@@ -261,7 +261,7 @@ def test_cleanup_cache_max_age(tmp_path):
   metadata cid and drops those older than max_age; the current version
   block is always kept.
   """
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   iface = chf.CacheInterface(cache_dir)
   url = 'http://x/a.bin'
 
@@ -291,7 +291,7 @@ def test_cleanup_cache_max_age(tmp_path):
 
 def test_cleanup_cache_max_size(tmp_path):
   """cleanup_cache(max_size=...) drops LRU entries until the size fits."""
-  cache_dir = str(tmp_path / 'cache')
+  cache_dir = os.path.join(tmp_path, 'cache')
   iface = chf.CacheInterface(cache_dir)
 
   iface.open('http://x/old.bin',
@@ -329,7 +329,7 @@ def test_get_cache_dir(tmp_path):
   The folder is created lazily by the cache machinery (the cleanup check
   only runs the periodic cleanup), so the returned path may not exist.
   """
-  cdir = chf.get_cache_dir(str(tmp_path / 'base'))
+  cdir = chf.get_cache_dir(os.path.join(tmp_path, 'base'))
 
-  assert cdir == os.path.join(str(tmp_path / 'base'), 'gfs')
+  assert cdir == os.path.join(os.path.join(tmp_path, 'base'), 'gfs')
   assert not os.path.exists(cdir)

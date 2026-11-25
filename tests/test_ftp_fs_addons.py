@@ -17,7 +17,7 @@ from py_misc_utils.fs import ftp_fs as ff
 @pytest.fixture
 def fs(tmp_path):
   """FtpFs with a mocked cache interface."""
-  ffs = ff.FtpFs(cache_dir=str(tmp_path / 'cache'))
+  ffs = ff.FtpFs(cache_dir=os.path.join(tmp_path, 'cache'))
   ffs._cache_iface = mock.MagicMock()
   return ffs
 

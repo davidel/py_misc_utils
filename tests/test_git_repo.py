@@ -22,7 +22,7 @@ def git_available():
 def repo(tmp_path, git_available):
   if not git_available:
     pytest.skip('git binary not available')
-  repo_dir = os.path.join(str(tmp_path), 'repo')
+  repo_dir = os.path.join(tmp_path, 'repo')
   # init a bare-ish local repo with one commit
   os.makedirs(repo_dir)
   subprocess.run(['git', 'init', '-q'], cwd=repo_dir, check=True)
