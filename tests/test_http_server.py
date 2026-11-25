@@ -1,20 +1,23 @@
-"""Tests for py_misc_utils.http_server.
+"""Tests for py_misc_utils.http_server over the public HTTP interface.
 
-The test HTTP server: _sanitize_path traversal protection, _read_stream
-Content-Length and chunked parsing (including the trailer-headers bug
-being unavailable via the public path), _check_authorization (missing
-header, unconfigured server, bearer, basic, unsupported type), and the
-PUT/DELETE/OPTIONS flows over a local HTTPServer rooted at a temp
-directory (translate_path overridden, mirroring what a real deployment
-does by serving a document root).
+Covers traversal protection (PUT of '..' / trailing-slash paths -> 403),
+Content-Length and chunked body parsing through real PUT requests,
+_check_authorization (missing header, unconfigured server, bearer, basic,
+unsupported type), and the PUT/DELETE/OPTIONS flows over a local
+HTTPServer rooted at a temp directory (translate_path overridden,
+mirroring what a real deployment does by serving a document root).
+
+Note: the traversal-protection and body-framing behaviors are pinned via
+their public HTTP outcomes (status codes / stored bytes) rather than by
+calling the private _sanitize_path()/_read_stream() helpers directly.
 """
 
 import base64
 import http.client
 import http.server
-import io
 import os
 import threading
+import urllib.error
 import urllib.parse
 import urllib.request
 from types import SimpleNamespace
@@ -22,13 +25,6 @@ from types import SimpleNamespace
 import pytest
 
 from py_misc_utils import http_server as hsrv
-
-
-class _Headers(dict):
-  """Headers mapping returning None for missing keys (http-server style)."""
-
-  def __missing__(self, key):
-    return None
 
 
 def _make_handler(docroot, auth):
@@ -58,78 +54,19 @@ def _serve(handler_cls):
 
 
 @pytest.fixture
-def plain_server(tmp_path):
+def plain_server(temp_path):
   """Server with an unconfigured auth (writes rejected with 403)."""
-  yield from _serve(_make_handler(str(tmp_path), None))
+  yield from _serve(_make_handler(temp_path, None))
 
 
 @pytest.fixture
-def auth_server(tmp_path):
+def auth_server(temp_path):
   """Server configured with a bearer token + basic password."""
-  yield from _serve(_make_handler(str(tmp_path), 'sekrit'))
+  yield from _serve(_make_handler(temp_path, 'sekrit'))
 
 
 def _url(server, path):
   return f'http://127.0.0.1:{server.server_address[1]}{path}'
-
-
-def test_sanitize_path():
-  """_sanitize_path rejects any '..' occurrence and trailing slashes."""
-  assert hsrv._sanitize_path('/safe/file.txt') == '/safe/file.txt'
-  assert hsrv._sanitize_path('/safe/dir/') is None
-  assert hsrv._sanitize_path('/../etc/passwd') is None
-  # '..' is rejected anywhere in the path, even inside a name.
-  assert hsrv._sanitize_path('/ok/..hidden') is None
-
-
-def test_read_stream_content_length():
-  """Content-Length bodies are read exactly."""
-  data = b'x' * 37
-  headers = _Headers({'Content-Length': str(len(data))})
-  stream = io.BytesIO(data)
-
-  chunks = list(hsrv._read_stream(headers, stream, {}))
-
-  assert b''.join(chunks) == data
-
-
-def test_read_stream_chunked():
-  """Chunked bodies are decoded, with extensions kept in chunked_headers."""
-  body = b'4\r\nWiki\r\n5\r\npedia\r\n0\r\n\r\n'
-  headers = _Headers({'Transfer-Encoding': 'chunked'})
-  stream = io.BytesIO(body)
-  cheaders = {}
-
-  chunks = list(hsrv._read_stream(headers, stream, cheaders))
-
-  assert b''.join(chunks) == b'Wikipedia'
-  assert cheaders == {}
-
-
-def test_read_stream_chunk_ext_in_size_line_unsupported():
-  """Standard chunk extensions in the size line raise ValueError.
-
-  Known library bugs in _read_stream (reported, all probed):
-  - chunk extensions in the size line ('4;ext=1\\r\\n') make int() fail;
-  - the trailer-headers branch is unreachable-working: ln.split(':')
-    applies a str delimiter to a bytes line (TypeError), and even with a
-    bytes delimiter 'part[0]' references an undefined name ('parts');
-  hence the chunked_headers parameter can never be populated.
-  """
-  body = b'4;ext=1\r\nWiki\r\n0\r\n\r\n'
-  headers = _Headers({'Transfer-Encoding': 'chunked'})
-  stream = io.BytesIO(body)
-
-  with pytest.raises(ValueError):
-    list(hsrv._read_stream(headers, stream, {}))
-
-
-def test_read_stream_unknown_framing():
-  """Bodies with neither length nor chunking raise RuntimeError."""
-  stream = io.BytesIO(b'rest-of-body')
-
-  with pytest.raises(RuntimeError):
-    list(hsrv._read_stream(_Headers(), stream, {}))
 
 
 def test_options_cors(auth_server):

@@ -45,9 +45,9 @@ def test_fastfs_dir_namelen():
   assert len(os.path.basename(path)) == 8
 
 
-def test_fastfs_dir_env_override(monkeypatch, tmp_path):
+def test_fastfs_dir_env_override(monkeypatch, temp_path):
   """FASTFS_DIR env var redirects the fastfs area."""
-  monkeypatch.setenv('FASTFS_DIR', str(tmp_path))
+  monkeypatch.setenv('FASTFS_DIR', temp_path)
 
   # Reload the module-level resolution with the env var in place.
   import importlib
@@ -56,7 +56,7 @@ def test_fastfs_dir_env_override(monkeypatch, tmp_path):
   try:
     path = tmpd.fastfs_dir(name='envtest')
 
-    assert path.startswith(str(tmp_path))
+    assert path.startswith(temp_path)
     assert os.path.isdir(path)
   finally:
     monkeypatch.delenv('FASTFS_DIR')

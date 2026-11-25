@@ -51,9 +51,19 @@ def _meta(tag='v1', size=None, **kw):
   return chf.Meta(tag=tag, size=size, mtime=111, **kw)
 
 
-def _cpath(iface, url):
-  """Cache entry path for a URL (module-level function)."""
-  return chf._get_cache_path(cache_dir=iface._cache_dir, url=url)
+def _cpath(cache_dir, url):
+  """Locate the cache entry folder of a URL through public helpers.
+
+  The entry folder name is an implementation detail; the entry is found
+  by reading each sub-folder metadata, whose url field is public.
+  """
+  for name in os.listdir(cache_dir):
+    path = os.path.join(cache_dir, name)
+    meta = chf.CachedBlockFile.load_meta(path)
+    if meta is not None and meta.url == url:
+      return path
+
+  return None
 
 
 def test_default_meta():
@@ -218,7 +228,7 @@ def test_missing_meta_entry_fails_to_rebuild(tmp_path):
   with iface.open('http://x/data.bin', meta, reader):
     pass
 
-  cpath = _cpath(iface, 'http://x/data.bin')
+  cpath = _cpath(cache_dir, 'http://x/data.bin')
   os.remove(chf.CachedBlockFile.fmeta_path(cpath))
 
   with pytest.raises(OSError):
@@ -272,7 +282,7 @@ def test_cleanup_cache_max_age(tmp_path):
   with iface.open(url, _meta(tag='v2'), StubReader(b'bbbb')) as cfile:
     cfile.read()
 
-  cpath = _cpath(iface, url)
+  cpath = _cpath(cache_dir, url)
   bdir = chf.CachedBlockFile.blocks_dir(cpath)
   old_time = datetime.datetime.now() - datetime.timedelta(days=30)
   aged = [
@@ -303,8 +313,8 @@ def test_cleanup_cache_max_size(tmp_path):
              StubReader(b'n' * 100),
              uncached=False).close()
 
-  old_path = _cpath(iface, 'http://x/old.bin')
-  new_path = _cpath(iface, 'http://x/new.bin')
+  old_path = _cpath(cache_dir, 'http://x/old.bin')
+  new_path = _cpath(cache_dir, 'http://x/new.bin')
   old_time = datetime.datetime.now() - datetime.timedelta(days=30)
   for path in (old_path, new_path):
     os.utime(path, (old_time.timestamp(), old_time.timestamp()))

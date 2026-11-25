@@ -13,11 +13,10 @@ from py_misc_utils.fs import http_fs as hf
 
 
 @pytest.fixture
-def fs(tmp_path):
+def fs(temp_path):
   """HttpFs with a mocked cache interface (no local caching side effects)."""
-  hfs = hf.HttpFs(cache_dir=os.path.join(tmp_path, 'cache'))
-  hfs._cache_iface = mock.MagicMock()
-  return hfs
+  return hf.HttpFs(cache_dir=os.path.join(temp_path, 'cache'),
+                   cache_iface=mock.MagicMock())
 
 
 def _capture_upload(http_routes, url):
@@ -52,25 +51,25 @@ def _capture_upload(http_routes, url):
   return uploaded
 
 
-def test_read_via_http(http_server, http_routes, tmp_path):
+def test_read_via_http(http_server, http_routes, temp_path):
   http_routes.add_route('/hf.txt', body=b'http fs data')
-  fs = hf.HttpFs(cache_dir=str(tmp_path / 'cache'))
-  fs._cache_iface = mock.MagicMock()
-  fs._cache_iface.open.return_value.__enter__.return_value.read.return_value = b'http fs data'
+  cache_iface = mock.MagicMock()
+  cache_iface.open.return_value.__enter__.return_value.read.return_value = b'http fs data'
+  fs = hf.HttpFs(cache_dir=os.path.join(temp_path, 'cache'), cache_iface=cache_iface)
   with fs.open(http_server.url + '/hf.txt', mode='rb') as f:
     assert f.read() == b'http fs data'
 
 
-def test_exists_via_http(http_server, http_routes, tmp_path):
+def test_exists_via_http(http_server, http_routes, temp_path):
   http_routes.add_route('/hf_exists.txt', body=b'e')
-  fs = hf.HttpFs(cache_dir=str(tmp_path / 'cache'))
+  fs = hf.HttpFs(cache_dir=os.path.join(temp_path, 'cache'))
   assert fs.exists(http_server.url + '/hf_exists.txt')
   assert not fs.exists(http_server.url + '/hf_missing.txt')
 
 
-def test_stat_via_http(http_server, http_routes, tmp_path):
+def test_stat_via_http(http_server, http_routes, temp_path):
   http_routes.add_route('/hf_stat.txt', body=b'stat over http')
-  fs = hf.HttpFs(cache_dir=str(tmp_path / 'cache'))
+  fs = hf.HttpFs(cache_dir=os.path.join(temp_path, 'cache'))
   st = fs.stat(http_server.url + '/hf_stat.txt')
   assert st.st_size == len(b'stat over http')
 
@@ -185,17 +184,19 @@ def test_get_file_chunks(fs, http_server, http_routes):
   assert data == b'0123456789'
 
 
-def test_as_local(fs, http_server, http_routes, tmp_path):
-  """as_local downloads the URL through the (mocked) cache interface."""
+def test_as_local(fs, http_server, http_routes, temp_path):
+  """as_local delegates the download to the injected cache interface."""
   http_routes.add_route('/local.bin', body=b'local-copy')
 
-  local_path = os.path.join(tmp_path, 'local-out.bin')
-  fs._cache_iface.as_local.return_value = local_path
+  cache_iface = mock.MagicMock()
+  local_path = os.path.join(temp_path, 'local-out.bin')
+  cache_iface.as_local.return_value = local_path
+  fs = hf.HttpFs(cache_dir=os.path.join(temp_path, 'cache'), cache_iface=cache_iface)
 
   lpath = fs.as_local(http_server.url + '/local.bin')
 
   assert lpath == local_path
-  fs._cache_iface.as_local.assert_called_once()
+  cache_iface.as_local.assert_called_once()
 
 
 def test_open_write_uploads_on_close(fs, http_server, http_routes):

@@ -18,11 +18,11 @@ import py_misc_utils.tracking_executor as pte
 
 
 def _shutdown(ex, timeout=5.0):
-  """Stop an executor and wait for its workers to exit."""
+  """Stop an executor and wait for it to become idle."""
   ex.shutdown()
-  deadline = time.time() + timeout
-  while ex._workers and time.time() < deadline:
-    time.sleep(0.01)
+  # After shutdown() all pending work is drained: wait_for_idle() returns
+  # instead of blocking forever.
+  assert ex.wait_for_idle(timeout=timeout) is True
 
 
 def test_submit_assigns_unique_increasing_ids():
@@ -48,8 +48,10 @@ def test_wait_blocks_until_all_submitted_complete():
     for i in range(8):
       tex.submit(time.sleep, 0.02)
 
+    # After the wait() the whole tracked set has drained: a fresh wait with
+    # a zero timeout returns immediately (nothing pending).
     assert tex.wait(timeout=5)
-    assert tex._pending == set()
+    assert tex.wait(timeout=0)
   finally:
     _shutdown(ex)
 
@@ -115,8 +117,16 @@ def test_submit_failure_untracks_task():
   with pytest.raises(RuntimeError):
     tex.submit_result(lambda: None)
 
-  # The failed submissions must not stay pending.
-  assert tex._pending == set()
+  # The failed submissions must not stay pending: with nothing tracked the
+  # tracked-set wait returns immediately. Restore a working executor and
+  # verify a fresh task still tracks and completes.
+  assert tex.wait() is True
+  tex.executor = xe.Executor(min_threads=1, max_threads=1, idle_timeout=0.2)
+  try:
+    tid = tex.submit(lambda: None)
+    assert tex.wait(tids=[tid], timeout=5) is True
+  finally:
+    tex.executor.shutdown()
 
 
 def test_wait_for_idle_combines_tracked_and_executor():
@@ -134,21 +144,20 @@ def test_wait_for_idle_combines_tracked_and_executor():
     _shutdown(ex)
 
 
-def test_wrap_task_reports_done_after_completion():
-  """The wrapped task removes its id from the pending set on completion."""
+def test_task_completes_untracked_and_result_resolves():
+  """A submitted task completes and its result future resolves.
+
+  Completion removes the task from the tracked set: wait() on the task id
+  returns once the task has run (tracked-until-done semantics pinned via
+  the public wait()/submit_result() APIs).
+  """
   tex = pte.TrackingExecutor()
-  done = threading.Event()
-  original = tex._report_done
 
-  def spy_report(tid):
-    original(tid)
-    done.set()
+  tid = tex.submit(lambda v: v * 3, 7)
 
-  tex._report_done = spy_report
+  # wait() on the specific task id blocks until the task completed.
+  assert tex.wait(tids=[tid], timeout=5) is True
 
-  wfn, tid = tex._wrap(lambda v: v * 3, 7)
-
-  assert tex._pending == {tid}
-  assert wfn() == 21
-  assert done.wait(timeout=5)
-  assert tid not in tex._pending
+  ares = tex.submit_result(lambda v: v + 1, 1)
+  assert ares.wait(timeout=5) == 2
+  assert tex.wait(timeout=5) is True

@@ -13,7 +13,7 @@ from py_misc_utils.fs import ftp_fs as ff
 
 
 @pytest.fixture
-def ftp_host(tmp_path):
+def ftp_host(temp_path):
   """Run a minimal FTP server using pyftpdlib on localhost."""
   pytest.importorskip('pyftpdlib')
   import threading
@@ -23,7 +23,7 @@ def ftp_host(tmp_path):
   from pyftpdlib.servers import FTPServer
 
   authorizer = DummyAuthorizer()
-  authorizer.add_user('user', 'pass', str(tmp_path), perm='elradfmwMT')
+  authorizer.add_user('user', 'pass', temp_path, perm='elradfmwMT')
   handler = FTPHandler
   handler.authorizer = authorizer
   server = FTPServer(('127.0.0.1', 0), handler)
@@ -34,22 +34,20 @@ def ftp_host(tmp_path):
   try:
     host, port = server.address
     url = f'ftp://user:pass@{host}:{port}'
-    yield url, str(tmp_path)
+    yield url, temp_path
   finally:
     server.close_all()
     thread.join(timeout=0)
 
 
 @pytest.fixture
-def fs(tmp_path):
-  fs = ff.FtpFs(cache_dir=str(tmp_path / 'cache'))
+def fs(temp_path):
   cache_iface = mock.MagicMock()
   cache_iface.open.return_value.__enter__.return_value.read.return_value = b'ftp data'
-  fs._cache_iface = cache_iface
-  return fs
+  return ff.FtpFs(cache_dir=os.path.join(temp_path, 'cache'), cache_iface=cache_iface)
 
 
-def test_ftp_open_read_write(fs, ftp_host, tmp_path):
+def test_ftp_open_read_write(fs, ftp_host):
   url, root = ftp_host
   with open(os.path.join(root, 'ftp.txt'), 'wb') as f:
     f.write(b'ftp data')
@@ -57,7 +55,7 @@ def test_ftp_open_read_write(fs, ftp_host, tmp_path):
     assert f.read() == b'ftp data'
 
 
-def test_ftp_exists(fs, ftp_host, tmp_path):
+def test_ftp_exists(fs, ftp_host):
   url, root = ftp_host
   assert not fs.exists(url + '/missing.txt')
   with open(os.path.join(root, 'exists.txt'), 'wb') as f:
@@ -65,7 +63,7 @@ def test_ftp_exists(fs, ftp_host, tmp_path):
   assert fs.exists(url + '/exists.txt')
 
 
-def test_ftp_stat(fs, ftp_host, tmp_path):
+def test_ftp_stat(fs, ftp_host):
   url, root = ftp_host
   with open(os.path.join(root, 'stat.txt'), 'wb') as f:
     f.write(b'ftp stat')
@@ -73,7 +71,7 @@ def test_ftp_stat(fs, ftp_host, tmp_path):
   assert st.st_size == 8
 
 
-def test_ftp_list(fs, ftp_host, tmp_path):
+def test_ftp_list(fs, ftp_host):
   url, root = ftp_host
   with open(os.path.join(root, 'ftp_a.txt'), 'wb') as f:
     f.write(b'a')
@@ -84,7 +82,7 @@ def test_ftp_list(fs, ftp_host, tmp_path):
   assert names == {'ftp_a.txt', 'ftp_b.txt'}
 
 
-def test_ftp_remove(fs, ftp_host, tmp_path):
+def test_ftp_remove(fs, ftp_host):
   url, root = ftp_host
   with open(os.path.join(root, 'ftp_rm.txt'), 'wb') as f:
     f.write(b'ftp rm')
@@ -93,7 +91,7 @@ def test_ftp_remove(fs, ftp_host, tmp_path):
   assert not fs.exists(url + '/ftp_rm.txt')
 
 
-def test_ftp_copy(fs, ftp_host, tmp_path):
+def test_ftp_copy(fs, ftp_host):
   url, root = ftp_host
   with open(os.path.join(root, 'ftp_src.txt'), 'wb') as f:
     f.write(b'ftp copy')
@@ -188,7 +186,7 @@ def test_cache_handler_sets_time_shift(fs, ftp_host):
     host.close()
 
 
-def test_ftp_isdir_isfile(fs, ftp_host, tmp_path):
+def test_ftp_isdir_isfile(fs, ftp_host):
   """isdir/isfile classify remote paths via stat."""
   url, root = ftp_host
   os.makedirs(os.path.join(root, 'sub'))

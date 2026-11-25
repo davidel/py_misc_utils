@@ -6,6 +6,8 @@ the documented contract the test will fail, exposing a possible library
 bug (see KNOWN LIBRARY BUGS in SCRATCH/REFACTORING_PLAN.md).
 """
 
+import os
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,9 +18,9 @@ from py_misc_utils import pd_utils as pdu
 @pytest.fixture()
 def df():
   return pd.DataFrame({
-    'a': [1, 2, 3, 4],
-    'b': ['x', 'y', 'x', 'y'],
-    'c': [1.0, 2.0, 3.0, 4.0],
+      'a': [1, 2, 3, 4],
+      'b': ['x', 'y', 'x', 'y'],
+      'c': [1.0, 2.0, 3.0, 4.0],
   })
 
 
@@ -31,6 +33,7 @@ def test_get_df_columns_excludes_discards(df):
 
 def test_get_typed_columns_filters_by_dtype(df):
   """get_typed_columns() returns columns whose dtype satisfies type_fn."""
+
   def _is_numeric(dt):
     try:
       return np.issubdtype(np.dtype(dt), np.number)
@@ -49,9 +52,9 @@ def test_re_select_columns_matches_regex(df):
   assert sorted(cols) == ['a', 'c']
 
 
-def test_read_csv_infers_dtypes(tmp_path):
+def test_read_csv_infers_dtypes(temp_path):
   """read_csv() infers numeric dtypes when none provided."""
-  path = str(tmp_path / 'data.csv')
+  path = os.path.join(temp_path, 'data.csv')
   df = pd.DataFrame({'a': [1, 2, 3], 'b': [1.5, 2.5, 3.5]})
   df.to_csv(path, index=False)
 
@@ -62,9 +65,9 @@ def test_read_csv_infers_dtypes(tmp_path):
   assert np.issubdtype(result['b'].dtype, np.number)
 
 
-def test_save_load_pickle_roundtrip(tmp_path, df):
+def test_save_load_pickle_roundtrip(temp_path, df):
   """save_dataframe()/load_dataframe() round-trip via pickle."""
-  path = str(tmp_path / 'df.pkl')
+  path = os.path.join(temp_path, 'df.pkl')
   pdu.save_dataframe(df, path)
 
   result = pdu.load_dataframe(path)
@@ -72,9 +75,9 @@ def test_save_load_pickle_roundtrip(tmp_path, df):
   pd.testing.assert_frame_equal(result, df)
 
 
-def test_save_load_csv_roundtrip(tmp_path, df):
+def test_save_load_csv_roundtrip(temp_path, df):
   """save_dataframe()/load_dataframe() round-trip via CSV."""
-  path = str(tmp_path / 'df.csv')
+  path = os.path.join(temp_path, 'df.csv')
   pdu.save_dataframe(df, path)
 
   result = pdu.load_dataframe(path)
@@ -82,9 +85,9 @@ def test_save_load_csv_roundtrip(tmp_path, df):
   pd.testing.assert_frame_equal(result, df)
 
 
-def test_unknown_extension_raises(tmp_path):
+def test_unknown_extension_raises(temp_path):
   """save_dataframe()/load_dataframe() raise on unknown extension."""
-  path = str(tmp_path / 'df.xyz')
+  path = os.path.join(temp_path, 'df.xyz')
 
   with pytest.raises(RuntimeError):
     pdu.save_dataframe(df, path)
@@ -115,9 +118,9 @@ def test_to_npdict_no_convert_skips_columns(df):
   assert npdict['a'].dtype == np.int64
 
 
-def test_load_dataframe_as_npdict(tmp_path, df):
+def test_load_dataframe_as_npdict(temp_path, df):
   """load_dataframe_as_npdict() loads a file and returns dict of arrays."""
-  path = str(tmp_path / 'df.pkl')
+  path = os.path.join(temp_path, 'df.pkl')
   pdu.save_dataframe(df, path)
 
   npdict = pdu.load_dataframe_as_npdict(path)
@@ -152,10 +155,10 @@ def test_get_columns_index(df):
   assert cols == ['a', 'b', 'c']
 
 
-def test_concat_dataframes(tmp_path):
+def test_concat_dataframes(temp_path):
   """concat_dataframes() concatenates multiple CSV/pickle files."""
-  path1 = str(tmp_path / 'df1.pkl')
-  path2 = str(tmp_path / 'df2.pkl')
+  path1 = os.path.join(temp_path, 'df1.pkl')
+  path2 = os.path.join(temp_path, 'df2.pkl')
   df1 = pd.DataFrame({'a': [1, 2]})
   df2 = pd.DataFrame({'a': [3, 4]})
   pdu.save_dataframe(df1, path1)

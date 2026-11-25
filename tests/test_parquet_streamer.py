@@ -4,6 +4,8 @@ Requires pyarrow. Uses pytest.importorskip("pyarrow") so the file
 is skipped when pyarrow is not installed.
 """
 
+import os
+
 import pytest
 
 pyarrow = pytest.importorskip("pyarrow")
@@ -14,9 +16,9 @@ import pyarrow.parquet as pq
 from py_misc_utils import parquet_streamer as ps
 
 
-def test_parquet_streamer_basic_read(tmp_path):
+def test_parquet_streamer_basic_read(temp_path):
   """ParquetStreamer yields all records from a Parquet file."""
-  path = str(tmp_path / 'data.parquet')
+  path = os.path.join(temp_path, 'data.parquet')
   table = pa.table({'a': [1, 2, 3], 'b': [4.0, 5.0, 6.0]})
   pq.write_table(table, path)
 
@@ -29,9 +31,9 @@ def test_parquet_streamer_basic_read(tmp_path):
   assert records[2] == {'a': 3, 'b': 6.0}
 
 
-def test_parquet_streamer_batch_size(tmp_path):
+def test_parquet_streamer_batch_size(temp_path):
   """ParquetStreamer reads file in batches of the specified size."""
-  path = str(tmp_path / 'batch.parquet')
+  path = os.path.join(temp_path, 'batch.parquet')
   table = pa.table({'x': list(range(10))})
   pq.write_table(table, path)
 
@@ -42,9 +44,9 @@ def test_parquet_streamer_batch_size(tmp_path):
   assert [r['x'] for r in records] == list(range(10))
 
 
-def test_parquet_streamer_rename_columns(tmp_path):
+def test_parquet_streamer_rename_columns(temp_path):
   """ParquetStreamer renames columns per rename_columns mapping."""
-  path = str(tmp_path / 'rename.parquet')
+  path = os.path.join(temp_path, 'rename.parquet')
   table = pa.table({'old_a': [1, 2], 'old_b': [3.0, 4.0]})
   pq.write_table(table, path)
 
@@ -57,9 +59,9 @@ def test_parquet_streamer_rename_columns(tmp_path):
   assert records[1] == {'old_b': 4.0, 'new_a': 2}
 
 
-def test_parquet_streamer_iter_alias(tmp_path):
+def test_parquet_streamer_iter_alias(temp_path):
   """ParquetStreamer.__iter__() is an alias for generate()."""
-  path = str(tmp_path / 'alias.parquet')
+  path = os.path.join(temp_path, 'alias.parquet')
   table = pa.table({'z': [42]})
   pq.write_table(table, path)
 
@@ -70,9 +72,9 @@ def test_parquet_streamer_iter_alias(tmp_path):
   assert records[0] == {'z': 42}
 
 
-def test_parquet_streamer_empty_file(tmp_path):
+def test_parquet_streamer_empty_file(temp_path):
   """ParquetStreamer on an empty file yields no records."""
-  path = str(tmp_path / 'empty.parquet')
+  path = os.path.join(temp_path, 'empty.parquet')
   table = pa.table({'a': pa.array([], type=pa.int64())})
   pq.write_table(table, path)
 

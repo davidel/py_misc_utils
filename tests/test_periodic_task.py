@@ -108,9 +108,17 @@ def test_exception_logged_not_propagated(sched, caplog):
   time.sleep(0.2)
   task.stop()
   # The scheduler swallows the exception (only logs it): the run counter
-  # reached 1 and the scheduler thread is still alive.
+  # reached 1 and the scheduler keeps accepting/scheduling new events.
   assert cnt[0] == 1
-  assert sched._runner.is_alive()
+  def bump():
+    cnt[0] += 1
+
+  task2 = pt.PeriodicTask('after-error', bump, 0.05, scheduler=sched)
+  task2.start()
+  time.sleep(0.15)
+  task2.stop()
+  # The scheduler survived the error and ran the follow-up task.
+  assert cnt[0] >= 3
 
 
 def test_gc_self_terminates(sched):

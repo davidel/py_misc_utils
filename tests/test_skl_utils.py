@@ -37,13 +37,19 @@ def test_quantizer_fit_then_transform():
   assert np.array_equal(r1, r2)
 
 
-def test_quantizer_attributes():
-  """Quantizer stores nbins, std_k, eps as private attributes."""
+def test_quantizer_transform_bins():
+  """Quantizer bins data into [-nbins, nbins] by fit/transform behavior."""
   q = sku.Quantizer(nbins=5, std_k=3.0, eps=1e-8)
 
-  assert q._nbins == 5
-  assert q._std_k == 3.0
-  assert q._eps == 1e-8
+  X = np.array([[0.0, 100.0], [1.0, 104.0], [2.0, 96.0]])
+  q.fit(X)
+  out = q.transform(X)
+
+  assert out.shape == X.shape
+  # Quantized values are integers within [-nbins, nbins].
+  assert np.all(out >= -5) and np.all(out <= 5)
+  # Round-trip: transform preserves the order of the input values.
+  assert np.array_equal(np.argsort(out[:, 0]), np.argsort(X[:, 0]))
 
 
 def test_parse_transform_known_name():

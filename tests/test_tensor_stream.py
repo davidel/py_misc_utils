@@ -1,6 +1,6 @@
 """Tests for py_misc_utils.tensor_stream.
 
-Writer/Reader round-trips over tmp_path folders, random access via
+Writer/Reader round-trips over temp_path folders, random access via
 Reader.get_slice and StreamArray, per-stream transforms, writer state
 round-trip, and the empty-stream regression (a stream folder holding no
 chunk file must not crash Reader construction).
@@ -17,8 +17,8 @@ from py_misc_utils import tensor_stream as ts
 
 
 @pytest.fixture()
-def stream_path(tmp_path):
-  return str(tmp_path / 'stream')
+def stream_path(temp_path):
+  return os.path.join(temp_path, 'stream')
 
 
 def _mk_writer(path, chunk_size=64):
@@ -106,9 +106,9 @@ def test_state_roundtrip(stream_path):
   assert ts.Reader.is_stream_folder(stream_path) is True
 
 
-def test_reader_missing_folder_raises(tmp_path):
+def test_reader_missing_folder_raises(temp_path):
   with pytest.raises(RuntimeError):
-    ts.Reader(str(tmp_path / 'missing'))
+    ts.Reader(os.path.join(temp_path, 'missing'))
 
 
 def test_get_slice_partial(stream_path):

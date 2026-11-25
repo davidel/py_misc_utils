@@ -1,8 +1,8 @@
 """Tests for py_misc_utils.throttle.
 
 Timing-sensitive values are asserted with lower bounds only, all well above
-the 50 ms floor; rate-limit debt behavior is probed via _wait_time() (a
-white-box value check) instead of wall-clock races.
+the 50 ms floor; rate-limit behavior is exercised through the public
+trigger() API only.
 """
 
 import threading
@@ -13,12 +13,12 @@ from py_misc_utils import throttle as thr
 
 def test_disabled_limit():
   th = thr.Throttle(0)
-  assert th._wait_time() == 0
   th2 = thr.Throttle(-5)
-  assert th2._wait_time() == 0
   t0 = time.time()
   th.trigger()
   th.trigger()
+  th2.trigger()
+  th2.trigger()
   assert time.time() - t0 < 0.05
 
 
@@ -42,24 +42,19 @@ def test_rate_enforced():
 
 
 def test_no_debt_after_full_pause():
+  # After a full pause the next trigger goes through without extra delay.
   th = thr.Throttle(10)
   th.trigger()
-  th.trigger()  # blocked 0.1s
+  th.trigger()  # blocked ~0.1s
   time.sleep(0.15)  # longer than one full period
-  wt = th._wait_time()
-  assert wt <= 0
+  t0 = time.time()
+  th.trigger()
+  assert time.time() - t0 < 0.05
 
 
 def test_trigger_returns_lock():
-  th = thr.Throttle(0)
-  lock = th.trigger()
-  assert lock is th._lock
-  assert lock.acquire(timeout=0.01) is True
-  lock.release()
-
-
-def test_trigger_returns_unheld_lock():
-  # The returned lock is not held by the trigger itself.
+  # trigger() returns a lock usable to serialize triggered events, and the
+  # returned lock is not held by the trigger itself.
   th = thr.Throttle(0)
   lock = th.trigger()
   assert lock.acquire(blocking=False) is True

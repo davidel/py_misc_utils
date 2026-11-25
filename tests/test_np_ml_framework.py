@@ -73,22 +73,24 @@ def test_resolve_preserves_numpy_value():
   assert np.array_equal(args[0], [[1, 2], [3, 4]])
 
 
-def test_check_identifies_torch_tensor():
-  """torch check returns True for torch tensors, False for numpy arrays."""
+def test_resolve_identifies_torch_tensor():
+  """resolve() with only torch tensors selects the torch module."""
   a = torch.tensor([1.0, 2.0])
-  b = np.array([1.0, 2.0])
 
-  assert nf._torch_check(a)
-  assert not nf._torch_check(b)
+  mod, args = nf.resolve(a)
+
+  assert mod.__npml_name == 'torch'
+  assert args[0] is a
 
 
-def test_check_identifies_numpy_array():
-  """numpy check returns True for numpy arrays, False for torch tensors."""
-  a = torch.tensor([1.0, 2.0])
-  b = np.array([1.0, 2.0])
+def test_resolve_picks_numpy_for_numpy_only():
+  """resolve() with only numpy arrays selects the numpy module."""
+  a = np.array([1.0, 2.0])
 
-  assert nf._np_check(b)
-  assert not nf._np_check(a)
+  mod, args = nf.resolve(a)
+
+  assert mod.__npml_name == 'np'
+  assert args[0] is a
 
 
 def test_resolve_numpy_to_torch_conversion():

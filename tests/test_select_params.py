@@ -8,6 +8,7 @@ re-evaluating points, status pickles roundtrip, and the subprocess helpers
 tag/extract scores with the SPSCORE marker.
 """
 
+import os
 import subprocess
 import sys
 
@@ -340,7 +341,7 @@ def test_score_slice_sequential_and_pool_agree():
   assert par == seq
 
 
-def test_fetch_scores_batches_and_saves_status(tmp_path, monkeypatch):
+def test_fetch_scores_batches_and_saves_status(temp_path, monkeypatch):
   """_fetch_scores() evaluates in scores_x_run chunks, saving after each."""
   sel = sp.Selector({'a': [1, 2, 3], 'b': [10, 20]})
   sel.pts = [
@@ -364,7 +365,7 @@ def test_fetch_scores_batches_and_saves_status(tmp_path, monkeypatch):
 
   monkeypatch.setattr(sp.Selector, 'save_status', counting_save)
 
-  status_path = str(tmp_path / 'status.pkl')
+  status_path = os.path.join(temp_path, 'status.pkl')
   sel._fetch_scores(score_fn, n_jobs=1, scores_x_run=2, status_path=status_path)
 
   # 5 points in chunks of 2 -> 3 batches.
@@ -440,7 +441,7 @@ def test_select_top_n_boundary_gain_accepted():
   assert sel.pid_scores == {0: 11.0}
 
 
-def test_call_finds_optimum_on_small_grid(seeded_rng, tmp_path):
+def test_call_finds_optimum_on_small_grid(seeded_rng, temp_path):
   """__call__() explores a tiny grid, finds the optimum and persists state."""
   calls = []
 
@@ -451,7 +452,7 @@ def test_call_finds_optimum_on_small_grid(seeded_rng, tmp_path):
 
   sel = sp.Selector({'a': [1, 2, 3], 'b': [10, 20]})
   sel(score_fn,
-      status_path=str(tmp_path / 'status.pkl'),
+      status_path=os.path.join(temp_path, 'status.pkl'),
       explore_pct=1.0,
       max_blanks_pct=0.5,
       top_n=2,
@@ -484,7 +485,7 @@ def test_call_constant_scores_terminate_via_blanks(seeded_rng):
   assert len(calls) >= 2
 
 
-def test_save_load_status_roundtrip(tmp_path):
+def test_save_load_status_roundtrip(temp_path):
   """save_status()/load_status() restore the full search state."""
   sel = sp.Selector({'a': [1, 2, 3], 'b': [10, 20]}, seeds=[{'a': 2, 'b': 20}])
   sel.pts.extend(sel._randgen(2))
@@ -496,7 +497,7 @@ def test_save_load_status_roundtrip(tmp_path):
   sel.blanks, sel.cpid, sel.processed_scores = 2, 3, 1
   sel.current_scores = [3.5]
 
-  path = str(tmp_path / 'status.pkl')
+  path = os.path.join(temp_path, 'status.pkl')
   sel.save_status(path)
   loaded = sp.Selector.load_status(path)
 

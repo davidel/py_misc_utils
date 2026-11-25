@@ -5,6 +5,7 @@ Verifies Daemon alias resolves and start/stop/control methods exist.
 """
 
 import os
+import tempfile
 
 from py_misc_utils import daemon_process as dp
 
@@ -27,6 +28,6 @@ def test_daemon_posix_has_pid_methods():
 
 
 def test_pids_dir_uses_temp():
-  """_get_pids_dir returns a temp-derived directory."""
-  d = dp._get_pids_dir()
-  assert os.path.isdir(d)
+  """Daemon PID files live under the system temp dir."""
+  pidsdir = os.path.join(tempfile.gettempdir(), '.pids')
+  assert os.path.isdir(pidsdir)

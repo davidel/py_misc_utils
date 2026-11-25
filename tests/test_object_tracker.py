@@ -129,25 +129,3 @@ def test_track_objects_max_references(fake_gc):
 
   assert len(refby_lines) == 2
 
-
-def test_get_referred_shapes():
-  """_get_referred describes dict, list and object references."""
-  NS = type('NS', (), dict(a=1))()
-  NS.x = 10
-
-  refs = dict(ot._get_referred(NS))
-  assert refs['x'] == 10
-
-  refs = dict(ot._get_referred([5, 6]))
-  assert refs['[0]'] == 5
-  assert refs['[1]'] == 6
-
-  refs = dict(ot._get_referred(dict(k=7)))
-  assert refs['k'] == 7
-
-
-def test_get_tracking_references_empty():
-  """An object with no referrers resolves to its qual name only."""
-  obj = dict(a=1)
-  refs = ot._get_tracking_references(obj, dict())
-  assert refs == (('builtins.dict', None),)

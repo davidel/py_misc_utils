@@ -8,6 +8,7 @@ a generic Exception for unpicklable held exceptions), and enum_ready()
 enumerates stored result files.
 """
 
+import os
 import pickle
 
 import pytest
@@ -29,7 +30,7 @@ def test_work_path_joins_folder_and_hash():
   assert pwr.work_path('/tmp/res', 'wid') == '/tmp/res/' + pwr.work_hash('wid')
 
 
-def test_write_and_load_roundtrip(tmp_path):
+def test_write_and_load_roundtrip(temp_path):
   """write_result()/load_work() store and return the exact payload.
 
   Report-only finding: load_work(path=, workid=) resolves the file as
@@ -37,19 +38,19 @@ def test_write_and_load_roundtrip(tmp_path):
   to the literal path it is given, so the two call forms only pair up
   when writers go through work_path() themselves.
   """
-  wpath = pwr.work_path(str(tmp_path), 'a.result')
+  wpath = pwr.work_path(temp_path, 'a.result')
 
   with pwr.write_result(wpath) as fd:
     fd.write(b'payload-bytes')
 
   assert pwr.load_work(wpath) == b'payload-bytes'
-  assert pwr.load_work(path=str(tmp_path), workid='a.result') == \
+  assert pwr.load_work(path=temp_path, workid='a.result') == \
     b'payload-bytes'
 
 
-def test_get_work_returns_payload(tmp_path):
+def test_get_work_returns_payload(temp_path):
   """get_work() returns plain payloads unchanged."""
-  wpath = str(tmp_path / 'b.result')
+  wpath = os.path.join(temp_path, 'b.result')
 
   with pwr.write_result(wpath) as fd:
     fd.write(pickle.dumps({'v': 42}))
@@ -57,9 +58,9 @@ def test_get_work_returns_payload(tmp_path):
   assert pickle.loads(pwr.get_work(wpath)) == {'v': 42}
 
 
-def test_error_payload_is_detected_and_raises(tmp_path):
+def test_error_payload_is_detected_and_raises(temp_path):
   """get_work() re-raises the WorkException held by an error payload."""
-  wpath = str(tmp_path / 'c.result')
+  wpath = os.path.join(temp_path, 'c.result')
 
   pwr.write_error(wpath, ValueError('bad work'), extra='meta')
 
@@ -153,18 +154,18 @@ def test_holder_roundtrip_preserves_exact_type():
     wex2.do_raise()
 
 
-def test_enum_ready_lists_result_files(tmp_path):
+def test_enum_ready_lists_result_files(temp_path):
   """enum_ready() yields (name, path) for every stored result."""
   for tag in ('w1', 'w2'):
-    with pwr.write_result(str(tmp_path / tag)) as fd:
+    with pwr.write_result(os.path.join(temp_path, tag)) as fd:
       fd.write(b'x')
 
-  names = sorted(name for name, _path in pwr.enum_ready(str(tmp_path)))
+  names = sorted(name for name, _path in pwr.enum_ready(temp_path))
 
   assert names == ['w1', 'w2']
 
 
-def test_get_work_missing_file_raises_oserror(tmp_path):
+def test_get_work_missing_file_raises_oserror(temp_path):
   """load_work() resolves path/workid when wpath is omitted."""
   with pytest.raises(OSError):
-    pwr.load_work(path=str(tmp_path), workid='nope')
+    pwr.load_work(path=temp_path, workid='nope')

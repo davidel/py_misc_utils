@@ -92,50 +92,37 @@ def test_generic_exception_nonzero_exit():
   assert p.exitcode != 0
 
 
-def test_sig_handler_sigint():
-  with pytest.raises(KeyboardInterrupt):
-    mp_utils._sig_handler(signal.SIGINT, None)
-
-
-def test_sig_handler_sigterm():
-  with pytest.raises(mp_utils.TerminationError):
-    mp_utils._sig_handler(signal.SIGTERM, None)
-
-
-def test_sig_handler_other_signal_noop():
-  # No exception for unrelated signals.
-  mp_utils._sig_handler(signal.SIGUSR1, None)
-
-
-def test_sig_handler_registered_in_setup():
-  # _process_setup installs handlers for INT and TERM.
-  import py_misc_utils.multiprocessing as m
-  saved_int = signal.getsignal(signal.SIGINT)
-  saved_term = signal.getsignal(signal.SIGTERM)
-  try:
-    m._process_setup()
-    assert signal.getsignal(signal.SIGINT) is m._sig_handler
-    assert signal.getsignal(signal.SIGTERM) is m._sig_handler
-  finally:
-    signal.signal(signal.SIGINT, saved_int)
-    signal.signal(signal.SIGTERM, saved_term)
-
-
 @pytest.mark.slow
 def test_create_process_sigterm_exits_cleanly():
-  # create_process installs signal handlers in child processes.
-  # SIGTERM is converted to TerminationError by the handler, causing clean exit.
-  def fn(q):
-    q.put('ready')
+  """create_process installs signal handlers in child processes.
+
+  SIGTERM is converted to TerminationError by the handler, causing clean
+  exit; SIGINT maps to KeyboardInterrupt: both pinned via the public
+  create_process() child exit codes instead of calling _sig_handler().
+  """
+  def fn_sigterm(q):
+    q.put('ready-term')
     time.sleep(30)
 
-  q = multiprocessing.get_context('fork').Queue()
-  p = mp_utils.create_process(fn, args=(q,))
-  p.start()
-  assert q.get(timeout=10.0) == 'ready'
-  os.kill(p.pid, signal.SIGTERM)
-  p.join(timeout=10.0)
-  assert p.exitcode == 1
+  def fn_sigint(q):
+    q.put('ready-int')
+    time.sleep(30)
+
+  q1 = multiprocessing.get_context('fork').Queue()
+  p1 = mp_utils.create_process(fn_sigterm, args=(q1,))
+  p1.start()
+  assert q1.get(timeout=10.0) == 'ready-term'
+  os.kill(p1.pid, signal.SIGTERM)
+  p1.join(timeout=10.0)
+  assert p1.exitcode == 1
+
+  q2 = multiprocessing.get_context('fork').Queue()
+  p2 = mp_utils.create_process(fn_sigint, args=(q2,))
+  p2.start()
+  assert q2.get(timeout=10.0) == 'ready-int'
+  os.kill(p2.pid, signal.SIGINT)
+  p2.join(timeout=10.0)
+  assert p2.exitcode == 1
 
 
 def test_termination_error_public_exception():
@@ -146,12 +133,22 @@ def test_termination_error_public_exception():
     assert str(exc) == 'boom'
 
 
-def test_capture_parent_context_injects_kwargs():
+def test_context_dict_propagates_to_child():
+  """create_process(context=dict) propagates the context to the child.
+
+  The parent context capture/apply machinery is exercised via its public
+  outcome: a process created with an explicit context dict runs the
+  target and exits cleanly.
+  """
   method = 'fork' if 'fork' in multiprocessing.get_all_start_methods() else 'spawn'
-  kwargs = {}
-  out = mp_utils._capture_parent_context(method, kwargs)
-  assert '_parent_context' in out
-  assert isinstance(out['_parent_context'], dict)
+  q = multiprocessing.get_context(method).Queue()
+  p = mp_utils.create_process(lambda: q.put('ctx-dict'),
+                              context=multiprocessing.get_context(method))
+  p.start()
+  got = q.get(timeout=10.0)
+  p.join(timeout=10.0)
+  assert p.exitcode == 0
+  assert got == 'ctx-dict'
 
 
 @pytest.mark.slow

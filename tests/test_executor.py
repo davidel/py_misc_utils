@@ -16,13 +16,11 @@ import py_misc_utils.executor as xe
 
 
 def _shutdown(ex, timeout=5.0):
-  """Stop an executor and wait for its workers to exit."""
+  """Stop an executor and wait for it to become idle."""
   ex.shutdown()
-  deadline = time.time() + timeout
-  while ex._workers and time.time() < deadline:
-    time.sleep(0.01)
-
-  assert not ex._workers
+  # After shutdown() all pending work is drained: wait_for_idle() returns
+  # instead of blocking forever.
+  assert ex.wait_for_idle(timeout=timeout) is True
 
 
 def test_task_delivers_result_through_aresult():
@@ -48,11 +46,14 @@ def test_task_captures_exception_into_aresult():
 
   t = xe.Task(boom_fn, aresult=aresult)
 
-  # __call__ itself never raises: the wrapper is stored on the aresult.
+  # __call__ itself never raises: the exception is captured and re-raised
+  # by wait() (the original exception instance).
   assert t() is None
-  assert isinstance(aresult._result, xe._ExceptionWrapper)
-  assert aresult._result.exception is boom
-  # wait() re-raises the original exception.
+  with pytest.raises(RuntimeError) as info:
+    aresult.wait()
+
+  assert info.value is boom
+  # The result stays faulted: a second wait() re-raises again.
   with pytest.raises(RuntimeError):
     aresult.wait()
 

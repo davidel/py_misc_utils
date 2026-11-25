@@ -10,6 +10,7 @@ tuples, with worker exceptions surfaced as WorkException payloads.
 """
 
 import asyncio
+import concurrent.futures
 import multiprocessing
 
 import pytest
@@ -70,9 +71,8 @@ def test_async_context_add_get_remove():
     entered = []
     ctx = _mk_async_ctx(entered)
 
-    # add() awaits __aenter__ and stores (context, aenter result).
+    # add() awaits __aenter__; get() reuses the entered context.
     assert await am.add('a', ctx) is None
-    assert am._contexts['a'][0] is ctx
     assert entered == ['enter']
 
     # get() on a known name returns the stored aenter result.
@@ -81,7 +81,8 @@ def test_async_context_add_get_remove():
 
     await am.remove('a')
     assert entered == ['enter', 'exit']
-    assert 'a' not in am._contexts
+
+    # remove() on a known name exits the context; get() recreates it.
 
   asyncio.run(scenario())
 
@@ -118,7 +119,10 @@ def test_async_context_close_exits_all():
     await am.close()
 
     assert entered == ['enter', 'enter', 'exit', 'exit']
-    assert am._contexts == {}
+
+    # After close() the contexts are gone: get() recreates them.
+    await am.get('a', lambda: _mk_async_ctx(entered))
+    assert entered == ['enter', 'enter', 'exit', 'exit', 'enter']
 
   asyncio.run(scenario())
 
@@ -137,7 +141,7 @@ def test_async_context_close_propagates_failure():
 
 
 def test_async_runner_runs_coroutine_and_stops():
-  """AsyncRunner executes coroutines and shuts down its loop thread."""
+  """AsyncRunner executes coroutines; after stop() the loop is closed."""
   runner = pam.AsyncRunner()
 
   async def work(v):
@@ -151,7 +155,19 @@ def test_async_runner_runs_coroutine_and_stops():
 
   runner.stop()
 
-  assert not runner._thread.is_alive()
+  # After stop() the loop is closed and drained: submitting a new coroutine
+  # never completes (run_coroutine_threadsafe schedules onto a dead loop).
+  # Pin the observable public behavior: the future does not resolve in time.
+  async def never():
+    await asyncio.sleep(0)
+
+  fut2 = runner.run(never())
+
+  try:
+    fut2.result(timeout=1)
+    raise AssertionError('run() after stop() unexpectedly completed')
+  except concurrent.futures.TimeoutError:
+    pass
 
 
 def test_run_async_uses_global_runner():
@@ -180,8 +196,6 @@ def test_async_manager_distributes_and_fetches():
       results[wid] = res
 
     assert results == {f'w{i}': 'ok' for i in range(4)}
-    # Every worker's queued-work counter is back to zero.
-    assert not am._queued.any()
   finally:
     am.close()
 

@@ -127,10 +127,10 @@ def test_safe_rmtree(tmp_path):
   fsu.safe_rmtree(tree, ignore_errors=True)
 
 
-def test_stat_none_on_error(tmp_path):
+def test_stat_none_on_error(temp_path):
   """stat() returns None for missing paths."""
-  assert fsu.stat(os.path.join(tmp_path, 'nope')) is None
-  assert fsu.stat(str(tmp_path)) is not None
+  assert fsu.stat(os.path.join(temp_path, 'nope')) is None
+  assert fsu.stat(temp_path) is not None
 
 
 def test_path_split():
@@ -148,11 +148,15 @@ def test_drop_ext():
   assert fsu.drop_ext('noext', '.txt') == 'noext'
 
 
-def test_normpath(tmp_path, monkeypatch):
+def test_normpath(temp_path, monkeypatch):
   """normpath expands user/vars and makes the path absolute."""
   monkeypatch.setenv('BATCHB', 'subdir')
-  assert fsu.normpath('$BATCHB/x') == os.path.join(tmp_path, 'subdir', 'x') \
-      if os.getcwd() == str(tmp_path) else fsu.normpath('$BATCHB/x').endswith('subdir/x')
+  npath = fsu.normpath('$BATCHB/x')
+
+  assert os.path.isabs(npath)
+  assert npath.endswith(os.path.join('subdir', 'x'))
+  if os.getcwd() == temp_path:
+    assert npath == os.path.join(temp_path, 'subdir', 'x')
 
 
 def test_subst_path(tmp_path):
@@ -302,22 +306,22 @@ def test_atomic_write_create_parents(tmp_path):
     assert f.read() == b'nested'
 
 
-def test_cwd_context(tmp_path):
+def test_cwd_context(temp_path):
   """cwd() switches the working directory and restores it."""
   original = os.getcwd()
 
-  with fsu.cwd(str(tmp_path)) as new_cwd:
-    assert new_cwd == str(tmp_path)
-    assert os.getcwd() == str(tmp_path)
+  with fsu.cwd(temp_path) as new_cwd:
+    assert new_cwd == temp_path
+    assert os.getcwd() == temp_path
 
   assert os.getcwd() == original
 
 
-def test_cwd_restores_on_error(tmp_path):
+def test_cwd_restores_on_error(temp_path):
   """cwd() restores the original directory even when the body raises."""
   original = os.getcwd()
 
-  with pytest.raises(RuntimeError), fsu.cwd(str(tmp_path)):
+  with pytest.raises(RuntimeError), fsu.cwd(temp_path):
     raise RuntimeError('boom')
 
   assert os.getcwd() == original

@@ -16,6 +16,7 @@ for local files (reported as a finding, not pinned here).
 """
 
 import os
+import tempfile
 from types import SimpleNamespace
 
 import pytest
@@ -76,15 +77,19 @@ def test_open_requires_mode_keyword():
     fd.close()
 
 
-def test_tempfile_discard_on_close(tmp_path):
+def test_tempfile_discard_on_close(temp_path):
   """A TempFile closed without replace() is removed."""
-  tf = gfs.TempFile(nsdir=str(tmp_path), mode='w+b')
+  before = set(os.listdir(temp_path))
+  tf = gfs.TempFile(nsdir=temp_path, mode='w+b')
 
   with tf as fd:
     fd.write(b'temporary')
-    tpath = tf._path
+    tname = tf.name
 
-  assert not os.path.exists(tpath)
+  # The temp file existed while open and is removed after close.
+  assert tname not in before
+  assert tname.startswith(temp_path)
+  assert not os.path.exists(tname)
 
 
 def test_tempfile_replace(tmp_path):
@@ -105,19 +110,22 @@ def test_tempfile_replace_nonlocal_path_ignored(tmp_path):
 
   with tf as fd:
     fd.write(b'local')
-    tpath = tf._path
+    tname = tf.name
 
-  assert tf._fs.ID == 'file'
-  assert not tpath.startswith('s3://')
-  assert not os.path.exists(tpath)
+  # Temp file is created in a local temp dir, not at the s3:// URL.
+  assert tname.startswith(tempfile.gettempdir())
+  assert not tname.startswith('s3://')
+
+  # Temp file is removed after close.
+  assert not os.path.exists(tname)
 
 
-def test_tempfile_replace_to_url(tmp_path):
+def test_tempfile_replace_to_url(temp_path):
   """replace() moves a local temp file to a gfs URL destination."""
-  dst = os.path.join(tmp_path, 'dstdir')
+  dst = os.path.join(temp_path, 'dstdir')
   os.makedirs(dst)
 
-  tf = gfs.TempFile(nsdir=str(tmp_path), mode='w+b')
+  tf = gfs.TempFile(nsdir=temp_path, mode='w+b')
   with tf as fd:
     fd.write(b'url-target')
     tf.replace(os.path.join(dst, 'out.bin'))
@@ -127,9 +135,9 @@ def test_tempfile_replace_to_url(tmp_path):
   assert not hasattr(tf, 'closed')
 
 
-def test_tempfile_mirrors_fd_attrs(tmp_path):
+def test_tempfile_mirrors_fd_attrs(temp_path):
   """open() mirrors the fd public attributes onto the TempFile."""
-  tf = gfs.TempFile(nsdir=str(tmp_path), mode='w+b')
+  tf = gfs.TempFile(nsdir=temp_path, mode='w+b')
 
   with tf:
     assert tf.closed is False
@@ -253,29 +261,28 @@ def test_link_across_fs_rejected(tmp_path):
     gfs.link(src, 's3://bucket/key')
 
 
-def test_enumerate_files(tmp_path):
+def test_enumerate_files(temp_path):
   """enumerate_files yields names, or (name, DirEntry) with return_stats."""
-  fsu.write_content(os.path.join(tmp_path, 'a.txt'), b'a')
-  os.makedirs(os.path.join(tmp_path, 'sub'))
-  fsu.write_content(os.path.join(tmp_path, 'sub', 'b.txt'), b'b')
+  fsu.write_content(os.path.join(temp_path, 'a.txt'), b'a')
+  os.makedirs(os.path.join(temp_path, 'sub'))
+  fsu.write_content(os.path.join(temp_path, 'sub', 'b.txt'), b'b')
 
-  names = list(gfs.enumerate_files(str(tmp_path)))
+  names = list(gfs.enumerate_files(temp_path))
 
   assert sorted(names) == ['a.txt', 'sub']
 
-  pairs = dict(gfs.enumerate_files(str(tmp_path), return_stats=True))
+  pairs = dict(gfs.enumerate_files(temp_path, return_stats=True))
 
   assert set(pairs) == {'a.txt', 'sub'}
   assert pairs['a.txt'].st_size == 1
 
 
-def test_enumerate_files_regex(tmp_path):
+def test_enumerate_files_regex(temp_path):
   """The matcher argument filters entries (regex match)."""
-  fsu.write_content(os.path.join(tmp_path, 'keep.txt'), b'k')
-  fsu.write_content(os.path.join(tmp_path, 'drop.log'), b'd')
+  fsu.write_content(os.path.join(temp_path, 'keep.txt'), b'k')
+  fsu.write_content(os.path.join(temp_path, 'drop.log'), b'd')
 
-  entries = list(
-      gfs.enumerate_files(str(tmp_path), matcher=gfs.RegexMatcher(r'.*\.txt')))
+  entries = list(gfs.enumerate_files(temp_path, matcher=gfs.RegexMatcher(r'.*\.txt')))
 
   assert entries == ['keep.txt']
 
@@ -296,13 +303,13 @@ def test_is_same_fs(tmp_path):
                             SimpleNamespace(path='gs://b'))
 
 
-def test_is_local_path_and_helpers(tmp_path):
+def test_is_local_path_and_helpers(temp_path):
   """is_local_path/find_mount classify local vs remote paths."""
-  assert gfs.is_local_path(str(tmp_path))
+  assert gfs.is_local_path(temp_path)
   assert gfs.is_local_path('file:///tmp/x')
   assert not gfs.is_local_path('s3://bucket/key')
 
-  assert gfs.find_mount(str(tmp_path)) == fsu.localfs_mount(str(tmp_path))
+  assert gfs.find_mount(temp_path) == fsu.localfs_mount(temp_path)
   assert gfs.find_mount('s3://bucket/key') is None
 
 
@@ -345,12 +352,12 @@ def test_registry_and_get_proto_fs():
     gfs.get_proto_fs('no-such-proto-xyz')
 
 
-def test_cache_dir_roundtrip(tmp_path):
+def test_cache_dir_roundtrip(temp_path):
   """set_cache_dir/cache_dir round-trips the cache location."""
   old = gfs.cache_dir()
 
-  gfs.set_cache_dir(str(tmp_path))
+  gfs.set_cache_dir(temp_path)
   try:
-    assert gfs.cache_dir() == str(tmp_path)
+    assert gfs.cache_dir() == temp_path
   finally:
     gfs.set_cache_dir(old)

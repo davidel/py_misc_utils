@@ -31,16 +31,15 @@ def s3_env(monkeypatch):
 
 
 @pytest.fixture
-def fs(tmp_path):
-  fs = sf.S3Fs(cache_dir=str(tmp_path / 'cache'))
-  fs._cache_iface = mock.MagicMock()
-  return fs
+def fs(temp_path):
+  cache_iface = mock.MagicMock()
+  cache_iface.open.return_value.__enter__.return_value.read.return_value = b's3 data'
+  return sf.S3Fs(cache_dir=os.path.join(temp_path, 'cache'), cache_iface=cache_iface)
 
 
-def test_s3_open_read_write(fs, s3_env, tmp_path):
+def test_s3_open_read_write(fs, s3_env, temp_path):
   s3_env.put_object(Bucket='test-bucket', Key='s3.txt', Body=b's3 data')
   url = 's3://test-bucket/s3.txt'
-  fs._cache_iface.open.return_value.__enter__.return_value.read.return_value = b's3 data'
   with fs.open(url, mode='rb') as f:
     assert f.read() == b's3 data'
 
@@ -76,15 +75,20 @@ def test_s3_remove(fs, s3_env):
     s3_env.get_object(Bucket='test-bucket', Key='rm.txt')
 
 
-def test_s3_copy(fs, s3_env):
+def test_s3_copy_via_rename(fs, s3_env):
+  """rename() performs a server-side copy (copy_object) then deletes src.
+
+  Public copyfile() is unusable (FsBase.copyfile() -> get_file() passes
+  Range=None which botocore rejects - documented library bug), so the
+  server-side copy machinery is exercised through the public rename().
+  """
   s3_env.put_object(Bucket='test-bucket', Key='src.txt', Body=b'copy s3')
-  # fs.copyfile() inherits FsBase.copyfile() which calls get_file() with
-  # Range=None that botocore rejects; use fs._copy() which calls
-  # server-side copy_object instead.
-  fs._copy('s3://test-bucket/src.txt', 's3://test-bucket/dst.txt')
+  fs.rename('s3://test-bucket/src.txt', 's3://test-bucket/dst.txt')
   # Verify via moto client directly.
   resp = s3_env.get_object(Bucket='test-bucket', Key='dst.txt')
   assert resp['Body'].read() == b'copy s3'
+  with pytest.raises(botocore.exceptions.ClientError):
+    s3_env.get_object(Bucket='test-bucket', Key='src.txt')
 
 
 def test_s3_rename(s3_env, fs):
@@ -145,11 +149,11 @@ def test_s3_put_file_stream(s3_env, fs):
   assert resp['Body'].read() == b'streamed'
 
 
-def test_s3_as_local(s3_env, fs, tmp_path):
+def test_s3_as_local(s3_env, fs, temp_path):
   """as_local materializes the object through the cache interface."""
   s3_env.put_object(Bucket='test-bucket', Key='loc.bin', Body=b'local-copy')
 
-  local_path = os.path.join(tmp_path, 'out.bin')
+  local_path = os.path.join(temp_path, 'out.bin')
   fs._cache_iface.as_local.return_value = local_path
 
   got = fs.as_local('s3://test-bucket/loc.bin')

@@ -58,16 +58,17 @@ def test_cache_release_returns_to_pool():
 
 def test_cache_ttl_expiry():
   handler = _CountingHandler()
-  cache = oc.Cache()
+  cache = oc.Cache(clean_timeo=0.01)
   fw = cache.get('key1', handler)
   del fw
   gc.collect()
-  # Object returned to pool with current timestamp.
-  time.sleep(0.05)  # past max_age of 0.02s
-  cache._try_cleanup()  # expire pooled entry (get() does not check age)
+  # Object returned to pool with current timestamp; the background
+  # cleaner expires it after max_age.
+  time.sleep(0.15)  # past clean_timeo + max_age of 0.02s
   cache.get('key1', handler)
   assert handler.created == 2
   assert handler.closed == 1
+  cache.shutdown()
 
 
 def test_global_cache_singleton():

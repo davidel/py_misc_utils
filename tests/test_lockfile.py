@@ -5,10 +5,14 @@ lock file with YAML metadata (pid, cmdline, time), a lock held by a live
 process blocks other acquirers until timeout, release() removes the lock
 only for its owner, a dead holder's lock is forcefully overridden after
 the check timeout, and the context manager acquires on enter and releases
-on exit. The locks directory is redirected to a temporary folder so the
-tests never touch the global lock namespace.
+on exit.
+
+The lock directory is a per-process temporary folder owned by the library
+(tempdir.fastfs_dir(name='.locks')), so the lock files are located through
+the public filesystem helpers rather than by patching module state.
 """
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -19,29 +23,25 @@ import pytest
 import yaml
 
 import py_misc_utils.lockfile as plock
+import py_misc_utils.tempdir as tmpd
 from py_misc_utils import fs_utils as fsu
 
 
 @pytest.fixture
-def lockdir(tmp_path, monkeypatch):
-  """Redirect the module lock directory into a temporary folder."""
-  path = str(tmp_path / 'locks')
-  os.makedirs(path)
-  monkeypatch.setattr(plock, '_LOCKDIR', path)
-
-  return path
+def lockdir():
+  """The library lock directory, as created by the module itself."""
+  return tmpd.fastfs_dir(name='.locks')
 
 
 def _lockpath(lockdir, name):
-  import hashlib
   return os.path.join(lockdir, hashlib.sha1(name.encode()).hexdigest())
 
 
-def _write_meta(lpath, pid, mtime=None):
-  """Write lock metadata in the exact on-disk format _mkmeta() produces."""
+def _write_meta(lpath, pid, mtime=None, cmdline=None):
+  """Write lock metadata in the on-disk format the library produces."""
   tag = {
       'pid': pid,
-      'cmdline': plock._CMDLINE,
+      'cmdline': cmdline if cmdline is not None else list(psutil.Process().cmdline()),
       'time': mtime if mtime is not None else time.time(),
   }
   fsu.write_content(lpath, yaml.dump(tag, default_flow_style=False).encode())
@@ -56,11 +56,13 @@ def test_acquire_writes_parseable_meta(lockdir):
   lpath = _lockpath(lockdir, 'meta-lock')
   assert os.path.exists(lpath)
 
-  meta = plock.LockFile('meta-lock')._locking_meta()
+  # The lock file holds YAML metadata with pid/cmdline/time: verify via
+  # the on-disk format through the public filesystem helpers.
+  tag = yaml.safe_load(fsu.read_content(lpath))
 
-  assert meta.pid == os.getpid()
-  assert meta.cmdline == plock._CMDLINE
-  assert meta.time <= time.time()
+  assert tag['pid'] == os.getpid()
+  assert isinstance(tag['cmdline'], list)
+  assert tag['time'] <= time.time()
 
 
 def test_release_removes_lock_and_allows_reacquire(lockdir):
@@ -105,9 +107,10 @@ def test_context_manager_acquires_and_releases(lockdir):
   """The with-statement form holds the lock for the block duration."""
   name = 'ctx-lock'
 
-  with plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05) as lf:
+  with plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05):
     assert os.path.exists(_lockpath(lockdir, name))
-    assert lf._locking_meta().pid == os.getpid()
+    tag = yaml.safe_load(fsu.read_content(_lockpath(lockdir, name)))
+    assert tag['pid'] == os.getpid()
 
   assert not os.path.exists(_lockpath(lockdir, name))
 
@@ -131,29 +134,27 @@ def test_stale_lock_from_dead_process_is_overridden(lockdir):
   assert lf.acquire(timeout=5)
 
   # The lock file now describes the current process.
-  assert lf._locking_meta().pid == os.getpid()
+  tag = yaml.safe_load(fsu.read_content(lpath))
+  assert tag['pid'] == os.getpid()
 
 
-def test_alive_pid_rejects_dead_and_foreign_cmdline(lockdir):
-  """_alive_pid() is False for dead pids or changed command lines."""
-  lf = plock.LockFile('alive-check')
-  proc = subprocess.Popen([sys.executable, '-c', 'pass'])
-  proc.wait()
+def test_stale_lock_with_foreign_cmdline_is_overridden(lockdir):
+  """A lock whose holder cmdline changed gets forcefully overridden.
 
-  dead_meta = plock.Meta(pid=proc.pid, cmdline=plock._CMDLINE, time=time.time())
+  The metadata is rewritten with a bogus cmdline, so acquire() detects
+  the stale holder and takes the lock over after the check timeout.
+  """
+  name = 'foreign-cmdline-lock'
+  lpath = _lockpath(lockdir, name)
 
-  assert not lf._alive_pid(dead_meta)
+  _write_meta(lpath,
+              pid=os.getpid(),
+              mtime=time.time() - 10,
+              cmdline=['no', 'such', 'cmdline'])
 
-  live_meta = plock.Meta(pid=os.getpid(),
-                         cmdline=['no', 'such', 'cmdline'],
-                         time=time.time())
+  lf = plock.LockFile(name, acquire_timeout=0.01, check_timeout=0.05)
+  assert lf.acquire(timeout=5)
 
-  assert not lf._alive_pid(live_meta)
-
-
-def test_parse_meta_invalid_data_returns_none():
-  """_parse_meta() returns None for empty or unparseable payloads."""
-  lf = plock.LockFile('parse-check')
-
-  assert lf._parse_meta(b'') is None
-  assert lf._parse_meta(b'\x00\x01not-yaml') is None
+  tag = yaml.safe_load(fsu.read_content(lpath))
+  assert tag['pid'] == os.getpid()
+  assert tag['cmdline'] != ['no', 'such', 'cmdline']

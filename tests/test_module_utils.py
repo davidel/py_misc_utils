@@ -9,8 +9,8 @@ modules; clone_module() re-executes a module spec into a fresh module;
 module_file() returns __file__ or None.
 """
 
+import os
 import sys
-
 
 from py_misc_utils import module_utils as mu
 
@@ -21,25 +21,27 @@ def test_split_module_name():
   assert mu.split_module_name('single') == ('', 'single')
 
 
-def test_load_module_from_path(tmp_path):
+def test_load_module_from_path(temp_path):
   """A module can be loaded from a filesystem .py path."""
-  modfile = tmp_path / 'mymod.py'
-  modfile.write_text('VALUE = 42\n')
+  modfile = os.path.join(temp_path, 'mymod.py')
+  with open(modfile, 'w') as fd:
+    fd.write('VALUE = 42\n')
 
-  module = mu.load_module(str(modfile), modname='mymod_test')
+  module = mu.load_module(modfile, modname='mymod_test')
 
   assert module.VALUE == 42
   assert sys.modules.get('mymod_test') is module
 
 
-def test_load_module_install_is_always_true(tmp_path):
+def test_load_module_install_is_always_true(temp_path):
   """Report-only bug: load_module() coerces install with
   'install or True', so install=False still installs the module into
   sys.modules."""
-  modfile = tmp_path / 'plainmod.py'
-  modfile.write_text('X = 1\n')
+  modfile = os.path.join(temp_path, 'plainmod.py')
+  with open(modfile, 'w') as fd:
+    fd.write('X = 1\n')
 
-  module = mu.load_module(str(modfile), modname='plainmod_test', install=False)
+  module = mu.load_module(modfile, modname='plainmod_test', install=False)
 
   assert module.X == 1
   assert sys.modules.get('plainmod_test') is module
@@ -51,12 +53,13 @@ def test_import_module_by_name():
   assert module.dumps({}) == '{}'
 
 
-def test_import_module_by_path(tmp_path):
+def test_import_module_by_path(temp_path):
   """import_module() loads a file path via load_module."""
-  modfile = tmp_path / 'bypath.py'
-  modfile.write_text('MARK = \"p\"\n')
+  modfile = os.path.join(temp_path, 'bypath.py')
+  with open(modfile, 'w') as fd:
+    fd.write('MARK = \"p\"\n')
 
-  module = mu.import_module(str(modfile), modname='bypath_test')
+  module = mu.import_module(modfile, modname='bypath_test')
 
   assert module.MARK == 'p'
 
@@ -87,22 +90,23 @@ def test_clone_module():
   assert second.wrap is not None
 
 
-def test_add_sys_path(tmp_path):
+def test_add_sys_path(temp_path):
   """add_sys_path() appends a new directory to sys.path."""
   before = list(sys.path)
   try:
-    mu.add_sys_path(str(tmp_path))
-    assert str(tmp_path) in sys.path
+    mu.add_sys_path(temp_path)
+    assert temp_path in sys.path
   finally:
     sys.path = before
 
 
-def test_install_and_get_module(tmp_path):
+def test_install_and_get_module(temp_path):
   """install_module() registers a module under the given name."""
-  modfile = tmp_path / 'instmod.py'
-  modfile.write_text('K = 9\n')
+  modfile = os.path.join(temp_path, 'instmod.py')
+  with open(modfile, 'w') as fd:
+    fd.write('K = 9\n')
 
-  module = mu.load_module(str(modfile), install=False)
+  module = mu.load_module(modfile, install=False)
   mu.install_module('instmod_test', module)
 
   assert sys.modules['instmod_test'] is module

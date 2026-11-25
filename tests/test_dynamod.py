@@ -22,5 +22,8 @@ def test_create_and_get_module():
 
 def test_module_name_dot_separator():
   """module_name() builds the full importable name."""
-  assert dm.module_name('foo') == f'{dm._MODNAME}.foo'
-  assert dm.module_name('a.b') == f'{dm._MODNAME}.a.b'
+  name_foo = dm.module_name('foo')
+  name_dot = dm.module_name('a.b')
+  assert name_foo.endswith('.foo')
+  assert name_dot.endswith('.a.b')
+  assert name_dot.startswith(name_foo.rsplit('.', 1)[0])

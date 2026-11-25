@@ -11,9 +11,9 @@ import pytest
 from py_misc_utils import url_fetcher as uf
 
 
-def test_fetch_local_file(tmp_path, make_text_file):
+def test_fetch_local_file(temp_path, make_text_file):
   path = make_text_file('in.txt', 'fetch me\n')
-  work = str(tmp_path / 'work')
+  work = os.path.join(temp_path, 'work')
   os.makedirs(work, exist_ok=True)
   f = uf.UrlFetcher(path=work)
   f.start()
@@ -25,9 +25,9 @@ def test_fetch_local_file(tmp_path, make_text_file):
     f.shutdown()
 
 
-def test_fetch_http_file(http_server, http_routes, tmp_path):
+def test_fetch_http_file(http_server, http_routes, temp_path):
   http_routes.add_route('/data.bin', body=b'http payload')
-  work = str(tmp_path / 'work')
+  work = os.path.join(temp_path, 'work')
   os.makedirs(work, exist_ok=True)
   f = uf.UrlFetcher(path=work)
   f.start()
@@ -40,11 +40,11 @@ def test_fetch_http_file(http_server, http_routes, tmp_path):
     f.shutdown()
 
 
-def test_fetch_multiple_parallel(http_server, http_routes, tmp_path):
+def test_fetch_multiple_parallel(http_server, http_routes, temp_path):
   http_routes.add_route('/one', body=b'one\n')
   http_routes.add_route('/two', body=b'two\n')
   http_routes.add_route('/three', body=b'three\n')
-  work = str(tmp_path / 'work')
+  work = os.path.join(temp_path, 'work')
   os.makedirs(work, exist_ok=True)
   f = uf.UrlFetcher(path=work, num_workers=3)
   f.start()
@@ -62,11 +62,11 @@ def test_fetch_multiple_parallel(http_server, http_routes, tmp_path):
     f.shutdown()
 
 
-def test_fetch_max_results(http_server, http_routes, tmp_path):
+def test_fetch_max_results(http_server, http_routes, temp_path):
   http_routes.add_route('/a', body=b'a\n')
   http_routes.add_route('/b', body=b'b\n')
   http_routes.add_route('/c', body=b'c\n')
-  work = str(tmp_path / 'work')
+  work = os.path.join(temp_path, 'work')
   os.makedirs(work, exist_ok=True)
   f = uf.UrlFetcher(path=work, num_workers=2)
   f.start()
@@ -79,22 +79,22 @@ def test_fetch_max_results(http_server, http_routes, tmp_path):
     f.shutdown()
 
 
-def test_fetch_nonexistent_local_file_raises(tmp_path):
-  work = str(tmp_path / 'work')
+def test_fetch_nonexistent_local_file_raises(temp_path):
+  work = os.path.join(temp_path, 'work')
   os.makedirs(work, exist_ok=True)
   f = uf.UrlFetcher(path=work)
   f.start()
   try:
-    f.enqueue(str(tmp_path / 'missing.txt'))
+    f.enqueue(os.path.join(temp_path, 'missing.txt'))
     with pytest.raises(FileNotFoundError):
-      f.wait(str(tmp_path / 'missing.txt'))
+      f.wait(os.path.join(temp_path, 'missing.txt'))
   finally:
     f.shutdown()
 
 
-def test_context_manager(tmp_path, make_text_file):
+def test_context_manager(temp_path, make_text_file):
   path = make_text_file('ctx.txt', 'ctx\n')
-  work = str(tmp_path / 'work')
+  work = os.path.join(temp_path, 'work')
   os.makedirs(work, exist_ok=True)
   with uf.UrlFetcher(path=work) as f:
     f.enqueue(path)

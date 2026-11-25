@@ -9,6 +9,7 @@ instance class mutates to module. A missing module spec raises
 AttributeError on creation (report-only: no guard on spec=None).
 """
 
+import os
 import sys
 
 import pytest
@@ -16,13 +17,14 @@ import pytest
 from py_misc_utils import lazy_import as li
 
 
-def test_lazy_import_defers_execution(tmp_path, monkeypatch):
+def test_lazy_import_defers_execution(temp_path, monkeypatch):
   """The module body does not run until an attribute is accessed."""
-  modfile = tmp_path / 'lazyslow'
-  modfile.mkdir()
-  (modfile / '__init__.py').write_text('FLAG = True\n')
+  modfile = os.path.join(temp_path, 'lazyslow')
+  os.makedirs(modfile)
+  with open(os.path.join(modfile, '__init__.py'), 'w') as fd:
+    fd.write('FLAG = True\n')
 
-  monkeypatch.syspath_prepend(str(tmp_path))
+  monkeypatch.syspath_prepend(temp_path)
   monkeypatch.delitem(sys.modules, 'lazyslow', raising=False)
 
   module = li.lazy_import('lazyslow')

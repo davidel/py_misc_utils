@@ -3,7 +3,8 @@
 This conftest provides the infrastructure used across all the test
 modules:
 
-- Temporary working directory and file-content factories (plain text,
+- Temporary working directories (as a Path, and as a str for the library
+  APIs that still expect one) and file-content factories (plain text,
   gzip blobs, pickled objects).
 - A session-scoped local HTTP server on an ephemeral port, with a
   dynamically configurable route table, so that network-dependent tests
@@ -131,6 +132,18 @@ def http_routes(http_server):
     yield http_server
   finally:
     http_server.clear_routes()
+
+
+@pytest.fixture
+def temp_path(tmp_path):
+  """A temporary directory path, as a str.
+
+  Several library entry points (gfs, lockfile, ...) call str-only methods
+  such as re.match() or .encode() on their path arguments, so they reject
+  pathlib.Path. Tests needing those APIs request this fixture instead of
+  wrapping tmp_path in str() at every call site.
+  """
+  return str(tmp_path)
 
 
 @pytest.fixture

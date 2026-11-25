@@ -79,12 +79,23 @@ def test_unwrap_nested_roundtrip():
   assert obj['items'][1] == 2
 
 
-def test_unwrap_unloadable_kept():
-  """A PickleWrap whose data cannot be unpickled is kept as-is."""
-  wrap = pw.PickleWrap(Local(3))
-  wrap._data = b'not-pickle-data'
+class _BadPickle:
+  """Pickle module whose loads() always raises."""
 
-  res = pw.unwrap(wrap)
+  @staticmethod
+  def dumps(obj):
+    return b'some-data'
+
+  @staticmethod
+  def loads(data):
+    raise ValueError('cannot load')
+
+
+def test_unwrap_unloadable_kept():
+  """A PickleWrap whose load() raises is kept as-is by unwrap()."""
+  wrap = pw.PickleWrap(Local(3), pickle_module=_BadPickle)
+
+  res = pw.unwrap(wrap, pickle_module=_BadPickle)
 
   assert res is wrap
   assert isinstance(res, pw.PickleWrap)
