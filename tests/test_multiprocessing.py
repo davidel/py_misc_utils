@@ -4,7 +4,9 @@ All tests marked slow: they spawn real child processes.
 """
 
 import multiprocessing
+import os
 import signal
+import time
 
 import pytest
 
@@ -119,17 +121,27 @@ def test_sig_handler_registered_in_setup():
     signal.signal(signal.SIGTERM, saved_term)
 
 
-# def test_process_cleanup_ignores_signals():
-#   import py_misc_utils.multiprocessing as m
-#   saved_int = signal.getsignal(signal.SIGINT)
-#   saved_term = signal.getsignal(signal.SIGTERM)
-#   try:
-#     m._process_cleanup()
-#     assert signal.getsignal(signal.SIGINT) == signal.SIG_IGN
-#     assert signal.getsignal(signal.SIGTERM) == signal.SIG_IGN
-#   finally:
-#     signal.signal(signal.SIGINT, saved_int)
-#     signal.signal(signal.SIGTERM, saved_term)
+@pytest.mark.slow
+def test_create_process_sigterm_exits_cleanly():
+  # create_process installs signal handlers in child processes.
+  # SIGTERM is converted to TerminationError by the handler, causing clean exit.
+  def fn():
+    time.sleep(30)
+
+  p = mp_utils.create_process(fn)
+  p.start()
+  time.sleep(0.2)
+  os.kill(p.pid, signal.SIGTERM)
+  p.join(timeout=10.0)
+  assert p.exitcode == 1
+
+
+def test_termination_error_public_exception():
+  assert issubclass(mp_utils.TerminationError, Exception)
+  try:
+    raise mp_utils.TerminationError('boom')
+  except mp_utils.TerminationError as exc:
+    assert str(exc) == 'boom'
 
 
 def test_capture_parent_context_injects_kwargs():
