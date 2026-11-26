@@ -55,7 +55,8 @@ class FileOverwrite:
     """
     if self._tmpfile is not None:
       try:
-        self._tmpfile.replace(self._path)
+        if exc[0] is None:
+          self._tmpfile.replace(self._path)
       finally:
         self._tmpfile.close()
 

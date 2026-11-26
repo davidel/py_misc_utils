@@ -72,7 +72,7 @@ class _Cleanups:
       cleaner = self._cleaners.pop(cid, None)
 
     if cleaner is not None and run:
-      self._run_cleaner(fn, args, kwargs)
+      self._run_cleaner(cleaner)
 
     return cleaner
 
