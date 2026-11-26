@@ -17,7 +17,8 @@ import subprocess
 
 import numpy as np
 
-from . import alog, gfs
+from . import alog
+from . import gfs
 from . import utils as ut
 
 Point = collections.namedtuple('Point', 'pid, idx')

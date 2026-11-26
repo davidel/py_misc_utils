@@ -13,8 +13,9 @@ import os
 import queue
 import threading
 
-from . import alog, gfs
+from . import alog
 from . import assert_checks as tas
+from . import gfs
 from . import tempdir as tmpd
 from . import utils as ut
 from . import work_results as wres

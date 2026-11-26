@@ -8,10 +8,11 @@ path unchanged and blocks can be read directly from the file.
 import os
 import shutil
 
-from .. import alog, osfd
+from .. import alog
 from .. import cached_file as chf
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
+from .. import osfd
 
 
 class FileReader:

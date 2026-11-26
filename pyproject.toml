@@ -89,5 +89,9 @@ filterwarnings = [
 # low-level modules that deliberately avoid importing alog.
 ignore = ["C408", "LOG015"]
 
+[tool.ruff.lint.isort]
+# Never combine imports on one line (from X import a, b is banned).
+force-single-line = true
+
 [tool.ruff.lint.per-file-ignores]
 "py_misc_utils/debug.py" = ["T100"]

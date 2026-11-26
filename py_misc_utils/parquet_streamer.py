@@ -10,7 +10,8 @@ import contextlib
 
 import pyarrow.parquet as pq
 
-from . import alog, gfs
+from . import alog
+from . import gfs
 from . import url_fetcher as urlf
 from . import utils as ut
 

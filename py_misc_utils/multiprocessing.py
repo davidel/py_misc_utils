@@ -12,7 +12,8 @@ import multiprocessing
 import signal
 import sys
 
-from . import alog, cleanups
+from . import alog
+from . import cleanups
 from . import global_namespace as gns
 
 

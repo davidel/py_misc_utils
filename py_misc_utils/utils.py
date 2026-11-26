@@ -23,12 +23,14 @@ import types
 import numpy as np
 import yaml
 
-from . import alog, gfs, obj
+from . import alog
 from . import assert_checks as tas
 from . import core_utils as cu
 from . import file_overwrite as fow
+from . import gfs
 from . import inspect_utils as iu
 from . import mmap as mm
+from . import obj
 from . import split as sp
 from . import template_replace as tr
 from . import traceback as tb

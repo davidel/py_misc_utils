@@ -14,8 +14,10 @@ import time
 import psutil
 import yaml
 
-from . import alog, obj, osfd
+from . import alog
 from . import fs_utils as fsu
+from . import obj
+from . import osfd
 from . import rnd_utils as rngu
 from . import tempdir as tmpd
 

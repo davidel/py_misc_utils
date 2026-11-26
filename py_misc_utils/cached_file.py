@@ -21,7 +21,7 @@ import time
 
 import yaml
 
-from . import alog, obj, osfd
+from . import alog
 from . import assert_checks as tas
 from . import core_utils as cu
 from . import file_overwrite as fow
@@ -29,6 +29,8 @@ from . import fin_wrap as fw
 from . import fs_utils as fsu
 from . import lockfile as lockf
 from . import no_except as nox
+from . import obj
+from . import osfd
 from . import tempdir as tmpd
 
 _DroppedBlock = collections.namedtuple('DroppedBlock', 'name, sres, cid, offset')

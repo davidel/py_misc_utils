@@ -174,7 +174,7 @@ class Scheduler:
     # Note: Event is a namedtuple - hence a tuple - so a single event must
     # not be treated as a list of events.
     if isinstance(event, (list, tuple)) and not isinstance(event, Event):
-      ids = set([id(e) for e in event])
+      ids = {id(e) for e in event}
       return self._cancel_fn(lambda qe: id(qe) in ids)
 
     return self._cancel_fn(lambda qe: id(qe) == id(event))

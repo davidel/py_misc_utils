@@ -162,7 +162,7 @@ if _DEFAULT_MODULE not in _MODULES:
 
 _MODULES_PRIORITY = _parse_priorities()
 _MODULES_SEQ = tuple(_MODULES[x] for x in sorted(
-    list(_MODULES.keys()), key=lambda m: _MODULES_PRIORITY.get(m, -1), reverse=True))
+    _MODULES.keys(), key=lambda m: _MODULES_PRIORITY.get(m, -1), reverse=True))
 
 
 def _get_module(t):

@@ -18,12 +18,13 @@ import tempfile
 import bs4
 import requests
 
-from .. import alog, osfd
+from .. import alog
 from .. import cached_file as chf
 from .. import context_managers as cm
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import http_utils as hu
+from .. import osfd
 from .. import writeback_file as wbf
 
 

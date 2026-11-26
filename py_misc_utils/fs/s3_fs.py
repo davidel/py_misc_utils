@@ -18,7 +18,7 @@ import urllib.parse as uparse
 
 import boto3
 
-from .. import alog as alog
+from .. import alog
 from .. import assert_checks as tas
 from .. import cached_file as chf
 from .. import context_managers as cm
@@ -26,7 +26,7 @@ from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import iter_file as itf
 from .. import object_cache as objc
-from .. import osfd as osfd
+from .. import osfd
 from .. import utils as ut
 from .. import writeback_file as wbf
 

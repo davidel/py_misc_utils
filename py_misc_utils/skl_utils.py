@@ -161,7 +161,7 @@ class TransformPipeline:
     Returns:
       True if every transformer has a partial_fit method.
     """
-    return all([hasattr(trs, 'partial_fit') for trs in self._transformers])
+    return all(hasattr(trs, 'partial_fit') for trs in self._transformers)
 
   @property
   def supports_fit(self):

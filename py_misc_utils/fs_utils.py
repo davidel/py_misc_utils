@@ -15,7 +15,8 @@ import shutil
 import string
 import tempfile
 
-from . import alog, osfd
+from . import alog
+from . import osfd
 from . import rnd_utils as rngu
 
 
