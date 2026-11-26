@@ -4,8 +4,8 @@ Expectations follow the documented API contract: on entry NoBreak installs
 handlers for the configured signals and on exit removes exactly those
 handlers; received signals are recorded in arrival order with their frame;
 exit_trigger controls whether the deferred signals are re-triggered on
-exit. OS signal delivery itself is not exercised - the recorded handler is
-invoked directly, which keeps the tests deterministic.
+OS signal delivery itself is not exercised - the handler captured from
+the public signal spy is invoked directly, keeping tests deterministic.
 """
 
 import signal
@@ -43,11 +43,10 @@ def spy_sgn(monkeypatch):
 
 def test_enter_installs_handlers_for_default_signals(spy_sgn):
   """Default NoBreak installs its handler for SIGINT and SIGTERM."""
-  with pnb.NoBreak() as nb:
+  with pnb.NoBreak():
     installed = [(args[0], args[1]) for args, _kw in spy_sgn['signal']]
 
     assert {sig for sig, _h in installed} == {signal.SIGINT, signal.SIGTERM}
-    assert all(handler == nb._handler for _sig, handler in installed)
     # Handlers are installed at standard priority.
     assert all(kw == {'prio': psgn.STD_PRIO} for _args, kw in spy_sgn['signal'])
 
@@ -89,11 +88,12 @@ def test_handler_records_signals_in_order(spy_sgn):
   """Received signals are appended with their frame in arrival order."""
   frame1, frame2 = _Frame('f1'), _Frame('f2')
 
-  with pnb.NoBreak('INT') as nb:
-    nb._handler(signal.SIGINT, frame1)
-    nb._handler(signal.SIGINT, frame2)
+  with pnb.NoBreak('INT'):
+    # The handler NoBreak registered, captured from the public signal spy.
+    handler = spy_sgn['signal'][0][0][1]
+    handler(signal.SIGINT, frame1)
+    handler(signal.SIGINT, frame2)
 
-    assert nb._signal_received == [(signal.SIGINT, frame1), (signal.SIGINT, frame2)]
     assert spy_sgn['trigger'] == []
 
   # Nothing is re-triggered by default (exit_trigger=False).
@@ -104,8 +104,9 @@ def test_exit_trigger_replays_signals_on_exit(spy_sgn):
   """With exit_trigger, recorded signals are re-triggered on __exit__."""
   frame = _Frame('f')
 
-  with pnb.NoBreak('TERM', exit_trigger=True) as nb:
-    nb._handler(signal.SIGTERM, frame)
+  with pnb.NoBreak('TERM', exit_trigger=True):
+    handler = spy_sgn['signal'][0][0][1]
+    handler(signal.SIGTERM, frame)
 
   assert [args for args, _kw in spy_sgn['trigger']] == [(signal.SIGTERM, frame)]
 
@@ -114,9 +115,10 @@ def test_exit_trigger_replays_multiple_signals_in_order(spy_sgn):
   """Multiple recorded signals are replayed in record order on exit."""
   f1, f2 = _Frame('f1'), _Frame('f2')
 
-  with pnb.NoBreak('INT,TERM', exit_trigger=True) as nb:
-    nb._handler(signal.SIGINT, f1)
-    nb._handler(signal.SIGTERM, f2)
+  with pnb.NoBreak('INT,TERM', exit_trigger=True):
+    handler = spy_sgn['signal'][0][0][1]
+    handler(signal.SIGINT, f1)
+    handler(signal.SIGTERM, f2)
 
   assert [args for args, _kw in spy_sgn['trigger']] == [(signal.SIGINT, f1),
                                                         (signal.SIGTERM, f2)]

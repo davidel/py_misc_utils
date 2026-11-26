@@ -63,7 +63,11 @@ def test_reference_cycles_terminate():
 
 
 def test_registered_size_function_is_used():
-  """register() associates a size function with a type."""
+  """register() associates a size function with a type.
+
+  Custom is test-local, so the registration is inert for the rest of the
+  suite (there is no public unregister API - report-only finding).
+  """
 
   class Custom:
     pass
@@ -72,27 +76,27 @@ def test_registered_size_function_is_used():
     return 999
 
   mem.register(Custom, my_size)
-  try:
-    assert mem.get_size(Custom()) == 999
-  finally:
-    del mem._TYPES_SIZE[Custom]
-  assert mem._get_sizefn(Custom) is None
+  assert mem.get_size(Custom()) == 999
 
 
 def test_registered_size_function_terminates_recursion():
   """Registered types are not recursed into: the size function result
-  is the whole size for objects of that type."""
+  is the whole size for objects of that type.
+
+  A test-local list subclass is registered instead of the global list
+  type, so the registration cannot leak into other tests.
+  """
   seen = []
+
+  class MyList(list):
+    pass
 
   def note_size(obj):
     seen.append(1)
     return 8
 
-  mem.register(list, note_size)
-  try:
-    assert mem.get_size([1, 2, 3]) == 8
-  finally:
-    del mem._TYPES_SIZE[list]
+  mem.register(MyList, note_size)
+  assert mem.get_size(MyList([1, 2, 3])) == 8
   assert seen == [1]
 
 

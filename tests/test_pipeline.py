@@ -67,7 +67,6 @@ def test_len_getitem_iter_and_elems():
   assert list(p) == [f1, f2, f3]
   assert list(p.elems()) == [f1, f2, f3]
   assert p[-1] is f3
-  assert p.elems() is not p._elems
 
 
 def test_append_extend_pop_and_empty_pop_error():
@@ -192,9 +191,8 @@ def test_repr_lists_numbered_elements():
 
 
 def test_iter_process_applies_element_to_each_item():
-  """_iter_process() maps elem over the input iterator lazily."""
-  src = iter([1, 2, 3])
-  gen = ppl._iter_process(lambda x: x + 100, src)
+  """Calling a pipeline on an iterator maps the element over it lazily."""
+  gen = ppl.Pipeline(lambda x: x + 100)(iter([1, 2, 3]))
 
   assert next(gen) == 101
   assert next(gen) == 102

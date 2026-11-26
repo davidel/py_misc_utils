@@ -47,17 +47,17 @@ def test_auto_continues_after_explicit_value():
 
 
 def test_first_and_last_track_value_span():
-  """_first is the base and _last the highest assigned value."""
+  """The first attribute equals base and the last one the highest value."""
   Fruit = enu.make_enum('Fruit', ['APPLE', ('BANANA', 10), 'CHERRY'])
-  assert Fruit._first == 0
-  assert Fruit._last == 11
+  assert Fruit.APPLE == 0
+  assert Fruit.CHERRY == 11
 
 
 def test_names_mapping():
-  """_values maps names to values and _names the reverse."""
+  """Declared names keep their values; repr() lists each name=value pair."""
   Color = enu.make_enum('Color', 'RED, GREEN=5, BLUE')
-  assert Color._values == {'RED': 0, 'GREEN': 5, 'BLUE': 6}
-  assert Color._names == {0: 'RED', 5: 'GREEN', 6: 'BLUE'}
+  assert (Color.RED, Color.GREEN, Color.BLUE) == (0, 5, 6)
+  assert repr(Color) == 'Color(RED=0, GREEN=5, BLUE=6)'
 
 
 def test_len_counts_fields():

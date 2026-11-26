@@ -31,9 +31,15 @@ def s3_env(monkeypatch):
 
 
 @pytest.fixture
-def fs(temp_path):
+def cache_iface():
+  """The cache interface mock, created here so tests can configure it."""
   cache_iface = mock.MagicMock()
   cache_iface.open.return_value.__enter__.return_value.read.return_value = b's3 data'
+  return cache_iface
+
+
+@pytest.fixture
+def fs(temp_path, cache_iface):
   return sf.S3Fs(cache_dir=os.path.join(temp_path, 'cache'), cache_iface=cache_iface)
 
 
@@ -149,17 +155,17 @@ def test_s3_put_file_stream(s3_env, fs):
   assert resp['Body'].read() == b'streamed'
 
 
-def test_s3_as_local(s3_env, fs, temp_path):
+def test_s3_as_local(s3_env, fs, cache_iface, temp_path):
   """as_local materializes the object through the cache interface."""
   s3_env.put_object(Bucket='test-bucket', Key='loc.bin', Body=b'local-copy')
 
   local_path = os.path.join(temp_path, 'out.bin')
-  fs._cache_iface.as_local.return_value = local_path
+  cache_iface.as_local.return_value = local_path
 
   got = fs.as_local('s3://test-bucket/loc.bin')
 
   assert got == local_path
-  fs._cache_iface.as_local.assert_called_once()
+  cache_iface.as_local.assert_called_once()
 
 
 def test_s3_stat_missing_object_returns_none(s3_env, fs):
