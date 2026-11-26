@@ -241,7 +241,7 @@ class FtpFs(fsb.FsBase):
         same host.
     """
     src_conn, src_purl = self._parse_url(src_url)
-    dest_conn, dest_purl = self._parse_url(dest_url)
+    _, dest_purl = self._parse_url(dest_url)
 
     src_netloc, dest_netloc = self._netloc(src_purl), self._netloc(dest_purl)
 
@@ -374,7 +374,8 @@ class FtpFs(fsb.FsBase):
         url_file = self._download_file(url)
         self.seek_stream(mode, url_file)
       else:
-        url_file = tempfile.TemporaryFile()
+        # The WritebackFile owns the temp file's lifetime.
+        url_file = tempfile.TemporaryFile()  # noqa: SIM115
 
       wbfile = wbf.WritebackFile(url_file, writeback_fn)
 

@@ -211,7 +211,7 @@ def setup_logging(args):
       elif fname == 'STDERR':
         handler = logging.StreamHandler(sys.stderr)
       else:
-        handler = logging.StreamHandler(open(fname, mode='a'))
+        handler = logging.FileHandler(fname, mode='a')
 
       handler.setLevel(numeric_level)
       handler.setFormatter(Formatter(emit_extra=args.log_emit_extra))

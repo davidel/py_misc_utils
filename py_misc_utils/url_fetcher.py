@@ -77,7 +77,7 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
       with wres.write_result(wpath) as fd:
         for data in fs.get_file(fpath):
           fd.write(data)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- worker boundary: any fetch failure is recorded via write_error, never propagated
       wres.write_error(wpath, ex, workid=url)
     finally:
       rqueue.put(url)

@@ -29,7 +29,7 @@ def no_except(fn, *args, **kwargs):
   """
   try:
     return fn(*args, **kwargs)
-  except Exception as ex:
+  except Exception as ex:  # noqa: BLE001 -- API contract: return any exception raised by the wrapped callable
     # The logging.exception() API does emit in DEBUG level, and here we want something
     # a bit more higher level.
     tb = traceback.format_exc()
@@ -55,7 +55,7 @@ def qno_except(fn, *args, **kwargs):
   """
   try:
     return fn(*args, **kwargs)
-  except Exception as ex:
+  except Exception as ex:  # noqa: BLE001 -- API contract: return any exception raised by the wrapped callable
     return ex
 
 

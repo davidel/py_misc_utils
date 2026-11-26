@@ -680,7 +680,7 @@ def compile(code, syms, env=None, vals=None, lookup_fn=None, delim=None):
   if vals is not None or lookup_fn is not None:
     code = tr.template_replace(code, vals=vals, lookup_fn=lookup_fn, delim=delim)
 
-  exec(code, env)
+  exec(code, env)  # noqa: S102 -- deliberate dynamic-code API
 
   return tuple(env.get(s) for s in expand_strings(syms))
 

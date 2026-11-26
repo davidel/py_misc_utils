@@ -72,7 +72,7 @@ class OrderedSet:
     Raises:
       KeyError: If the set is empty.
     """
-    value, n = self._data.popitem()
+    value, _ = self._data.popitem()
 
     return value
 

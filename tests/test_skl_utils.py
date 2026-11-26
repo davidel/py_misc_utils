@@ -70,7 +70,7 @@ def test_parse_transform_with_config():
 
 def test_parse_transform_unknown_name():
   """parse_transform() raises for unknown transformer names."""
-  with pytest.raises(Exception):
+  with pytest.raises(AssertionError):
     sku.parse_transform('NOT_A_TRANSFORMER')
 
 

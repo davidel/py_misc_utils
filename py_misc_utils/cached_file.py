@@ -199,7 +199,7 @@ class CachedBlockFile:
         os.makedirs(os.path.dirname(lpath), exist_ok=True)
         os.link(bpath, lpath)
         os.chmod(lpath, 0o444)
-      except Exception:
+      except OSError:
         alog.warning(f'Unable to create link: {bpath} -> {lpath}')
 
   def _try_block(self, boffset, offset):
@@ -254,7 +254,7 @@ class CachedBlockFile:
       The local link path to the cached content, or None if the file
       could not be fetched.
     """
-    size, bpath = self._fetch_block(self.WHOLE_OFFSET)
+    size, _ = self._fetch_block(self.WHOLE_OFFSET)
 
     return self.local_link() if size > 0 else None
 
@@ -381,13 +381,13 @@ class CachedBlockFile:
                                 cid=cid,
                                 offset=offset))
 
-    max_age = max_age or int(os.getenv('GFS_CACHE_MAXAGE', 300))
+    max_age = max_age or int(os.getenv('GFS_CACHE_MAXAGE', '300'))
     for dblock in dropped:
       if (time.time() - dblock.sres.st_mtime) > max_age:
         try:
           alog.info(f'Removing block file {dblock.name} from {path} ({meta})')
           os.remove(os.path.join(bpath, dblock.name))
-        except Exception as ex:
+        except OSError as ex:
           alog.warning(
               f'Unable to purge block file from {dblock.name} from {path}: {ex}')
 
@@ -778,11 +778,11 @@ def cleanup_cache(cache_dir, max_age=None, max_size=None):
                                   mtime=sres.st_mtime,
                                   size=cfsize,
                                   meta=meta))
-            except Exception as ex:
+            except Exception as ex:  # noqa: BLE001 -- cache janitor: one corrupt cache dir must not abort the whole cleanup pass
               alog.warning(f'Unable to purge blocks from {cfpath}: {ex}')
 
     cache_files = sorted(cache_files, key=lambda cfs: cfs.mtime, reverse=True)
-    max_size = max_size or int(os.getenv('GFS_CACHE_MAXSIZE', 16 * 1024**3))
+    max_size = max_size or int(os.getenv('GFS_CACHE_MAXSIZE', str(16 * 1024**3)))
 
     cache_size = 0
     for cfs in cache_files:
@@ -810,7 +810,7 @@ def make_tag(**kwargs):
   return hashlib.sha1(stag.encode()).hexdigest()
 
 
-_CLEANUP_PERIOD = int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', 8 * 3600))
+_CLEANUP_PERIOD = int(os.getenv('GFS_CACHE_CLEANUP_PERIOD', str(8 * 3600)))
 
 
 def _cleanup_check(path):

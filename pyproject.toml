@@ -85,4 +85,9 @@ filterwarnings = [
 
 [tool.ruff.lint]
 # dict(...) keyword style is used pervasively across the codebase; keep it.
-ignore = ["C408"]
+# Root-logger calls are the intended dispatch mechanism for alog and for
+# low-level modules that deliberately avoid importing alog.
+ignore = ["C408", "LOG015"]
+
+[tool.ruff.lint.per-file-ignores]
+"py_misc_utils/debug.py" = ["T100"]

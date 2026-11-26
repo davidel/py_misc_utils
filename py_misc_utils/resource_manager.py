@@ -172,7 +172,7 @@ def _server_runner(name, *args, **kwargs):
   try:
     server = manager.get_server()
     server.serve_forever()
-  except Exception as ex:
+  except Exception as ex:  # noqa: BLE001 -- process-finalizer boundary: a daemon server body can only log its failure before exiting
     alog.error(f'[{name}] server start failed: {ex}')
   finally:
     alog.info(f'[{name}] server gone!')
@@ -209,7 +209,7 @@ def get_manager(name, *args, **kwargs):
       manager.connect()
       alog.info(f'[{name}] Connected to the manager')
       break
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- connect-retry boundary: any connection failure is retried; spin without timeout is a known P1 defect
       alog.debug(f'[{name}] Connection failed, retrying ...: {ex}')
       time.sleep(0.5)
 

@@ -117,7 +117,7 @@ def _find_fastfs_dir():
 
 
 _FASTFS_DIR = _find_fastfs_dir()
-_NAMELEN = int(os.getenv('FASTFS_NAMELEN', 12))
+_NAMELEN = int(os.getenv('FASTFS_NAMELEN', '12'))
 
 
 def fastfs_dir(name=None, namelen=_NAMELEN):

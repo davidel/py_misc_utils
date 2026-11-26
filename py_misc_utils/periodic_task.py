@@ -81,7 +81,7 @@ class PeriodicTask:
     try:
       if self._periodic_fn() is wcall.GONE:
         re_issue = False
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- policy boundary: stop_on_error must see any fn failure to decide re-issue vs stop
       alog.exception(ex, exmsg=f'Exception while running periodic task "{self._name}"')
       re_issue = not self._stop_on_error
     finally:

@@ -84,7 +84,7 @@ class _Cleanups:
     """
     try:
       cleaner.fn(*cleaner.args, **cleaner.kwargs)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- isolation boundary: user-registered cleanups must not abort remaining cleanups
       alog.exception(ex, exmsg='Exception while running cleanups')
 
   def run(self):

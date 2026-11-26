@@ -90,7 +90,7 @@ class Cache:
     self._cleaner = ptsk.PeriodicTask(
         'CacheCleaner',
         self._try_cleanup,
-        clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', 8)),
+        clean_timeo or int(os.getenv('CACHE_CLEAN_TIMEO', '8')),
         stop_on_error=False,
     )
     self._cleaner.start()

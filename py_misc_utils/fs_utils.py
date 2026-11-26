@@ -400,7 +400,7 @@ def find_path(name, paths, checkfn=os.path.exists):
       return cpath
 
 
-_TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', 10))
+_TMPFN_RNDSIZE = int(os.getenv('TMPFN_RNDSIZE', '10'))
 
 
 def temp_path(nspath=None, nsdir=None, rndsize=_TMPFN_RNDSIZE):
@@ -452,17 +452,16 @@ def atomic_write(path, mode='wb', create_parents=False):
   if create_parents:
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
-  fd = open(tpath, mode=mode)
+  completed = False
   try:
-    yield fd
-    fd.close()
-    fd = None
+    with open(tpath, mode=mode) as fd:
+      yield fd
+    completed = True
   finally:
-    if fd is not None:
-      fd.close()
-      os.remove(tpath)
-    else:
+    if completed:
       os.replace(tpath, path)
+    else:
+      os.remove(tpath)
 
 
 @contextlib.contextmanager

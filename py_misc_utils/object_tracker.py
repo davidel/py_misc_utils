@@ -119,7 +119,7 @@ def track_objects(tracker, max_references=None):
           treport.append(f'  refby = {r[0]} ({r[1]})')
 
         report.append((prio, treport))
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- per-object isolation: a failing tracker callback skips that object, not the whole report
       alog.warning(f'Exception while tracking objects: {ex}')
 
   sreport = []

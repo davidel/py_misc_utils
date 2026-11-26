@@ -34,7 +34,7 @@ class StreamedFile:
     self._lock = threading.Lock()
     self._cond = threading.Condition(lock=self._lock)
 
-    tmpfile = tempfile.TemporaryFile()
+    tmpfile = tempfile.TemporaryFile()  # noqa: SIM115 -- owned by fin_wrap lifecycle
     fw.fin_wrap(self, '_tempfile', tmpfile, finfn=tmpfile.close)
 
     self._offset = 0

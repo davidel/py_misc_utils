@@ -22,7 +22,7 @@ class NoBreak:
     SIGMAP: Dict mapping signal name strings to signal module constants.
   """
 
-  SIGMAP = {
+  SIGMAP = {  # noqa: RUF012 -- read-only class constant
       'INT': signal.SIGINT,
       'TERM': signal.SIGTERM,
   }

@@ -98,7 +98,7 @@ _MOD_FOLDER = gns.Var('dynamod.MOD_FOLDER',
 # Global namespace variable holding the dynamic module folder path,
 # initialized on fork so child processes get their own copy.
 
-_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', 12))
+_HASHNAME_LEN = int(os.getenv('DYNAMOD_HASHNAME_LEN', '12'))
 # Length of the hash suffix used in generated module names,
 # from the DYNAMOD_HASHNAME_LEN environment variable (default 12).
 

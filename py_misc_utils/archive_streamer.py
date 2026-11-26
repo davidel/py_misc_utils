@@ -96,10 +96,10 @@ class ArchiveStreamer:
   def _generate_tar(self, specs):
     """Generates the entries of a - possibly compressed - tar archive."""
     with gfs.open(self._url, mode='rb', **self._kwargs) as stream:
-      tfile = tarfile.open(mode=f'r|{specs.compression or ""}', fileobj=stream)
-      for tinfo in tfile:
-        data = tfile.extractfile(tinfo).read()
-        yield ArchiveEntry(name=tinfo.name, data=data)
+      with tarfile.open(mode=f'r|{specs.compression or ""}', fileobj=stream) as tfile:
+        for tinfo in tfile:
+          data = tfile.extractfile(tinfo).read()
+          yield ArchiveEntry(name=tinfo.name, data=data)
 
   def _generate_parquet(self, specs):
     """Generates the entries of a parquet file."""

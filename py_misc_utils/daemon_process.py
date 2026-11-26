@@ -263,7 +263,7 @@ class DaemonPosix(DaemonBase):
       self._setup_daemon(wpipe)
 
       return 0
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- daemonize error tunnel: child reports any failure to parent via wpipe before exiting
       self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 
@@ -318,7 +318,7 @@ class DaemonCompat(DaemonBase):
         os.umask(0)
 
       self._setup_daemon(wpipe)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- daemonize error tunnel: child reports any failure to parent via wpipe before exiting
       self._write_result(wpipe, exclass=ex.__class__, msg=f'Daemonize failed: {ex}')
       sys.exit(1)
 

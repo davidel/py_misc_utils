@@ -114,7 +114,7 @@ class ParquetStreamer:
             yield self._transform(fetcher, recd)
           except GeneratorExit:
             raise
-          except Exception as ex:
+          except Exception as ex:  # noqa: BLE001 -- per-record isolation: a failed record transform is skipped, not fatal to the stream
             alog.verbose(f'Unable to create parquet entry ({recd}): {ex}')
 
   def __iter__(self):

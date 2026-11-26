@@ -231,7 +231,8 @@ class HttpFs(fsb.FsBase):
         url_file = self._download_file(url)
         self.seek_stream(mode, url_file)
       else:
-        url_file = tempfile.TemporaryFile()
+        # The WritebackFile owns the temp file's lifetime.
+        url_file = tempfile.TemporaryFile()  # noqa: SIM115
 
       wbfile = wbf.WritebackFile(url_file, writeback_fn)
 
@@ -300,7 +301,7 @@ class HttpFs(fsb.FsBase):
           yield de
         except GeneratorExit:
           raise
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001 -- dir listing: un-stat-able entries are skipped, not fatal to the listing
           alog.debug(f'Unable to stat URL {lurl}: {ex}')
 
   def _upload_data_gen(self, url, data_gen):

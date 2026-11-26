@@ -129,7 +129,7 @@ def _unwrap(obj, pickle_module):
   elif isinstance(obj, PickleWrap):
     try:
       return obj.load(pickle_module=pickle_module)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- dynamic deserialization: un-unwrappable PickleWrap degrades to returning the wrapper itself
       alog.debug(f'Unable to reload pickle-wrapped data ({obj.wrapped_class()}): {ex}')
       return obj
   else:

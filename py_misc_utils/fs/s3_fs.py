@@ -546,7 +546,7 @@ class S3Fs(fsb.FsBase):
       dest_url: s3:// URL of the destination object.
     """
     src_client, src_purl = self._parse_url(src_url)
-    dest_client, dest_purl = self._parse_url(dest_url)
+    _, dest_purl = self._parse_url(dest_url)
 
     tas.check_eq(src_purl.hostname, dest_purl.hostname,
                  msg=f'Source and destination URL must be on the same bucket: ' \
@@ -661,7 +661,8 @@ class S3Fs(fsb.FsBase):
         url_file = self._download_file(url)
         self.seek_stream(mode, url_file)
       else:
-        url_file = tempfile.TemporaryFile()
+        # The WritebackFile owns the temp file's lifetime.
+        url_file = tempfile.TemporaryFile()  # noqa: SIM115
 
       wbfile = wbf.WritebackFile(url_file, writeback_fn)
 

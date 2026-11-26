@@ -151,7 +151,7 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                                f'Authorization not supported: {hauth}\n')
     except HandlerException:
       raise
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- request-boundary: auth-path failures are converted to a 500 response
       raise HandlerException(500, 'Internal Server Error', f'Internal error: {ex}\n')
 
   def do_OPTIONS(self):
@@ -214,7 +214,7 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
       except HandlerException as ex:
         self.send_error(ex.code, message=ex.message, explain=ex.explain)
-      except Exception as ex:
+      except Exception as ex:  # noqa: BLE001 -- handler boundary: convert any request-processing failure to a clean 500 response
         self.send_error(500,
                         message='Internal Server Error',
                         explain=f'Internal error: {ex}\n')
@@ -230,7 +230,7 @@ class ClassWrapper:
   PRIVATE_ATTRIBUTES: Set of attribute names that are not stored in _kwargs.
   """
 
-  PRIVATE_ATTRIBUTES = {'_cls', '_kwargs'}
+  PRIVATE_ATTRIBUTES = {'_cls', '_kwargs'}  # noqa: RUF012 -- read-only class constant
 
   # Attribute names excluded from _kwargs storage.
 

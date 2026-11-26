@@ -12,7 +12,7 @@ import time
 
 from . import gfs
 
-_MAX_AGE = int(os.getenv('DATACACHE_MAX_AGE', 3600 * 24))
+_MAX_AGE = int(os.getenv('DATACACHE_MAX_AGE', str(3600 * 24)))
 # The default maximum age - in seconds - of a cached data object, set
 # via the DATACACHE_MAX_AGE environment variable.
 

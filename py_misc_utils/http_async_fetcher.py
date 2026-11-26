@@ -47,7 +47,7 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
 
     with wres.write_result(wpath) as fd:
       fd.write(resp.content)
-  except Exception as ex:
+  except Exception as ex:  # noqa: BLE001 -- worker boundary: fetch failures are recorded via write_error, not propagated
     wres.write_error(wpath, ex, workid=url)
   finally:
     return wpath
@@ -193,7 +193,7 @@ class HttpAsyncFetcher:
                                                        timeout=timeout)) is None:
         break
 
-      rurl, result = fetchres
+      rurl, _ = fetchres
 
       self._pending.discard(rurl)
       wpath = wres.work_path(self._path, rurl)

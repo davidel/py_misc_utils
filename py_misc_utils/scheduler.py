@@ -64,7 +64,7 @@ class Scheduler:
     """
     try:
       event.action(*event.argument, **event.kwargs)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- action isolation: user-scheduled actions must not kill the scheduler worker; failure is logged
       alog.exception(ex, exmsg='Exception while running scheduled action')
 
   def _run(self):
@@ -89,7 +89,7 @@ class Scheduler:
     """
     return str(uuid.uuid4())
 
-  def enterabs(self, ts, action, ref=None, argument=(), kwargs={}):
+  def enterabs(self, ts, action, ref=None, argument=(), kwargs=None):
     """Schedule an action at an absolute timestamp.
 
     Args:
@@ -108,7 +108,7 @@ class Scheduler:
                     ref=ref,
                     action=action,
                     argument=argument,
-                    kwargs=kwargs)
+                    kwargs=kwargs or {})
       self._sequence += 1
 
       heapq.heappush(self._queue, event)
@@ -117,7 +117,7 @@ class Scheduler:
 
     return event
 
-  def enter(self, delay, action, ref=None, argument=(), kwargs={}):
+  def enter(self, delay, action, ref=None, argument=(), kwargs=None):
     """Schedule an action after a relative delay.
 
     Args:

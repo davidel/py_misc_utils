@@ -128,7 +128,7 @@ def np_datetime_to_epoch(dt, dtype=np.float64):
     The epoch-seconds values.
   """
   tas.check_fn(np.issubdtype, dt.dtype, np.datetime64)
-  u, c = np.datetime_data(dt.dtype)
+  u, _ = np.datetime_data(dt.dtype)
   if u == 's':
     return dt.astype(dtype)
 

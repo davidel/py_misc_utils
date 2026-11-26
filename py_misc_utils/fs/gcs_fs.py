@@ -199,7 +199,7 @@ class GcsFs(fsb.FsBase):
 
   def _copy(self, src_url, dest_url):
     """Server-side copy an object within the same bucket."""
-    (src_fs, src_purl), (dest_fs, dest_purl) = self._parse_samefs(src_url, dest_url)
+    (src_fs, src_purl), (_, dest_purl) = self._parse_samefs(src_url, dest_url)
 
     src_fs.copy(src_purl.path, dest_purl.path)
 
@@ -219,7 +219,7 @@ class GcsFs(fsb.FsBase):
       src_url: gs:// URL of the source object.
       dest_url: gs:// URL of the destination object.
     """
-    (src_fs, src_purl), (dest_fs, dest_purl) = self._parse_samefs(src_url, dest_url)
+    (src_fs, src_purl), (_, dest_purl) = self._parse_samefs(src_url, dest_url)
 
     src_fs.rename(src_purl.path, dest_purl.path)
 
@@ -298,7 +298,8 @@ class GcsFs(fsb.FsBase):
         url_file = self._download_file(url)
         self.seek_stream(mode, url_file)
       else:
-        url_file = tempfile.TemporaryFile()
+        # The WritebackFile owns the temp file's lifetime.
+        url_file = tempfile.TemporaryFile()  # noqa: SIM115
 
       wbfile = wbf.WritebackFile(url_file, writeback_fn)
 

@@ -29,7 +29,7 @@ else:
     """
     try:
       raise Exception
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- frame-capture idiom: Exception is raised as a carrier for its traceback, not caught as an error
       return exc.__traceback__.tb_frame.f_back
 
 

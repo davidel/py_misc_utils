@@ -45,8 +45,8 @@ class Meta(obj.Obj):
 
 
 _CMDLINE = list(psutil.Process().cmdline())
-_ACQUIRE_TIMEOUT = float(os.getenv('LOCKF_AQTIMEO', 0.5))
-_CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', 5.0))
+_ACQUIRE_TIMEOUT = float(os.getenv('LOCKF_AQTIMEO', '0.5'))
+_CHECK_TIMEOUT = float(os.getenv('LOCKF_CKTIMEO', '5.0'))
 
 
 class LockFile:

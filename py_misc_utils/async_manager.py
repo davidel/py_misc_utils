@@ -152,7 +152,7 @@ class _Worker:
       task = work.ctor(context=context)
 
       result = await task
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- process-boundary conversion: any task failure becomes a WorkException result
       result = wres.WorkException(ex, workid=work.id)
 
     self._out_queue.put((self._wid, work.id, result))

@@ -44,7 +44,7 @@ class Task:
     """Execute the task function and set result if provided."""
     try:
       fnres = self._fn(*self._args, **self._kwargs)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001 -- task boundary: any user-callable failure is delivered to the waiter as _ExceptionWrapper
       alog.exception(ex, exmsg='Exception while running task')
       fnres = _ExceptionWrapper(exception=ex)
 
