@@ -27,6 +27,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e '.[all]'
 
+      - name: Ruff lint
+        run: |
+          pip install ruff
+          ruff check py_misc_utils tests
+
       - name: Run tests with coverage
         run: |
           python -m pytest tests/ --cov=py_misc_utils --cov-report=term-missing
