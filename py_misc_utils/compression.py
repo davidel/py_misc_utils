@@ -23,9 +23,9 @@ def fgzip(src, dest):
     src: The source file path.
     dest: The destination file path.
   """
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with gzip.open(outfd, mode='wb') as zfd:
-      shutil.copyfileobj(infd, zfd)
+  with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
+        outfd, gzip.open(outfd, mode='wb') as zfd):
+    shutil.copyfileobj(infd, zfd)
 
 
 def fgunzip(src, dest):
@@ -35,9 +35,9 @@ def fgunzip(src, dest):
     src: The source file path.
     dest: The destination file path.
   """
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with gzip.open(infd, mode='rb') as zfd:
-      shutil.copyfileobj(zfd, outfd)
+  with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
+        outfd, gzip.open(infd, mode='rb') as zfd):
+    shutil.copyfileobj(zfd, outfd)
 
 
 def fbzip2(src, dest):
@@ -47,9 +47,9 @@ def fbzip2(src, dest):
     src: The source file path.
     dest: The destination file path.
   """
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with bz2.open(outfd, mode='wb') as zfd:
-      shutil.copyfileobj(infd, zfd)
+  with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
+        outfd, bz2.open(outfd, mode='wb') as zfd):
+    shutil.copyfileobj(infd, zfd)
 
 
 def fbunzip2(src, dest):
@@ -59,9 +59,9 @@ def fbunzip2(src, dest):
     src: The source file path.
     dest: The destination file path.
   """
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with bz2.open(infd, mode='rb') as zfd:
-      shutil.copyfileobj(zfd, outfd)
+  with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
+        outfd, bz2.open(infd, mode='rb') as zfd):
+    shutil.copyfileobj(zfd, outfd)
 
 
 def fxzip(src, dest):
@@ -71,9 +71,9 @@ def fxzip(src, dest):
     src: The source file path.
     dest: The destination file path.
   """
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with lzma.open(outfd, mode='wb') as zfd:
-      shutil.copyfileobj(infd, zfd)
+  with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
+        outfd, lzma.open(outfd, mode='wb') as zfd):
+    shutil.copyfileobj(infd, zfd)
 
 
 def fxunzip(src, dest):
@@ -83,9 +83,9 @@ def fxunzip(src, dest):
     src: The source file path.
     dest: The destination file path.
   """
-  with gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as outfd:
-    with lzma.open(infd, mode='rb') as zfd:
-      shutil.copyfileobj(zfd, outfd)
+  with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
+        outfd, lzma.open(infd, mode='rb') as zfd):
+    shutil.copyfileobj(zfd, outfd)
 
 
 _Processor = collections.namedtuple('Processor', 'processor, module')
@@ -190,9 +190,9 @@ def dopen(path, mode='r', **kwargs):
     with gfs.open(path, mode=mode, **kwargs) as fd:
       yield fd
   else:
-    with gfs.open(path, mode='rb', **kwargs) as fd:
-      with decomp.module.open(fd, mode=mode) as zfd:
-        yield zfd
+    with (gfs.open(path, mode='rb', **kwargs) as fd, decomp.module.open(fd, mode=mode)
+          as zfd):
+      yield zfd
 
 
 @contextlib.contextmanager
@@ -217,6 +217,6 @@ def copen(path, mode='w', **kwargs):
     with gfs.open(path, mode=mode, **kwargs) as fd:
       yield fd
   else:
-    with gfs.open(path, mode='wb', **kwargs) as fd:
-      with comp.module.open(fd, mode=mode) as zfd:
-        yield zfd
+    with (gfs.open(path, mode='wb', **kwargs) as fd, comp.module.open(fd, mode=mode) as
+          zfd):
+      yield zfd
