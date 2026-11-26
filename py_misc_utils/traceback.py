@@ -7,6 +7,12 @@ copied and adapted from the Python standard library's logging module.
 import sys
 
 # Copied from logging module ...
+
+
+class FrameCarrier(Exception):
+  """Exception used as a traceback carrier for the frame-walk fallback."""
+
+
 if hasattr(sys, '_getframe'):
 
   def _get_frame():
@@ -28,8 +34,8 @@ else:
       The frame object one level up from this function.
     """
     try:
-      raise Exception
-    except Exception as exc:  # noqa: BLE001 -- frame-capture idiom: Exception is raised as a carrier for its traceback, not caught as an error
+      raise FrameCarrier
+    except FrameCarrier as exc:
       return exc.__traceback__.tb_frame.f_back
 
 

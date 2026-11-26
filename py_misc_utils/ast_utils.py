@@ -156,7 +156,9 @@ def static_eval(node, eval_globals, eval_locals, filename=None):
   if isinstance(node, ast.stmt):
     mod = ast.Module(body=[node], type_ignores=[])
     cmod = compile(mod, filename=filename or '<ast_eval>', mode='exec')
-    exec(cmod, eval_globals, eval_locals)
+    # ast_eval exists to execute caller-supplied AST nodes: exec is its
+    # documented contract (the expression branch below uses eval likewise).
+    exec(cmod, eval_globals, eval_locals)  # noqa: S102
   elif isinstance(node, ast.expr):
     expr = ast.Expression(body=node)
     cexpr = compile(expr, filename=filename or '<ast_eval>', mode='eval')

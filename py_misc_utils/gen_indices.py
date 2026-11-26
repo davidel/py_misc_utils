@@ -33,6 +33,8 @@ def generate(shape, idx):
 
   Raises:
     AssertionError: If a 1-D-only index type is used with a multi-D shape.
+    TypeError: If the index specification is not one of the supported types
+      (a bare Ellipsis is only supported inside tuple specifications).
     ValueError: If the index specification is invalid for the given shape.
   """
   if isinstance(idx, int):
@@ -79,6 +81,6 @@ def generate(shape, idx):
         if gens[i] is None:
           gens[i] = range(shape[i])
   else:
-    raise ValueError(f'Wrong index {idx} for shape {shape}')
+    raise TypeError(f'Wrong index {idx} for shape {shape}')
 
   return itertools.product(*gens)

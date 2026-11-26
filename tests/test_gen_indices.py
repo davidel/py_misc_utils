@@ -63,9 +63,10 @@ def test_trailing_ellipsis_fills_leading_dimensions():
                                                              (1, 2, 0)]
 
 
-def test_bare_ellipsis_raises_value_error():
-  """A bare Ellipsis specification is rejected with ValueError."""
-  with pytest.raises(ValueError):
+def test_bare_ellipsis_raises_type_error():
+  """A bare Ellipsis specification is rejected with TypeError (it is not
+  one of the supported top-level index types)."""
+  with pytest.raises(TypeError):
     list(gin.generate((2, 3), Ellipsis))
 
 

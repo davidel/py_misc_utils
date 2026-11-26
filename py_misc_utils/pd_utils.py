@@ -348,7 +348,7 @@ def limit_per_group(df, cols, limit):
   mask = np.full(len(df), False)
 
   groups = get_dataframe_groups(df, cols)
-  for k, g in groups.items():
+  for g in groups.values():
     if limit > 0:
       rows = g[:limit]
     else:

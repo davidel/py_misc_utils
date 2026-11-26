@@ -49,8 +49,8 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
       fd.write(resp.content)
   except Exception as ex:  # noqa: BLE001 -- worker boundary: fetch failures are recorded via write_error, not propagated
     wres.write_error(wpath, ex, workid=url)
-  finally:
-    return wpath
+
+  return wpath
 
 
 class HttpAsyncFetcher:

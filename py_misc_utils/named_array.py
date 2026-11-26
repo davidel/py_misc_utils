@@ -194,8 +194,8 @@ class NamedArray:
 
     str_tbl = cu.StringTable()
     fields = dict()
-    for name, fmt in zip(fnames, ffmt):
-      fields[name] = Field.create(name, fmt, str_tbl)
+    for name, cfmt in zip(fnames, ffmt):
+      fields[name] = Field.create(name, cfmt, str_tbl)
 
     self._fields = fields
     self._fieldseq = tuple(fields.values())
