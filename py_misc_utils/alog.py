@@ -9,7 +9,6 @@ This module provides:
 - Exception logging and raising helpers
 """
 
-import argparse
 import logging
 import math
 import os
@@ -91,7 +90,7 @@ class Formatter(logging.Formatter):
       Formatted timestamp string with microsecond precision.
     """
     if datefmt:
-      return time.strftime(datefmt, r.created)
+      return time.strftime(datefmt, time.localtime(r.created))
 
     tstr = time.strftime('%Y%m%d %H:%M:%S', time.localtime(r.created))
     usecs = math.modf(r.created)[0] * 1e6
@@ -141,7 +140,7 @@ def add_logging_options(parser):
                       help='The logging level')
   parser.add_argument('--log_file', type=str, default=_DEFAULT_ARGS.get('log_file'),
                       help='Comma separated list of target log files (STDOUT, STDERR ' \
-                      f'are also recognized)')
+                      'are also recognized)')
   parser.add_argument(
       '--log_mod_levels',
       nargs='*',
@@ -514,7 +513,7 @@ def xraise(e, msg, *args, **kwargs):
   if kwargs.pop('logit', False):
     error(msg, *args, **_nested_args(kwargs))
 
-  raise e(_dmsg(msg))
+  raise e(_dmsg(msg) % args if args else _dmsg(msg))
 
 
 def async_log(level, msg, *args, **kwargs):

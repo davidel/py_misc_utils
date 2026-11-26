@@ -13,9 +13,9 @@ Functions:
 
 import inspect
 import itertools
-import sys
 import types
 
+from . import alog
 from . import assert_checks as tas
 from . import traceback as tb
 
@@ -117,8 +117,7 @@ def qual_name(obj, builtin_strip=False):
   Returns:
     A dotted qualified name string.
   """
-  if (inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj) or
-      inspect.ismodule(obj)):
+  if (inspect.isclass(obj) or inspect.isroutine(obj) or inspect.ismodule(obj)):
     ref = obj
   else:
     ref = obj.__class__
@@ -245,7 +244,7 @@ def fetch_args(func, locs, input_args=()):
       pv = locs.get(n, _NONE)
       if pv is not _NONE:
         args.append(pv)
-      elif args:
+      else:
         alog.xraise(RuntimeError, f'Missing argument: {n}')
 
   def kwargs_assign(kwargs, n, p):
