@@ -191,3 +191,20 @@ def test_s3_stat_maps_mtime(s3_env, fs):
   assert de.st_mtime == pytest.approx(lm, abs=2)
   assert de.st_ctime == pytest.approx(lm, abs=2)
   assert de.st_size == 2
+
+
+def test_s3_append_preserves_existing_content(s3_env, fs):
+  """Append-mode open() pins the download-path behavior (report-only).
+
+  The write path is reachable publicly (append mode), but the internal
+  download path is broken downstream by the known Range=None get_file
+  defect: S3Fs.open() crashes with ParamValidationError when the object
+  exists and truncation is not requested. This test pins the failure so
+  the module state is observable; the assertion will be flipped once
+  the Range=None fix (P2, awaiting ACK) lands.
+  """
+  s3_env.put_object(Bucket='test-bucket', Key='app.bin', Body=b'base')
+
+  with pytest.raises(botocore.exceptions.ParamValidationError), \
+      fs.open('s3://test-bucket/app.bin', mode='ab') as f:
+    f.write(b'-more')

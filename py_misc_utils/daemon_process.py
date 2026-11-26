@@ -91,7 +91,7 @@ class DaemonBase:
       True if the PID file has been removed.
     """
     with self._lockfile():
-      if pid is None or (xpid := self._readpid()) == pid:
+      if pid is None or self._readpid() == pid:
         try:
           os.remove(self._pidfile)
 

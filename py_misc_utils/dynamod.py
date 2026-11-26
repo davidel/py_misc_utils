@@ -52,7 +52,7 @@ def _create_mod_folder():
   dpath = os.path.join(path, _MODNAME)
   os.mkdir(dpath)
 
-  with open(os.path.join(dpath, '__init__.py'), mode='w') as fd:
+  with open(os.path.join(dpath, '__init__.py'), mode='w'):
     pass
 
   sys.path.append(path)

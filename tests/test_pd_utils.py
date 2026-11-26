@@ -236,3 +236,12 @@ def test_sorted_index_already_indexed(df):
   result = pdu.sorted_index(df2, 'c')
 
   assert result.index.tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+def test_get_dataframe_groups_applies_column_transforms(df):
+  """cols_transforms callables are applied to the group key values."""
+  groups = pdu.get_dataframe_groups(df, ['b'], cols_transforms={'b': str.upper})
+
+  assert set(groups) == {('X',), ('Y',)}
+  assert groups[('X',)].tolist() == [0, 2]
+  assert groups[('Y',)].tolist() == [1, 3]

@@ -64,9 +64,9 @@ def _read_stream(headers, stream, chunked_headers, chunk_size=None):
         ln = stream.readline().strip()
         if not ln:
           break
-        parts = ln.split(':', maxsplit=1)
+        parts = ln.split(b':', maxsplit=1)
         if len(parts) == 2:
-          chunked_headers[part[0].strip()] = part[1].strip()
+          chunked_headers[parts[0].strip()] = parts[1].strip()
 
   else:
     raise RuntimeError(f'Unable to read data: {headers}')

@@ -325,3 +325,18 @@ def test_cwd_restores_on_error(temp_path):
     raise RuntimeError('boom')
 
   assert os.getcwd() == original
+
+
+def test_link_or_copy_falls_back_to_copy_when_symlink_fails(tmp_path):
+  """Falls through to copyfile when both hardlink and symlink fail."""
+  src = tmp_path / 'src.txt'
+  dest = tmp_path / 'sub' / 'dest.txt'
+  src.write_bytes(b'copy-me')
+  dest.parent.mkdir()
+  # An existing destination makes both os.link() and os.symlink() fail.
+  dest.touch()
+
+  res = fsu.link_or_copy(str(src), str(dest))
+
+  assert res == str(dest)
+  assert dest.read_bytes() == b'copy-me'

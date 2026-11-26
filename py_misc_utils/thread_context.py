@@ -51,7 +51,7 @@ class Context:
     """Pops the context object from the thread-local stack."""
 
     stack = getattr(_TLS, self._name)
-    obj = stack.pop()
+    stack.pop()
 
     return False
 

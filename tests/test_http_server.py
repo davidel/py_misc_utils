@@ -236,3 +236,27 @@ def test_put_chunked_upload(auth_server):
 
   with urllib.request.urlopen(_url(auth_server, '/chunked.bin'), timeout=5) as resp:
     assert resp.read() == b'hello world'
+
+
+def test_put_chunked_upload_with_trailing_extension_header(auth_server):
+  """A colon-separated line after chunk data does not break the parse."""
+  token = base64.b64encode(b'sekrit').decode()
+  body = b'5\r\nhelloX-Foo: bar\r\n\r\n0\r\n\r\n'
+  conn = http.client.HTTPConnection('127.0.0.1',
+                                    auth_server.server_address[1],
+                                    timeout=5)
+  conn.request('PUT',
+               '/chunkext.bin',
+               body=body,
+               headers={
+                   'Authorization': f'Bearer {token}',
+                   'Transfer-Encoding': 'chunked'
+               })
+
+  resp = conn.getresponse()
+
+  assert resp.status == 201
+  conn.close()
+
+  with urllib.request.urlopen(_url(auth_server, '/chunkext.bin'), timeout=5) as r:
+    assert r.read() == b'hello'

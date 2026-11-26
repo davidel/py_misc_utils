@@ -180,13 +180,6 @@ def test_pack_with_ctx_manager_adapter():
   assert log == ['open', 'close']
 
 
-def test_detach_proxy_raises_nameerror():
-  """Report-only bug: cm.detach() references an undefined
-  CtxManagerProxy symbol, raising NameError for every input."""
-  with pytest.raises(NameError):
-    cm.detach(object())
-
-
 def test_cond_true():
   """cond(True, ...) enters the built context manager.
 
@@ -231,3 +224,18 @@ def test_cond_false_ctxfn_not_called():
     pass
 
   assert called == []
+
+
+def test_detach_unwraps_wrappers_and_passes_others_through():
+  """cm.detach() returns the wrapped object for Wrapper, passthrough else."""
+
+  class HasClose:
+
+    def close(self):
+      pass
+
+  obj = HasClose()
+  w = cm.Wrapper(obj)
+
+  assert cm.detach(w) is obj
+  assert cm.detach(obj) is obj

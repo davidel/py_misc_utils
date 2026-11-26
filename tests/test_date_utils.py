@@ -10,6 +10,7 @@ import datetime
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import py_misc_utils.date_utils as du
 
@@ -92,3 +93,11 @@ def test_at_time_replaces_time_of_day_components():
   assert (at.hour, at.minute, at.second) == (9, 30, 0)
   assert at.date() == dt.date()
   assert at.tzinfo.zone == dt.tzinfo.zone
+
+
+def test_np_datetime_to_epoch_unknown_unit_raises_runtime_error():
+  """An unknown datetime64 unit raises RuntimeError, not NameError."""
+  dt = np.array(['2011-11-17T00:05:23'], dtype='datetime64[fs]')
+
+  with pytest.raises(RuntimeError, match='Unknown NumPy datetime64 unit'):
+    du.np_datetime_to_epoch(dt)

@@ -79,7 +79,7 @@ def link_or_copy(src_path, dest_path):
     os.symlink(src_path, dest_path)
 
     return dest_path
-  except OSError:
+  except OSError as ex:
     alog.debug(f'Symlink failed from "{src_path}" to "{dest_path}", going to copy. ' \
                f'Error was: {ex}')
 

@@ -134,7 +134,7 @@ def detach(obj):
   Returns:
     The detached object.
   """
-  return obj.detach() if isinstance(obj, CtxManagerProxy) else obj
+  return obj.detach() if isinstance(obj, Wrapper) else obj
 
 
 def cond(value, ctxfn, *args, **kwargs):

@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import pytz
 
+from . import alog
 from . import assert_checks as tas
 
 # Default timezone so code shows/works with such timezone.

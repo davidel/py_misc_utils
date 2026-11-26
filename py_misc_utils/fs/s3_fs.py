@@ -21,6 +21,7 @@ import boto3
 from .. import alog as alog
 from .. import assert_checks as tas
 from .. import cached_file as chf
+from .. import context_managers as cm
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
 from .. import iter_file as itf
@@ -365,7 +366,7 @@ def _write_object(client, bucket, path, body):
   if isinstance(body, collections.abc.Iterator) and not hasattr(body, 'seek'):
     body = itf.IterFile(body)
 
-  response = client.put_object(
+  client.put_object(
       Bucket=bucket,
       Key=path,
       Body=body,
@@ -656,7 +657,7 @@ class S3Fs(fsb.FsBase):
       return io.TextIOWrapper(cfile) if self.text_mode(mode) else cfile
     else:
       writeback_fn = functools.partial(self._upload_file, url)
-      if not self.truncate_mode(mode) and client.exists(purl.path):
+      if not self.truncate_mode(mode) and self.exists(url):
         url_file = self._download_file(url)
         self.seek_stream(mode, url_file)
       else:
