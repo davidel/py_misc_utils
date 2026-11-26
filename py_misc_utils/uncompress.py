@@ -45,8 +45,13 @@ class Uncompress:
       self._tempdir = tempfile.mkdtemp()
       rpath = os.path.join(self._tempdir, os.path.basename(bpath))
 
-      decomp(self._path, rpath)
-      shutil.copystat(self._path, rpath)
+      try:
+        decomp.processor(self._path, rpath)
+        shutil.copystat(self._path, rpath)
+      except Exception:
+        shutil.rmtree(self._tempdir, ignore_errors=True)
+        self._tempdir = None
+        raise
     else:
       rpath = self._path
 

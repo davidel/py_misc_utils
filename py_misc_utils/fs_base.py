@@ -115,7 +115,7 @@ class FsBase(abc.ABC):
       mode: The file mode string.
       stream: The file stream object to seek.
     """
-    stream.seek(0, os.SEEK_END if self.append_mode(mode) else os.SEEK_SET)
+    stream.seek(0, os.SEEK_END if cls.append_mode(mode) else os.SEEK_SET)
 
   def norm_url(self, url):
     """Normalize a URL for this filesystem.
