@@ -33,7 +33,7 @@ class _RouterHandler(http.server.BaseHTTPRequestHandler):
 
   protocol_version = 'HTTP/1.1'
 
-  def _dispatch(self):
+  def _dispatch(self, send_body=True):
     """Serve the request by looking its path up in the server routes."""
     routes = self.server.routes
     entry = routes.get(self.path)
@@ -51,11 +51,16 @@ class _RouterHandler(http.server.BaseHTTPRequestHandler):
       self.send_header(name, value)
     self.send_header('Content-Length', str(len(body)))
     self.end_headers()
-    self.wfile.write(body)
+    if send_body:
+      self.wfile.write(body)
 
   def do_GET(self):
     """Serve GET requests."""
     self._dispatch()
+
+  def do_HEAD(self):
+    """Serve HEAD requests like a GET, but without the response body."""
+    self._dispatch(send_body=False)
 
   def do_PUT(self):
     """Serve PUT requests (the route callable may consume the body)."""

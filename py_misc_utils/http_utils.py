@@ -8,11 +8,12 @@ This module provides utilities for:
 - Convenience functions for GET/HEAD requests with range support
 """
 
+import calendar
 import collections
-import os
 import re
-import requests
 import time
+
+import requests
 
 ACCEPT_RANGES = 'Accept-Ranges'
 AUTHORIZATION = 'Authorization'
@@ -148,11 +149,18 @@ def range_data(start, stop, headers, data):
   """
   hrange = range(headers)
   if hrange is not None:
+    if start < hrange.start or stop > hrange.stop:
+      from . import alog
+
+      alog.xraise(ValueError,
+                  f'Requested range [{start}, {stop}] not covered by served '
+                  f'range [{hrange.start}, {hrange.stop}]')
+
     dstart = start - hrange.start
     size = min(stop - start, hrange.stop - hrange.start) + 1
     dstop = dstart + size - 1
 
-    if dstart != start or dstop != stop:
+    if dstart != 0 or dstop != len(data) - 1:
       return memoryview(data)[dstart:dstop + 1]
 
   return data
@@ -172,7 +180,7 @@ def date_to_epoch(http_date):
   """
   htime = time.strptime(http_date, _HTTP_DATE_FMT)
 
-  return time.mktime(htime)
+  return calendar.timegm(htime)
 
 
 def epoch_to_date(epoch_time=None):
@@ -184,7 +192,8 @@ def epoch_to_date(epoch_time=None):
   Returns:
     Date string in HTTP format (e.g., 'Mon, 01 Jan 2024 00:00:00 GMT').
   """
-  return time.strftime(_HTTP_DATE_FMT, time.gmtime(epoch_time or time.time()))
+  return time.strftime(_HTTP_DATE_FMT,
+                       time.gmtime(time.time() if epoch_time is None else epoch_time))
 
 
 def filter_request_args(kwargs, key=None):
@@ -236,7 +245,7 @@ def info(url, mod=None, headers=None, **kwargs):
     resp.raise_for_status()
 
     hrange = range(resp.headers)
-    if hrange is not None and hrange.length is not None:
+    if hrange is not None and hrange.length is not None and CONTENT_RANGE in resp.headers:
       resp.headers[CONTENT_LENGTH] = hrange.length
       resp.headers[ACCEPT_RANGES] = 'bytes'
     else:
