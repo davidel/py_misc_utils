@@ -156,9 +156,9 @@ class LockFile:
         if now >= check_time:
           check_time = now + self._check_timeout
           meta = self._locking_meta()
-          if meta is None or not self._alive_pid(meta):
-            if self._try_force_lock(meta):
-              return True
+          if (meta is None or not self._alive_pid(meta)) and \
+              self._try_force_lock(meta):
+            return True
 
         if quit_time is not None and now >= quit_time:
           alog.debug(f'Giving up on lock {self._name} after {timeout} seconds')

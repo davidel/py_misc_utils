@@ -126,7 +126,7 @@ class Obj:
       ov = getattr(other, k, missing)
       if ov is missing or v != ov:
         return False
-    for k in vars(other).keys():
+    for k in vars(other):
       if not hasattr(self, k):
         return False
 

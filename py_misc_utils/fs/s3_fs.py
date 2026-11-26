@@ -716,8 +716,8 @@ class S3Fs(fsb.FsBase):
     client, purl = self._parse_url(url)
 
     stream, _ = _read_object(client, purl.hostname, purl.path)
-    for data in stream.iter_chunks():
-      yield data
+
+    yield from stream.iter_chunks()
 
   def as_local(self, url, **kwargs):
     """Return a local file with the contents of a URL.

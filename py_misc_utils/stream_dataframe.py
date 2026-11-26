@@ -75,7 +75,7 @@ class StreamDataWriter:
       df: A pandas DataFrame whose columns match the writer's fields.
     """
     wargs = collections.OrderedDict()
-    for field in self._fields.keys():
+    for field in self._fields:
       wargs[field] = df[field].to_numpy()
 
     self.write(**wargs)

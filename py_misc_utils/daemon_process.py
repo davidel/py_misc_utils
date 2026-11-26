@@ -278,10 +278,9 @@ class DaemonPosix(DaemonBase):
       which case target() is executed before exiting.
     """
     pid = self.getpid()
-    if pid is None:
-      if (pid := self._daemonize()) == 0:
-        target()
-        sys.exit(0)
+    if pid is None and (pid := self._daemonize()) == 0:
+      target()
+      sys.exit(0)
 
     return pid
 

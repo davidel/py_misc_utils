@@ -435,8 +435,7 @@ class FtpFs(fsb.FsBase):
     conn, purl = self._parse_url(url)
 
     with conn.open(purl.path, mode='rb') as fd:
-      for data in fsu.enum_chunks(fd):
-        yield data
+      yield from fsu.enum_chunks(fd)
 
   def as_local(self, url, **kwargs):
     """Return a local file with the contents of a URL.

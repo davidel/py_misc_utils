@@ -55,9 +55,8 @@ try:
   import numpy as np
 
   def _np_from(mod, t, tref):
-    if mod is not None:
-      if mod is torch or mod is tfnp:
-        return t.numpy()
+    if mod is not None and (mod is torch or mod is tfnp):
+      return t.numpy()
 
     return np.asarray(t)
 

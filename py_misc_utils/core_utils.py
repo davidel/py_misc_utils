@@ -1016,8 +1016,7 @@ def enum_dict_values(ddict, name):
   ivalue = ddict.get(name, _NONE)
   if ivalue is not _NONE:
     if isinstance(ivalue, ValueList):
-      for value in ivalue:
-        yield value
+      yield from ivalue
     else:
       yield ivalue
 

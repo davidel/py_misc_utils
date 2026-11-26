@@ -245,8 +245,7 @@ class FileFs(fsb.FsBase):
       The file contents as bytes chunks.
     """
     with open(url, mode='rb') as fd:
-      for data in fsu.enum_chunks(fd):
-        yield data
+      yield from fsu.enum_chunks(fd)
 
   def as_local(self, url, **kwargs):
     """Return the path unchanged, since files are already local.

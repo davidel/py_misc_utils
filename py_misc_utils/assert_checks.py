@@ -132,7 +132,7 @@ def check_fnres_eq(res,
   Raises:
     exception: If the function result differs from the expected result.
   """
-  if not (fn(*args) == res):
+  if fn(*args) != res:
     _report_fail(level, fn, *args, res=res, res_op='==', msg=msg, exception=exception)
 
 
@@ -221,7 +221,7 @@ def check_eq(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   Raises:
     exception: If the values are not equal.
   """
-  if not (a == b):
+  if a != b:
     _report_fail(level, '==', a, b, msg=msg, exception=exception)
 
 
@@ -238,7 +238,7 @@ def check_ne(a, b, level=logging.ERROR, msg=None, exception=AssertionError):
   Raises:
     exception: If the values are equal.
   """
-  if not (a != b):
+  if a == b:
     _report_fail(level, '!=', a, b, msg=msg, exception=exception)
 
 

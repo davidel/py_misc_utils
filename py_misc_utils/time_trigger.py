@@ -36,10 +36,9 @@ class TimeTrigger:
     Returns:
       True exactly once per configured interval, False otherwise.
     """
-    if self._interval > 0:
-      if (now := time.time()) >= self.next:
-        self.next = now + self._interval
+    if self._interval > 0 and (now := time.time()) >= self.next:
+      self.next = now + self._interval
 
-        return True
+      return True
 
     return False

@@ -345,8 +345,7 @@ class HttpFs(fsb.FsBase):
     resp = self._session.get(url, stream=True, **self._req_kwargs)
     resp.raise_for_status()
 
-    for data in resp.iter_content(chunk_size=chunk_size):
-      yield data
+    yield from resp.iter_content(chunk_size=chunk_size)
 
   def _download_file(self, url, chunk_size=None):
     """Download the contents of a URL into a temporary file.
@@ -382,8 +381,7 @@ class HttpFs(fsb.FsBase):
     Yields:
       The file contents as bytes chunks.
     """
-    for data in self._iterate_chunks(url):
-      yield data
+    yield from self._iterate_chunks(url)
 
   def as_local(self, url, **kwargs):
     """Return a local file with the contents of a URL.

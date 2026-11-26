@@ -70,7 +70,7 @@ class ParquetStreamer:
     """
     if fetcher is not None:
       for recd in recs:
-        for key in self._load_columns.keys():
+        for key in self._load_columns:
           fetcher.enqueue(recd[key])
 
   def _transform(self, fetcher, recd):
