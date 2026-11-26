@@ -9,7 +9,6 @@ and NPML_DEFAULT environment variables).
 If a framework is not installed, it is simply skipped at import time.
 """
 
-import collections
 import os
 
 _MODULES = dict()
@@ -101,8 +100,8 @@ except ImportError:
 # JAX
 try:
   import jax
-  from jax import dlpack as jax_dlpack
   import jax.numpy as jaxnp
+  from jax import dlpack as jax_dlpack
 
   def _jaxdev(t):
     return next(iter(t.devices()))

@@ -28,16 +28,14 @@ class IOStream:
       fd: A file descriptor (int), file-like object with write/read methods,
         or socket-like object with send/recv methods.
     """
-    if (wfn := getattr(fd, 'write', None)) is not None:
-      self.write = wfn
-    elif (wfn := getattr(fd, 'send', None)) is not None:
+    if (wfn := getattr(fd, 'write', None)) is not None or (wfn := getattr(
+        fd, 'send', None)) is not None:
       self.write = wfn
     else:
       self.write = functools.partial(os.write, fd)
 
-    if (rfn := getattr(fd, 'read', None)) is not None:
-      self.read = rfn
-    elif (rfn := getattr(fd, 'recv', None)) is not None:
+    if (rfn := getattr(fd, 'read', None)) is not None or (rfn := getattr(
+        fd, 'recv', None)) is not None:
       self.read = rfn
     else:
       self.read = functools.partial(os.read, fd)

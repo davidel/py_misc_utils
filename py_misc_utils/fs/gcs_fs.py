@@ -7,18 +7,16 @@ staged locally and uploaded on close.
 """
 
 import functools
-import hashlib
 import io
 import os
 import tempfile
 import urllib.parse as uparse
 
-from .. import alog
 from .. import assert_checks as tas
+from .. import cached_file as chf
 from .. import context_managers as cm
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
-from .. import cached_file as chf
 from .. import gcs_fs as gcs
 from .. import object_cache as objc
 from .. import osfd
@@ -227,15 +225,12 @@ class GcsFs(fsb.FsBase):
 
   def mkdir(self, url, mode=None):
     """No-op since GCS has no real directories."""
-    pass
 
   def makedirs(self, url, mode=None, exist_ok=None):
     """No-op since GCS has no real directories."""
-    pass
 
   def rmdir(self, url):
     """No-op since GCS has no real directories."""
-    pass
 
   def rmtree(self, url, ignore_errors=None):
     """Recursively remove all the objects under a URL.

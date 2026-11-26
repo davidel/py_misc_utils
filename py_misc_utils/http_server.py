@@ -2,7 +2,6 @@
 
 import argparse
 import base64
-import copy
 import http.server
 import os
 
@@ -209,8 +208,7 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         chunked_headers = dict()
         with open(path, 'wb') as f:
-          for data in _read_stream(self.headers, self.rfile, chunked_headers):
-            f.write(data)
+          f.writelines(_read_stream(self.headers, self.rfile, chunked_headers))
 
         self.send_response(201, 'Created')
         self.end_headers()

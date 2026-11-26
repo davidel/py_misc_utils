@@ -15,10 +15,8 @@ import re
 import numpy as np
 import pandas as pd
 
-from . import alog
-from . import assert_checks as tas
+from . import alog, gfs
 from . import core_utils as cu
-from . import gfs
 from . import np_utils as npu
 from . import utils as ut
 

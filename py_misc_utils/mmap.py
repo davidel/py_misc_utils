@@ -8,7 +8,6 @@ loading the entire file into process memory.
 import mmap
 import os
 
-from . import alog
 from . import osfd
 
 

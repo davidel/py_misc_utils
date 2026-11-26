@@ -7,8 +7,8 @@ file extension - and dopen()/copen() context managers which transparently
 """
 import bz2
 import collections
-import gzip
 import contextlib
+import gzip
 import lzma
 import os
 import shutil

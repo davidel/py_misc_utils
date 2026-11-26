@@ -8,13 +8,13 @@ and shift or floor datetimes.
 
 import datetime
 import os
-import pytz
 import re
 
 import dateutil
 import dateutil.parser
 import numpy as np
 import pandas as pd
+import pytz
 
 from . import assert_checks as tas
 

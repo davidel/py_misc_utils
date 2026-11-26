@@ -124,7 +124,7 @@ class Pipeline:
 
   def __repr__(self):
     """Return a string representation of the pipeline."""
-    return '\n'.join(f'[{i}] {repr(elem)}' for i, elem in enumerate(self._elems))
+    return '\n'.join(f'[{i}] {elem!r}' for i, elem in enumerate(self._elems))
 
   def clone(self):
     """Create a copy of the pipeline, cloning stateful elements.
@@ -168,7 +168,6 @@ class HaltedPipeline(Exception):
   pipeline element which is a filter which should pass through the first
   N samples, for example.
   """
-  pass
 
 
 # The Pipeline can also be used with data which is returned as iterators, where
@@ -188,7 +187,6 @@ class IterElement:
 
   Subclasses must implement __call__(self, iterator) -> iterator.
   """
-  pass
 
 
 def _iter_process(elem, data):

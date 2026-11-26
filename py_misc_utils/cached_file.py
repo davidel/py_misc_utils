@@ -18,9 +18,10 @@ import os
 import re
 import shutil
 import time
+
 import yaml
 
-from . import alog
+from . import alog, obj, osfd
 from . import assert_checks as tas
 from . import core_utils as cu
 from . import file_overwrite as fow
@@ -28,8 +29,6 @@ from . import fin_wrap as fw
 from . import fs_utils as fsu
 from . import lockfile as lockf
 from . import no_except as nox
-from . import obj
-from . import osfd
 from . import tempdir as tmpd
 
 _DroppedBlock = collections.namedtuple('DroppedBlock', 'name, sres, cid, offset')
@@ -46,7 +45,6 @@ class Meta(obj.Obj):
     blocksize: The size of the cache blocks.
     cid: The content id - the hash identifying the cache entry.
   """
-  pass
 
 
 class CachedBlockFile:
@@ -201,7 +199,7 @@ class CachedBlockFile:
         os.makedirs(os.path.dirname(lpath), exist_ok=True)
         os.link(bpath, lpath)
         os.chmod(lpath, 0o444)
-      except Exception as ex:
+      except Exception:
         alog.warning(f'Unable to create link: {bpath} -> {lpath}')
 
   def _try_block(self, boffset, offset):
@@ -507,8 +505,8 @@ class CachedFile:
     else:
       alog.xraise(ValueError, f'Invalid seek mode: {whence}')
 
-    tas.check_le(offset, self.cbf.size(), msg=f'Offset out of range')
-    tas.check_ge(offset, 0, msg=f'Offset out of range')
+    tas.check_le(offset, self.cbf.size(), msg='Offset out of range')
+    tas.check_ge(offset, 0, msg='Offset out of range')
 
     self._offset = offset
 
@@ -619,7 +617,6 @@ class CachedFile:
 
   def flush(self):
     """No-op: the file is read-only."""
-    pass
 
   def readable(self):
     """Whether the file is readable."""

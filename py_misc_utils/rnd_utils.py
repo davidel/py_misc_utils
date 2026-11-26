@@ -96,7 +96,7 @@ def uniform(center, delta=None, pct=None):
   if pct is not None:
     delta = abs(center * pct)
 
-  tas.check_is_not_none(delta, msg=f'Either delta or pct must be provided')
+  tas.check_is_not_none(delta, msg='Either delta or pct must be provided')
 
   return random.uniform(center - delta, center + delta)
 

@@ -15,9 +15,7 @@ import shutil
 import string
 import tempfile
 
-from . import alog
-from . import assert_checks as tas
-from . import osfd
+from . import alog, osfd
 from . import rnd_utils as rngu
 
 

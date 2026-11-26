@@ -7,13 +7,10 @@ iteration over large Parquet datasets.
 """
 
 import contextlib
-import functools
 
 import pyarrow.parquet as pq
 
-from . import alog
-from . import fin_wrap as fw
-from . import gfs
+from . import alog, gfs
 from . import url_fetcher as urlf
 from . import utils as ut
 

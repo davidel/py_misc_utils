@@ -29,7 +29,7 @@ class Field:
     str_tbl: String table used for string columns ('S' format).
   """
 
-  __slots__ = ('name', 'data', 'size', 'fmt', 'str_tbl')
+  __slots__ = ('data', 'fmt', 'name', 'size', 'str_tbl')
 
   def __init__(self, name, data, size, fmt, str_tbl):
     """Initialize a Field with name, data storage, size, format, and string table.

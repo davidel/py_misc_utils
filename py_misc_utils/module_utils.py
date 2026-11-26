@@ -223,7 +223,7 @@ def import_module(name_or_path,
                          install=install,
                          add_syspath=add_syspath)
   else:
-    alog.debug(f'Loading module \"{name_or_path}')  # noqa: E501
+    alog.debug(f'Loading module \"{name_or_path}')
     module = importlib.import_module(name_or_path, package=package)
 
     if modname is not None and install in (True, None):

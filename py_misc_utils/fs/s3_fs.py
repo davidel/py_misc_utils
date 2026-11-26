@@ -318,7 +318,7 @@ def _stat(client, bucket, path):
     ctime = min(dentry.st_ctime for dentry in dentries)
     mtime = max(dentry.st_mtime for dentry in dentries)
 
-    bpath = path[:-1] if path.endswith('/') else path
+    bpath = path.removesuffix('/')
     name = os.path.basename(bpath)
 
     return fsb.DirEntry(name=name,
@@ -580,15 +580,12 @@ class S3Fs(fsb.FsBase):
 
   def mkdir(self, url, mode=None):
     """No-op since S3 has no real directories."""
-    pass
 
   def makedirs(self, url, mode=None, exist_ok=None):
     """No-op since S3 has no real directories."""
-    pass
 
   def rmdir(self, url):
     """No-op since S3 has no real directories."""
-    pass
 
   def rmtree(self, url, ignore_errors=None):
     """Recursively remove all the objects under a URL.

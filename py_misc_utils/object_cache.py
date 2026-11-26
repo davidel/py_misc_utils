@@ -68,7 +68,6 @@ class Handler(abc.ABC):
     Args:
       obj: Object to clean up.
     """
-    pass
 
 
 class Cache:
@@ -98,7 +97,7 @@ class Cache:
 
   def _try_cleanup(self):
     """Periodic cleanup task: remove expired objects from all pools."""
-    alog.verbose(f'Object cache cleanup running')
+    alog.verbose('Object cache cleanup running')
     cleans = []
     with self._lock:
       new_cache = collections.defaultdict(collections.deque)

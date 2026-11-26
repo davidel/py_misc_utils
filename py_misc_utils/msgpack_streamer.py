@@ -8,7 +8,6 @@ loading everything into memory.
 
 import msgpack
 
-from . import alog
 from . import gfs
 from . import utils as ut
 

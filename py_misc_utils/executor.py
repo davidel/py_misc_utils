@@ -9,10 +9,8 @@ This module provides:
 """
 
 import collections
-import heapq
 import os
 import threading
-import time
 import weakref
 
 from . import alog
@@ -47,7 +45,7 @@ class Task:
     try:
       fnres = self._fn(*self._args, **self._kwargs)
     except Exception as ex:
-      alog.exception(ex, exmsg=f'Exception while running task')
+      alog.exception(ex, exmsg='Exception while running task')
       fnres = _ExceptionWrapper(exception=ex)
 
     if self._aresult is not None:
@@ -56,7 +54,6 @@ class Task:
 
 class _Void:
   """Sentinel class for unset AsyncResult."""
-  pass
 
 
 VOID = _Void()
@@ -341,10 +338,10 @@ class Executor:
 
   def shutdown(self):
     """Stop the executor and wait for all workers to exit."""
-    alog.debug0(f'Stopping executor')
+    alog.debug0('Stopping executor')
     self._queue.stop()
     with self._lock:
-      alog.debug0(f'Waiting executor workers exit')
+      alog.debug0('Waiting executor workers exit')
       while self._workers:
         self._idle_cond.wait()
 
@@ -361,7 +358,7 @@ class Executor:
     Returns:
       True if all workers became idle, False if timeout expired.
     """
-    alog.debug0(f'Waiting for idle ...')
+    alog.debug0('Waiting for idle ...')
 
     waiter = waiter or cwait.CondWaiter(timeout=timeout, timegen=timegen)
     self._queue.stop()
@@ -372,7 +369,7 @@ class Executor:
             return False
     finally:
       self._queue.start()
-      alog.debug0(f'Waiting for idle ... done')
+      alog.debug0('Waiting for idle ... done')
 
     return True
 

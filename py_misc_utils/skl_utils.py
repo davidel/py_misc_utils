@@ -8,10 +8,7 @@ classification/probability estimation, plus fit/predict helpers handling
 single- vs multi-output target shapes.
 """
 
-import os
-
 import numpy as np
-import pandas as pd
 import sklearn.decomposition
 import sklearn.neighbors
 import sklearn.preprocessing
@@ -224,7 +221,7 @@ class TransformPipeline:
       The pipeline itself.
     """
     tas.check(self.supports_fit,
-              msg=f'Only pipelines with a single transformer can call fit()')
+              msg='Only pipelines with a single transformer can call fit()')
     for trs in self._transformers:
       trs.fit(x)
 

@@ -12,11 +12,8 @@ import os
 import tarfile
 import zipfile
 
-from . import alog
+from . import alog, gfs
 from . import assert_checks as tas
-from . import gfs
-from . import img_utils as imgu
-from . import utils as ut
 
 ArchiveSpecs = collections.namedtuple('ArchiveSpecs',
                                       'kind, compression, base_path, purl')

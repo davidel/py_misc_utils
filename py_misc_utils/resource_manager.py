@@ -7,8 +7,6 @@ objects across processes.
 
 import collections
 import functools
-import logging
-import multiprocessing
 import multiprocessing.managers as mpmgr
 import os
 import queue
@@ -199,7 +197,7 @@ def get_manager(name, *args, **kwargs):
     alog.info(f'[{name}] Starting server daemon')
     try:
       daemon.start(functools.partial(_server_runner, name, *args, **kwargs))
-    except FileExistsError as ex:
+    except FileExistsError:
       pass
     time.sleep(0.5)
 

@@ -10,7 +10,6 @@ import bisect
 import collections
 
 import numpy as np
-import pandas as pd
 
 from . import assert_checks as tas
 from . import np_utils as npu

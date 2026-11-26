@@ -81,8 +81,8 @@ class IterFile:
     else:
       alog.xraise(ValueError, f'Invalid seek mode: {whence}')
 
-    tas.check_le(offset, self._size, msg=f'Offset out of range')
-    tas.check_ge(offset, 0, msg=f'Offset out of range')
+    tas.check_le(offset, self._size, msg='Offset out of range')
+    tas.check_ge(offset, 0, msg='Offset out of range')
 
     self._offset = offset
 
@@ -178,7 +178,6 @@ class IterFile:
 
   def flush(self):
     """No-op flush (read-only stream)."""
-    pass
 
   def readable(self):
     """Check if the stream is readable.

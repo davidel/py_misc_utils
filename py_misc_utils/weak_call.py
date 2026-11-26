@@ -10,7 +10,6 @@ import weakref
 
 class _Gone:
   """Sentinel type returned by WeakCall when its target is gone."""
-  pass
 
 
 GONE = _Gone()

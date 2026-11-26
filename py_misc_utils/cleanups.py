@@ -85,7 +85,7 @@ class _Cleanups:
     try:
       cleaner.fn(*cleaner.args, **cleaner.kwargs)
     except Exception as ex:
-      alog.exception(ex, exmsg=f'Exception while running cleanups')
+      alog.exception(ex, exmsg='Exception while running cleanups')
 
   def run(self):
     """Execute all registered cleanups in reverse registration order.

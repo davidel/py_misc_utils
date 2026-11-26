@@ -5,7 +5,6 @@ over file descriptors using IOStream. Each packet is framed with an 8-byte
 little-endian unsigned length prefix followed by the raw payload data.
 """
 
-import os
 import struct
 
 from . import iostream as ios

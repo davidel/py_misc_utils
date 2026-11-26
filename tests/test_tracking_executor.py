@@ -8,7 +8,6 @@ shuts down the underlying executor on its own, and wait_for_idle()
 combines the two idle conditions.
 """
 
-import threading
 import time
 
 import pytest

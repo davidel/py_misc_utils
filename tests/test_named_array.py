@@ -8,7 +8,6 @@ bug.
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from py_misc_utils import named_array as na
 

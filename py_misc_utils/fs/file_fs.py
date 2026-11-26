@@ -5,16 +5,13 @@ on plain local paths. Since files are already local, as_local() returns the
 path unchanged and blocks can be read directly from the file.
 """
 
-import hashlib
 import os
 import shutil
 
-from .. import alog
-from .. import assert_checks as tas
+from .. import alog, osfd
 from .. import cached_file as chf
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
-from .. import osfd
 
 
 class FileReader:
@@ -236,8 +233,7 @@ class FileFs(fsb.FsBase):
       data_gen: Iterable of bytes chunks to write.
     """
     with open(url, mode='wb') as fd:
-      for data in data_gen:
-        fd.write(data)
+      fd.writelines(data_gen)
 
   def get_file(self, url):
     """Read the contents of a file as chunks.

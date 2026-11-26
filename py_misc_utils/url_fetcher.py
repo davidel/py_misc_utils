@@ -13,10 +13,8 @@ import os
 import queue
 import threading
 
-from . import alog
+from . import alog, gfs
 from . import assert_checks as tas
-from . import file_overwrite as fow
-from . import gfs
 from . import tempdir as tmpd
 from . import utils as ut
 from . import work_results as wres
@@ -147,11 +145,11 @@ class UrlFetcher:
     and removes the working folder if it has been created by the fetcher
     itself.
     """
-    alog.verbose(f'Sending shutdowns down the queue')
+    alog.verbose('Sending shutdowns down the queue')
     for _ in range(len(self._workers)):
       self._uqueue.put('')
 
-    alog.verbose(f'Joining fetcher workers')
+    alog.verbose('Joining fetcher workers')
     for worker in self._workers:
       worker.join()
 

@@ -6,8 +6,6 @@ Exercises Cache get/set/close, TTL expiry, and Handler lifecycle.
 import gc
 import time
 
-import pytest
-
 from py_misc_utils import object_cache as oc
 
 

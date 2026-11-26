@@ -8,7 +8,6 @@ FTP does not support random access reads.
 
 import ftplib
 import functools
-import hashlib
 import io
 import os
 import tempfile
@@ -16,12 +15,11 @@ import urllib.parse as uparse
 
 import ftputil
 
-from .. import alog
 from .. import assert_checks as tas
+from .. import cached_file as chf
 from .. import context_managers as cm
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
-from .. import cached_file as chf
 from .. import object_cache as objc
 from .. import writeback_file as wbf
 
@@ -118,9 +116,8 @@ class FtpReader:
                  msg=f'Wrong offset for whole content read: {offset}')
 
     bfd = os.open(bpath, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, mode=0o440)
-    with open(bfd, mode='wb') as wfd:
-      with self._conn.open(self._path, mode='rb') as rfd:
-        self._conn.copyfileobj(rfd, wfd)
+    with open(bfd, mode='wb') as wfd, self._conn.open(self._path, mode='rb') as rfd:
+      self._conn.copyfileobj(rfd, wfd)
 
     return os.path.getsize(bpath)
 

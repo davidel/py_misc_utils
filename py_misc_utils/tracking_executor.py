@@ -8,7 +8,6 @@ notification delivered via condition variables.
 import threading
 import weakref
 
-from . import alog
 from . import cond_waiter as cwait
 from . import executor as xe
 

@@ -9,7 +9,6 @@ import os
 import shutil
 import tempfile
 
-from . import alog
 from . import compression as comp
 
 

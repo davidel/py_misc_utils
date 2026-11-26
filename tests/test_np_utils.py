@@ -7,7 +7,6 @@ bug (see KNOWN LIBRARY BUGS in SCRATCH/REFACTORING_PLAN.md).
 """
 
 import numpy as np
-import pytest
 
 from py_misc_utils import np_utils as npu
 
@@ -18,9 +17,9 @@ def test_diff_split_groups_by_mask():
   splits = npu.diff_split(data, lambda d: d > 2.0)
 
   assert [data[s].tolist() for s in splits] == [
-    [1.0, 2.0],
-    [5.0, 6.0],
-    [9.0],
+      [1.0, 2.0],
+      [5.0, 6.0],
+      [9.0],
   ]
 
 
@@ -30,9 +29,9 @@ def test_group_by_delta_splits_contiguous_groups():
   groups = npu.group_by_delta(data, lambda d: d > 2.0)
 
   assert [g.tolist() for g in groups] == [
-    [1.0, 2.0],
-    [5.0, 6.0],
-    [9.0],
+      [1.0, 2.0],
+      [5.0, 6.0],
+      [9.0],
   ]
 
 
@@ -223,9 +222,9 @@ def test_onehot_encodes_indices():
   result = npu.onehot(values, num_categories=3)
 
   assert result.tolist() == [
-    [1.0, 0.0, 0.0],
-    [0.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0],
+      [1.0, 0.0, 0.0],
+      [0.0, 0.0, 1.0],
+      [0.0, 1.0, 0.0],
   ]
 
 

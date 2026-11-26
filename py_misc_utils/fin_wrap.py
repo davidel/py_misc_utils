@@ -56,7 +56,7 @@ class fin_wrap:
     setattr(parent, name, obj)
     fname = _finalizer_name(name)
     if obj is not None:
-      tas.check_is_not_none(finfn, msg=f'Missing finalize function argument')
+      tas.check_is_not_none(finfn, msg='Missing finalize function argument')
 
       setattr(parent, fname, self)
       self._finalizer = weakref.finalize(self, finfn)
@@ -72,7 +72,6 @@ class fin_wrap:
 
 class _Wrapper:
   """Trivial namespace object used as a parent by fin_wrap_np()."""
-  pass
 
 
 def fin_wrap_np(obj, finfn, name='v'):

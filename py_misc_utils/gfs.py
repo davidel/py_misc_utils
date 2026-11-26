@@ -14,14 +14,12 @@ import importlib
 import os
 import pkgutil
 import re
-import shutil
 import sys
 import urllib.parse as uparse
 
 from . import alog
 from . import assert_checks as tas
 from . import cached_file as chf
-from . import context_managers as cm
 from . import fs_utils as fsu
 from . import mirror_from as mrf
 from . import run_once as ro

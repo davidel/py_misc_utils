@@ -8,25 +8,22 @@ listing is parsed from the anchor links of an HTML index page.
 """
 
 import functools
-import hashlib
 import io
 import mimetypes
 import os
 import re
-import requests
 import stat as st
 import tempfile
 
 import bs4
+import requests
 
-from .. import alog
-from .. import assert_checks as tas
+from .. import alog, osfd
+from .. import cached_file as chf
 from .. import context_managers as cm
 from .. import fs_base as fsb
 from .. import fs_utils as fsu
-from .. import cached_file as chf
 from .. import http_utils as hu
-from .. import osfd
 from .. import writeback_file as wbf
 
 
@@ -267,19 +264,15 @@ class HttpFs(fsb.FsBase):
 
   def mkdir(self, url, mode=None):
     """No-op since HTTP has no directories."""
-    pass
 
   def makedirs(self, url, mode=None, exist_ok=None):
     """No-op since HTTP has no directories."""
-    pass
 
   def rmdir(self, url):
     """No-op since HTTP has no directories."""
-    pass
 
   def rmtree(self, url, ignore_errors=None):
     """No-op since HTTP has no directories."""
-    pass
 
   def list(self, url):
     """Enumerate the entries linked from an HTML directory page.

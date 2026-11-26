@@ -7,8 +7,6 @@ content -- when the file is closed.
 
 import functools
 
-from . import alog
-from . import assert_checks as tas
 from . import fin_wrap as fw
 from . import mirror_from as mrf
 

@@ -13,15 +13,15 @@ one via the DAEMON_MODE environment variable.
 import atexit
 import collections
 import functools
-import logging
 import multiprocessing
 import os
 import pickle
-import psutil
 import signal
 import sys
 import tempfile
 import time
+
+import psutil
 
 from . import fs_utils as fsu
 from . import lockfile as lockf
@@ -129,7 +129,7 @@ class DaemonBase:
     try:
       with osfd.OsFd(self._pidfile, os.O_RDONLY) as fd:
         return int(fsu.readall(fd).strip())
-    except IOError:
+    except OSError:
       pass
 
   def getpid(self):

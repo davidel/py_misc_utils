@@ -6,7 +6,6 @@ work failures: failed work results are marked with an error tag, holding
 a pickled WorkException, so that the consumers can detect the failure and
 re-raise it as if the work was executed locally.
 """
-import contextlib
 import hashlib
 import importlib
 import os
@@ -118,7 +117,7 @@ class WorkException:
     exception = pickle.loads(self._ex_data)
     xvars = {k: v for k, v in vars(self).items() if not k.startswith('_')}
 
-    return f'{repr(exception)}: {xvars}'
+    return f'{exception!r}: {xvars}'
 
 
 def work_hash(workid):

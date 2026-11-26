@@ -263,7 +263,7 @@ class Writer:
         if size != len(t):
           alog.xraise(
               RuntimeError,
-              f'The major dimension of a write operation must match: {size} vs {len(args[i])}'
+              f'The major dimension of a write operation must match: {size} vs {len(t)}'
           )
         _check_shapes(self._shapes[i], t.shape)
         self._chunks[i].append(t)

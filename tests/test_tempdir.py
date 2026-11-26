@@ -12,9 +12,6 @@ namespace variable, so they do not depend on the shared singleton state
 
 import os
 
-import pytest
-
-from py_misc_utils import global_namespace as gns
 from py_misc_utils import tempdir as tmpd
 
 

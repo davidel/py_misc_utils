@@ -6,7 +6,6 @@ error handling, and automatic cleanup when the callable is garbage collected.
 """
 
 import threading
-import weakref
 
 from . import alog
 from . import scheduler as sch

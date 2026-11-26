@@ -6,10 +6,7 @@ until the target module is available. Useful for delaying deserialization of
 objects from optional dependencies.
 """
 
-import importlib
-import os
 import pickle
-import sys
 
 from . import alog
 from . import core_utils as cu

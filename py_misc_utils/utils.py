@@ -12,29 +12,23 @@ This module provides a collection of general-purpose utility functions including
 """
 
 import array
-import collections
 import datetime
-import inspect
-import json
 import math
 import os
 import pickle
 import re
-import sys
 import time
 import types
-import yaml
 
 import numpy as np
+import yaml
 
-from . import alog
+from . import alog, gfs, obj
 from . import assert_checks as tas
 from . import core_utils as cu
 from . import file_overwrite as fow
-from . import gfs
 from . import inspect_utils as iu
 from . import mmap as mm
-from . import obj
 from . import split as sp
 from . import template_replace as tr
 from . import traceback as tb
@@ -1003,7 +997,7 @@ def scale_data(data, base_data, scale):
   return ((data - base_data) / base_data) * scale
 
 
-_ARRAY_SIZES = tuple((array.array(c).itemsize, c) for c in 'B,H,I,L,Q'.split(','))
+_ARRAY_SIZES = tuple((array.array(c).itemsize, c) for c in ['B', 'H', 'I', 'L', 'Q'])
 
 
 def array_code(size):

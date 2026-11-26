@@ -13,7 +13,6 @@ This module provides a collection of NumPy-related utility functions including:
 
 import numpy as np
 
-from . import alog
 from . import assert_checks as tas
 from . import core_utils as cu
 

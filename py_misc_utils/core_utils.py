@@ -25,7 +25,6 @@ import array
 import collections
 import copy
 import inspect
-import os
 import re
 import sys
 import threading
@@ -55,7 +54,6 @@ def noop(*args, **kwargs):
 
   Useful as a placeholder callback or default function.
   """
-  pass
 
 
 def object_context(sobj, **kwargs):
@@ -972,8 +970,6 @@ class ValueList(list):
 
   Used by dict_add to accumulate values when the same key is added multiple times.
   """
-
-  pass
 
 
 def dict_add(ddict, name, value):

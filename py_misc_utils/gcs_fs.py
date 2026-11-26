@@ -5,7 +5,6 @@ objects of a Google Cloud Storage bucket: listing, streaming and partial
 reads, uploads, copies and removals are exposed over plain paths.
 """
 
-import collections
 import os
 import stat as st
 
@@ -234,7 +233,7 @@ class GcsFs:
         mtime = de.st_mtime
 
     if ctime is not None and mtime is not None:
-      bpath = path[:-1] if path.endswith('/') else path
+      bpath = path.removesuffix('/')
       name = os.path.basename(bpath)
 
       return fsb.DirEntry(name=name,

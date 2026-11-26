@@ -9,16 +9,13 @@ is also provided.
 
 import collections
 import heapq
-import os
 import threading
-import time
 import uuid
 
 from . import alog
 from . import executor as xe
 from . import fin_wrap as fw
 from . import timegen as tg
-from . import utils as ut
 
 Event = collections.namedtuple('Event', 'time, sequence, ref, action, argument, kwargs')
 
@@ -68,7 +65,7 @@ class Scheduler:
     try:
       event.action(*event.argument, **event.kwargs)
     except Exception as ex:
-      alog.exception(ex, exmsg=f'Exception while running scheduled action')
+      alog.exception(ex, exmsg='Exception while running scheduled action')
 
   def _run(self):
     """Main scheduler loop: wait for due events and submit them for execution."""

@@ -114,9 +114,9 @@ class StreamedFile:
     if offset > 0:
       if whence != os.SEEK_END:
         self._wait_completed()
-      tas.check_le(offset, self._size, msg=f'Offset out of range')
+      tas.check_le(offset, self._size, msg='Offset out of range')
 
-    tas.check_ge(offset, 0, msg=f'Offset out of range')
+    tas.check_ge(offset, 0, msg='Offset out of range')
 
     self._offset = offset
 
@@ -209,7 +209,6 @@ class StreamedFile:
 
   def flush(self):
     """No-op; flushing is not applicable to this read-only file."""
-    pass
 
   def readable(self):
     """Whether the file is readable.

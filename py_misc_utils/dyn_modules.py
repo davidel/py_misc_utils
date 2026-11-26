@@ -9,7 +9,6 @@ import collections
 import importlib
 import os
 
-from . import alog
 from . import assert_checks as tas
 from . import gfs
 from . import module_utils as mu
@@ -50,7 +49,7 @@ class DynLoader:
       parent_mod = importlib.import_module(modname)
       mpath = os.path.dirname(parent_mod.__file__)
     else:
-      tas.check_is_not_none(path, msg=f'Path must be specified if "modname" is missing')
+      tas.check_is_not_none(path, msg='Path must be specified if "modname" is missing')
       mpath = path
 
     module_names, matcher = [], gfs.RegexMatcher(r'(.*)' + postfix + r'\.py$')

@@ -9,15 +9,13 @@ the PID, command line, and acquisition timestamp.
 
 import hashlib
 import os
-import psutil
 import time
+
+import psutil
 import yaml
 
-from . import alog
-from . import assert_checks as tas
+from . import alog, obj, osfd
 from . import fs_utils as fsu
-from . import obj
-from . import osfd
 from . import rnd_utils as rngu
 from . import tempdir as tmpd
 
@@ -44,7 +42,6 @@ class Meta(obj.Obj):
   Attributes are populated from a YAML document and typically include pid,
   cmdline, and time fields describing the process that holds the lock.
   """
-  pass
 
 
 _CMDLINE = list(psutil.Process().cmdline())

@@ -12,14 +12,12 @@ import multiprocessing
 import signal
 import sys
 
-from . import alog
-from . import cleanups
+from . import alog, cleanups
 from . import global_namespace as gns
 
 
 class TerminationError(Exception):
   """Raised when a process receives SIGTERM and should terminate."""
-  pass
 
 
 def _sig_handler(sig, frame):
@@ -149,7 +147,7 @@ def procfn_wrap(procfn, *args, **kwargs):
   except (KeyboardInterrupt, TerminationError):
     sys.exit(1)
   except Exception as ex:
-    alog.exception(ex, exmsg=f'Exception while running process function')
+    alog.exception(ex, exmsg='Exception while running process function')
     raise
   finally:
     _process_cleanup()

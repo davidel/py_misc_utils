@@ -6,7 +6,7 @@ with optional format conversion.
 
 import io
 
-import PIL.Image as Image
+from PIL import Image
 
 from . import http_utils as hu
 

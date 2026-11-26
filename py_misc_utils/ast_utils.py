@@ -7,7 +7,6 @@ utility honoring an environment-driven indentation and a static AST
 evaluator executing statements/expressions.
 """
 import ast
-import logging
 import os
 
 from . import alog
