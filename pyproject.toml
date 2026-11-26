@@ -81,3 +81,7 @@ filterwarnings = [
   "ignore:The asyncore module is deprecated",
   "ignore:The asynchat module is deprecated",
 ]
+
+[tool.ruff.lint]
+# dict(...) keyword style is used pervasively across the codebase; keep it.
+ignore = ["C408"]
