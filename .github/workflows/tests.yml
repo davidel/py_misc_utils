@@ -30,3 +30,30 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m pytest tests/ --cov=py_misc_utils --cov-report=term-missing
+
+  legacy-fork:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package with test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[all]'
+
+      - name: Run fork-method tests
+        # fork must stay tested: this dedicated job opts into the
+        # legacy_fork tests deselected by the default suite.
+        run: |
+          python -m pytest tests/ -m legacy_fork

@@ -10,12 +10,15 @@ stop() terminates the daemon (SIGTERM, then SIGKILL after kill_timeout)
 and removes the PID file, so getpid() goes back to None and a further
 stop() is a no-op returning False.
 
-DaemonCompat is exercised in-process: its daemon is a multiprocessing
-process and the caller survives start(). DaemonPosix is exercised in a
-dedicated subprocess with a hard timeout: its daemonization redirects
-the standard streams (impossible under the pytest capture pseudofiles)
-and its raw os.fork() copy of the caller cannot be unwound safely
-inside the test process. Either way only the public API is used.
+DaemonCompat is exercised in-process under spawn (its daemon is a
+multiprocessing process and the caller survives start()). The fork ways
+- DaemonPosix, which double-forks with raw os.fork(), and DaemonCompat
+with the DAEMON_MP_CONTEXT=fork env knob - run in dedicated subprocesses
+with a hard timeout, marked legacy_fork: their daemons detach the
+standard streams (impossible under the pytest capture pseudofiles),
+their fork copies of the caller cannot be unwound safely inside the
+test process, and a hang must fail as a timeout instead of stalling the
+suite. Either way only the public API is used.
 """
 
 import os
@@ -28,6 +31,11 @@ import uuid
 import pytest
 
 from py_misc_utils import daemon_process as dp
+
+# DaemonCompat reads the start method for its daemon process from this
+# public env knob at start() time; the suite runs it as spawn so no
+# fork start (and no multi-threaded-fork deprecation) ever happens.
+os.environ.setdefault('DAEMON_MP_CONTEXT', 'spawn')
 
 # How long the daemon target stays alive before exiting on its own -
 # an upper bound only: tests stop() the daemon well before this.
@@ -162,18 +170,27 @@ def test_daemon_alias_selects_compat_on_cpython():
   assert dp.Daemon is dp.DaemonCompat
 
 
-# The DaemonPosix lifecycle, run verbatim inside a subprocess with real
-# stdio. The script talks only to the public API; it prints one
-# KEY=VALUE line per check and exits 0 only if all of them hold.
-POSIX_SCRIPT = """
+# The fork ways of doing daemons, run verbatim inside a subprocess with
+# real stdio: DaemonPosix (raw os.fork() double-fork) and DaemonCompat
+# driven through the DAEMON_MP_CONTEXT=fork public env knob. The script
+# talks only to the public API; it prints one KEY=VALUE line per check
+# and exits 0 only if all of them hold.
+LIFECYCLE_SCRIPT = """
 import os
 import sys
 import time
 
 from py_misc_utils import daemon_process as dp
 
+daemon_class_name = sys.argv[1]
 name, marker_path, target_lifetime, kill_timeout = (
-    sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4]))
+    sys.argv[2], sys.argv[3], float(sys.argv[4]), float(sys.argv[5]))
+
+if daemon_class_name == 'compat-fork':
+  os.environ['DAEMON_MP_CONTEXT'] = 'fork'
+  daemon_class = dp.DaemonCompat
+else:
+  daemon_class = dp.DaemonPosix
 
 
 def target():
@@ -183,7 +200,7 @@ def target():
   time.sleep(target_lifetime)
 
 
-dae = dp.DaemonPosix(name)
+dae = daemon_class(name)
 pid = dae.start(target)
 print(f'PID={pid}')
 
@@ -198,17 +215,31 @@ print(f'GETPID_AFTER_STOP={dae.getpid()}')
 print(f'STOP_AGAIN={dae.stop(kill_timeout=kill_timeout)}')
 """
 
+# (daemon_class_name, description): the two fork ways of making daemons.
+FORK_MODES = [
+    ('posix', 'DaemonPosix raw os.fork() double-fork'),
+    ('compat-fork', 'DaemonCompat with DAEMON_MP_CONTEXT=fork'),
+]
+
 
 @pytest.mark.slow
-def test_daemon_posix_lifecycle(posix_cleanup, daemon_name):
-  """DaemonPosix: full start/run/stop lifecycle in a subprocess."""
+@pytest.mark.legacy_fork
+@pytest.mark.parametrize('fork_mode', FORK_MODES, ids=lambda m: m[0])
+def test_daemon_fork_lifecycle(posix_cleanup, fork_mode, daemon_name):
+  """Fork-based daemons: full start/run/stop lifecycle in a subprocess.
+
+  Parametrized over the two fork ways - raw double-fork (DaemonPosix)
+  and the multiprocessing API forced to fork via the public env knob.
+  """
+  daemon_class_name, why = fork_mode
   marker_path = _marker_path(daemon_name)
   script_dir = os.path.dirname(os.path.abspath(__file__))
   env = dict(os.environ, PYTHONPATH=os.path.dirname(script_dir))
 
   try:
     proc = subprocess.run([
-        sys.executable, '-c', POSIX_SCRIPT, daemon_name, marker_path,
+        sys.executable, '-c', LIFECYCLE_SCRIPT, daemon_class_name, daemon_name,
+        marker_path,
         str(TARGET_LIFETIME),
         str(KILL_TIMEOUT)
     ],
@@ -218,7 +249,7 @@ def test_daemon_posix_lifecycle(posix_cleanup, daemon_name):
                           env=env,
                           check=True)
   except subprocess.TimeoutExpired:
-    pytest.fail(f'DaemonPosix lifecycle hung for {POSIX_SUBPROCESS_TIMEOUT}s')
+    pytest.fail(f'{why}: lifecycle hung for {POSIX_SUBPROCESS_TIMEOUT}s')
 
   report = dict(line.split('=', 1) for line in proc.stdout.splitlines())
   pid = report['PID']

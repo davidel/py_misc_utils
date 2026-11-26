@@ -14,6 +14,7 @@ import multiprocessing
 import pytest
 
 from py_misc_utils import global_namespace as gns
+from py_misc_utils import multiprocessing as mp_utils
 
 _NS_KEY = 'py-misc-utils-tests-gns'
 
@@ -57,6 +58,10 @@ def test_var_name_is_registry_key():
   assert gns.get(gns.Var(name)) == 42
 
 
+def _upper(data):
+  return data.upper()
+
+
 def test_defval_function_called_lazily():
   calls = []
 
@@ -65,7 +70,11 @@ def test_defval_function_called_lazily():
 
     return 'lazy'
 
-  v = gns.Var(_mkname('defval-lazy'), defval=_defval)
+  # fork_init=True: the local-scope defval callable cannot cross a
+  # process boundary, and this test is about lazy evaluation, not about
+  # switch propagation - the same idiom the library itself uses for
+  # lambda defvals.
+  v = gns.Var(_mkname('defval-lazy'), defval=_defval, fork_init=True)
 
   assert gns.get(v) == 'lazy'
   assert len(calls) == 1
@@ -77,7 +86,7 @@ def test_defval_function_called_lazily():
 
 def test_parent_switch_serializes_state():
   name = _mkname('parent-switch')
-  v = gns.Var(name, parent_fn=lambda data: data.upper())
+  v = gns.Var(name, parent_fn=_upper)
   gns.set(v, 'state')
 
   pns = gns.parent_switch('spawn')
@@ -99,6 +108,7 @@ def test_fork_init_vars_excluded_from_switches():
 
 
 @pytest.mark.slow
+@pytest.mark.legacy_fork
 def test_fork_child_filters_fork_init_vars():
   # _child_fork() runs in the forked child via os.register_at_fork():
   # fork_init=False variables carry the parent value over, while
@@ -140,6 +150,7 @@ def test_parent_switch_unknown_method_asserts():
 
 
 @pytest.mark.slow
+@pytest.mark.legacy_fork
 def test_fork_roundtrip():
   name = _mkname('fork-roundtrip')
   v = gns.Var(name)
@@ -158,3 +169,20 @@ def test_fork_roundtrip():
 def _child_gets(v, q):
   # In fork mode the child inherits the parent namespace.
   q.put(gns.get(v))
+
+
+@pytest.mark.slow
+def test_spawn_roundtrip_propagates_parent_state():
+  """parent_switch/child_switch carry GNS state across spawn boundaries."""
+  name = _mkname('spawn-roundtrip')
+  v = gns.Var(name)
+  gns.set(v, {'k': 'parent-value'})
+  ctx = multiprocessing.get_context('spawn')
+  q = ctx.Queue()
+  p = mp_utils.create_process(_child_gets, args=(v, q), context='spawn')
+  p.start()
+  got = q.get(timeout=10.0)
+  p.join(timeout=10.0)
+
+  assert p.exitcode == 0
+  assert got == {'k': 'parent-value'}

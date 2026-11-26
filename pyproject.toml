@@ -67,10 +67,11 @@ include = ["py_misc_utils*"]
 testpaths = [
   "tests",
 ]
-addopts = '-q --strict-markers -m "not needs_network"'
+addopts = '-q --strict-markers -m "not needs_network and not legacy_fork"'
 markers = [
   "slow: long-running tests (kept on by default, deselect with -m 'not slow')",
   "needs_network: tests that require real internet access (deselected by default)",
+  "legacy_fork: tests using the fork start method (deselected by default; fork must stay tested - opt in with -m legacy_fork)",
 ]
 filterwarnings = [
   # ftputil 5.x warns about the upcoming encoding change in 6.0.0; the

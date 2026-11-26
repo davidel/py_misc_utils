@@ -323,7 +323,8 @@ def test_is_processed_roundtrip_and_dtype_caveat():
   assert sel._is_processed(np.array([2, 1], dtype=np.int32)) is False
 
 
-def test_score_slice_sequential_and_pool_agree():
+@pytest.mark.parametrize('mp_ctx', ['spawn', 'forkserver'])
+def test_score_slice_sequential_and_pool_agree(mp_ctx):
   """_score_slice() returns identical scores sequentially and via a pool."""
   sel = sp.Selector({'a': [1, 2, 3], 'b': [10, 20, 30]})
   pts = [_mkpt(0, [0, 0]), _mkpt(1, [2, 1]), _mkpt(2, [1, 2])]
@@ -336,7 +337,7 @@ def test_score_slice_sequential_and_pool_agree():
 
   sel2 = sp.Selector({'a': [1, 2, 3], 'b': [10, 20, 30]})
   sel2.pts = list(pts)
-  par = sel2._score_slice(pts, _pool_score_fn, n_jobs=2, mp_ctx='fork')
+  par = sel2._score_slice(pts, _pool_score_fn, n_jobs=2, mp_ctx=mp_ctx)
 
   assert par == seq
 

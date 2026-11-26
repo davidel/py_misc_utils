@@ -5,8 +5,13 @@ exits all managed contexts on close and re-raises the handled exception
 when a context does not suppress it, get() creates-or-returns named
 contexts, AsyncRunner runs coroutines on a background event loop thread,
 run_async() uses the process-global runner, and AsyncManager distributes
-work over worker processes (fork context) returning (work_id, result)
-tuples, with worker exceptions surfaced as WorkException payloads.
+work over worker processes returning (work_id, result) tuples, with
+worker exceptions surfaced as WorkException payloads.
+
+AsyncManager tests run under both spawn and forkserver contexts: the
+process-boundary contract (module-level, picklable work ctors) holds
+regardless of the start method, and no library state relies on fork
+inheritance.
 """
 
 import asyncio
@@ -17,6 +22,14 @@ import pytest
 
 import py_misc_utils.async_manager as pam
 import py_misc_utils.work_results as pwr
+
+MP_METHODS = ['spawn', 'forkserver']
+
+
+@pytest.fixture(params=MP_METHODS)
+def mpctx(request):
+  """Parametrized multiprocessing context: spawn and forkserver."""
+  return multiprocessing.get_context(request.param)
 
 
 def _mk_async_ctx(entered):
@@ -186,52 +199,6 @@ def test_run_async_uses_global_runner():
   assert fut.result(timeout=5) == 'done'
 
 
-def test_async_manager_distributes_and_fetches():
-  """AsyncManager runs work items and returns (work_id, result) pairs."""
-  mpctx = multiprocessing.get_context('fork')
-  am = pam.AsyncManager(num_workers=2, mpctx=mpctx)
-
-  try:
-    for i in range(4):
-      am.enqueue_work(f'w{i}', _worker_ctor)
-
-    results = {}
-    for _ in range(4):
-      wid, res = am.fetch_result(timeout=10)
-      results[wid] = res
-
-    assert results == {f'w{i}': 'ok' for i in range(4)}
-  finally:
-    am.close()
-
-
-def test_async_manager_surfaces_worker_errors():
-  """Worker exceptions come back as WorkException payloads."""
-  mpctx = multiprocessing.get_context('fork')
-  am = pam.AsyncManager(num_workers=1, mpctx=mpctx)
-
-  try:
-    am.enqueue_work('boom', _failing_ctor)
-    wid, res = am.fetch_result(timeout=10)
-
-    assert wid == 'boom'
-    assert isinstance(res, pwr.WorkException)
-    assert res.is_instance(ValueError)
-  finally:
-    am.close()
-
-
-def test_async_manager_fetch_nonblocking_empty():
-  """fetch_result(block=False) on an idle manager returns None."""
-  mpctx = multiprocessing.get_context('fork')
-  am = pam.AsyncManager(num_workers=1, mpctx=mpctx)
-
-  try:
-    assert am.fetch_result(block=False) is None
-  finally:
-    am.close()
-
-
 # ---- Additional work factories imported from test_async_manager_addons ----
 
 
@@ -363,10 +330,8 @@ def test_async_context_aexit_suppressed():
   asyncio.run(scenario())
 
 
-def test_async_manager_multiple_results_in_order():
+def test_async_manager_multiple_results_in_order(mpctx):
   """Results are fetched with their work ids after parallel enqueues."""
-  mpctx = multiprocessing.get_context('fork')
-
   with pam.AsyncManager(num_workers=2, mpctx=mpctx) as am:
     for i, ctor in enumerate((_echo0, _echo10, _echo20, _echo30)):
       am.enqueue_work(i, ctor)
@@ -379,9 +344,8 @@ def test_async_manager_multiple_results_in_order():
     assert results == {0: 0, 1: 10, 2: 20, 3: 30}
 
 
-def test_async_manager_repeated_work_on_same_worker():
+def test_async_manager_repeated_work_on_same_worker(mpctx):
   """A single worker processes several work items sequentially."""
-  mpctx = multiprocessing.get_context('fork')
   am = pam.AsyncManager(num_workers=1, mpctx=mpctx)
 
   try:
@@ -395,9 +359,8 @@ def test_async_manager_repeated_work_on_same_worker():
     am.close()
 
 
-def test_async_manager_timeout_error_surfaces():
+def test_async_manager_timeout_error_surfaces(mpctx):
   """A work item raising after fetch_result(timeout) reports the failure."""
-  mpctx = multiprocessing.get_context('fork')
   am = pam.AsyncManager(num_workers=1, mpctx=mpctx)
 
   try:
@@ -425,3 +388,46 @@ def test_async_runner_is_runnable_repeatedly():
 
   assert async_manager.run_async(work(3)).result(timeout=10) == 6
   assert async_manager.run_async(work(5)).result(timeout=10) == 10
+
+
+def test_async_manager_distributes_and_fetches(mpctx):
+  """AsyncManager runs work items and returns (work_id, result) pairs."""
+  am = pam.AsyncManager(num_workers=2, mpctx=mpctx)
+
+  try:
+    for i in range(4):
+      am.enqueue_work(f'w{i}', _worker_ctor)
+
+    results = {}
+    for _ in range(4):
+      wid, res = am.fetch_result(timeout=10)
+      results[wid] = res
+
+    assert results == {f'w{i}': 'ok' for i in range(4)}
+  finally:
+    am.close()
+
+
+def test_async_manager_surfaces_worker_errors(mpctx):
+  """Worker exceptions come back as WorkException payloads."""
+  am = pam.AsyncManager(num_workers=1, mpctx=mpctx)
+
+  try:
+    am.enqueue_work('boom', _failing_ctor)
+    wid, res = am.fetch_result(timeout=10)
+
+    assert wid == 'boom'
+    assert isinstance(res, pwr.WorkException)
+    assert res.is_instance(ValueError)
+  finally:
+    am.close()
+
+
+def test_async_manager_fetch_nonblocking_empty(mpctx):
+  """fetch_result(block=False) on an idle manager returns None."""
+  am = pam.AsyncManager(num_workers=1, mpctx=mpctx)
+
+  try:
+    assert am.fetch_result(block=False) is None
+  finally:
+    am.close()
