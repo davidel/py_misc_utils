@@ -33,10 +33,10 @@ def trigger(filename, count):
   """
   frame = tb.get_frame_after(filename)
   if frame is not None:
-    tb = frame.f_code.co_filename, frame.f_lineno
+    site = frame.f_code.co_filename, frame.f_lineno
     with _LOCK:
-      c = _TB.get(tb, 0)
-      _TB[tb] = c + 1
+      c = _TB.get(site, 0)
+      _TB[site] = c + 1
 
       return count > c
 
