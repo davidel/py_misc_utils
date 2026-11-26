@@ -53,9 +53,13 @@ def test_factor_above_one_rejected():
 
 
 def test_factor_one_exactly_accepted():
-  """The factor check is inclusive at 1.0."""
-  ma = mav.MovingAverage(1.0)
-  assert ma._factor == 1.0
+  """The factor check is inclusive at 1.0.
+
+  Acceptance is asserted behaviorally: with factor 1.0 the running
+  value never moves off its initial value.
+  """
+  ma = mav.MovingAverage(1.0, init=42.0)
+  assert ma.update(100.0) == 42.0
 
 
 def test_negative_factor_rejected():

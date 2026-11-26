@@ -17,7 +17,7 @@ def test_resolve_numpy_only():
   a = np.array([1.0, 2.0, 3.0])
   mod, args = nf.resolve(a)
 
-  assert mod.__npml_name == 'np'
+  assert mod is np
   assert len(args) == 1
   assert np.array_equal(args[0], a)
 
@@ -27,7 +27,7 @@ def test_resolve_torch_only():
   a = torch.tensor([1.0, 2.0, 3.0])
   mod, args = nf.resolve(a)
 
-  assert mod.__npml_name == 'torch'
+  assert mod is torch
   assert len(args) == 1
   assert torch.equal(args[0], a)
 
@@ -38,7 +38,7 @@ def test_resolve_mixed_converts_to_torch():
   b = torch.tensor([3.0, 4.0])
   mod, args = nf.resolve(a, b)
 
-  assert mod.__npml_name == 'torch'
+  assert mod is torch
   assert isinstance(args[0], torch.Tensor)
   assert torch.equal(args[0], torch.tensor([1.0, 2.0]))
   assert torch.equal(args[1], b)
@@ -48,7 +48,7 @@ def test_resolve_empty_args():
   """resolve() with no args returns default module and empty tuple."""
   mod, args = nf.resolve()
 
-  assert mod.__npml_name == 'np'
+  assert mod is np
   assert args == ()
 
 
@@ -58,7 +58,7 @@ def test_resolve_multiple_numpy():
   b = np.array([3.0, 4.0])
   mod, args = nf.resolve(a, b)
 
-  assert mod.__npml_name == 'np'
+  assert mod is np
   assert len(args) == 2
   assert np.array_equal(args[0], a)
   assert np.array_equal(args[1], b)
@@ -69,7 +69,7 @@ def test_resolve_preserves_numpy_value():
   a = np.array([[1, 2], [3, 4]])
   mod, args = nf.resolve(a)
 
-  assert mod.__npml_name == 'np'
+  assert mod is np
   assert np.array_equal(args[0], [[1, 2], [3, 4]])
 
 
@@ -79,7 +79,7 @@ def test_resolve_identifies_torch_tensor():
 
   mod, args = nf.resolve(a)
 
-  assert mod.__npml_name == 'torch'
+  assert mod is torch
   assert args[0] is a
 
 
@@ -89,7 +89,7 @@ def test_resolve_picks_numpy_for_numpy_only():
 
   mod, args = nf.resolve(a)
 
-  assert mod.__npml_name == 'np'
+  assert mod is np
   assert args[0] is a
 
 
@@ -99,7 +99,7 @@ def test_resolve_numpy_to_torch_conversion():
   b = torch.tensor([1.0, 2.0])
   mod, args = nf.resolve(a, b)
 
-  assert mod.__npml_name == 'torch'
+  assert mod is torch
   converted = args[0]
   assert isinstance(converted, torch.Tensor)
   assert torch.equal(converted, torch.tensor([5.0, 6.0]))

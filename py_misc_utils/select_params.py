@@ -255,6 +255,11 @@ class Selector:
     Processes points in chunks of scores_x_run, evaluating each batch and
     optionally saving status after each batch.
 
+    Points are marked as processed as soon as their score is fetched, so
+    that status files saved mid-run never carry stale dedup information:
+    a run resumed from any save does not re-evaluate already scored
+    configurations.
+
     Args:
       score_fn: Callable accepting keyword arguments from parameter dicts.
       n_jobs: Number of parallel workers. Defaults to None.
@@ -269,6 +274,9 @@ class Selector:
       current_points = self.pts[i:i + scores_x_run]
 
       scores = self._score_slice(current_points, score_fn, n_jobs=n_jobs, mp_ctx=mp_ctx)
+
+      for pt in current_points:
+        self.processed.add(pt.idx.tobytes())
 
       self.current_scores.extend(scores)
       self.processed_scores += len(current_points)
@@ -459,8 +467,12 @@ class Selector:
 
       fsidx = self._select_top_n(top_n, min_pid_gain_pct)
 
-      score = self.current_scores[fsidx[0]]
-      if self.best_score is None or score > self.best_score:
+      # An empty selection means no pending point improved over its
+      # recorded score: the iteration counts as blanks instead of
+      # crashing on the missing best entry.
+      score = self.current_scores[fsidx[0]] if fsidx else None
+
+      if score is not None and (self.best_score is None or score > self.best_score):
         self.best_score = score
         self.best_idx = self.pts[fsidx[0]].idx
         self.best_param = self._make_param(self.best_idx)
@@ -471,9 +483,6 @@ class Selector:
         self.blanks += len(self.pts)
         alog.info(
             f'Score not improved (current run top {score}, best {self.best_score})')
-
-      for pt in self.pts:
-        self.processed.add(pt.idx.tobytes())
 
       # Sample around best points ...
       next_pts = []
