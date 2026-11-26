@@ -177,7 +177,9 @@ def maybe_open(path, **kwargs):
   """
   try:
     return open(path, **kwargs)
-  except:
+  # Open dispatches over all fs backends - each raises its own error types:
+  # any open failure answers None, per the documented contract.
+  except Exception:  # noqa: BLE001, S110
     pass
 
 

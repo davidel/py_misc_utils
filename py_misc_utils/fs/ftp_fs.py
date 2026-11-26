@@ -61,7 +61,9 @@ class CacheHandler(objc.Handler):
       obj.keep_alive()
 
       return True
-    except:
+    # Third-party connection probe: any failure means "not alive" - a false
+    # negative just drops the pooled connection, which is self-healing.
+    except:  # noqa: E722
       return False
 
   def close(self, obj):

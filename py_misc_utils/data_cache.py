@@ -47,7 +47,9 @@ class DataCache:
       if max_age is None or (sres.st_ctime + max_age) > time.time():
         with gfs.open(self._data_path, mode='rb') as fd:
           self._orig_data = pickle.load(fd)
-    except:
+    # Pickle payloads can raise nearly anything when stale/corrupt: treat
+    # every load failure as a cache miss - the source data is the fallback.
+    except:  # noqa: E722, S110
       pass
 
     self._data = self._orig_data

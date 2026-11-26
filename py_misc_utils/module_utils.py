@@ -339,7 +339,9 @@ def maybe_import(modname, package=None):
   """
   try:
     return importlib.import_module(modname, package=package)
-  except:
+  # Optional import: module bodies run arbitrary code and can fail in any
+  # way - a broken optional dependency is logged and reported as missing.
+  except Exception:  # noqa: BLE001
     alog.spam(f'Unable to load module \"{modname}\" in package \"{package}\"')
 
 

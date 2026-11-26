@@ -126,7 +126,7 @@ class CachedBlockFile:
       fsu.safe_rmtree(path, ignore_errors=True)
 
       return True
-    except:
+    except OSError:
       return False
 
   @classmethod
@@ -441,7 +441,8 @@ class CachedBlockFile:
     """
     try:
       return cls.load_meta(path)
-    except:
+    # Suppress E722/S110: validator contract is True/False, never raise.
+    except:  # noqa: E722, S110
       pass
 
 

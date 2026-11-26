@@ -371,9 +371,11 @@ class DaemonCompat(DaemonBase):
     return pid
 
 
+# Probe of a private multiprocessing internal: shape varies across Python
+# versions, so any surprise must fall back to the conservative DaemonPosix.
 try:
   HAS_MP_CHILDREN = isinstance(multiprocessing.process._children, set)
-except:
+except:  # noqa: E722
   HAS_MP_CHILDREN = False
 
 if HAS_MP_CHILDREN and os.getenv('DAEMON_MODE') != 'posix':

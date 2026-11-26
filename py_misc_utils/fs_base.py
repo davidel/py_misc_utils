@@ -144,7 +144,9 @@ class FsBase(abc.ABC):
       self.stat(url)
 
       return True
-    except:
+    # stat() backends raise backend-specific errors (and some return None on
+    # missing URLs - tracked defect): any failure answers False, never raises.
+    except Exception:  # noqa: BLE001
       return False
 
   def isdir(self, url):
@@ -160,7 +162,7 @@ class FsBase(abc.ABC):
       de = self.stat(url)
 
       return st.S_ISDIR(de.st_mode)
-    except:
+    except Exception:  # noqa: BLE001
       return False
 
   def isfile(self, url):
@@ -176,7 +178,9 @@ class FsBase(abc.ABC):
       de = self.stat(url)
 
       return st.S_ISREG(de.st_mode)
-    except:
+    # stat() backends raise backend-specific errors (and some return None on
+    # missing URLs - tracked defect): any failure answers False, never raises.
+    except Exception:  # noqa: BLE001
       return False
 
   def copyfile(self, url, dest_fs, dest_url):

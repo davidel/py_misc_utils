@@ -86,7 +86,7 @@ def _try_fastfs_dir(path):
       os.makedirs(fastfs_dir, exist_ok=True)
 
       return fastfs_dir
-    except:
+    except OSError:
       pass
 
 

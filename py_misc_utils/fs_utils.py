@@ -214,7 +214,7 @@ def stat(path):
   """
   try:
     return os.stat(path)
-  except:
+  except OSError:
     pass
 
 

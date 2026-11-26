@@ -101,7 +101,9 @@ class LockFile:
         tag = yaml.safe_load(data.decode())
 
         return Meta(**tag)
-      except:
+      # Lock metadata may be truncated, corrupt, or schema-drifted: any parse
+      # failure means "no valid holder" so lock recovery can proceed safely.
+      except Exception:  # noqa: BLE001, S110
         pass
 
   def _alive_pid(self, meta):
