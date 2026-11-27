@@ -65,6 +65,28 @@ def test_read_csv_infers_dtypes(temp_path):
   assert np.issubdtype(result['b'].dtype, np.number)
 
 
+def test_is_numeric_dtype_handles_extension_dtypes():
+  """is_numeric_dtype() classifies pandas extension dtypes and np dtypes."""
+  assert pdu.is_numeric_dtype(np.dtype('int64'))
+  assert not pdu.is_numeric_dtype(np.dtype(bool))
+  assert pdu.is_numeric_dtype(pd.Int64Dtype())
+  assert not pdu.is_numeric_dtype(pd.StringDtype())
+  assert not pdu.is_numeric_dtype(pd.CategoricalDtype(['a', 'b']))
+
+
+def test_read_csv_single_dtype_with_string_column(temp_path):
+  """A single dtype applies to numeric columns only, skipping string ones."""
+  path = os.path.join(temp_path, 'data.csv')
+  with open(path, 'w') as fd:
+    fd.write('a,b\n1,x\n2,y\n')
+
+  result = pdu.load_dataframe(path, dtype=np.int64)
+
+  assert list(result.columns) == ['a', 'b']
+  assert np.issubdtype(result['a'].dtype, np.number)
+  assert result['b'].tolist() == ['x', 'y']
+
+
 def test_save_load_pickle_roundtrip(temp_path, df):
   """save_dataframe()/load_dataframe() round-trip via pickle."""
   path = os.path.join(temp_path, 'df.pkl')

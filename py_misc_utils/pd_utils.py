@@ -71,6 +71,34 @@ def get_typed_columns(df, type_fn, discards=None):
   return cols
 
 
+def is_numeric_dtype(dtype):
+  """Check if a dtype is numeric (integer or floating point).
+
+  Extension dtypes - which np.issubdtype() cannot interpret - are
+  handled via pd.api.types.is_numeric_dtype(), while plain NumPy dtypes
+  are delegated to npu.is_numeric() to keep the np_utils contract pure.
+
+  Args:
+    dtype: A pandas or NumPy dtype.
+
+  Returns:
+    True if dtype is a numeric type.
+
+  Example:
+    import numpy as np
+    import pandas as pd
+
+    pd_utils.is_numeric_dtype(np.dtype('int64'))  # True
+    pd_utils.is_numeric_dtype(pd.Int64Dtype())  # True
+    pd_utils.is_numeric_dtype(pd.StringDtype())  # False
+    pd_utils.is_numeric_dtype(np.dtype(bool))  # False
+  """
+  if isinstance(dtype, np.dtype):
+    return npu.is_numeric(dtype)
+
+  return pd.api.types.is_numeric_dtype(dtype)
+
+
 def re_select_columns(df, re_cols):
   """Return column names matching any of the given regex patterns.
 
@@ -144,7 +172,7 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
     else:
       df_test = pd.read_csv(fd, nrows=rows_sample, **args)
       fd.seek(0)
-      dtype = {c: dtype for c in get_typed_columns(df_test, npu.is_numeric)}
+      dtype = {c: dtype for c in get_typed_columns(df_test, is_numeric_dtype)}
 
     return pd.read_csv(fd, dtype=dtype, **args)
 
