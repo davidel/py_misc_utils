@@ -186,7 +186,9 @@ class GcsFs(fsb.FsBase):
       A tuple with the GcsReader and the cache Meta describing the object.
     """
     sres = fs.stat(purl.path)
-    tas.check_is_not_none(sres, msg=f'File does not exist: {purl.geturl()}')
+    tas.check_is_not_none(sres,
+                          exception=FileNotFoundError,
+                          msg=f'File does not exist: {purl.geturl()}')
 
     tag = GcsReader.tag(sres)
     meta = chf.Meta(size=sres.st_size, mtime=sres.st_mtime, tag=tag)
@@ -268,11 +270,19 @@ class GcsFs(fsb.FsBase):
       url: gs:// URL to stat.
 
     Returns:
-      The DirEntry of the object, or None if it does not exist.
+      The DirEntry of the object.
+
+    Raises:
+      FileNotFoundError: If the object does not exist.
     """
     fs, purl = self._parse_url(url)
 
-    return fs.stat(purl.path)
+    dentry = fs.stat(purl.path)
+    tas.check_is_not_none(dentry,
+                          exception=FileNotFoundError,
+                          msg=f'Not found: {purl.hostname}:{purl.path}')
+
+    return dentry
 
   def list(self, url):
     """List the entries under a URL.

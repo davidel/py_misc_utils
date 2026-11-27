@@ -253,15 +253,19 @@ def test_gcs_exists(fs, gcs_env):
   assert fs.exists('gs://test-bucket/present.bin')
 
 
-def test_gcs_exists_false_for_missing_object_is_broken(fs, gcs_env):
-  """Report-only bug: exists() is True for a missing object.
+def test_gcs_stat_missing_object_raises(fs, gcs_env):
+  """stat() raises FileNotFoundError for a missing object, so exists()
+  reports False."""
+  with pytest.raises(FileNotFoundError):
+    fs.stat('gs://test-bucket/missing.bin')
 
-  GcsFs.stat() returns None (instead of raising) for an absent object,
-  and FsBase.exists() only returns False when stat() *raises*. A None
-  DirEntry therefore makes exists() report True.
-  """
-  assert fs.stat('gs://test-bucket/missing.bin') is None
-  assert fs.exists('gs://test-bucket/missing.bin') is True
+  assert fs.exists('gs://test-bucket/missing.bin') is False
+
+
+def test_gcs_open_missing_object_raises(fs, gcs_env):
+  """open() raises FileNotFoundError when the object does not exist."""
+  with pytest.raises(FileNotFoundError):
+    fs.open('gs://test-bucket/never-there.bin', mode='rb')
 
 
 def test_gcs_stat(fs, gcs_env):
