@@ -4,6 +4,18 @@ This module provides BreakControl, a context manager that registers a global
 SIGINT handler and tracks whether a break has been received. Multiple
 BreakControl instances can be active simultaneously; the first to open
 installs the handler, and the last to close removes it.
+
+Example:
+  import os
+  import signal
+  from py_misc_utils import break_control
+
+  with break_control.BreakControl() as bc:
+    os.kill(os.getpid(), signal.SIGINT)  # Simulate Ctrl-C.
+
+  # The break is recorded rather than interrupting the program.
+  assert bc.hit()
+  assert bc.frame() is not None
 """
 
 import signal

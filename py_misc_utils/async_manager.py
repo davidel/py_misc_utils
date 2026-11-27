@@ -5,6 +5,17 @@ This module provides:
 - AsyncManager: Pool of worker processes running asyncio event loops
 - AsyncRunner: Single-threaded asyncio event loop in a background thread
 - run_async(): Convenience function to submit coroutines to the global runner
+
+Example:
+  import concurrent.futures
+  import py_misc_utils.async_manager as am
+
+  async def add(a, b):
+    return a + b
+
+  fut = am.run_async(add(2, 3))
+  assert isinstance(fut, concurrent.futures.Future)
+  assert fut.result(timeout=5.0) == 5
 """
 
 import asyncio
@@ -26,7 +37,9 @@ class AsyncContext:
   """Manages multiple async context managers with shared lifecycle.
 
   Allows adding, removing, and getting context managers by name.
-  Automatically enters/exits all contexts on close.
+  Automatically enters/exits all contexts on close. get() enters a context
+  only the first time it is requested - later calls with the same name
+  return the same __aenter__() result.
   """
 
   def __init__(self):
@@ -200,6 +213,32 @@ class AsyncManager:
 
   Distributes work across workers using a simple least-loaded strategy.
   Each worker runs an independent asyncio event loop in its own process.
+  Each worker shares one AsyncContext, so context managers created via
+  context.get(name, ctor) live as long as the worker - not per work item.
+
+  NOTE: work ctors must be picklable (module-level callables) since they
+  travel through a multiprocessing queue to the worker processes.
+
+  Example:
+    class Ctx:
+      async def __aenter__(self):
+        return 'ctx-value'
+
+      async def __aexit__(self, *exc):
+        return False
+
+    def make_ctx():
+      return Ctx()
+
+    async def work(context):
+      ctx = await context.get('res', make_ctx)
+      return (ctx, 21 * 2)
+
+    m = am.AsyncManager(num_workers=2)
+    m.enqueue_work('w1', work)
+    wid, res = m.fetch_result(block=True, timeout=5.0)
+    assert wid == 'w1' and res == ('ctx-value', 42)
+    m.close()
   """
 
   def __init__(self, num_workers=None, mpctx=multiprocessing):
@@ -238,6 +277,9 @@ class AsyncManager:
   def fetch_result(self, block=True, timeout=None):
     """Fetch a completed work result.
 
+    Results of failed work items carry a WorkException instance - raised
+    work errors do not terminate the fetch loop.
+
     Args:
       block: Whether to block until a result is available (default: True).
       timeout: Maximum time to wait in seconds (default: None).
@@ -274,6 +316,18 @@ class AsyncRunner:
 
   Provides a way to run async coroutines from synchronous code.
   Automatically registers for cleanup on process exit.
+
+  Example:
+    import py_misc_utils.async_manager as am
+
+    runner = am.AsyncRunner()
+
+    async def sq(x):
+      return x * x
+
+    futs = [runner.run(sq(i)) for i in range(4)]
+    assert [f.result(timeout=5.0) for f in futs] == [0, 1, 4, 9]
+    runner.stop()
   """
 
   def __init__(self):

@@ -5,6 +5,23 @@ that stores a designated key attribute and implements all standard comparison
 methods (__lt__, __le__, __gt__, __ge__, __eq__, __ne__) and __hash__ based
 on that key. The generated class also includes a custom __repr__ that displays
 the key value prominently.
+
+Note that the generated comparison operators do not check the type of the
+other operand: comparing against an unrelated type raises AttributeError
+(or TypeError for __hash__-only operations) instead of returning
+NotImplemented.
+
+Example:
+  from py_misc_utils import key_wrap
+
+  PKey = key_wrap.key_wrap('PKey', 'id')
+  a = PKey(id=1, name='x')
+  b = PKey(id=1, name='y')
+
+  # Instances compare and hash by 'id' only.
+  assert a == b
+  assert a < PKey(id=2)
+  assert repr(a) == "id=[1] : {'name': 'x'}"
 """
 
 from . import utils as ut

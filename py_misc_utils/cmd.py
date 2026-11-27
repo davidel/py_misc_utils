@@ -3,6 +3,25 @@
 This module provides a run function which starts a child process,
 forwards its output to a file-like object and installs signal handlers
 so that received termination signals are propagated to the child.
+
+Example:
+  import io
+  import py_misc_utils.cmd as cmd
+
+  buf = io.BytesIO()
+  rc = cmd.run(['python3', '-c', 'print(1 + 1)'], outfd=buf)
+
+  assert rc == 0
+  assert b'2' in buf.getvalue()
+
+  # String commands get template substitution (from tmpl_envs, or the
+  # environment) and shell-splitting: '$VAR' references are resolved
+  # before the command runs.
+  buf = io.BytesIO()
+  rc = cmd.run('echo $GREETING', outfd=buf, tmpl_envs=[dict(GREETING='hi')])
+
+  assert rc == 0
+  assert b'hi' in buf.getvalue()
 """
 
 import functools
@@ -139,6 +158,11 @@ def _lookup(tmpl_envs, key, defval=None):
 
 def run(cmd, outfd=None, tmpl_envs=None, **kwargs):
   """Run a child process, forwarding its output and signals.
+
+  The output is forwarded line-wise, and the child receives the
+  termination signals (SIGINT/SIGTERM) delivered to the parent - the
+  first reception of each signal is forwarded, subsequent ones are
+  ignored.
 
   The command can be given as a string -- in which case template
   variables are substituted from the provided environments before shell

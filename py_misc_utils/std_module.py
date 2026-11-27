@@ -22,6 +22,10 @@ def is_std_module(modname):
 
   Returns:
     True if the module is a stdlib module, False otherwise.
+
+  Example:
+    std_module.is_std_module('os')      # True
+    std_module.is_std_module('numpy')   # False
   """
   modname = cu.root_module(modname)
   return modname in sys.stdlib_module_names

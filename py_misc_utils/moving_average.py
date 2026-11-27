@@ -14,7 +14,12 @@ class MovingAverage:
 
   Attributes:
     value: The current moving average value.
-"""
+
+  Example:
+    ma = moving_average.MovingAverage(0.25)
+    ma.update(10)  # 10: the first value is taken as-is.
+    ma.update(20)  # 17.5: 10 * 0.25 + 20 * 0.75.
+  """
 
   def __init__(self, factor, init=None):
     """Initialize the moving average with a smoothing factor.
@@ -28,6 +33,13 @@ class MovingAverage:
       factor: Smoothing factor between 0.0 and 1.0 (inclusive on both
         ends).
       init: Optional initial value for the average.
+
+    Raises:
+      AssertionError: When factor is outside [0.0, 1.0].
+
+    Example:
+      ma = moving_average.MovingAverage(0.5, init=100)
+      ma.update(50)  # 75
     """
     tas.check(factor >= 0.0 and factor <= 1.0, msg=f'Invalid factor: {factor:.4e}')
     self._factor = factor

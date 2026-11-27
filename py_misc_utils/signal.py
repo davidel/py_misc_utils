@@ -5,6 +5,27 @@ signal, ordered by priority. Handlers may return HANDLED to stop chain
 propagation or CALL_NEXT to continue. The :class:`Signals` context manager
 provides scoped handler registration, and state is preserved across process
 forks via the global namespace module.
+
+The priority determines the dispatch order - lower values run first - and
+defaults to STD_PRIO (the lowest priority). Note that trigger() manually
+invokes the registered handlers, and that the signals module owns the
+OS-level handler for any signal registered through it.
+
+Example:
+  import signal
+  from py_misc_utils import signal as sgn
+
+  hits = []
+
+  def handler(sig, frame):
+    hits.append(sig)
+
+    return sgn.HANDLED
+
+  with sgn.Signals(signal.SIGUSR1, handler):
+    sgn.trigger(signal.SIGUSR1)
+
+  assert hits == [signal.SIGUSR1]
 """
 
 import collections
@@ -224,7 +245,7 @@ class Signals:
     """Normalize the signals and handlers into aligned tuples.
 
     Args:
-      sig: A signal name ('int'), a signal number, or a list of them.
+      sig: A signal name ('INT'), a signal number, or a list of them.
       handler: A callable or a list of callables aligned with sig.
       prio: Optional priority (lower runs first).
     """

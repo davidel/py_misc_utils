@@ -4,6 +4,15 @@ This module provides a mechanism for registering cleanup functions that are
 automatically executed at process exit (via atexit) or on demand. Cleanups are
 stored in a global namespace variable so they survive across fork boundaries
 in multiprocessing scenarios.
+
+Cleanups run in reverse registration order, and an exception raised by one
+cleanup does not stop the remaining ones from running.
+
+Example:
+  from py_misc_utils import cleanups
+
+  cleanups.register(lambda: print('cleaning'))
+  cleanups.run()  # Also executed automatically at process exit.
 """
 
 import atexit
@@ -43,7 +52,8 @@ class _Cleanups:
     """Register a cleanup function to be called at process exit or on run().
 
     Args:
-      fn: The callable to invoke during cleanup.
+      fn: The callable to invoke during cleanup - called as
+        fn(*args, **kwargs).
       *args: Positional arguments to pass to fn.
       **kwargs: Keyword arguments to pass to fn.
 
@@ -122,7 +132,7 @@ def _cleanups():
 def register(fn, *args, **kwargs):
   """Register a cleanup function on the global _Cleanups instance.
 
-    See _Cleanups.register() for details.
+  See _Cleanups.register() for details.
 
   Args:
     fn: The callable to invoke during cleanup.

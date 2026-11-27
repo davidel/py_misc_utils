@@ -24,6 +24,10 @@ def exp_bias(nx):
 
   Returns:
     The exponent bias integer.
+
+  Example:
+    fp_utils.exp_bias(8)  # 127 (IEEE 754 single precision)
+    fp_utils.exp_bias(5)  # 15
   """
   return (1 << (nx - 1)) - 1
 
@@ -43,7 +47,12 @@ def real_to_bits(v, nx, nm):
     ValueError.
 
   Raises:
-    ValueError: If v is not a finite number.
+    ValueError: If v is not finite.
+
+  Example:
+    fp_utils.real_to_bits(1.0, 8, 23)  # (0, 127, 4194304)
+    fp_utils.real_to_bits(-2.5, 8, 7)  # (1, 128, 80)
+    fp_utils.real_to_bits(1e-70, 8, 23)  # (0, 0, 0): flushed to zero.
   """
   if not math.isfinite(v):
     raise ValueError(f'Cannot encode non-finite value: {v}')
@@ -85,6 +94,10 @@ def pack_bits(s, e, m, nx, nm):
 
   Returns:
     The packed integer representation.
+
+  Example:
+    fp_utils.pack_bits(0, 127, 0, 8, 23)  # 2139095040 (float32 +inf bits)
+    fp_utils.pack_bits(0, 127, 4194304, 8, 23)  # 1069547520 (1.0 bits)
   """
   return (s << (nx + nm)) | (e << nm) | m
 
@@ -99,6 +112,9 @@ def real_to_packedbits(v, nx, nm):
 
   Returns:
     The packed integer bit representation.
+
+  Example:
+    fp_utils.real_to_packedbits(1.0, 8, 23)  # 1069547520: the float32 bits of 1.0.
   """
   s, e, m = real_to_bits(v, nx, nm)
 
@@ -129,6 +145,11 @@ def packedbits_to_real(v, nx, nm):
 
   Returns:
     The decoded floating-point value, or math.inf/math.nan for special cases.
+
+  Example:
+    fp_utils.packedbits_to_real(1069547520, 8, 23)  # 1.0
+    fp_utils.packedbits_to_real(fp_utils.real_to_packedbits(3.14, 8, 5), 8, 5)
+    # 3.125: values are truncated on encode, not rounded.
   """
   s, e, m = _bits(v, nx + nm, 1), _bits(v, nm, nx), _bits(v, 0, nm)
 

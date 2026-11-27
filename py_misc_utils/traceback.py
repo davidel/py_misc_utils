@@ -2,6 +2,15 @@
 
 This module provides utilities for inspecting and walking the Python call stack,
 copied and adapted from the Python standard library's logging module.
+
+Example:
+  from py_misc_utils import traceback as tb
+
+  def inner():
+    return [f.f_code.co_name for f in tb.walk_stack()]
+
+  # The frames walk from the innermost frame up to the module one.
+  assert inner()[0] == 'inner'
 """
 
 import sys
@@ -44,7 +53,8 @@ def get_frame(n=0):
 
   Args:
     n: Number of frames to go back from the current frame. Defaults to 0,
-      meaning return the caller of get_frame().
+      meaning return the caller of get_frame() - 1 is the caller's
+      caller, and so on.
 
   Returns:
     The frame object n levels up, or None if the stack is not deep enough.
@@ -93,7 +103,9 @@ def walk_stack(frame=None):
 
   Yields:
     Frame objects walking up the call stack, starting from the given frame and
-    proceeding to each successive caller until None is reached.
+    proceeding to each successive caller until None is reached - the first
+    frame yielded is the given one (or the caller's frame when frame is
+    None).
   """
   if frame is None:
     frame = get_frame(1)

@@ -4,6 +4,23 @@ This module provides :class:`MsgPackStreamer` which reads MessagePack-encoded
 records from a file or stream, with optional column renaming. It yields each
 decoded record as a dictionary, supporting iteration over large files without
 loading everything into memory.
+
+Example:
+  import os
+  import tempfile
+
+  import msgpack
+
+  import py_misc_utils.fs_utils as fsu
+  import py_misc_utils.msgpack_streamer as ms
+
+
+  tdir = tempfile.mkdtemp()
+  path = os.path.join(tdir, 'recs.msgpack')
+  fsu.write_content(path, b''.join(msgpack.packb(r) for r in [{'a': 1}, {'a': 2}]))
+
+  recs = list(ms.MsgPackStreamer(path))
+  assert recs == [{'a': 1}, {'a': 2}], recs
 """
 
 import msgpack
@@ -14,6 +31,24 @@ from . import utils as ut
 
 class MsgPackStreamer:
   """Stream MessagePack-encoded records from a file or URL.
+
+  Example:
+    import os
+    import tempfile
+
+    import msgpack
+
+    import py_misc_utils.fs_utils as fsu
+    import py_misc_utils.msgpack_streamer as ms
+
+
+    tdir = tempfile.mkdtemp()
+    path = os.path.join(tdir, 'recs.msgpack')
+    fsu.write_content(path, b''.join(msgpack.packb(r) for r in
+                                     [{'old': 1}, {'old': 2}]))
+
+    recs = list(ms.MsgPackStreamer(path, rename_columns={'old': 'new'}))
+    assert recs == [{'new': 1}, {'new': 2}], recs
   """
 
   def __init__(self, url, rename_columns=None, **kwargs):

@@ -57,6 +57,13 @@ class LockFile:
   Uses O_CREAT | O_EXCL to atomically create a lock file. If the lock is held
   by a process that no longer exists or whose command line has changed, the
   lock can be forcefully overridden after a check timeout interval.
+
+  Example:
+    import py_misc_utils.lockfile as lk
+
+    with lk.LockFile('/tmp/demo_b5.lock') as lf:
+      # Already held: a second acquire from the same process fails.
+      assert lf.acquire(timeout=0.1) is False
   """
 
   def __init__(self, name, acquire_timeout=None, check_timeout=None):
@@ -144,6 +151,15 @@ class LockFile:
     Returns:
       True if the lock was acquired, False if the timeout elapsed without
       acquiring it.
+
+    Example:
+      import py_misc_utils.lockfile as lk
+
+      lf = lk.LockFile('/tmp/demo_b5b.lock')
+      assert lf.acquire(timeout=0.1)
+      assert lf.release()
+      # Releasing again is a no-op returning False.
+      assert lf.release() is False
     """
     quit_time = timeout + time.time() if timeout is not None else None
     check_time = time.time() + self._check_timeout

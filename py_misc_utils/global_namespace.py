@@ -12,6 +12,17 @@ Key concepts:
 - child_switch(): Called in child after process creation to restore state
 
 All data must be pickle-able unless fork_init=True.
+
+Example:
+  import py_misc_utils.global_namespace as gns
+
+  v = gns.Var('b4_greeting')
+  gns.set(v, 'hello')
+  assert gns.get(v) == 'hello'
+
+  # A callable defval is invoked when the variable is unset (force=True).
+  v2 = gns.Var('b4_level', defval=lambda: 'defaulted')
+  assert gns.get(v2, force=True) == 'defaulted'
 """
 
 import collections
@@ -142,7 +153,8 @@ def set(var, data):
     data: New data value.
 
   Returns:
-    Previous data value, or None if not previously set.
+    The previous data value, or None if the variable was not previously
+    set or was set to None.
   """
   with _LOCK:
     prev_value = _NS.get(var.name)

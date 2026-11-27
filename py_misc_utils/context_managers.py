@@ -4,12 +4,38 @@ This module provides a set of small context-manager utilities: adapters
 turning in/out function pairs into context managers, wrappers closing the
 wrapped object upon exit, a pack of context managers entered together,
 and helpers to conditionally-activate a context manager.
+
+Example:
+  import os
+  from py_misc_utils import context_managers as cm
+
+  pack = cm.Pack(cm.Wrapper(open(os.devnull, 'w')))
+  with pack as w:
+    assert w.v.closed is False
+
+  assert w.v.closed is True
 """
 import contextlib
 
 
 class CtxManager:
-  """A context manager built from an enter and an exit function."""
+  """A context manager built from an enter and an exit function.
+
+  Example:
+    from py_misc_utils import context_managers as cm
+
+    log = []
+
+    def outfn(*exc):
+      log.append('out')
+
+      return False
+
+    with cm.CtxManager(lambda: log.append('in'), outfn):
+      assert log == ['in']
+
+    assert log == ['in', 'out']
+  """
 
   def __init__(self, infn, outfn):
     """Creates a context manager adapter.
@@ -127,6 +153,10 @@ class Pack(contextlib.ExitStack):
 
 def detach(obj):
   """Detaches an object from its context manager wrapper - if wrapped.
+
+  Wrapper instances get their close operation cancelled, so that the
+  wrapped object is not closed when the wrapping context exits; any
+  other object is returned unchanged.
 
   Args:
     obj: The object to detach.

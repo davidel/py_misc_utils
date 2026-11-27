@@ -4,6 +4,18 @@ This module provides functions to compute the memory footprint of Python
 objects, including recursive traversal of containers such as dicts, lists,
 and objects with __dict__ or __iter__ attributes. Custom type-specific size
 functions can be registered for specialized types.
+
+Example:
+  mem_size.get_size([1, 2, 3])  # The list object plus its contents, in bytes.
+  mem_size.get_size('x' * 1000)  # Strings count their payload as a leaf.
+
+  def my_size_fn(obj):
+    return 8
+
+  class MyList(list):
+    pass
+
+  mem_size.register(MyList, my_size_fn)  # Custom size for a custom type.
 """
 
 import array
@@ -20,6 +32,9 @@ _TYPES_SIZE = dict()
 
 def register(otype, sizefn):
   """Register a custom size function for a given object type.
+
+  The registered function fully accounts for the object: get_size()
+  returns what it reports without recursing into the object contents.
 
   Args:
     otype: The object type to associate with the size function.
@@ -104,7 +119,8 @@ def get_size(obj):
   """Compute the total memory size of an object in bytes.
 
   Recursively traverses containers and references to estimate the full
-  memory footprint of obj.
+  memory footprint of obj. Shared objects (reached via multiple paths)
+  are counted once, and reference cycles are tolerated.
 
   Args:
     obj: Any Python object.

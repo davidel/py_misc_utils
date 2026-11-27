@@ -25,6 +25,14 @@ class Quantizer:
 
   Normalizes data by mean and std_k*std, rounds to integer bins, and clips
   to the range [-nbins, nbins].
+
+  Example:
+    import numpy as np
+
+    q = skl_utils.Quantizer(nbins=2)
+    X = np.array([[1.0], [2.0], [3.0], [100.0]])
+    q.fit(X)
+    q.transform(X)  # Integer values in [-2, 2].
   """
 
   def __init__(self, nbins=3, std_k=2.0, eps=1e-6):
@@ -108,13 +116,21 @@ def parse_transform(trs_spec):
   """Create a transformer instance from a spec string.
 
   The spec format is 'NAME' or 'NAME:cfg', where cfg is a config string
-  parsed via pyu.parse_config.
+  parsed via pyu.parse_config (a YAML dict such as '{nbins: 4}', or a
+  path to a YAML file).
 
   Args:
-    trs_spec: The transformer spec string (e.g. 'QTZ', 'PCA:n=2').
+    trs_spec: The transformer spec string (e.g. 'QTZ', 'PCA:{n_components: 2}').
 
   Returns:
     A configured transformer instance.
+
+  Raises:
+    AssertionError: When the transformer name is unknown.
+
+  Example:
+    skl_utils.parse_transform('QTZ:{nbins: 4}')  # Quantizer(nbins=4)
+    skl_utils.parse_transform('PCA')  # sklearn.decomposition.PCA()
   """
   trs, *spec = trs_spec.split(':', 1)
   spec_cfg = pyu.parse_config(spec[0]) if spec else dict()
@@ -131,6 +147,14 @@ class TransformPipeline:
   """A sequence of transformers applied in order to input data.
 
   Supports adding transformers, partial_fit/full-fit, and transform.
+  Transformers can be given as instances or spec strings: strings passed
+  to the constructor are parsed via parse_transform(), while add() keeps
+  them as-is.
+
+  Example:
+    tp = skl_utils.TransformPipeline(['QTZ', 'PCA:{n_components: 1}'])
+    import numpy as np
+    tp.fit_transform(np.random.rand(8, 4))
   """
 
   def __init__(self, transformers):
@@ -175,6 +199,9 @@ class TransformPipeline:
 
   def add(self, transformer):
     """Append a transformer to the pipeline.
+
+    Unlike the constructor, spec strings are kept as-is instead of being
+    parsed via parse_transform().
 
     Args:
       transformer: The transformer instance or spec string to add.
@@ -258,6 +285,15 @@ def fit(m, x, y, **kwargs):
 
   Returns:
     The fitted model.
+
+  Example:
+    import numpy as np
+    import sklearn.linear_model
+
+    model = sklearn.linear_model.LinearRegression()
+    x = np.array([[1.0], [2.0], [3.0]])
+    y = np.array([[1.0], [2.0], [3.0]])
+    skl_utils.fit(model, x, y)  # (N, 1) y is handled.
   """
   shape = y.shape
   # Some SciKit Learn models (ie. KNeighborsClassifier/KNeighborsRegressor) although
@@ -282,6 +318,15 @@ def predict(m, x, **kwargs):
 
   Returns:
     The predicted targets, always with ndim >= 2.
+
+  Example:
+    import numpy as np
+    import sklearn.linear_model
+
+    model = sklearn.linear_model.LinearRegression()
+    x = np.array([[1.0], [2.0], [3.0]])
+    skl_utils.fit(model, x, np.array([[1.0], [2.0], [3.0]]))
+    skl_utils.predict(model, x).shape  # (3, 1) for single-output models.
   """
   y = m.predict(x, **kwargs)
 
@@ -302,6 +347,16 @@ def predict_proba(m, x, classes=None):
 
   Returns:
     The probability array(s), filtered to requested classes if provided.
+
+  Example:
+    import numpy as np
+    import sklearn.neighbors
+
+    model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
+    x = np.array([[0.0], [1.0], [10.0], [11.0]])
+    skl_utils.fit(model, x, np.array([0, 0, 1, 1]))
+    skl_utils.predict_proba(model, np.array([[0.5]]))  # All the class probabilities.
+    skl_utils.predict_proba(model, np.array([[0.5]]), classes=[1])  # Only class 1.
   """
 
   def extract_probs(p, cls):
@@ -375,10 +430,21 @@ class WeighedKNNClassifier:
 
   When no sample weights are provided the operations are simply delegated
   to sklearn.neighbors.KNeighborsClassifier; otherwise the weighted mode
-  of the neighbor labels drives the predictions.
+  of the neighbor labels drives the predictions: each neighbor votes with
+  a weight of sample_weight * neighbor-distance-weight.
 
   Args:
     **kwargs: Keyword arguments forwarded to KNeighborsClassifier.
+
+  Example:
+    import numpy as np
+
+    knn = skl_utils.WeighedKNNClassifier(n_neighbors=3)
+    X = np.array([[0.0], [1.0], [2.0], [3.0]])
+    y = np.array([0, 1, 1, 2])
+    weights = np.array([1.0, 0.01, 0.01, 1.0])
+    knn.fit(X, y, sample_weight=weights)
+    knn.predict(np.array([[1.6]]))
   """
 
   def __init__(self, **kwargs):

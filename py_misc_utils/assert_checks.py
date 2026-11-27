@@ -8,6 +8,17 @@ Each check raises an AssertionError when its condition is not satisfied,
 logging a detailed failure message - including the source location of the
 failing check, the performed operation and the involved values - before
 raising.
+
+Example:
+  from py_misc_utils import assert_checks as tas
+
+  tas.check_eq(1, 1)
+
+  try:
+    tas.check_eq(1, 2)
+  except AssertionError as e:
+    # Message like: '1 == 2 failed from <file>:<line>: <source line>'
+    assert '1 == 2 failed from' in str(e)
 """
 import inspect
 import logging
@@ -83,6 +94,10 @@ def _report_fail(level, op, *args, exception=AssertionError, **kwargs):
 def check(a, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a value is true.
 
+  All the checks raise plain AssertionError by default - pass a custom
+  exception class to raise something else (e.g. a project-specific
+  error).
+
   Args:
     a: The value to check.
     level: The logging level used to log the failure message.
@@ -98,6 +113,9 @@ def check(a, level=logging.ERROR, msg=None, exception=AssertionError):
 
 def check_fn(fn, *args, level=logging.ERROR, msg=None, exception=AssertionError):
   """Checks that a predicate function returns a true value.
+
+  The predicate is used as the operation in the failure message -
+  e.g. ``<lambda>(-1) failed from <file>:<line>: <source line>``.
 
   Args:
     fn: The predicate function to call.
@@ -120,6 +138,9 @@ def check_fnres_eq(res,
                    msg=None,
                    exception=AssertionError):
   """Checks that a function returns an expected result.
+
+  Note the argument order: the expected result comes first, so that the
+  function and its arguments can be passed positionally.
 
   Args:
     res: The expected result.

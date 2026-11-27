@@ -56,6 +56,15 @@ class WeakCall:
     Returns:
       The result of the target function call, or the GONE sentinel if the
       target bound method object has been garbage collected.
+
+    Example:
+      class Handler:
+
+        def on_event(self, eid, user=None):
+          print(eid, user)
+
+      call = weak_call.WeakCall(Handler().on_event, 1)
+      call(user='me')  # on_event(1, user='me')
     """
     fn = self._fn()
     if fn is not None:

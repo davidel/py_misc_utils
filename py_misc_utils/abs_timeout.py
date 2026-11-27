@@ -1,7 +1,15 @@
 """Absolute timeout helper for managing deadlines.
 
 This module provides a simple timeout class that tracks an absolute
-expiration time and returns remaining time on demand.
+expiration time and returns the remaining time on demand - so that a
+fixed deadline is not shifted forward by the time spent between its
+creation and its uses.
+
+Example:
+  tmo = abs_timeout.AbsTimeout(30)
+  time_left = tmo.get()  # seconds remaining, shrinking over time
+  if time_left == 0:
+    deadline_expired()  # handle the expired 30s deadline
 """
 
 import time
@@ -19,7 +27,8 @@ class AbsTimeout:
     """Initialize the timeout.
 
     Args:
-      timeout: Timeout duration in seconds (None for no timeout).
+      timeout: The timeout duration, in seconds. If None, get() always
+        returns None (no timeout).
       timefn: Optional time function (default: time.time). Useful for testing
         or when using monotonic clocks.
     """

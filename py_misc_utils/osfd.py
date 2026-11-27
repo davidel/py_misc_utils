@@ -15,6 +15,21 @@ class OsFd:
   closed when exiting the context. Optionally removes the file if an error
   occurs and the file did not previously exist.
 
+  Example:
+    import os
+    import tempfile
+    from py_misc_utils import osfd
+
+    tdir = tempfile.TemporaryDirectory()
+    path = os.path.join(tdir.name, 'out.bin')
+
+    with osfd.OsFd(path, os.O_WRONLY | os.O_CREAT, mode=0o600) as fd:
+      os.write(fd, b'hello')
+
+    with open(path, 'rb') as f:
+      assert f.read() == b'hello'
+
+    tdir.cleanup()
   """
 
   def __init__(self, path, flags, remove_on_error=None, **kwargs):

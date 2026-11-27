@@ -14,10 +14,13 @@ class Pipeline:
   Elements are applied sequentially: output of one becomes input to the next.
   Supports both single-value processing and iterator/streaming processing.
 
+  Elements can be plain callables (applied value-by-value) or IterElement
+  subclasses (applied to the whole stream at once).
+
   Example:
-    >>> p = Pipeline(lambda x: x + 1, lambda x: x * 2)
-    >>> p(5)
-    12
+    p = pipeline.Pipeline(lambda x: x + 1, lambda x: x * 2)
+    p(5)  # 12
+    list(p(iter([1, 2])))  # [4, 6] - iterators stay lazy streams.
   """
 
   def __init__(self, *elems):
@@ -41,7 +44,7 @@ class Pipeline:
     return iter(self._elems)
 
   def append(self, elem):
-    """Append a callable element to the pipeline.
+    """Append a callable element to the pipeline (returns its index).
 
     Args:
       elem: Callable to append.
@@ -88,7 +91,9 @@ class Pipeline:
   def _apply(self, elem, data):
     """Apply a single pipeline element to data.
 
-    Handles iterator/streaming logic for IterElement subclasses.
+    Handles iterator/streaming logic for IterElement subclasses: when data
+    is an iterator, an IterElement consumes the whole stream, while a plain
+    callable is mapped over it value-by-value.
 
     Args:
       elem: Pipeline element (callable or IterElement).
@@ -142,7 +147,10 @@ class Pipeline:
   def flush(self):
     """Flush stateful pipeline elements.
 
-    Calls `flush()` on elements that have it, passing the previous flush result.
+    Calls `flush()` on elements that have it, passing the previous flush
+    result - so that residual data (e.g. a partial batch held by a chunking
+    element) is pushed through the remaining elements. Elements without a
+    flush() method process the pending value as a regular call.
 
     Returns:
       Result of the last flush operation, or None.
@@ -185,7 +193,9 @@ class IterElement:
   This is useful for elements that batch data, absorb multiple inputs
   before producing output, or transform streams.
 
-  Subclasses must implement __call__(self, iterator) -> iterator.
+  Subclasses must implement __call__(self, iterator) -> iterator. A
+  flush() method may also be provided to emit residual data at the end of
+  a stream (see Pipeline.flush()).
   """
 
 

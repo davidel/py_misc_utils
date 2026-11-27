@@ -36,6 +36,14 @@ class VirtArray(collections.abc.Sequence):
   The virtual array exposes the elements of the underlying data selected
   by a set of indices, supporting slicing, numpy conversion and index
   shuffling without copying the data.
+
+  Example:
+    import numpy
+    data = numpy.arange(10).reshape(5, 2)
+    va = virt_array.VirtArray(data, [4, 0, 2])
+    va[0]  # The data row 4: array([8, 9]).
+    len(va)  # 3 - the number of selected indices.
+    numpy.asarray(va)  # The selected rows stacked into an array.
   """
 
   def __init__(self, data, indices):
@@ -97,6 +105,9 @@ class VirtArray(collections.abc.Sequence):
 
   def shuffle(self, rng=None):
     """Randomly shuffle the order of the selected elements.
+
+    The shuffle reorders the index array in place - the underlying data
+    is left untouched.
 
     Args:
       rng: Optional numpy random Generator to use; a default one is

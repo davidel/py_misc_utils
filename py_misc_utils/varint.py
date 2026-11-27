@@ -3,6 +3,11 @@
 This module provides functions to encode non-negative integers -- or
 iterables of them -- using the variable-length varint representation,
 and to decode such buffers back into lists of integers.
+
+Example:
+  buf = []
+  varint.varint_encode(300, buf)
+  varint.varint_decode(buf)  # [300]
 """
 
 import numpy as np
@@ -21,6 +26,11 @@ def varint_encode(v, encbuf):
     v: Non-negative integer, numpy integer or iterable of integers to
       encode.
     encbuf: List-like buffer to append encoded bytes to.
+
+  Example:
+    buf = []
+    varint.varint_encode(300, buf)
+    buf  # [172, 2] - 300 = 0b100101100 -> 2 varint groups
   """
   if isinstance(v, (int, np.integer)):
     tas.check_ge(v, 0, msg=f'Cannot encode negative values: {v}')
@@ -73,6 +83,11 @@ def varint_decode(encbuf):
 
   Raises:
     ValueError: If the buffer does not contain a valid varint stream.
+
+  Example:
+    buf = []
+    varint.varint_encode(300, buf)
+    varint.varint_decode(buf)  # [300]
   """
   values, cpos = [], 0
   try:

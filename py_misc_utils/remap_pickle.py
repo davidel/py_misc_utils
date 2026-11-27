@@ -15,7 +15,18 @@ from . import module_utils as mu
 
 
 class Unpickler(pickle.Unpickler):
-  """A pickle.Unpickler that remaps class names and filters unsafe references."""
+  """A pickle.Unpickler that remaps class names and filters unsafe references.
+
+  Example:
+    import io
+    import pickle
+    import py_misc_utils.obj as obj
+    data = pickle.dumps(obj.Obj())
+    unpickler = remap_pickle.Unpickler(io.BytesIO(data))
+    # Remap a class reference to the module it moved to:
+    unpickler.find_class('py_misc_utils.obj', 'Obj')
+    # -> <class 'py_misc_utils.obj.Obj'>
+  """
 
   def __init__(self, *args, remaps=None, safe_refs=None, **kwargs):
     """Initialize the Unpickler with remapping and safety configuration.
@@ -34,12 +45,19 @@ class Unpickler(pickle.Unpickler):
   def find_class(self, module, name):
     """Resolve a class reference, applying remaps and safety checks.
 
+    A remapped reference bypasses the safe_refs check, since it was
+    explicitly mapped to its new name.
+
     Args:
       module: The module name from the pickle stream.
       name: The class name from the pickle stream.
 
     Returns:
       The resolved class object.
+
+    Raises:
+      RuntimeError: If safe_refs is set and the (non-remapped) reference
+        is not in the whitelist.
     """
     fqname = f'{module}.{name}'
     remap = self._remaps.get(fqname, fqname)
@@ -55,7 +73,7 @@ def load(*args, **kwargs):
   """Load an object from a file using the remapping Unpickler.
 
   Args:
-    *args: Positional arguments passed to Unpickler.
+    *args: The file to load from, plus any Unpickler positional argument.
     **kwargs: Keyword arguments passed to Unpickler (remaps, safe_refs).
 
   Returns:
@@ -86,11 +104,23 @@ def loads(data, *args, **kwargs):
 def make_module(**kwargs):
   """Create a pickle-like module clone with remapping load functions.
 
+  The returned module can be handed over to code (or libraries) expecting
+  the pickle module, so that all its (de)serializations go through the
+  remapping/safety policy.
+
   Args:
     **kwargs: Default keyword arguments for load/loads (remaps, safe_refs).
 
   Returns:
     A module clone exposing load and loads with remapping support.
+
+  Example:
+    import pickle
+    import pandas
+    pmod = remap_pickle.make_module(safe_refs={'builtins.dict'})
+    pmod.loads(pickle.dumps(dict(a=1)))  # OK - dict is whitelisted.
+    pmod.loads(pickle.dumps(pandas.DataFrame()))
+    # RuntimeError: pandas.DataFrame is not whitelisted.
   """
   module = mu.clone_module('pickle')
 

@@ -5,6 +5,24 @@ an archive: besides the classic zip and tar (with optional compression)
 formats, parquet and msgpack files are streamed as well - with each
 record generating a set of UID.ENTITY-named entries, similar to what a
 Web Dataset would expect.
+
+Example:
+  import os
+  import tempfile
+  import zipfile
+
+  import py_misc_utils.archive_streamer as ars
+
+
+  tdir = tempfile.mkdtemp()
+  path = os.path.join(tdir, 'data.zip')
+  with zipfile.ZipFile(path, 'w') as zf:
+    zf.writestr('0.txt', 'hello')
+    zf.writestr('1.bin', b'0A0B')
+
+  entries = list(ars.ArchiveStreamer(path))
+  assert [(e.name, e.data) for e in entries] == [
+    ('0.txt', b'hello'), ('1.bin', b'0A0B')]
 """
 import collections
 import hashlib
@@ -45,6 +63,15 @@ def parse_specs(url):
 
   Raises:
     AssertionError: If the archive type extension cannot be inferred.
+
+  Example:
+    import py_misc_utils.archive_streamer as ars
+
+    specs = ars.parse_specs('http://host/data.tar.gz')
+    assert specs.base_path == '/data'
+
+    specs = ars.parse_specs('file.parquet')
+    assert specs.kind == 'parquet' and specs.compression is None
   """
   usplit = gfs.splitext(url)
 
@@ -66,6 +93,29 @@ class ArchiveStreamer:
 
   Supported archive types: zip, tar (optionally compressed with
   gz/xz/bz2), parquet and msgpack files.
+
+  Example:
+    import os
+    import tempfile
+
+    import msgpack
+
+    import py_misc_utils.archive_streamer as ars
+    import py_misc_utils.fs_utils as fsu
+
+
+    tdir = tempfile.mkdtemp()
+    path = os.path.join(tdir, 'recs.msgpack')
+    fsu.write_content(path, b''.join(msgpack.packb(r) for r in
+                                     [{'id': 1, 'val': 'one'},
+                                      {'id': 2, 'val': 'two'}]))
+
+    # Parquet/msgpack records generate UID.ENTITY-named entries (like
+    # a Web Dataset).
+    entries = [(e.name, e.data) for e in ars.ArchiveStreamer(path)]
+    assert len(entries) == 4
+    assert sorted(e[0].rsplit('.', 1)[1] for e in entries) == [
+      'id', 'id', 'val', 'val']
   """
 
   def __init__(self, url, **kwargs):

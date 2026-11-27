@@ -4,6 +4,26 @@ This module provides functions for discovering, loading, installing, and
 manipulating Python modules at runtime. It supports loading modules from
 filesystem paths, resolving module hierarchies, importing module attributes
 by dotted path, and cloning modules.
+
+Example:
+  import os
+  import tempfile
+  import py_misc_utils.module_utils as mu
+
+  tdir = tempfile.TemporaryDirectory()
+  mfile = os.path.join(tdir.name, 'zapmod.py')
+  with open(mfile, 'w') as fpt:
+    fpt.write('V = 42')
+
+  # Load a module directly from its file path...
+  mod = mu.load_module(mfile)
+  assert mod.V == 42
+
+  # ...or through the import_module() dispatcher.
+  mod = mu.import_module(mfile)
+  assert mod.V == 42
+
+  tdir.cleanup()
 """
 
 import functools
@@ -264,6 +284,10 @@ def _module_getter(dot_path, obj):
 def module_getter(dot_path):
   """Create a callable that resolves a dotted path on any object.
 
+  Each path element is looked up as an attribute of the previous one;
+  module names encountered on the way are imported (and any submodule
+  path is imported relative to the parent module).
+
   Args:
     dot_path: Dot-separated attribute path string (e.g. 'a.b.c').
 
@@ -363,7 +387,8 @@ def clone_module(modname):
 
   Finds the module spec, creates a new module from it, and executes the
   loader to populate it. This produces a module independent of any cached
-  version in sys.modules.
+  version in sys.modules - a fresh copy of the module body, with its own
+  state, sharing nothing with the original module object.
 
   Args:
     modname: The name of the module to clone.

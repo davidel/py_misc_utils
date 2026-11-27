@@ -2,9 +2,9 @@
 
 This module provides BufferedIterator, which wraps an iterable and yields
 IterData namedtuples. It maintains a bounded buffer of the most recent items,
-replacing older items probabilistically as new data arrives. This is useful
-for streaming scenarios where you need to keep a fixed-size sample of recent
-items while iterating.
+replacing buffered items deterministically (slot ``n % buffer_size``) as new
+data arrives, and draining the buffer in a deterministic order once the
+source is exhausted.
 """
 
 import collections
@@ -19,10 +19,11 @@ IterData = collections.namedtuple('IterData', 'n, left, data')
 class BufferedIterator:
   """Iterator that maintains a bounded buffer of items from a data source.
 
-  As items are drawn from the underlying iterable, they are added to a buffer
-  up to buffer_size. Once full, new items replace existing ones at a
-  pseudorandom position. Each yielded IterData includes the item, the count
-  of items seen so far, and the number of items left in the buffer.
+  As items are drawn from the underlying iterable, they are added to a
+  bounded buffer; once the buffer is full, each new item deterministically
+  replaces the buffered item at slot ``n % buffer_size`` (n being the item
+  count), which is yielded in its place. Once the source is exhausted, the
+  remaining buffered items are yielded in slot order.
   """
 
   def __init__(self, data, buffer_size):
@@ -45,6 +46,9 @@ class BufferedIterator:
       IterData namedtuples with fields n (item count), left (items remaining
       in buffer), and data (the yielded item).
     """
+    # Example: for BufferedIterator([1, 2, 3, 4], buffer_size=2) the yields
+    # are (data=1, left=2), (data=2, left=2), (data=3, left=1), (data=4,
+    # left=0) - each item replaces the buffer slot n % buffer_size.
     queue, n = [], 0
     for data in self._data:
       if len(queue) < self._buffer_size:

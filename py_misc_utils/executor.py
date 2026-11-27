@@ -6,6 +6,16 @@ This module provides:
 - Task: Callable wrapper that captures exceptions
 - AsyncResult: Future-like object for retrieving task results
 - common_executor(): Global singleton executor instance
+
+Example:
+  import py_misc_utils.executor as xe
+
+  ex = xe.Executor(max_threads=4, min_threads=1, name_prefix='Demo')
+  res = ex.submit_result(lambda a, b: a + b, 2, 3)
+  assert res.wait() == 5
+  ex.submit(print, 'fire and forget')
+  ex.wait_for_idle()
+  ex.shutdown()
 """
 
 import collections
@@ -62,7 +72,16 @@ VOID = _Void()
 class AsyncResult:
   """Future-like object for retrieving asynchronous task results.
 
-  Thread-safe with blocking wait() and optional timeout.
+  Thread-safe with blocking wait() and optional timeout. If the task
+  raised an exception, wait() re-raises it instead of returning a value.
+
+  Example:
+    import py_misc_utils.executor as xe
+
+    res = xe.common_executor().submit_result(len, 'abc')
+    assert res.wait() == 3
+    # The same instance is returned on every call.
+    assert xe.common_executor() is xe.common_executor()
   """
 
   def __init__(self):
@@ -108,7 +127,22 @@ class AsyncResult:
 class Queue:
   """Thread-safe task queue with start/stop control.
 
-  Supports blocking get with timeout and graceful shutdown.
+  Supports blocking get with timeout and graceful shutdown. stop() just
+  increments a counter, so it can be called multiple times, and pending
+  items are still returned by get() - only once the queue is empty (and
+  stopped) get() stops blocking and returns None.
+
+  Example:
+    import py_misc_utils.executor as xe
+
+    q = xe.Queue()
+    q.put('a')
+    q.put('b')
+    assert q.get(timeout=1.0) == 'a'
+    q.stop()
+    # Pending items are still returned after stop - None means exhausted.
+    assert q.get() == 'b'
+    assert q.get(timeout=0.1) is None
   """
 
   def __init__(self):
@@ -136,7 +170,9 @@ class Queue:
   def get(self, timeout=None):
     """Get a task from the queue, blocking until available or timeout.
 
-    Even if the queue is stopped, pending items are still returned.
+    Even if the queue is stopped, pending items are still returned. Once
+    the queue is both stopped and empty, None is returned - so None is
+    the "no more work" sentinel used by the worker loop.
 
     Args:
       timeout: Maximum time to wait in seconds (default: None, wait forever).
@@ -239,6 +275,16 @@ class Executor:
 
   Maintains a minimum number of persistent workers and scales up to a maximum
   based on queue depth. Workers beyond the minimum have an idle timeout.
+
+  Example:
+    import py_misc_utils.executor as xe
+
+    ex = xe.Executor(max_threads=4, min_threads=1, name_prefix='Demo')
+    res = ex.submit_result(lambda a, b: a + b, 2, 3)
+    assert res.wait() == 5
+    ex.submit(print, 'fire and forget')
+    ex.wait_for_idle()
+    ex.shutdown()
   """
 
   def __init__(self,
@@ -348,7 +394,9 @@ class Executor:
   def wait_for_idle(self, timeout=None, timegen=None, waiter=None):
     """Wait for all tasks to complete and workers to become idle.
 
-    Temporarily stops the queue to prevent new tasks from being added.
+    Temporarily stops the queue to prevent new tasks from being added -
+    tasks submitted concurrently are queued but do not spawn extra workers
+    during the wait (the queue is restarted before returning).
 
     Args:
       timeout: Maximum time to wait in seconds (default: None).
@@ -387,6 +435,12 @@ def common_executor():
 
   Returns:
     The global Executor instance.
+
+  Example:
+    import py_misc_utils.executor as xe
+
+    res = xe.common_executor().submit_result(len, 'abc')
+    assert res.wait() == 3
   """
   global _EXECUTOR
 

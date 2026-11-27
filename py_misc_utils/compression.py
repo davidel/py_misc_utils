@@ -4,6 +4,24 @@ This module provides gzip/bzip2/xz compression helpers operating on any
 filesystem supported by the gfs layer, plus dispatch helpers - keyed by
 file extension - and dopen()/copen() context managers which transparently
 (de)compress the data flowing through the opened streams.
+
+Example:
+  import os
+  import tempfile
+
+  import py_misc_utils.compression as comp
+
+
+  tdir = tempfile.mkdtemp()
+  src = os.path.join(tdir, 'data.csv')
+  dest = os.path.join(tdir, 'data.csv.gz')
+
+  with open(src, 'w') as fd:
+    fd.write('a,b\\n1,2\\n')
+
+  comp.compress(src, dest)
+  comp.decompress(dest, os.path.join(tdir, 'data.csv'))
+  assert open(src).read() == open(os.path.join(tdir, 'data.csv')).read()
 """
 import bz2
 import collections
@@ -22,6 +40,27 @@ def fgzip(src, dest):
   Args:
     src: The source file path.
     dest: The destination file path.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    src = os.path.join(tdir, 'f.txt')
+    dest = os.path.join(tdir, 'f.txt.gz')
+
+    with open(src, 'w') as fd:
+      fd.write('compress me ' * 200)
+
+    comp.fgzip(src, dest)
+    assert os.path.getsize(dest) < os.path.getsize(src)
+
+    back = os.path.join(tdir, 'f_back.txt')
+    comp.fgunzip(dest, back)
+    assert open(back).read() == 'compress me ' * 200
   """
   with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
         outfd, gzip.open(outfd, mode='wb') as zfd):
@@ -46,6 +85,27 @@ def fbzip2(src, dest):
   Args:
     src: The source file path.
     dest: The destination file path.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    src = os.path.join(tdir, 'f.txt')
+    dest = os.path.join(tdir, 'f.txt.bz2')
+
+    with open(src, 'w') as fd:
+      fd.write('bzip2 me ' * 200)
+
+    comp.fbzip2(src, dest)
+    assert os.path.getsize(dest) < os.path.getsize(src)
+
+    back = os.path.join(tdir, 'f_back.txt')
+    comp.fbunzip2(dest, back)
+    assert open(back).read() == 'bzip2 me ' * 200
   """
   with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
         outfd, bz2.open(outfd, mode='wb') as zfd):
@@ -70,6 +130,27 @@ def fxzip(src, dest):
   Args:
     src: The source file path.
     dest: The destination file path.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    src = os.path.join(tdir, 'f.txt')
+    dest = os.path.join(tdir, 'f.txt.xz')
+
+    with open(src, 'w') as fd:
+      fd.write('xz me ' * 200)
+
+    comp.fxzip(src, dest)
+    assert os.path.getsize(dest) < os.path.getsize(src)
+
+    back = os.path.join(tdir, 'f_back.txt')
+    comp.fxunzip(dest, back)
+    assert open(back).read() == 'xz me ' * 200
   """
   with (gfs.open(src, mode='rb') as infd, gfs.open(dest, mode='wb') as
         outfd, lzma.open(outfd, mode='wb') as zfd):
@@ -107,6 +188,15 @@ def compressor(ext):
   Returns:
     A (compressor function, compression module) tuple, or None if the
     extension is not supported.
+
+  Example:
+    import gzip
+
+    import py_misc_utils.compression as comp
+
+    proc, module = comp.compressor('.gz')
+    assert module is gzip
+    assert comp.compressor('.txt') is None
   """
   return _COMPRESSORS.get(ext)
 
@@ -128,6 +218,15 @@ def decompressor(ext):
   Returns:
     A (decompressor function, compression module) tuple, or None if the
     extension is not supported.
+
+  Example:
+    import lzma
+
+    import py_misc_utils.compression as comp
+
+    dproc, dmodule = comp.decompressor('.xz')
+    assert dmodule is lzma
+    assert comp.decompressor('.bin') is None
   """
   return _DECOMPRESSORS.get(ext)
 
@@ -141,6 +240,25 @@ def compress(src, dest):
   Args:
     src: The source file path.
     dest: The destination file path.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    src = os.path.join(tdir, 'a.bin')
+    with open(src, 'wb') as fd:
+      fd.write(b'x' * 1000)
+
+    comp.compress(src, os.path.join(tdir, 'a.bin.bz2'))
+    comp.compress(src, os.path.join(tdir, 'a.copy.bin'))  # No ext: plain copy.
+    assert os.path.getsize(os.path.join(tdir, 'a.bin.bz2')) < 1000
+
+    comp.decompress(os.path.join(tdir, 'a.bin.bz2'), os.path.join(tdir, 'a2.bin'))
+    assert open(os.path.join(tdir, 'a2.bin'), 'rb').read() == b'x' * 1000
   """
   _, ext = os.path.splitext(dest)
   comp = compressor(ext)
@@ -159,6 +277,23 @@ def decompress(src, dest):
   Args:
     src: The source file path.
     dest: The destination file path.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    src = os.path.join(tdir, 'a.bin')
+    dest = os.path.join(tdir, 'a.bin.xz')
+    with open(src, 'wb') as fd:
+      fd.write(b'y' * 1000)
+
+    comp.compress(src, dest)
+    comp.decompress(dest, os.path.join(tdir, 'a2.bin'))
+    assert open(os.path.join(tdir, 'a2.bin'), 'rb').read() == b'y' * 1000
   """
   _, ext = os.path.splitext(src)
   decomp = decompressor(ext)
@@ -182,6 +317,28 @@ def dopen(path, mode='r', **kwargs):
 
   Yields:
     The open file object.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    plain = os.path.join(tdir, 'log.txt')
+    gz = os.path.join(tdir, 'log.txt.gz')
+
+    with open(plain, 'w') as fd:
+      fd.write('hello world')
+
+    comp.fgzip(plain, gz)
+    with comp.dopen(gz, mode='rt') as fd:
+      assert fd.read() == 'hello world'
+
+    # Uncompressed files are opened as-is.
+    with comp.dopen(plain, mode='rt') as fd:
+      assert fd.read() == 'hello world'
   """
   _, ext = os.path.splitext(path)
 
@@ -209,6 +366,22 @@ def copen(path, mode='w', **kwargs):
 
   Yields:
     The open file object.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.compression as comp
+
+
+    tdir = tempfile.mkdtemp()
+    path = os.path.join(tdir, 'out.json.gz')
+
+    with comp.copen(path, mode='wt') as fd:
+      fd.write('{"key": 1}')
+
+    with comp.dopen(path, mode='rt') as fd:
+      assert fd.read() == '{"key": 1}'
   """
   _, ext = os.path.splitext(path)
 

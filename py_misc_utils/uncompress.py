@@ -3,6 +3,23 @@
 This module provides a context manager which transparently decompresses
 a compressed file, exposing the decompressed content for the duration of
 the context.
+
+Example:
+  import gzip
+  import os
+  import tempfile
+
+  import py_misc_utils.uncompress as unc
+
+
+  tdir = tempfile.mkdtemp()
+  gz = os.path.join(tdir, 'data.csv.gz')
+  with gzip.open(gz, 'wt') as fd:
+    fd.write('x,y\\n1,2\\n')
+
+  with unc.Uncompress(gz) as path:
+    assert os.path.basename(path) == 'data.csv'
+    assert open(path).read() == 'x,y\\n1,2\\n'
 """
 
 import os
@@ -19,6 +36,21 @@ class Uncompress:
   decompressed into a temporary directory and the decompressed path is
   returned by the context; otherwise the original path is returned
   unchanged. The temporary files are removed on exit.
+
+  Example:
+    import os
+    import tempfile
+
+    import py_misc_utils.uncompress as unc
+
+
+    tdir = tempfile.mkdtemp()
+    plain = os.path.join(tdir, 'plain.txt')
+    with open(plain, 'w') as fd:
+      fd.write('not compressed')
+
+    with unc.Uncompress(plain) as path:
+      assert path == plain
   """
 
   def __init__(self, path):

@@ -57,8 +57,18 @@ def test_sign_extend_interprets_high_bit_as_sign():
 def test_nearest_divisor_picks_the_closest_working_divisor():
   """nearest_divisor() returns the largest divisor of size below target."""
   assert nu.nearest_divisor(10, 4) == 5
-  assert nu.nearest_divisor(15, 4) == 5
+  assert nu.nearest_divisor(15, 4) == 3
   assert nu.nearest_divisor(7, 3) == 1
+
+
+def test_nearest_divisor_tie_resolves_downwards():
+  """nearest_divisor() resolves equidistant divisors towards the lower one."""
+  # (12, 5): divisors 4 and 6 are both at distance 1 -> 4.
+  assert nu.nearest_divisor(12, 5) == 4
+  # (30, 4): divisors 3 and 5 are both at distance 1 -> 3.
+  assert nu.nearest_divisor(30, 4) == 3
+  # No tie: 100 has divisor 5 (distance 1) and 10 (distance 5) -> 5.
+  assert nu.nearest_divisor(100, 6) == 5
 
 
 def test_mix_interpolates_linearly():

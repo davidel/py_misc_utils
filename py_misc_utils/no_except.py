@@ -4,10 +4,13 @@ This module provides functions that wrap other functions to catch and handle
 exceptions, returning the exception object instead of propagating it. The
 logging module is used directly (rather than alog) to keep this a low-level
 module with minimal local dependencies.
+
+Example:
+  res = no_except.no_except(int, 'x')  # ValueError object (not raised)
 """
 
-# Using logging module directly here to avoid import the alog module, since this
-# is supposed to be a lower level module with minimal/no local dependencies.
+# Using the logging module directly (rather than alog), since this is supposed
+# to be a lower level module with minimal/no local dependencies.
 import logging
 import traceback
 
@@ -15,8 +18,8 @@ import traceback
 def no_except(fn, *args, **kwargs):
   """Call fn with the given args, catching and returning any exception.
 
-    Executes fn(*args, **kwargs). If an exception occurs, logs it at WARNING
-    level and returns the exception object instead of propagating it.
+  Executes fn(*args, **kwargs). If an exception occurs, logs it at WARNING
+  level and returns the exception object instead of propagating it.
 
   Args:
     fn: The callable to execute.
@@ -26,6 +29,10 @@ def no_except(fn, *args, **kwargs):
   Returns:
     The return value of fn on success, or the Exception object if an
     exception was raised.
+
+  Example:
+    res = no_except.no_except(int, 'x')  # ValueError - not raised
+    res = no_except.no_except(int, '42')  # 42
   """
   try:
     return fn(*args, **kwargs)
@@ -52,6 +59,9 @@ def qno_except(fn, *args, **kwargs):
   Returns:
     The return value of fn on success, or the Exception object if an
     exception was raised.
+
+  Example:
+    res = no_except.qno_except(int, 'x')  # ValueError, not raised/logged
   """
   try:
     return fn(*args, **kwargs)

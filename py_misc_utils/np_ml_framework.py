@@ -6,7 +6,18 @@ check and conversion functions, and resolve() normalizes a set of arguments
 to the arrays of the highest-priority framework (selected via the NPML_ORDER
 and NPML_DEFAULT environment variables).
 
+Each registered framework module also gets item() and tolist() helper
+attributes (e.g. np.tolist(arr), torch.tolist(tensor)) working uniformly
+across the supported frameworks.
+
 If a framework is not installed, it is simply skipped at import time.
+
+Example:
+  import numpy as np
+  import torch
+
+  mod, args = np_ml_framework.resolve(np.array([1.0]), torch.tensor([2.0]))
+  # mod is torch (the highest-priority framework) and args are torch tensors.
 """
 
 import os
@@ -195,6 +206,13 @@ def resolve(*args):
     A tuple with the resolved target module and the tuple of converted
     arguments. If no argument matches any framework, the default module
     (NPML_DEFAULT) is returned together with the original arguments.
+
+  Example:
+    import numpy as np
+    import torch
+
+    mod, (a, b) = np_ml_framework.resolve(np.array([1.0]), torch.tensor([2.0]))
+    # isinstance(a, torch.Tensor) and b is torch_tensor (highest priority wins).
   """
   mods = []
   tprio, tmod, tref = -1, None, None

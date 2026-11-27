@@ -21,6 +21,17 @@ def file_view(path):
     A memoryview over the memory-mapped file contents. The underlying mmap
     object is kept alive by the memoryview's buffer protocol and is released
     when the memoryview is garbage collected.
+
+  Example:
+    import os
+    import tempfile
+
+    fd, path = tempfile.mkstemp()
+    os.write(fd, b'x' * 1024)
+    os.close(fd)
+
+    view = mmap.file_view(path)  # read-only view over the file contents
+    header = bytes(view[:16])
   """
   with osfd.OsFd(path, os.O_RDONLY) as fd:
     mm = mmap.mmap(fd, 0, access=mmap.ACCESS_READ)

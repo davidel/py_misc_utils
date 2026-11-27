@@ -7,6 +7,41 @@ This module provides:
 
 Objects are automatically returned to the cache when the FinWrapper is
 closed or garbage collected.
+
+Example:
+  import gc
+
+  import py_misc_utils.object_cache as oc
+
+
+  class Conn:
+
+    def query(self, q):
+      return f'result:{q}'
+
+
+  class ConnHandler(oc.Handler):
+
+    def __init__(self):
+      self.created = 0
+
+    def create(self):
+      self.created += 1
+      return Conn()
+
+
+  cache = oc.Cache(clean_timeo=60)
+  handler = ConnHandler()
+
+  conn = cache.get('db1', handler)
+  assert conn.query('SELECT 1') == 'result:SELECT 1'
+  assert handler.created == 1
+
+  del conn  # The FinWrapper finalizer returns the object to the pool.
+  gc.collect()
+  conn = cache.get('db1', handler)
+  assert handler.created == 1  # Reused - no new object created.
+  cache.shutdown()
 """
 
 import abc
@@ -59,6 +94,36 @@ class Handler(abc.ABC):
 
     Returns:
       True if object is valid, False if it should be discarded.
+
+    Example:
+      import gc
+
+      import py_misc_utils.object_cache as oc
+
+
+      class Handler(oc.Handler):
+
+        def __init__(self):
+          self.created = 0
+          self.alive = True
+
+        def create(self):
+          self.created += 1
+          return object()
+
+        def is_alive(self, obj):
+          return self.alive
+
+
+      cache = oc.Cache(clean_timeo=60)
+      handler = Handler()
+      obj = cache.get('k', handler)
+      del obj
+      gc.collect()
+      handler.alive = False
+      obj = cache.get('k', handler)
+      assert handler.created == 2  # Dead object discarded, a new one created.
+      cache.shutdown()
     """
     return True
 
@@ -75,6 +140,33 @@ class Cache:
 
   Maintains pools of objects by name, with a background cleaner that
   periodically removes expired objects.
+
+  Example:
+    import gc
+
+    import py_misc_utils.object_cache as oc
+
+
+    class Handler(oc.Handler):
+
+      def __init__(self):
+        self.created = 0
+
+      def create(self):
+        self.created += 1
+        return object()
+
+
+    cache = oc.Cache(clean_timeo=60)
+    handler = Handler()
+
+    obj = cache.get('key1', handler)
+    assert handler.created == 1
+    del obj
+    gc.collect()
+    obj = cache.get('key1', handler)
+    assert handler.created == 1  # Pooled object reused.
+    cache.shutdown()
   """
 
   def __init__(self, clean_timeo=None):

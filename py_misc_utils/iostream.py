@@ -16,6 +16,12 @@ class IOStream:
   and sockets) or uses os.write/os.read (like raw file descriptors), and
   exposes a consistent .write() and .read() interface.
 
+  Example:
+    import io
+
+    buf = io.BytesIO(b'payload')
+    data = iostream.IOStream(buf).read(4096)  # b'payload'
+
   Attributes:
     write: A callable for writing data.
     read: A callable for reading data.

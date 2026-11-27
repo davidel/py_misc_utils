@@ -3,6 +3,16 @@
 This module provides NoBreak, a context manager that temporarily suppresses
 SIGINT and SIGTERM signals, recording them for later processing. Useful for
 protecting critical sections from interruption.
+
+Example:
+  import signal
+  from py_misc_utils import no_break
+  from py_misc_utils import signal as sgn
+
+  with no_break.NoBreak('INT'):
+    sgn.trigger(signal.SIGINT)  # Recorded, not acted upon.
+
+  # After the context the standard handler is active again.
 """
 
 import signal
@@ -35,8 +45,10 @@ class NoBreak:
     Args:
       sigs: Signal names - as a comma-separated string or a sequence -
         or None to intercept the default termination signals.
-      exit_trigger: If True, a received signal also triggers a system
-        exit (default: False).
+      exit_trigger: If True, the signals received while the context was
+        active are re-triggered upon exit, so that - with the standard
+        handlers restored - they can act as if received after the
+        protected section (default: False).
     """
     if sigs is None:
       self._signals = tuple(self.SIGMAP.values())

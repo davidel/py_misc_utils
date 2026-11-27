@@ -16,6 +16,12 @@ def select(fn, idx):
 
   Returns:
     A wrapped callable that invokes fn and returns result[idx].
+
+  Example:
+    def stats():
+      return 10, 20
+
+    get_count = call_result_selector.select(stats, 0)  # get_count() -> 10
   """
 
   @functools.wraps(fn)

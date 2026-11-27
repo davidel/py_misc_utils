@@ -3,6 +3,24 @@
 This module provides the DynLoader class which can discover Python modules in a
 directory or package, optionally matching a filename pattern, and import them
 dynamically for use as plugin-like extensions.
+
+Example:
+  import os
+  import sys
+  import tempfile
+  import py_misc_utils.dyn_modules as dym
+
+  tdir = tempfile.TemporaryDirectory()
+  with open(os.path.join(tdir.name, 'plug_a.py'), 'w') as fpt:
+    fpt.write('V = 10')
+
+  loader = dym.DynLoader(path=tdir.name)
+
+  assert loader.get('plug_a').V == 10
+  assert loader.module_names() == ('plug_a',)
+
+  tdir.cleanup()
+  sys.modules.pop('plug_a', None)
 """
 
 import collections
@@ -28,7 +46,8 @@ class DynLoader:
 
     Either modname or path must be specified (but not both). If modname is given,
     modules are discovered as submodules of that package. If path is given,
-    modules are loaded directly from that filesystem path.
+    modules are loaded directly from that filesystem path. Discovered modules
+    are also installed into sys.modules under their derived names.
 
     Args:
       modname: Optional package/module name to discover submodules from. If

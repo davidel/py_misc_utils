@@ -3,6 +3,12 @@
 This module provides :class:`Field` and :class:`NamedArray` for managing
 columnar data with named fields, type formats, and efficient conversion to
 numpy arrays and pandas DataFrames.
+
+Example:
+  narr = named_array.NamedArray('id=i,val=f')
+  narr.append(1, 10.0)  # Append one row.
+  narr.data()['id']  # The per-field numpy arrays.
+  narr.to_numpy()  # A 2D array - numeric, size==1 fields only.
 """
 
 import array
@@ -28,7 +34,6 @@ class Field:
     fmt: The data format character code.
     str_tbl: String table used for string columns ('S' format).
   """
-
   __slots__ = ('data', 'fmt', 'name', 'size', 'str_tbl')
 
   def __init__(self, name, data, size, fmt, str_tbl):
@@ -117,8 +122,9 @@ class Field:
       i: The row index, or a slice of row indices.
 
     Returns:
-      The row value - the element for size==1 fields, the tuple of the
-      size elements otherwise.
+      The row value - the element for size==1 fields, the list of the
+      size elements otherwise. A slice of a vector field returns a list
+      of per-row lists.
     """
     if self.size == 1:
       return self.data[i]
@@ -141,7 +147,8 @@ class Field:
     Args:
       name: The column name.
       fmt: Format specification, optionally holding a size prefix (e.g.
-        '3f'); non-numeric formats fall back to a plain list storage.
+        '3f' = 3 float32 per row); non-numeric formats ('S', 'x') fall
+        back to a plain list storage.
       str_tbl: String table used for string columns.
 
     Returns:
@@ -161,20 +168,37 @@ class Field:
 class NamedArray:
   """A columnar data container with named, typed fields.
 
-  Fields are defined by name=format pairs (e.g. 'id=i name=S value=f').
+  Fields are defined by name=format pairs - comma-separated, e.g.
+  'id=i,name=S' - where the format is an array.array type code, optionally
+  prefixed with a fixed vector size (e.g. '3f' for a 3-elements float
+  vector per row). String fields use the 'S' code, whose values are
+  interned in a per-array string table.
+
   Supports appending rows, extending from other NamedArrays, conversion to
   numpy arrays and pandas DataFrames.
+
+  Example:
+    narr = named_array.NamedArray('id=i,val=f,name=S')
+    narr.append(1, 10.0, 'alice')
+    narr.kwappend(id=2, val=20.0, name='bob')
+    narr.shape  # (2, 3) - rows and fields.
+    narr[0]  # (1, 10.0, 'alice') - a whole row as a tuple.
   """
 
   def __init__(self, names, fmt=None):
     """Initialize a NamedArray with named fields.
 
     Args:
-      names: A comma-separated string of 'name=format' pairs, or a list of
-        field names. If fmt is provided, names is treated as a list of names
-        and fmt as a list of format strings.
-      fmt: Optional format specification. Can be a string of format codes
-        or a list of format characters matching the names.
+      names: Either a comma-separated string of 'name=format' pairs, or a
+        sequence of field names.
+      fmt: When provided, names is treated as a plain sequence of names
+        and fmt holds the matching format codes - either as a single
+        space-separated string or as a sequence of format strings.
+
+    Example:
+      named_array.NamedArray('id=i,val=S')  # Pairs in one string.
+      named_array.NamedArray(['id', 'val'], 'iS')  # Names + fmt string.
+      named_array.NamedArray(['id', 'val'], ['i', 'S'])  # Per-field fmts.
     """
     fnames = re.split(r'\s*,\s*', names) if isinstance(names, str) else names
     if fmt is None:
@@ -225,7 +249,12 @@ class NamedArray:
     """Append a row of values to each field.
 
     Args:
-      *args: One value per field, in field order.
+      *args: One value per field, in field order. Vector fields take a
+        sequence of self.size values.
+
+    Example:
+      narr = named_array.NamedArray('id=i,name=S')
+      narr.append(1, 'alice')  # One full row.
     """
     for field, arg in zip(self._fieldseq, args):
       field.append(arg)
@@ -265,7 +294,7 @@ class NamedArray:
       i: The row index.
 
     Returns:
-      A tuple of values, one per field.
+      A tuple of values, one per field. Alias of __getitem__.
     """
     item = []
     for field in self._fieldseq:
@@ -280,7 +309,8 @@ class NamedArray:
       names: Optional collection of field names. If None, all fields are returned.
 
     Returns:
-      A tuple of numpy arrays, one per requested field.
+      A tuple of numpy arrays, one per requested field - shaped (n,) for
+      scalar fields and (n, size) for vector fields.
     """
     if names:
       return tuple(self._fields[name].np_array() for name in names)
@@ -309,7 +339,8 @@ class NamedArray:
   def to_numpy(self, dtype=None):
     """Convert all fields to a single 2D numpy array.
 
-    All fields must be numeric with size==1.
+    All fields must be numeric with size==1 - string ('S') and vector
+    fields cannot be converted.
 
     Args:
       dtype: Optional numpy dtype. If None, inferred from field dtypes.
@@ -359,7 +390,7 @@ class NamedArray:
       i: The row index.
 
     Returns:
-      A dict mapping each field name to the value of the row.
+      A dict mapping each field name to the row value.
     """
     item = dict()
     for field in self._fieldseq:
@@ -379,11 +410,16 @@ class NamedArray:
     return self.to_numpy(dtype=dtype)
 
   def to_dataframe(self):
-    """Convert the fields into a pandas DataFrame.
+    """Convert the NamedArray into a pandas DataFrame.
 
     Returns:
       A DataFrame with one column per field, holding the numpy arrays of
       the scalar fields and the lists of the vector fields.
+
+    Example:
+      narr = named_array.NamedArray('id=i,name=S')
+      narr.append(1, 'alice')
+      narr.to_dataframe().to_dict('list')  # {'id': [1], 'name': ['alice']}
     """
     df_data = dict()
     for name, arr in self.data().items():

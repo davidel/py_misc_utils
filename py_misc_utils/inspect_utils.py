@@ -9,6 +9,22 @@ Functions:
   is_subclass, get_caller_function, current_module, fetch_args,
   fetch_call, get_fn_kwargs, get_defaulted_params, parent_locals,
   parent_globals, parent_coords, class_slots
+
+Note that the parent_*() helpers look past the immediate caller: the
+frame at ``level + 2`` - i.e. the caller of the function calling the
+helper - is inspected by default.
+
+Example:
+  from py_misc_utils import inspect_utils as iu
+
+  class Greeter:
+
+    def hello(self):
+      pass
+
+  # Qualified names resolve through instances to their class.
+  assert iu.qual_name(Greeter()).endswith('.Greeter')
+  assert iu.qual_name(dict) == 'builtins.dict'
 """
 
 import inspect
@@ -108,7 +124,8 @@ def _qual_name(obj, builtin_strip=False):
 def qual_name(obj, builtin_strip=False):
   """Returns the qualified name for a class, function, method, or module.
 
-  For non-class/function/method/module objects, uses the object's class.
+  For non-class/function/method/module objects, uses the object's class -
+  so the qualified name of an instance is the qualified name of its class.
 
   Args:
     obj: The object to get the qualified name for.
@@ -133,7 +150,8 @@ def qual_mro(obj, builtin_strip=False):
     builtin_strip: If True, strips builtin module prefixes.
 
   Yields:
-    Qualified name strings for each class in ``cls.__mro__``.
+    Qualified name strings for each class in ``cls.__mro__`` - from the
+    most specific class up to ``object``.
   """
   cls = obj if inspect.isclass(obj) else obj.__class__
 
@@ -216,6 +234,10 @@ def current_module():
 def fetch_args(func, locs, input_args=()):
   """Extracts positional and keyword arguments for a function from locals.
 
+  Optional parameters pick their value from the matching local variable,
+  falling back to the parameter default when the local is None or
+  missing.
+
   Args:
     func: The function whose signature is used to extract arguments.
     locs: A dict-like mapping of local variable names to values.
@@ -278,6 +300,8 @@ def fetch_args(func, locs, input_args=()):
 
 def fetch_call(func, locs, input_args=()):
   """Calls a function with arguments extracted from locals.
+
+  Uses fetch_args() to build the call arguments from the given locals.
 
   Args:
     func: The function to call.
@@ -398,11 +422,15 @@ def parent_coords(level=0):
 def class_slots(cls):
   """Returns all slot names defined across a class's MRO.
 
+  Note that slot names reappear once per ancestor defining them: a
+  slotless subclass does not hide the __slots__ of its parents.
+
   Args:
     cls: A class object.
 
   Returns:
-    A tuple of slot name strings from all classes in ``cls.__mro__``.
+    A tuple of slot name strings from all classes in ``cls.__mro__`` -
+    empty for classes without slots anywhere in their hierarchy.
   """
   slots = itertools.chain.from_iterable(
       getattr(mcls, '__slots__', []) for mcls in cls.__mro__)

@@ -3,6 +3,29 @@
 This module provides :func:`track_objects` which scans all objects tracked by
 the garbage collector, identifies which objects are tracked by a given tracker
 callable, and produces a report of reference chains that keep objects alive.
+
+Example:
+  import py_misc_utils.object_tracker as ot
+
+
+  class Thing:
+
+    def __init__(self, name):
+      self.name = name
+
+
+  class Tracker:
+
+    def track(self, obj):
+      if isinstance(obj, Thing):
+        return (5, f'Thing: {obj.name}')
+      return None
+
+
+  t = Thing('kept')
+  report = ot.track_objects(Tracker(), max_references=2)
+  assert report.startswith('Thing: kept')
+  assert 'refby' in report
 """
 
 import collections
@@ -89,6 +112,29 @@ def track_objects(tracker, max_references=None):
 
   Returns:
     A newline-separated string report of tracked objects and references.
+
+  Example:
+    import py_misc_utils.object_tracker as ot
+
+
+    class Thing:
+
+      def __init__(self, name):
+        self.name = name
+
+
+    class Tracker:
+
+      def track(self, obj):
+        if isinstance(obj, Thing):
+          # Lower priority values are reported first.
+          return (5, f'Thing: {obj.name}')
+        return None
+
+
+    t = Thing('kept')
+    report = ot.track_objects(Tracker(), max_references=2)
+    assert 'Thing: kept' in report
   """
   gc.collect()
 

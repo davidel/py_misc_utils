@@ -4,6 +4,16 @@ This module provides helpers for spawning child processes while preserving
 global namespace state, signal handling, and cleanup behavior. It includes
 the :class:`TerminationError` exception and functions such as
 :func:`create_process` and :func:`procfn_wrap` for robust process management.
+
+Example:
+  import py_misc_utils.multiprocessing as mpx
+
+  def worker(n):
+    return n * n
+
+  proc = mpx.create_process(worker, (4,))
+  proc.start()
+  proc.join()
 """
 
 import functools
@@ -18,7 +28,12 @@ from . import global_namespace as gns
 
 
 class TerminationError(Exception):
-  """Raised when a process receives SIGTERM and should terminate."""
+  """Raised when a process receives SIGTERM and should terminate.
+
+  The signal handler installed by procfn_wrap converts SIGTERM into this
+  exception, so that the usual unwinding - cleanups included - happens
+  before the process exits with code 1.
+  """
 
 
 def _sig_handler(sig, frame):
@@ -140,6 +155,10 @@ def procfn_wrap(procfn, *args, **kwargs):
 
   Returns:
     The return value of procfn.
+
+  Note:
+    KeyboardInterrupt and TerminationError cause sys.exit(1); any other
+    exception is logged - with the traceback - and re-raised.
   """
   try:
     _process_setup()
@@ -172,6 +191,25 @@ def _wrapped_procfn(procfn, *args, **kwargs):
 
 def create_process(procfn, args=(), kwargs=None, context=None, daemon=None):
   """Create a multiprocessing.Process with context propagation and signal handling.
+
+  The target is wrapped so that, in the child process, the parent global
+  namespace state is restored (also with the spawn start method), SIGINT
+  and SIGTERM install handlers - converting them to KeyboardInterrupt and
+  TerminationError - and registered cleanups run on exit.
+
+  Example:
+    import time
+    import py_misc_utils.multiprocessing as mpx
+
+    def slow_worker():
+      time.sleep(5)
+
+    proc = mpx.create_process(slow_worker)
+    proc.start()
+    time.sleep(0.3)
+    proc.terminate()   # SIGTERM -> TerminationError -> exit code 1
+    proc.join(timeout=5)
+    assert proc.exitcode != 0
 
   The target function is wrapped to propagate the parent's global namespace
   context, install signal handlers, and run cleanup on exit.

@@ -14,6 +14,14 @@ class CondWaiter:
 
   Each wait() call consumes the remaining time held by the object, so
   that a sequence of waits honors a single overall timeout.
+
+  Example:
+    import threading
+
+    waiter = cond_waiter.CondWaiter(timeout=10.0)
+    cond = threading.Condition()
+    with cond:
+      notified = waiter.wait(cond)  # notified within the 10s budget?
   """
 
   def __init__(self, timeout=None, timegen=None):

@@ -19,6 +19,11 @@ class TransformArray(collections.abc.Sequence):
   Elements are transformed by the configured pipeline only when they are
   accessed, either individually, as slices or through conversion to a
   numpy array.
+
+  Example:
+    ta = transform_array.TransformArray([1, 2, 3], lambda x: x * 2)
+    ta[0]  # 2 - the element is transformed on access.
+    ta.to_numpy()  # The whole array transformed: array([2, 4, 6]).
   """
 
   def __init__(self, data, pipeline):

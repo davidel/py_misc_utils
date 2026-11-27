@@ -12,10 +12,14 @@ def prime_factors(n):
   """Yield the prime factors of n.
 
   Args:
-    n: A positive integer to factorize.
+    n: A positive integer to factorize. Zero yields nothing.
 
   Yields:
-    Prime factors of n in ascending order.
+    Prime factors of n in ascending order, with multiplicity.
+
+  Example:
+    list(num_utils.prime_factors(360))  # [2, 2, 2, 3, 3, 5]
+    list(num_utils.prime_factors(13))  # [13]
   """
   i = 2
   while i * i <= n:
@@ -40,6 +44,10 @@ def nearest_divisor(value, n):
   Returns:
     The divisor of value nearest to n - ties resolved towards the lower
     divisor.
+
+  Example:
+    num_utils.nearest_divisor(100, 6)  # 5: the divisor closest to 6.
+    num_utils.nearest_divisor(24, 5)  # 4: tie (4 vs 6) resolved downwards.
   """
   nmin, nmax = n, n
 
@@ -59,7 +67,7 @@ def nearest_divisor(value, n):
   if value % nmax != 0:
     return nmin
 
-  return nmin if dmin < (nmax - n) else nmax
+  return nmin if dmin <= (nmax - n) else nmax
 
 
 def sign_extend(value, nbits):
@@ -71,6 +79,10 @@ def sign_extend(value, nbits):
 
   Returns:
     The negative value when the sign bit is set, the value otherwise.
+
+  Example:
+    num_utils.sign_extend(0xFF, 8)  # -1
+    num_utils.sign_extend(0x7F, 8)  # 127
   """
   sign = 1 << (nbits - 1)
 
@@ -85,6 +97,10 @@ def ffs(n):
 
   Returns:
     The 0-based index of the lowest set bit of n.
+
+  Example:
+    num_utils.ffs(8)  # 3
+    num_utils.ffs(12)  # 2
   """
   nnorm = n & (-n)
 
@@ -100,6 +116,10 @@ def round_up(v, step):
 
   Returns:
     The smallest multiple of step which is greater than or equal to v.
+
+  Example:
+    num_utils.round_up(17, 5)  # 20
+    num_utils.round_down(17, 5)  # 15
   """
   return ((v + step - 1) // step) * step
 
@@ -127,12 +147,15 @@ def mix(a, b, gamma):
 
   Returns:
     a * gamma + b * (1.0 - gamma).
+
+  Example:
+    num_utils.mix(10, 20, 0.25)  # 17.5
   """
   return a * gamma + b * (1.0 - gamma)
 
 
 def perfect_power(value, base):
-  """Compute the exponent of a perfect power.
+  """Return the exponent when value is a power of base.
 
   Args:
     value: The value to check.
@@ -140,6 +163,10 @@ def perfect_power(value, base):
 
   Returns:
     The exponent n when value == base**n, or None otherwise.
+
+  Example:
+    num_utils.perfect_power(8, 2)  # 3
+    num_utils.perfect_power(10, 2)  # None
   """
   vlog = round(math.log(value, base))
 

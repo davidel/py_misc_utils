@@ -4,6 +4,23 @@ This module provides :class:`ParquetStreamer` which reads Parquet files in
 batches, optionally prefetching external columns via URLs, and supports
 column renaming. Records are yielded one at a time for memory-efficient
 iteration over large Parquet datasets.
+
+Example:
+  import os
+  import tempfile
+
+  import pyarrow as pa
+  import pyarrow.parquet as pq
+
+  import py_misc_utils.parquet_streamer as ps
+
+
+  tdir = tempfile.mkdtemp()
+  path = os.path.join(tdir, 'data.parquet')
+  pq.write_table(pa.table({'id': [1, 2], 'val': ['one', 'two']}), path)
+
+  recs = list(ps.ParquetStreamer(path))
+  assert recs == [{'id': 1, 'val': 'one'}, {'id': 2, 'val': 'two'}]
 """
 
 import contextlib
@@ -18,6 +35,25 @@ from . import utils as ut
 
 class ParquetStreamer:
   """Stream records from a Parquet file in batches with optional column loading.
+
+  Example:
+    import os
+    import tempfile
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    import py_misc_utils.parquet_streamer as ps
+
+
+    tdir = tempfile.mkdtemp()
+    path = os.path.join(tdir, 'data.parquet')
+    pq.write_table(pa.table({'id': [1, 2], 'val': ['one', 'two']}), path)
+
+    streamer = ps.ParquetStreamer(path, batch_size=1,
+                                  rename_columns={'id': 'ident'})
+    assert list(streamer) == [{'val': 'one', 'ident': 1},
+                              {'val': 'two', 'ident': 2}]
   """
 
   def __init__(self,

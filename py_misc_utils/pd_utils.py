@@ -31,6 +31,13 @@ def get_df_columns(df, discards=None):
 
   Returns:
     A list of column names not in discards.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1], 'b': [1.5, 2.5]})
+    pd_utils.get_df_columns(df)  # ['a', 'b']
+    pd_utils.get_df_columns(df, discards={'b'})  # ['a']
   """
   dset = discards or {}
 
@@ -48,6 +55,13 @@ def get_typed_columns(df, type_fn, discards=None):
 
   Returns:
     A list of column names matching the type predicate.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1], 'c': ['x', 'y']})
+    pd_utils.get_typed_columns(df, pd.api.types.is_numeric_dtype)
+    # ['a']
   """
   cols = []
   for c in get_df_columns(df, discards=discards):
@@ -66,6 +80,12 @@ def re_select_columns(df, re_cols):
 
   Returns:
     A list of column names that match at least one pattern.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'ab': [1], 'cd': [2]})
+    pd_utils.re_select_columns(df, ['a', 'c.+'])  # ['ab', 'cd']
   """
   cols = []
   for c in df.columns:
@@ -83,15 +103,29 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
   If dtype is not provided, samples the first rows_sample rows to infer
   numeric column types automatically.
 
+  A dict dtype is passed through to pd.read_csv() as-is, while a single
+  dtype is applied to the numeric columns detected in the sample.
+
   Args:
     path: Filesystem path or URL to the CSV file.
     rows_sample: Number of rows to sample for dtype inference (default: 100).
     dtype: Optional dtype specification (dict mapping column to dtype, or
       a single dtype to apply to all numeric columns).
-    args: Optional additional keyword arguments passed to pd.read_csv.
+    args: Optional dict of extra keyword arguments for pd.read_csv().
 
   Returns:
-    A pandas DataFrame containing the CSV data.
+    A pandas DataFrame.
+
+  Example:
+    import os
+    import tempfile
+    import numpy as np
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2], 'b': [1.5, 2.5]})
+    path = os.path.join(tempfile.mkdtemp(), 'data.csv')
+    pd_utils.save_dataframe(df, path)
+    pd_utils.read_csv(path, dtype={'a': np.int64})
   """
   with gfs.open(path, mode='r') as fd:
     args = dict() if args is None else args
@@ -118,10 +152,25 @@ def read_csv(path, rows_sample=100, dtype=None, args=None):
 def save_dataframe(df, path, **kwargs):
   """Save a DataFrame to a pickle or CSV file based on extension.
 
+  Only '.pkl' and '.csv' extensions are supported. For CSV files, the
+  index is dropped when it has no name (unless index is given in kwargs).
+
   Args:
     df: A pandas DataFrame.
     path: Output filesystem path.
     **kwargs: Format-specific options passed to to_pickle or to_csv.
+
+  Raises:
+    RuntimeError: When the path extension is neither .pkl nor .csv.
+
+  Example:
+    import os
+    import tempfile
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2], 'b': [1.5, 2.5]})
+    pd_utils.save_dataframe(df, os.path.join(tempfile.mkdtemp(), 'out.pkl'))
+    pd_utils.save_dataframe(df, os.path.join(tempfile.mkdtemp(), 'out.csv'))
   """
   _, ext = os.path.splitext(os.path.basename(path))
   if ext == '.pkl':
@@ -153,10 +202,25 @@ def load_dataframe(path, **kwargs):
 
   Args:
     path: Filesystem path or URL to the data file.
-    **kwargs: Format-specific options. For CSV, supports rows_sample and dtype.
+    **kwargs: Format-specific options. For CSV, supports rows_sample and
+      dtype (as per read_csv()), plus any pd.read_csv() option.
 
   Returns:
     A pandas DataFrame.
+
+  Raises:
+    RuntimeError: When the path extension is neither .pkl nor .csv.
+
+  Example:
+    import os
+    import tempfile
+    import numpy as np
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2], 'b': [1.5, 2.5]})
+    path = os.path.join(tempfile.mkdtemp(), 'data.csv')
+    pd_utils.save_dataframe(df, path)
+    pd_utils.load_dataframe(path, dtype={'a': np.int64})
   """
   _, ext = os.path.splitext(os.path.basename(path))
   if ext == '.pkl':
@@ -188,12 +252,21 @@ def to_npdict(df, reset_index=False, dtype=None, no_convert=()):
 
   Args:
     df: A pandas DataFrame.
-    reset_index: If True, reset the index before conversion.
+    reset_index: If True, a named index is added to the output as an
+      extra column.
     dtype: Optional dtype specification applied via npu.astype.
     no_convert: Tuple of column names to skip dtype conversion.
 
   Returns:
     A dict mapping column names to numpy arrays.
+
+  Example:
+    import numpy as np
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1], 'b': [1.5, 2.5]})
+    pd_utils.to_npdict(df)  # {'a': array([3, 1]), 'b': array([1.5, 2.5])}
+    pd_utils.to_npdict(df, dtype={'a': np.float32})
   """
   if reset_index and df.index.name:
     df = df.reset_index()
@@ -213,12 +286,24 @@ def load_dataframe_as_npdict(path, reset_index=False, dtype=None, no_convert=())
 
   Args:
     path: Filesystem path or URL to the data file, as per load_dataframe().
-    reset_index: If True, reset the index before conversion.
+    reset_index: If True, a named index is added to the output as an
+      extra column.
     dtype: Optional dtype specification applied via npu.astype.
     no_convert: Tuple of column names to skip dtype conversion.
 
   Returns:
     A dict mapping column names to numpy arrays.
+
+  Example:
+    import os
+    import tempfile
+    import numpy as np
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2], 'b': [1.5, 2.5]})
+    path = os.path.join(tempfile.mkdtemp(), 'data.csv')
+    pd_utils.save_dataframe(df, path)
+    pd_utils.load_dataframe_as_npdict(path, dtype={'b': np.float32})
   """
   df = load_dataframe(path)
 
@@ -234,7 +319,16 @@ def column_or_index(df, name, numpy=True):
     numpy: If True, return data as a numpy array.
 
   Returns:
-    The column/index data, or None if not found.
+    The column/index data, or None when no column or index named name
+    exists.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1]})
+    df.index.name = 'ts'
+    pd_utils.column_or_index(df, 'a')  # The 'a' column values.
+    pd_utils.column_or_index(df, 'ts')  # The index values.
   """
   data = df.get(name)
   if data is None and df.index.name == name:
@@ -248,11 +342,23 @@ def columns_transform(df, cols, tfn):
 
   Args:
     df: A pandas DataFrame.
-    cols: A collection of column names to transform.
-    tfn: A callable taking (name, data, index) and returning transformed data.
+    cols: A collection of column names to transform: names matching a
+      named index are applied to the index.
+    tfn: A callable taking (name, data, index) and returning transformed
+      data; data is the column (or index) values and index tells whether
+      they belong to the index.
 
   Returns:
     The modified DataFrame.
+
+  Raises:
+    RuntimeError: When a name matches neither a column nor the index.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1]})
+    pd_utils.columns_transform(df, ['a'], lambda c, v, index: v * 10)
   """
   for c in cols:
     cv = df.get(c)
@@ -275,6 +381,12 @@ def get_columns_index(df):
   Returns:
     A tuple with the dict mapping each column name to its ordinal
     position and the list of column names.
+
+  Example:
+    import pandas as pd
+
+    pd_utils.get_columns_index(pd.DataFrame({'a': [0], 'b': [1]}))
+    # ({'a': 0, 'b': 1}, ['a', 'b'])
   """
   cols = df.columns.tolist()
 
@@ -291,6 +403,18 @@ def concat_dataframes(files, **kwargs):
 
   Returns:
     The concatenated pandas DataFrame, or None when no file is given.
+
+  Example:
+    import os
+    import tempfile
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2]})
+    td = tempfile.mkdtemp()
+    p1, p2 = os.path.join(td, 'a.csv'), os.path.join(td, 'b.csv')
+    pd_utils.save_dataframe(df, p1)
+    pd_utils.save_dataframe(df * 2, p2)
+    pd_utils.concat_dataframes([p1, p2])
   """
   dfs = []
   for path in files:
@@ -311,7 +435,16 @@ def get_dataframe_groups(df, cols, cols_transforms=None):
 
   Returns:
     A dict mapping each group key tuple to the array.array of strictly
-    ascending row numbers of the rows belonging to the group.
+    ascending row numbers of the rows belonging to the group. The row
+    numbers are strictly ascending within each group, do NOT change that!
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'k': ['u', 'u', 'v'], 'v': [1, 2, 3]})
+    pd_utils.get_dataframe_groups(df, ['k'])
+    # {('u',): array([0, 1]), ('v',): array([2])}
+    pd_utils.get_dataframe_groups(df, ['k'], cols_transforms={'k': str.upper})
   """
   # Pandas groupby() is extremely slow when there are many groups as it builds
   # a DataFrame for each group. This simply collects the rows associated with each
@@ -333,7 +466,7 @@ def get_dataframe_groups(df, cols, cols_transforms=None):
 
 
 def limit_per_group(df, cols, limit):
-  """Keep at most limit rows for each group of column values.
+  """Limit the number of rows selected from each group.
 
   Args:
     df: A pandas DataFrame.
@@ -344,6 +477,13 @@ def limit_per_group(df, cols, limit):
 
   Returns:
     The DataFrame containing the selected rows.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'k': ['u', 'u', 'v'], 'v': [1, 2, 3]})
+    pd_utils.limit_per_group(df, ['k'], 1)  # The first row of each group.
+    pd_utils.limit_per_group(df, ['k'], -1)  # The last row of each group.
   """
   mask = np.full(len(df), False)
 
@@ -361,6 +501,9 @@ def limit_per_group(df, cols, limit):
 def dataframe_column_rewrite(df, name, fn):
   """Replace the values of a column or of the index in place.
 
+  The DataFrame is modified in place; a new copy is still returned for
+  chaining purposes.
+
   Args:
     df: A pandas DataFrame.
     name: Name of the column or index to rewrite.
@@ -369,6 +512,12 @@ def dataframe_column_rewrite(df, name, fn):
 
   Raises:
     RuntimeError: When no column or index named name exists.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1]})
+    pd_utils.dataframe_column_rewrite(df, 'a', lambda v: v * -1)
   """
   data = df.get(name)
   if data is not None:
@@ -391,6 +540,13 @@ def correlate(df, col, top_n=None):
   Returns:
     A tuple of (column name, correlation) pairs sorted by descending
     absolute correlation value.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'x': [1, 2, 3], 'y': [2, 4, 6], 'z': [1, 0, 1]})
+    pd_utils.correlate(df, 'x')  # (('x', 1.0), ('y', 1.0), ('z', -0.44...))
+    pd_utils.correlate(df, 'x', top_n=2)  # The two most correlated columns.
   """
   ccorr = df.corrwith(df[col])
   scorr = ccorr.sort_values(key=lambda x: abs(x), ascending=False)
@@ -408,6 +564,12 @@ def type_convert_dataframe(df, types):
 
   Returns:
     The modified DataFrame.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2]})
+    pd_utils.type_convert_dataframe(df, {'a': 'float32'})
   """
   # Pandas DataFrame astype() doe not have an 'inplace' argument.
   for c, t in types.items():
@@ -425,6 +587,12 @@ def dataframe_rows_select(df, indices):
 
   Returns:
     The DataFrame containing the selected rows.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [1, 2, 3]})
+    pd_utils.dataframe_rows_select(df, [0, 2])
   """
   return df.loc[df.index[indices]]
 
@@ -440,6 +608,13 @@ def sorted_index(df, col):
     The DataFrame sorted by col: when col is already the index name the
     rows are simply sorted, otherwise the sorted rows are re-indexed
     with the col values.
+
+  Example:
+    import pandas as pd
+
+    df = pd.DataFrame({'a': [3, 1, 2]})
+    sdf = pd_utils.sorted_index(df, 'a')
+    sdf.index  # The sorted 'a' values: [1, 2, 3].
   """
   if df.index.name == col:
     return df.sort_values(col)
@@ -457,6 +632,10 @@ def datetime_to_epoch(data):
 
   Returns:
     A pandas Series of epoch seconds with fractional part.
+
+  Example:
+    pd_utils.datetime_to_epoch(['1970-01-01', '1970-01-02'])
+    # [0.0, 86400.0]
   """
   ts = pd.Series(pd.to_datetime(data))
   return (ts - datetime.datetime(1970, 1, 1)).dt.total_seconds()

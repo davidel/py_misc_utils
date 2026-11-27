@@ -17,8 +17,10 @@ class _EnumBase:
   from base, and can be accessed as attributes on the instance.
 
   Example:
-    Color = _EnumBase('RED, GREEN=5, BLUE')
-    # Color.RED == 0, Color.GREEN == 5, Color.BLUE == 6
+    Color = enum._EnumBase('RED, GREEN=5, BLUE')
+    Color.RED  # 0
+    Color.GREEN  # 5
+    Color.BLUE  # 6 - auto-incremented from the last explicit value
   """
 
   def __init__(self, fields, base=0):
@@ -84,7 +86,11 @@ def make_enum(name, fields, base=0):
       Defaults to 0.
 
   Returns:
-    A new _EnumBase subclass instance with the specified fields.
+    A new _EnumBase subclass with the specified fields.
+
+  Example:
+    Color = enum.make_enum('Color', 'RED, GREEN=5, BLUE')
+    Color.GREEN  # 5
   """
   cls = types.new_class(name, bases=(_EnumBase,))
 

@@ -7,6 +7,9 @@ This module provides:
 - Async-safe logging for signal handlers
 - Convenience functions for all log levels
 - Exception logging and raising helpers
+
+The numeric values of the extended levels are: SPAM=8, VERBOSE=9,
+DEBUG0..3=11..14 (between DEBUG=10 and INFO=20).
 """
 
 import logging
@@ -53,6 +56,21 @@ class Formatter(logging.Formatter):
   """Custom log formatter with compact headers and optional extra fields.
 
   Header format: LEVELYYMMDD HH:MM:SS.mmmmmm;PID;MODULE[;EXTRA...]
+
+  Example:
+    import io
+    import logging
+    import py_misc_utils.alog as alog
+
+    buf = io.StringIO()
+    logging.basicConfig(level=logging.INFO, stream=buf)
+    alog.set_current_level(logging.INFO, set_logger=False)
+
+    alog.info('hello %s', 'world')
+
+    # Header: 'IN' + timestamp;PID;module, then the message.
+    assert buf.getvalue().startswith('IN')
+    assert 'hello world' in buf.getvalue()
   """
 
   def __init__(self, emit_extra=None):
@@ -273,7 +291,9 @@ def level_active(level):
     level: Numeric log level to check.
 
   Returns:
-    True if level >= current threshold.
+    True if the level is at or above the current threshold - e.g. with
+    the threshold at INFO, level_active(INFO) is True while
+    level_active(DEBUG) is False.
   """
   return _LEVEL <= level
 
@@ -499,13 +519,18 @@ def exception(e, *args, **kwargs):
 
 
 def xraise(e, msg, *args, **kwargs):
-  """Log an error message and raise an exception.
+  """Raise an exception carrying a formatted message (and optionally log it).
+
+  The message is formatted as ``msg % args`` when format arguments are
+  given - unlike the log functions, which use ``%``-formatting at record
+  rendering time.
 
   Args:
     e: Exception class to raise (e.g., ValueError).
     msg: Error message string or callable.
-    *args: Format arguments.
-    **kwargs: Additional logging arguments. If 'logit' is True, log before raising.
+    *args: Format arguments - applied with the % operator immediately.
+    **kwargs: Additional logging arguments. If 'logit' is True, the
+      message is logged at ERROR level before raising.
 
   Raises:
     e: Instance of the provided exception class with the formatted message.
@@ -520,13 +545,27 @@ def async_log(level, msg, *args, **kwargs):
   """Log a message asynchronously (safe for signal handlers).
 
   This function avoids the logging module's locks and can be safely called
-  from signal handlers or other asynchronous contexts.
+  from signal handlers or other asynchronous contexts. It bypasses the
+  configured handlers entirely, formatting the record with the default
+  Formatter() and writing it to the output stream.
 
   Args:
     level: Numeric log level.
     msg: Message string or callable.
     *args: Format arguments.
-    **kwargs: Additional arguments. 'file' specifies output stream (default: stderr).
+    **kwargs: Additional arguments. 'file' specifies the output stream -
+      stderr by default.
+
+  Example:
+    import io
+    import py_misc_utils.alog as alog
+
+    buf = io.StringIO()
+    alog.async_log(alog.INFO, 'async %s', 'msg', file=buf)
+
+    # Header: 'IN' + timestamp;PID;module, then the message.
+    assert buf.getvalue().startswith('IN')
+    assert 'async msg' in buf.getvalue()
   """
   # This one cannot use the logging module as it could be called from signal
   # handler asycnhronously. The logging.getLevelName() is safe since it is simply

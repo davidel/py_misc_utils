@@ -15,7 +15,7 @@ Writing a tensor stream::
   writer = Writer('/data/mystream')
   writer.write(feats, labels)  # Writes one batch of samples.
   writer.write(feats, labels)  # Writes another batch of samples.
-  writer.flush()               # Flushes pending data to disk.
+  writer.flush(final=True)     # Flushes pending data to disk and closes.
 
 Reading a tensor stream::
 
@@ -204,6 +204,11 @@ class Writer:
   A writer accumulates tensors - one per stream - in memory, and flushes
   them to the tensor stream folder as chunk files whenever the amount of
   pending data reaches a given chunk size.
+
+  Example:
+    writer = tensor_stream.Writer('/data/mystream')
+    writer.write(feats, labels)  # One tensor per stream.
+    writer.flush(final=True)     # Write the pending chunks and close.
   """
 
   def __init__(self, path, chunk_size=100 * 1024 * 1024):
@@ -279,7 +284,14 @@ class Writer:
         written.
       state: An optional object to persist into the tensor stream state
         file - useful to store metadata (like epoch numbers) along the
-        tensor stream data.
+        tensor stream data. When given, the state file is written (or
+        overwritten), making is_stream_folder() report True for the
+        stream folder.
+
+    Example:
+      writer = tensor_stream.Writer('/data/mystream')
+      writer.write(feats, labels)
+      writer.flush(final=True, state=dict(epoch=3))
     """
     for i, chunk in enumerate(self._chunks):
       if chunk is not None and chunk.size() > 0 and (final or
@@ -301,6 +313,12 @@ class Reader:
   A reader gives random access to the tensors stored in a tensor stream
   folder, optionally applying per-stream transformation functions to the
   data being read.
+
+  Example:
+    reader = tensor_stream.Reader('/data/mystream')
+    reader.shape  # Per-stream shapes - e.g. ((5, 2), (5, 2)).
+    reader.get_slice(0, start=2, size=2)  # Rows 2:4 of stream 0.
+    reader.get_slices(2, size=1)  # Row 2 of every stream.
   """
 
   def __init__(self, path, transforms=None):
@@ -333,6 +351,9 @@ class Reader:
   @classmethod
   def is_stream_folder(cls, path):
     """Checks whether a folder holds a tensor stream with a state file.
+
+    Note that a stream written without saving a state file does not
+    count as a stream folder for this check.
 
     Args:
       path: The folder path to check.
@@ -457,6 +478,13 @@ class StreamArray(collections.abc.Sequence):
 
   StreamArray objects support indexing (both integer and slice indexing)
   and behave as if they were numpy arrays (via the __array__ protocol).
+
+  Example:
+    reader = tensor_stream.Reader('/data/mystream')
+    arr = tensor_stream.StreamArray(reader, 0)
+    arr[2]  # Sample 2 of stream 0.
+    arr[1:3]  # Samples 1:3 as a single numpy array.
+    numpy.asarray(arr)  # The whole stream as a numpy array.
   """
 
   def __init__(self, reader, streamno):
@@ -523,6 +551,11 @@ class Dataset(data_utils.Dataset):
 
   Each dataset item is a tuple of tensors - one per stream - holding the
   data of a single sample.
+
+  Example:
+    ds = tensor_stream.Dataset('/data/mystream')
+    len(ds)  # The number of samples.
+    x0, x1 = ds[0]  # Torch tensors - one per stream.
   """
 
   def __init__(self, path, transforms=None):

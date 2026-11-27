@@ -10,7 +10,13 @@ import threading
 
 
 class MultiWait:
-  """A barrier that waits for a configurable number of signals before releasing.
+  """A barrier waiting for a configurable number of signals before releasing.
+
+  Example:
+    barrier = multi_wait.MultiWait(3)  # released after 3 signal() calls
+    barrier.signal()
+    barrier.signal()
+    barrier.signal()  # all threads waiting in barrier.wait() now proceed
   """
 
   def __init__(self, count):

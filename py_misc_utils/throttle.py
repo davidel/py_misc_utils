@@ -17,6 +17,11 @@ class Throttle:
 
   The object is thread-safe: the events spacing is computed over the
   trigger() calls made by all the threads.
+
+  Example:
+    throttle = throttle.Throttle(2)  # at most 2 events per second
+    with throttle.trigger():
+      pass  # perform_event() here - spaced by >= 0.5s from the previous one
   """
 
   def __init__(self, xsec_limit):

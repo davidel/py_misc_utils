@@ -5,6 +5,23 @@ parsing to a main function, the configuration of the library modules
 requiring command line setup - like alog - and the Main decorator which
 auto-generates the command line arguments from the signature of the
 decorated main function.
+
+Note that main() always adds the logging options to the given parser -
+besides the ones of a Main-decorated function.
+
+Example:
+  import argparse
+  import py_misc_utils.app_main as am
+
+  @am.Main
+  def run_it(count: int = 5):
+    return count * 2
+
+  parser = argparse.ArgumentParser()
+  run_it.add_arguments(parser)
+  args = parser.parse_args(['--count', '21'])
+
+  assert run_it(args) == 42
 """
 import argparse
 import functools
@@ -196,6 +213,10 @@ class Main:
   line arguments: parameters with a default value generate --name
   options - with type and default derived from the default value -
   while the ones without it generate positional arguments.
+
+  The decorated function keeps its original signature for direct calls,
+  but when used as a main function - via main() - it is called with the
+  parsed arguments.
 
   Parameters annotated with a typing.Literal get the literal values as
   their choices, bool parameters get a BooleanOptionalAction action, and

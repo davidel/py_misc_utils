@@ -13,6 +13,24 @@ class ContextBase:
 
   The context is stored as a plain object - built via
   utils.make_object() - whose attributes are the option values.
+
+  Note that the clone is shallow: nested mutable values are shared
+  between the clone and the context it was cloned from.
+
+  Example:
+    from py_misc_utils import context_base
+
+    class Opt(context_base.ContextBase):
+
+      def set(self, **kwargs):
+        return self._new_ctx(**kwargs)
+
+    o = Opt(dict(v=1))
+    ctx = o.set(v=2, w=3)
+
+    # The new context is the current one, and it carries the overrides.
+    assert ctx.v == 2
+    assert ctx.w == 3
   """
 
   def __init__(self, default_ctx):

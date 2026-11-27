@@ -27,6 +27,13 @@ def diff_split(data, mask_fn, sort=True):
 
   Returns:
     List of index arrays for each group. Use data[result[i]] to fetch split data.
+
+  Example:
+    import numpy as np
+
+    data = np.array([1, 100, 2, 200, 3])
+    groups = np_utils.diff_split(data, lambda x: np.abs(x) > 10)
+    # Groups in sorted order: [data[g] for g in groups] -> [[1, 2, 3], [100], [200]]
   """
   if sort:
     indices = np.argsort(data)
@@ -54,6 +61,12 @@ def group_splits(data, mask_fn):
 
   Returns:
     Array of indices where splits should occur.
+
+  Example:
+    import numpy as np
+
+    np_utils.group_splits(np.array([1, 5, 6, 30]), lambda x: np.abs(x) > 10)
+    # [2]: a new group starts after the 6 -> 30 jump.
   """
   diff = np.diff(data)
   mask = mask_fn(diff)
@@ -70,6 +83,12 @@ def group_by_delta(data, mask_fn):
 
   Returns:
     List of arrays, each containing a contiguous group.
+
+  Example:
+    import numpy as np
+
+    np_utils.group_by_delta(np.array([1, 1, 0, 0, 1]), lambda x: x != 1)
+    # [array([1]), array([1]), array([0]), array([0, 1])]
   """
   return np.split(data, group_splits(data, mask_fn) + 1)
 
@@ -90,6 +109,12 @@ def fillna(data, copy=False, defval=0):
 
   Returns:
     The array with the NaN entries filled.
+
+  Example:
+    import numpy as np
+
+    np_utils.fillna(np.array([1.0, np.nan, 4.0]), copy=True)
+    # [1.0, 4.0, 4.0]: the run takes the value right after it.
   """
   if copy:
     data = data.copy()
@@ -116,13 +141,20 @@ def fillna(data, copy=False, defval=0):
 def infer_np_dtype(dtypes):
   """Infer a common NumPy dtype from a sequence of dtypes.
 
-  Prefers float64, then float32, then largest integer type.
+  Promotes to the widest type: float64 wins over float32, float32 over
+  integers, and bigger integer types win over smaller ones.
 
   Args:
     dtypes: Sequence of NumPy dtypes.
 
   Returns:
     Inferred common dtype (default: float32 if no dtypes provided).
+
+  Example:
+    import numpy as np
+
+    np_utils.infer_np_dtype([np.int32, np.float32])  # float32
+    np_utils.infer_np_dtype([])  # float32
   """
   dtype = None
   for t in dtypes:
@@ -146,12 +178,22 @@ def infer_np_dtype(dtypes):
 def maybe_stack_slices(slices, axis=0):
   """Stack slices into an array if they are numpy arrays.
 
+  The list is stacked only when it is non-empty and its first element is
+  an ndarray; note that np.stack() still requires all the elements to
+  have the same shape.
+
   Args:
     slices: List of arrays or other objects.
     axis: Axis along which to stack (default: 0).
 
   Returns:
     Stacked array if all elements are ndarrays, otherwise original list.
+
+  Example:
+    import numpy as np
+
+    np_utils.maybe_stack_slices([np.array([1]), np.array([2])])  # array([[1], [2]])
+    np_utils.maybe_stack_slices([[1], 'x'])  # Unchanged: mixed element types.
   """
   if slices and isinstance(slices[0], np.ndarray):
     return np.stack(slices, axis=axis)
@@ -162,14 +204,20 @@ def maybe_stack_slices(slices, axis=0):
 def to_numpy(data):
   """Convert various array-like objects to NumPy array.
 
-  Handles numpy arrays, pandas DataFrames/Series (via to_numpy),
-  PyTorch tensors (via .numpy()), and other array-likes.
+  Handles numpy arrays (returned as-is), pandas DataFrames/Series (via
+  to_numpy), PyTorch tensors (via .numpy()), and other array-likes.
 
   Args:
     data: Array-like object to convert.
 
   Returns:
     NumPy ndarray.
+
+  Example:
+    import numpy as np
+
+    np_utils.to_numpy([1, 2])  # array([1, 2])
+    np_utils.to_numpy(np.array([1.5]))  # ndarray inputs are returned as-is.
   """
   if isinstance(data, np.ndarray):
     return data
@@ -237,6 +285,10 @@ def is_numpy(v):
 def astype(data, col, dtype):
   """Convert a column of data to a specific dtype if applicable.
 
+  A dict dtype only applies to the matching column name, while a plain
+  dtype applies to any numeric column: non-numeric data is always left
+  unchanged.
+
   Args:
     data: Input array.
     col: Column name or index.
@@ -244,6 +296,12 @@ def astype(data, col, dtype):
 
   Returns:
     Data array with column converted if dtype matches, otherwise unchanged.
+
+  Example:
+    import numpy as np
+
+    np_utils.astype(np.array([1.5]), 'x', {'x': np.int32})  # array([1])
+    np_utils.astype(np.array(['a']), 'x', np.int32)  # Unchanged (non-numeric).
   """
   if cu.isdict(dtype):
     cdtype = dtype.get(col)
@@ -278,7 +336,13 @@ def categorical(un_probs, n=None):
 
   Returns:
     Sampled indices. Shape: () for 1D with n=None, (n,) for 1D with n>1,
-    or (..., n) for higher dimensions.
+    or (..., 1) for higher dimensions.
+
+  Example:
+    import numpy as np
+
+    np_utils.categorical(np.array([0.2, 0.5, 0.3]))  # A single sampled index.
+    np_utils.categorical(np.array([0.2, 0.5, 0.3]), n=4)  # Shape (4,).
   """
   probs = softmax(un_probs)
   if probs.ndim == 1:
@@ -308,6 +372,12 @@ def onehot(values, num_categories=None):
 
   Raises:
     AssertionError: If any value >= num_categories.
+
+  Example:
+    import numpy as np
+
+    np_utils.onehot(np.array([0, 2, 1]))
+    # [[1, 0, 0], [0, 0, 1], [0, 1, 0]]
   """
   if num_categories is None:
     num_categories = np.max(values) + 1
@@ -328,6 +398,12 @@ def normalize(data, axis=None):
   Returns:
     The normalized array; zero standard deviations are treated as 1.0 to
     avoid division by zero.
+
+  Example:
+    import numpy as np
+
+    np_utils.normalize(np.array([1.0, 3.0]))  # [-1.0, 1.0]
+    np_utils.normalize(np.array([2.0, 2.0]))  # [0.0, 0.0] (zero std).
   """
   mean = np.mean(data, axis=axis)
   std = np.std(data, axis=axis)
@@ -348,12 +424,21 @@ def hasher(value):
 
   Returns:
     The hash of the array, computed from its dtype, shape and raw bytes.
+
+  Example:
+    import numpy as np
+
+    np_utils.hasher(np.array([1, 2])) == np_utils.hasher(np.array([1, 2]))  # True
+    # Different dtype or shape or content -> different hash.
   """
   return hash((value.dtype, tuple(value.shape), value.tobytes()))
 
 
 def moving_average(data, window, include_current=True):
   """Compute moving average of 1D data.
+
+  The array is edge-padded before the convolution, so the output has the
+  same length as the input.
 
   Args:
     data: 1D input array.
@@ -363,6 +448,12 @@ def moving_average(data, window, include_current=True):
 
   Returns:
     Moving average array of same length as input.
+
+  Example:
+    import numpy as np
+
+    np_utils.moving_average(np.array([1.0, 2.0, 3.0, 4.0]), 2)
+    # [1.0, 1.5, 2.5, 3.5]
   """
   weights = np.ones(window, dtype=data.dtype) / window
   pdata = np.pad(data, (window, window), mode='edge')
@@ -375,7 +466,8 @@ def moving_average(data, window, include_current=True):
 def rolling_window(a, window):
   """Create a rolling window view of the last dimension of an array.
 
-  Uses stride tricks for zero-copy windowing.
+  Uses stride tricks for zero-copy windowing: the returned array shares
+  the memory of a, so writing to the result also modifies a.
 
   Args:
     a: Input array.
@@ -383,6 +475,12 @@ def rolling_window(a, window):
 
   Returns:
     View of array with shape (..., n_windows, window).
+
+  Example:
+    import numpy as np
+
+    np_utils.rolling_window(np.array([1, 2, 3, 4]), 2)
+    # [[1, 2], [2, 3], [3, 4]]
   """
   shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
   strides = a.strides + (a.strides[-1],)
@@ -396,10 +494,17 @@ def shift(data, pos=1):
   Args:
     data: Input array.
     pos: Number of positions to shift. Positive shifts right (later),
-      negative shifts left (earlier). Fill with edge values (default: 1).
+      negative shifts left (earlier). The vacated entries are filled
+      with the edge values of data.
 
   Returns:
     Shifted array of same shape.
+
+  Example:
+    import numpy as np
+
+    np_utils.shift(np.array([1, 2, 3, 4]), 2)  # [1, 1, 1, 2]
+    np_utils.shift(np.array([1, 2, 3, 4]), -1)  # [2, 3, 4, 4]
   """
   result = np.empty_like(data)
   if pos > 0:
@@ -423,6 +528,11 @@ def complement_indices(indices, size):
 
   Returns:
     Array of indices not in the input indices.
+
+  Example:
+    import numpy as np
+
+    np_utils.complement_indices(np.array([1, 3]), 5)  # [0, 2, 4]
   """
   all_indices = np.full(size, 1, dtype=np.int8)
   all_indices[indices] = 0
@@ -440,6 +550,12 @@ def polyfit_std(yv, xv=None, deg=1):
 
   Returns:
     Tuple of (std_dev, fitted_values, polynomial_object).
+
+  Example:
+    import numpy as np
+
+    std, fyv, poly = np_utils.polyfit_std(np.array([0.0, 1.1, 2.0, 3.1]))
+    # std: residual standard deviation, fyv: fitted y values, poly: Polynomial.
   """
   xv = np.arange(len(yv), dtype=np.float32) if xv is None else np.array(xv)
   yv = yv if isinstance(yv, np.ndarray) else np.array(yv)
@@ -457,7 +573,8 @@ def npdict_clone(npd):
     npd: Dictionary mapping keys to numpy arrays.
 
   Returns:
-    New dictionary with copied arrays.
+    New dictionary with copied arrays: modifying a copied array does not
+    affect the original one.
   """
   cloned = type(npd)()
   for k, v in npd.items():
@@ -476,6 +593,11 @@ def is_ordered(v, reverse=False):
 
   Returns:
     True if ordered according to the specified direction.
+
+  Example:
+    np_utils.is_ordered([1, 2, 2, 3])  # True (non-decreasing).
+    np_utils.is_ordered([3, 2, 1], reverse=True)  # True.
+    np_utils.is_ordered([1, 3, 2])  # False.
   """
   npv = to_numpy(v)
 
@@ -487,6 +609,14 @@ class RingBuffer:
 
   Supports multi-dimensional elements and provides zero-copy iteration
   via iter_views() and iter_indices().
+
+  Example:
+    import numpy as np
+
+    rb = np_utils.RingBuffer(3, np.float32, ())
+    for x in [1, 2, 3, 4, 5]:
+      rb.append(x)
+    rb.to_numpy()  # [3.0, 4.0, 5.0]: the last 3 values, in arrival order.
   """
 
   def __init__(self, capacity, dtype, vshape):
@@ -511,6 +641,9 @@ class RingBuffer:
   def resize(self, capacity):
     """Resize the buffer, preserving recent elements if possible.
 
+    The raw storage is resized with np.resize(), so growing the buffer
+    may break the chronological order of the preserved elements.
+
     Args:
       capacity: New capacity.
     """
@@ -520,6 +653,8 @@ class RingBuffer:
 
   def select(self, indices):
     """Keep only elements at specified indices.
+
+    Indices beyond the current element count are silently dropped.
 
     Args:
       indices: Array of indices to keep (relative to current buffer).
@@ -542,6 +677,13 @@ class RingBuffer:
 
     Args:
       v: Array-like of elements to append.
+
+    Example:
+      import numpy as np
+
+      rb = np_utils.RingBuffer(4, np.float64, (2,))
+      rb.extend(np.array([[1, 2], [3, 4], [5, 6]]))
+      rb.to_numpy()  # [[1, 2], [3, 4], [5, 6]]
     """
     arr = np.asarray(v, dtype=self.dtype)
     if self._vshape:
@@ -568,6 +710,9 @@ class RingBuffer:
 
   def data(self, dtype=None):
     """Get buffer contents as a new array (copy).
+
+    Unlike to_numpy(), the copy keeps the internal (non-chronological)
+    storage order.
 
     Args:
       dtype: Optional dtype for the returned array.
@@ -598,7 +743,16 @@ class RingBuffer:
     """Get indices of valid elements in the internal buffer.
 
     Returns:
-      Array of indices mapping chronological order to internal storage.
+      Array of indices mapping chronological order to internal storage:
+      data[iter_indices()[i]] is the i-th oldest element.
+
+    Example:
+      import numpy as np
+
+      rb = np_utils.RingBuffer(3, np.float32, ())
+      for x in [1, 2, 3, 4, 5]:
+        rb.append(x)
+      rb.iter_indices()  # [2, 0, 1]
     """
     if self._count <= self.capacity:
       return np.arange(0, self._count)
@@ -612,11 +766,24 @@ class RingBuffer:
   def __getitem__(self, i):
     """Get element(s) by index (chronological order, negative supported).
 
+    Integer indexing is chronological (0 = oldest element); slice
+    indexing addresses the raw internal storage instead.
+
     Args:
       i: Integer index or slice.
 
     Returns:
-      Element or slice of elements.
+      Element (integer index) or slice of elements in storage order.
+
+    Example:
+      import numpy as np
+
+      rb = np_utils.RingBuffer(3, np.float32, ())
+      for x in [1, 2, 3, 4, 5]:
+        rb.append(x)
+      rb[0]  # 3.0: the oldest retained value.
+      rb[-1]  # 5.0: the most recent value.
+      rb[1:3]  # Raw storage slice: [5.0, 3.0].
     """
     if isinstance(i, int):
       idx = (max(self._count, self.capacity) + i) % self.capacity
@@ -659,5 +826,11 @@ def array_typecode(dtype):
 
   Returns:
     Array typecode character (e.g., 'f', 'd', 'i', 'l') or None if not found.
+
+  Example:
+    import numpy as np
+
+    np_utils.array_typecode(np.dtype(np.float32))  # 'f'
+    np_utils.array_typecode(np.dtype(np.bool_))  # None
   """
   return _NP_ARRAY_TYPECODES.get(dtype.type)

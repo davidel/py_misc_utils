@@ -5,6 +5,21 @@ asynchronous work - via unique work ids - along with the handling of the
 work failures: failed work results are marked with an error tag, holding
 a pickled WorkException, so that the consumers can detect the failure and
 re-raise it as if the work was executed locally.
+
+Example:
+  import os
+  import pickle
+  import tempfile
+
+  import py_misc_utils.work_results as pwr
+
+
+  tdir = tempfile.mkdtemp()
+  path = pwr.work_path(tdir, 'sum-job')
+  with pwr.write_result(path) as fd:
+    fd.write(pickle.dumps({'sum': 42}))
+
+  assert pickle.loads(pwr.get_work(wpath=path)) == {'sum': 42}
 """
 import hashlib
 import importlib
@@ -30,6 +45,20 @@ class WorkException:
 
   Arbitrary attributes - set from the kwargs - can be attached to the
   exception holder, to be transported along the exception.
+
+  Example:
+    import pickle
+
+    import py_misc_utils.work_results as pwr
+
+    wex = pwr.WorkException(ValueError('bad input'), worker='W1')
+    assert wex.is_instance(ValueError)
+    assert isinstance(wex.exception(), ValueError)
+    assert repr(wex) == "ValueError('bad input'): {'worker': 'W1'}"
+
+    # The holder is picklable, and keeps the kwargs after the roundtrip.
+    wex2 = pickle.loads(pickle.dumps(wex))
+    assert wex2.is_instance(ValueError) and wex2.worker == 'W1'
   """
 
   def __init__(self, exception, **kwargs):
@@ -38,6 +67,18 @@ class WorkException:
     Args:
       exception: The exception to hold.
       **kwargs: Optional attributes to attach to the holder.
+
+    Example:
+      import py_misc_utils.work_results as pwr
+
+      wex = pwr.WorkException(KeyError('missing-key'), worker='W9')
+      assert wex.is_instance(KeyError)
+      assert not wex.is_instance(ValueError)
+
+      try:
+        wex.do_raise()
+      except KeyError as e:
+        assert str(e) == "'missing-key'"
     """
     # Some exceptions cannot be pickled, so the real exception cannot be serialized
     # (or it can be serialized, and failed to be deserialized for missing arguments).
@@ -93,12 +134,29 @@ class WorkException:
   def is_instance(self, *types):
     """Checks the type of the held exception.
 
+    The check uses the resolved (module, qualname) reference, so it stays
+    consistent with the exception type actually re-raised by do_raise():
+    locally-defined exception classes degrade to a generic Exception.
+
     Args:
-      *types: The exception types to check.
+      *types: The exception types to check against.
 
     Returns:
-      True if the type of the held exception matches - or derives
-      from - any of the given ones.
+      True if the held exception type is one of the given types.
+
+    Example:
+      import py_misc_utils.work_results as pwr
+
+      # Exception classes which cannot be referenced by (module, qualname)
+      # - like locally-defined ones - degrade to a generic Exception.
+      class LocalEx(Exception):
+        pass
+
+
+      wex = pwr.WorkException(LocalEx('local only'))
+      assert wex.is_instance(Exception)
+      assert not wex.is_instance(LocalEx)
+      assert str(wex.exception()) == 'LocalEx: local only'
     """
     cls = self._resolve_type()
 
@@ -129,6 +187,11 @@ def work_hash(workid):
 
   Returns:
     The SHA-1 hash of the work id.
+
+  Example:
+    import py_misc_utils.work_results as pwr
+
+    assert len(pwr.work_hash('job-1')) == 40  # SHA-1 hex digest.
   """
   return hashlib.sha1(workid.encode()).hexdigest()
 
@@ -142,6 +205,15 @@ def work_path(path, workid):
 
   Returns:
     The work-result file path.
+
+  Example:
+    import os
+
+    import py_misc_utils.work_results as pwr
+
+    path = pwr.work_path('/results', 'job-1')
+    assert os.path.dirname(path) == '/results'
+    assert os.path.basename(path) == pwr.work_hash('job-1')
   """
   return os.path.join(path, work_hash(workid))
 
@@ -154,6 +226,21 @@ def enum_ready(path):
 
   Yields:
     (name, path) tuples - one per stored work result.
+
+  Example:
+    import pickle
+    import tempfile
+
+    import py_misc_utils.work_results as pwr
+
+
+    tdir = tempfile.mkdtemp()
+    for workid in ('a', 'b'):
+      with pwr.write_result(pwr.work_path(tdir, workid)) as fd:
+        fd.write(pickle.dumps(workid))
+
+    names = sorted(name for name, path in pwr.enum_ready(tdir))
+    assert len(names) == 2, names
   """
   with os.scandir(path) as rit:
     for dentry in rit:
@@ -171,6 +258,14 @@ def make_error(msg):
 
   Returns:
     The tagged error payload.
+
+  Example:
+    import pickle
+
+    import py_misc_utils.work_results as pwr
+
+    tagged = pwr.make_error(pickle.dumps(pwr.WorkException(RuntimeError('boom'))))
+    assert tagged.startswith(b'#@$ERROR$@#')
   """
   return _ERROR_TAG + msg
 
@@ -184,6 +279,20 @@ def write_result(path):
   Returns:
     A context manager yielding the open file object of the work-result
     file.
+
+  Example:
+    import pickle
+    import tempfile
+
+    import py_misc_utils.work_results as pwr
+
+
+    tdir = tempfile.mkdtemp()
+    path = pwr.work_path(tdir, 'sum-job')
+    with pwr.write_result(path) as fd:
+      fd.write(pickle.dumps({'sum': 42}))
+
+    assert pickle.loads(pwr.load_work(wpath=path)) == {'sum': 42}
   """
   return fsu.atomic_write(path)
 
@@ -195,6 +304,18 @@ def write_error(path, exception, **kwargs):
     path: The work-result file path.
     exception: The exception to record.
     **kwargs: Optional attributes attached to the WorkException holder.
+
+  Example:
+    import tempfile
+
+    import py_misc_utils.work_results as pwr
+
+
+    tdir = tempfile.mkdtemp()
+    pwr.write_error(pwr.work_path(tdir, 'bad-job'), ValueError('failed'),
+                    worker='W2')
+    wex = pwr.load_work(wpath=pwr.work_path(tdir, 'bad-job'))
+    assert wex.is_instance(ValueError) and wex.worker == 'W2'
   """
   wex = WorkException(exception, **kwargs)
 
@@ -211,6 +332,13 @@ def get_error(data):
   Returns:
     The deserialized WorkException, or None if the data is not
     error-tagged.
+
+  Example:
+    import pickle
+
+    import py_misc_utils.work_results as pwr
+
+    assert pwr.get_error(pickle.dumps({'ok': 1})) is None
   """
   if data.startswith(_ERROR_TAG):
     return pickle.loads(data[len(_ERROR_TAG):])
@@ -227,6 +355,19 @@ def raise_if_error(data):
 
   Raises:
     Exception: The exception held by the work result, if any.
+
+  Example:
+    import pickle
+
+    import py_misc_utils.work_results as pwr
+
+    tagged = pwr.make_error(pickle.dumps(pwr.WorkException(RuntimeError('boom'))))
+    wex = pwr.get_error(tagged)
+
+    try:
+      pwr.raise_if_error(wex)
+    except RuntimeError as e:
+      assert str(e) == 'boom'
   """
   if isinstance(data, WorkException):
     data.do_raise()
@@ -246,6 +387,24 @@ def load_work(wpath=None, path=None, workid=None):
   Returns:
     The work-result data: either the payload, or the WorkException
     deserialized from an error-tagged payload.
+
+  Example:
+    import pickle
+    import tempfile
+
+    import py_misc_utils.work_results as pwr
+
+
+    tdir = tempfile.mkdtemp()
+    path = pwr.work_path(tdir, 'sum-job')
+    with pwr.write_result(path) as fd:
+      fd.write(pickle.dumps({'sum': 42}))
+
+    assert pickle.loads(pwr.load_work(wpath=path)) == {'sum': 42}
+
+    pwr.write_error(pwr.work_path(tdir, 'bad-job'), ValueError('failed'))
+    wex = pwr.load_work(wpath=pwr.work_path(tdir, 'bad-job'))
+    assert wex.is_instance(ValueError)
   """
   wpath = wpath or work_path(path, workid)
 
@@ -271,6 +430,26 @@ def get_work(wpath, path=None, workid=None):
 
   Raises:
     Exception: The exception held by the work result, if any.
+
+  Example:
+    import pickle
+    import tempfile
+
+    import py_misc_utils.work_results as pwr
+
+
+    tdir = tempfile.mkdtemp()
+    path = pwr.work_path(tdir, 'sum-job')
+    with pwr.write_result(path) as fd:
+      fd.write(pickle.dumps({'sum': 42}))
+
+    assert pickle.loads(pwr.get_work(wpath=path)) == {'sum': 42}
+
+    pwr.write_error(pwr.work_path(tdir, 'bad-job'), ValueError('failed'))
+    try:
+      pwr.get_work(wpath=pwr.work_path(tdir, 'bad-job'))
+    except ValueError as e:
+      assert str(e) == 'failed'
   """
   data = load_work(wpath, path=path, workid=workid)
 

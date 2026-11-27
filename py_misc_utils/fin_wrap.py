@@ -10,8 +10,23 @@ Classes:
   FinWrapper: Wraps an object with attribute delegation via fin_wrap.
 
 Functions:
-  _finalizer_name: Builds the attribute name for storing a fin_wrap.
   fin_wrap_np: Wraps an object in a simple namespace with a finalizer.
+
+Example:
+  import gc
+  from py_misc_utils import fin_wrap as fw
+
+  class Res:
+
+    def close(self):
+      print('closed')
+
+  owner = type('Owner', (), {})()
+  res = Res()
+
+  fw.fin_wrap(owner, 'res', res, finfn=res.close)
+  del owner.res  # Runs the finalizer without waiting for GC.
+  gc.collect()
 """
 
 import weakref
@@ -26,7 +41,8 @@ def _finalizer_name(name):
     name: The name of the wrapped attribute.
 
   Returns:
-    A string like ``'_<name>_finalizer'``.
+    A string like ``'__<name>_finalizer'`` - with a double leading
+    underscore.
   """
   return f'__{name}_finalizer'
 
@@ -49,9 +65,12 @@ class fin_wrap:
     Args:
       parent: The object on which to store the wrapped object and finalizer.
       name: The attribute name on parent for the wrapped object.
-      obj: The object to wrap. If None, no finalizer is registered.
+      obj: The object to wrap. If None, no finalizer is registered and the
+        attribute named 'name' is cleared from the parent.
       finfn: A callable to invoke when this wrapper is garbage collected.
-      cleanup: If True and obj is None, clears the attribute from parent.
+      cleanup: If True and obj is None, the finalizer registered for the
+        previous wrapper is invoked (running the cleanup function) instead
+        of being detached.
     """
     setattr(parent, name, obj)
     fname = _finalizer_name(name)
@@ -101,11 +120,28 @@ class FinWrapper:
   The wrapped object is stored under a reserved attribute name and the
   dunders below forward every other attribute access to it, so that the
   wrapper transparently behaves like the wrapped object while carrying
-  a finalizer for cleanup.
+  a finalizer for cleanup. Note that attribute delegation - including
+  dunder lookups such as __len__ - only works for objects exposing a
+  __dict__ (instances of plain classes).
 
   Args:
     obj: The object to wrap and delegate to.
     finfn: A callable to invoke when the wrapper is garbage collected.
+
+  Example:
+    import gc
+    from py_misc_utils import fin_wrap as fw
+
+    class Thing:
+      pass
+
+    done = []
+    w = fw.FinWrapper(Thing(), lambda: done.append('closed'))
+    w.size = 3
+    assert w.size == 3
+
+    del w
+    gc.collect()
   """
 
   def __init__(self, obj, finfn):

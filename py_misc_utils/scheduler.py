@@ -29,6 +29,16 @@ class Scheduler:
   Attributes:
     timegen: The time source used for now() and wait().
     executor: The executor used to run scheduled actions.
+
+  Example:
+    import py_misc_utils.scheduler as sch
+
+    s = sch.Scheduler()
+    ev = s.enter(0.01, lambda: None)
+    s.enterabs(s.timegen.now() + 0.02, lambda: None, ref='demo')
+    assert s.get_events(lambda e: e.ref == 'demo')
+    assert s.ref_cancel('demo')
+    assert s.cancel(ev)
   """
 
   def __init__(self, timegen=None, executor=None, max_workers=None, name='Scheduler'):
@@ -92,6 +102,9 @@ class Scheduler:
   def enterabs(self, ts, action, ref=None, argument=(), kwargs=None):
     """Schedule an action at an absolute timestamp.
 
+    The timestamp is interpreted in the time source of the scheduler
+    (timegen), which by default is the wall clock.
+
     Args:
       ts: The absolute time to run the action.
       action: The callable to execute.
@@ -112,6 +125,8 @@ class Scheduler:
       self._sequence += 1
 
       heapq.heappush(self._queue, event)
+      # Notify the scheduler thread only if the new event became the
+      # closest-deadline one - otherwise it would just wake up for nothing.
       if id(event) == id(self._queue[0]):
         self._cond.notify()
 
@@ -182,6 +197,13 @@ class Scheduler:
   def ref_cancel(self, ref):
     """Cancel events by their reference identifier.
 
+    Example:
+      import py_misc_utils.scheduler as sch
+
+      s = sch.Scheduler()
+      s.enter(60.0, lambda: None, ref='cleanup')
+      assert s.ref_cancel('cleanup')
+
     Args:
       ref: A reference string or list/tuple of reference strings.
 
@@ -196,6 +218,18 @@ class Scheduler:
 
   def get_events(self, fn):
     """Return queued events matching a predicate.
+
+    Only events not yet due - still sitting in the queue - are returned:
+    once popped, an event is handed to the executor and disappears from
+    the scheduler queue even if its action is still running.
+
+    Example:
+      import py_misc_utils.scheduler as sch
+
+      s = sch.Scheduler()
+      ev = s.enter(60.0, lambda: None)
+      assert s.get_events(lambda e: e.ref is None) == [ev]
+      s.cancel(ev)
 
     Args:
       fn: A callable taking an Event and returning True if it matches.

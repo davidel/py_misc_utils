@@ -4,6 +4,14 @@ This module provides a mechanism to keep per-thread context objects: a
 Context object pushes an object onto a thread-local stack when entered,
 and pops it when exited, so that each thread can have its own current
 context - identified by name - at any time.
+
+Example:
+  from py_misc_utils import thread_context as ptc
+
+  with ptc.Context('job', 'render-task') as job:
+    assert ptc.get_context('job') == 'render-task'
+
+  assert ptc.get_context('job') is None
 """
 import threading
 

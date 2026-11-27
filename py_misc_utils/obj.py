@@ -23,6 +23,18 @@ class Obj:
   Attributes set via keyword arguments are stored in ``__dict__`` and can be
   accessed normally. Supports recursive conversion to plain dicts, shallow
   cloning with overrides, and equality comparison based on attribute contents.
+
+  Example:
+    from py_misc_utils import obj as objm
+
+    o = objm.Obj(a=1, b='x', nested=objm.Obj(c=2))
+
+    assert o.as_dict() == {'a': 1, 'b': 'x', 'nested': {'c': 2}}
+
+    c = o.clone(b='y')
+    assert c.b == 'y' and c.a == 1
+
+    assert o == objm.Obj(a=1, b='x', nested=objm.Obj(c=2))
   """
 
   def __init__(self, **kwargs):

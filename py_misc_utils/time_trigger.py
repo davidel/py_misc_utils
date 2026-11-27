@@ -18,6 +18,12 @@ class TimeTrigger:
   Note that the trigger times are computed by adding intervals to the
   previous trigger time, so a delayed evaluation does not accumulate
   drift of the trigger rate.
+
+  Example:
+    trig = time_trigger.TimeTrigger(interval=1.0)
+    for _ in range(3):
+      if trig:
+        print('one second elapsed')  # at most once per second
   """
 
   def __init__(self, interval):

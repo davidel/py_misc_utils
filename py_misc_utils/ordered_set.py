@@ -13,6 +13,12 @@ class OrderedSet:
   Supports standard set operations (add, remove, discard, pop, clear)
   and set algebra (union, intersection, difference).
   Iteration yields elements in insertion order.
+
+  Example:
+    oset = ordered_set.OrderedSet(['b', 'a', 'b', 'c'])
+    list(oset)  # ['b', 'a', 'c'] - duplicates keep their first position.
+    oset.add('x')  # Newly added values are appended at the end.
+    oset.union(['x', 'y'])  # Order of the result follows this set.
   """
 
   def __init__(self, init=None):
@@ -45,7 +51,7 @@ class OrderedSet:
     return n
 
   def remove(self, value):
-    """Remove a value from the set.
+    """Remove a value from the set (KeyError if missing).
 
     Args:
       value: Value to remove.

@@ -5,6 +5,24 @@ statements following an IF into the IF branch not ending with a return -
 making control flow linear for code generators - plus an AST dump
 utility honoring an environment-driven indentation and a static AST
 evaluator executing statements/expressions.
+
+Example:
+  import ast
+  from py_misc_utils import ast_utils as au
+
+  tree = ast.parse('a + b', mode='eval')
+
+  assert 'BinOp' in au.dump(tree, indent=2)
+
+  # Statements execute into the given namespaces...
+  node = ast.parse('res = a + b').body[0]
+  locs = dict()
+  au.static_eval(node, dict(a=1, b=2), locs)
+  assert locs['res'] == 3
+
+  # ...and expressions evaluate to their value.
+  v = au.static_eval(ast.parse('a * b', mode='eval').body, dict(a=3, b=4), {})
+  assert v == 12
 """
 import ast
 import os
@@ -101,7 +119,8 @@ def ifize(node):
   """Normalizes an AST so that each IF terminates its statement list.
 
   Recursively rearranges all the statement lists held by an AST,
-  applying the _ifize_stmt_list() transformation.
+  applying the _ifize_stmt_list() transformation. The transformation
+  mutates the AST in place and returns None.
 
   Args:
     node: The AST node to transform - e.g. a module or a function
@@ -142,6 +161,9 @@ def dump(node, indent=None):
 
 def static_eval(node, eval_globals, eval_locals, filename=None):
   """Evaluates an AST statement or expression.
+
+  Note that this is not a sandbox: the node is compiled and executed,
+  so arbitrary code can run.
 
   Args:
     node: The AST node to evaluate: a statement or an expression.

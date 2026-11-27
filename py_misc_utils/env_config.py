@@ -22,12 +22,13 @@ class EnvConfig:
   environment values.
 
   Example:
-    class MyConfig(EnvConfig):
+    class MyConfig(env_config.EnvConfig):
       timeout = 30
       retries = 3
 
-    config = MyConfig()  # Reads TIMEOUT and RETRIES env vars, accepts
-                         # --timeout and --retries CLI args.
+    # Values read from the TIMEOUT and RETRIES env vars, overridable via
+    # the --timeout and --retries command line arguments.
+    config = MyConfig()
   """
 
   def __init__(self):

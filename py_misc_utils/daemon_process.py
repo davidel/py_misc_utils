@@ -9,6 +9,22 @@ either by double-forking (DaemonPosix) or via the multiprocessing API
 The Daemon alias selects the implementation - defaulting to the
 multiprocessing one where available - and can be forced to the posix
 one via the DAEMON_MODE environment variable.
+
+Example:
+  import time
+  import py_misc_utils.daemon_process as dp
+
+  d = dp.Daemon('/tmp/demo_b5_daemon')
+
+  def body():
+    time.sleep(2)
+
+  pid = d.start(body)
+  assert d.getpid() == pid
+  assert d.stop() is True
+  assert d.getpid() is None
+  # Stopping an already-stopped daemon is not an error: returns False.
+  assert d.stop() is False
 """
 import atexit
 import collections
@@ -216,7 +232,8 @@ class DaemonBase:
       kill_timeout: An optional number of seconds passed to _killpid().
 
     Returns:
-      True if a running daemon has been stopped.
+      True if a running daemon has been stopped, False when no daemon was
+      running (in which case calling stop() again is not an error).
     """
     with self._lockfile():
       pid = self._readpid()
@@ -358,6 +375,9 @@ class DaemonCompat(DaemonBase):
   def start(self, target):
     """Starts the daemon, running a target function.
 
+    If a daemon is already running for this name - per the PID file - the
+    existing one is left alone and its PID is returned.
+
     Args:
       target: The function to be executed by the daemon process.
 
@@ -371,7 +391,7 @@ class DaemonCompat(DaemonBase):
     return pid
 
 
-# Probe of a private multiprocessing internal: shape varies across Python
+# Probe of a private multiprocessing internal - shape varies across Python
 # versions, so any surprise must fall back to the conservative DaemonPosix.
 try:
   HAS_MP_CHILDREN = isinstance(multiprocessing.process._children, set)

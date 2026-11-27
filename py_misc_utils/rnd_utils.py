@@ -23,6 +23,10 @@ def compute_seed(seed):
 
   Returns:
     A 32-bit unsigned integer seed derived via CRC32.
+
+  Example:
+    rnd_utils.compute_seed(42) == rnd_utils.compute_seed(42)  # True
+    isinstance(rnd_utils.compute_seed('hello'), int)  # True
   """
   if isinstance(seed, int):
     seed = binascii.crc32(struct.pack('=q', seed))
@@ -46,6 +50,9 @@ def manual_seed(seed):
 
   Returns:
     The computed 32-bit seed actually used.
+
+  Example:
+    rnd_utils.manual_seed('abc')  # Seeds np.random and random, returns the seed.
   """
   cseed = compute_seed(seed)
 
@@ -64,6 +71,10 @@ def choices(weights, n):
 
   Returns:
     A list of n selected indices.
+
+  Example:
+    rnd_utils.manual_seed(0)
+    rnd_utils.choices([1, 2, 3], 5)  # e.g. [2, 2, 0, 2, 2]
   """
   return random.choices(range(len(weights)), weights=weights, k=n)
 
@@ -76,6 +87,10 @@ def shuffle(args):
 
   Returns:
     A new list with the same items in random order.
+
+  Example:
+    rnd_utils.manual_seed(7)
+    rnd_utils.shuffle([1, 2, 3, 4, 5])  # e.g. [3, 5, 2, 1, 4]
   """
   return random.sample(args, k=len(args))
 
@@ -92,6 +107,13 @@ def uniform(center, delta=None, pct=None):
 
   Returns:
     A random float in [center - delta, center + delta].
+
+  Raises:
+    AssertionError: When neither delta nor pct is provided.
+
+  Example:
+    rnd_utils.uniform(10, delta=2)  # A float in [8.0, 12.0].
+    rnd_utils.uniform(10, pct=0.1)  # A float in [9.0, 11.0].
   """
   if pct is not None:
     delta = abs(center * pct)
@@ -109,6 +131,9 @@ def rand_string(n):
 
   Returns:
     A string of n lowercase letters and digits.
+
+  Example:
+    len(rnd_utils.rand_string(8))  # 8
   """
   rng = random.SystemRandom()
 

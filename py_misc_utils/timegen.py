@@ -14,6 +14,12 @@ class TimeGen:
   The default implementation uses the system time and condition variable
   wait semantics. Subclassing TimeGen allows to control the flow of time -
   e.g. for testing time-based logic without real delays.
+
+  Example:
+    class ShiftedTimeGen(timegen.TimeGen):
+
+      def now(self):
+        return super().now() + 3600  # one hour in the future
   """
 
   def now(self):

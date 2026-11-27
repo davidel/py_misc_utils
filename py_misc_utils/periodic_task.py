@@ -14,6 +14,29 @@ from . import weak_call as wcall
 
 class PeriodicTask:
   """Run a callable periodically on a scheduler.
+
+  The callable is held through a weak reference: once it gets garbage
+  collected the task stops rescheduling itself - so keep a reference to
+  the callable (or the object owning it) for as long as the task is meant
+  to run. Exceptions raised by the callable are logged and, by default,
+  stop the task.
+
+  Example:
+    import time
+    import py_misc_utils.periodic_task as pt
+    import py_misc_utils.scheduler as sch
+
+    s = sch.Scheduler()
+    cnt = [0]
+
+    def tick():
+      cnt[0] += 1
+
+    task = pt.PeriodicTask('tick', tick, period=0.01, scheduler=s)
+    task.start()
+    time.sleep(0.05)
+    task.stop()
+    assert cnt[0] >= 1
   """
 
   def __init__(self, name, periodic_fn, period, scheduler=None, stop_on_error=None):
@@ -52,6 +75,15 @@ class PeriodicTask:
     """Stop the periodic task and wait for any in-flight run to complete.
 
     If the task is not running, this is a no-op.
+
+    Example:
+      import py_misc_utils.periodic_task as pt
+      import py_misc_utils.scheduler as sch
+
+      s = sch.Scheduler()
+      task = pt.PeriodicTask('tick', lambda: None, period=1.0, scheduler=s)
+      task.start()
+      task.stop()   # Cancels the pending event and joins the in-flight run.
     """
     completed_event = None
     with self._lock:

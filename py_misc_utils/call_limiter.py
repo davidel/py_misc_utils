@@ -3,6 +3,22 @@
 This module provides functions to limit how many times a call site can invoke
 a function, based on the caller's filename and line number. Useful for rate
 limiting debug output or expensive operations called from specific locations.
+
+The call site is identified by the (filename, line number) of the first
+stack frame outside the given file - so each distinct source line that
+invokes limit_call() gets its own independent counter.
+
+Example:
+  from py_misc_utils import call_limiter
+
+  outs = []
+
+  # The next call site runs at most once - further calls return None.
+  for _ in range(3):
+    if call_limiter.limit_call(1, lambda: outs.append('x')) is not None:
+      pass
+
+  assert outs == ['x']
 """
 
 import threading

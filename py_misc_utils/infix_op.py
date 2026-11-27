@@ -10,9 +10,19 @@ class InfixOp:
   """Infix operator wrapper for creating pipe-style function composition.
 
   Allows using binary operators (|, <<, >>) as infix notation for calling
-  functions. For example, `InfixOp(add) | 5` creates an operator that adds 5
-  to its operand.
-"""
+  functions.
+
+  A binary function wrapped in an InfixOp is applied by writing the two
+  operands around it: `x | op | y` binds x as the left operand and applies
+  the function to y. `x << op` is a synonym of `x | op`, and `(x | op) >> y`
+  is the >> form of the final application.
+
+  Example:
+    add = infix_op.InfixOp(lambda a, b: a + b)
+    5 | add | 3  # 8 - equivalent to add(5, 3).
+    (5 | add) >> 3  # Same result via the >> form.
+    add(2, 3)  # 5 - an InfixOp is also directly callable.
+  """
 
   def __init__(self, opfn):
     """Initialize with a binary function.

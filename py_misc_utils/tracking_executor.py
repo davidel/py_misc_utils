@@ -43,6 +43,18 @@ class TrackingExecutor:
 
   A TrackingExecutor is not the owner of its underlying executor: it does
   not close it when being closed itself.
+
+  Example:
+    import time
+    import py_misc_utils.executor as xe
+    import py_misc_utils.tracking_executor as te
+
+    tex = te.TrackingExecutor(xe.Executor(max_threads=2, min_threads=1))
+    tid = tex.submit(time.sleep, 0.01)
+    tex.submit(time.sleep, 0.01)
+    assert tex.wait(timeout=2.0)      # all tracked tasks completed
+    assert tex.wait_for_idle(timeout=2.0)  # and workers are idle too
+    tex.shutdown()
   """
 
   def __init__(self, executor=None):
@@ -109,6 +121,9 @@ class TrackingExecutor:
   def submit_result(self, fn, *args, **kwargs):
     """Submits a task for execution, returning a result-holder object.
 
+    The returned holder also tracks the task, so wait()/wait_for_idle()
+    accounts for it - and wait() on the holder re-raises any task failure.
+
     Args:
       fn: The function to execute.
       *args: Positional arguments to pass to the function.
@@ -131,7 +146,17 @@ class TrackingExecutor:
 
   def shutdown(self):
     """Shuts down the underlying executor, waiting for all the pending
-    tasks to complete."""
+    tasks to complete.
+
+    Example:
+      import py_misc_utils.executor as xe
+      import py_misc_utils.tracking_executor as te
+
+      tex = te.TrackingExecutor(xe.Executor(max_threads=2, min_threads=1))
+      holder = tex.submit_result(len, 'abcd')
+      assert holder.wait() == 4
+      tex.shutdown()
+    """
     self.executor.shutdown()
     self.wait()
 
@@ -149,6 +174,16 @@ class TrackingExecutor:
     Returns:
       True if all the waited-for tasks are completed, False if the wait
       ended by timeout expiry.
+
+    Example:
+      import time
+      import py_misc_utils.executor as xe
+      import py_misc_utils.tracking_executor as te
+
+      tex = te.TrackingExecutor(xe.Executor(max_threads=2, min_threads=1))
+      tid = tex.submit(time.sleep, 0.01)
+      assert tex.wait(tids=[tid], timeout=2.0)
+      tex.shutdown()
     """
     waiter = waiter or cwait.CondWaiter(timeout=timeout, timegen=timegen)
     if not tids:
