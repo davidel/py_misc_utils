@@ -75,14 +75,14 @@ def parse_specs(url):
   """
   usplit = gfs.splitext(url)
 
-  compression = _EXT_COMPRESSION.get(usplit.ext)
+  compression = _EXT_COMPRESSION.get(usplit.ext.lower())
   ubase = usplit.base if compression else usplit.purl.path
 
   base_path, ext = os.path.splitext(ubase)
 
   tas.check(ext, msg=f'Unable to infer archive type: {url}')
 
-  return ArchiveSpecs(kind=usplit.ext.lower(),
+  return ArchiveSpecs(kind=ext[1:].lower(),
                       compression=compression,
                       base_path=base_path,
                       purl=usplit.purl)

@@ -78,6 +78,20 @@ def test_archive_streamer_msgpack(tmp_path):
   assert data_map['1.val'] == 'two'
 
 
+def test_archive_streamer_tar_gz(tmp_path):
+  """ArchiveStreamer yields entries from a compressed tar archive."""
+  path = os.path.join(tmp_path, 'data.tar.gz')
+  files = {'x.txt': b'data x', 'y.txt': b'data y'}
+  _write_tar(path, files, mode='w:gz')
+
+  entries = list(ars.ArchiveStreamer(path))
+  names = {e.name for e in entries}
+  assert names == {'x.txt', 'y.txt'}
+  data_map = {e.name: e.data for e in entries}
+  assert data_map['x.txt'] == b'data x'
+  assert data_map['y.txt'] == b'data y'
+
+
 def test_archive_streamer_empty_zip(tmp_path):
   """ArchiveStreamer on an empty zip yields no entries."""
   path = os.path.join(tmp_path, 'empty.zip')
