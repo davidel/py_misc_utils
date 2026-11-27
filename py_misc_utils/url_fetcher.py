@@ -8,6 +8,23 @@ either one by one (wait) or streamed (iter_results).
 The URLs are fetched via the filesystem abstraction layer (see gfs), so
 any supported URL protocol - local files, http(s), GCS, etc. - can be
 used transparently.
+
+Example:
+  import os
+  import tempfile
+
+  import py_misc_utils.url_fetcher as uf
+
+  tdir = tempfile.mkdtemp()
+  fpath = os.path.join(tdir, 'a.txt')
+  with open(fpath, 'wb') as f:
+    f.write(b'alpha')
+
+  with uf.UrlFetcher() as fetcher:
+    fetcher.enqueue(fpath)
+    data = fetcher.wait(fpath)
+
+  assert data == b'alpha'
 """
 import os
 import queue
@@ -34,6 +51,14 @@ def resolve_url(fss, url, fs_kwargs):
   Returns:
     A (fs, fpath) tuple, where fs is the filesystem object handling the
     URL and fpath the URL path normalized with respect to it.
+
+  Example:
+    import os
+
+    from py_misc_utils import url_fetcher as uf
+
+    fs, fpath = uf.resolve_url({}, '/etc/hosts', {})
+    assert fpath == '/etc/hosts'
   """
   proto = gfs.get_proto(url)
   fs = fss.get(proto)
@@ -62,6 +87,32 @@ def fetcher(path, fs_kwargs, uqueue, rqueue):
       messages ('').
     rqueue: The queue onto which the URLs of the completed - or failed -
       fetches are posted.
+
+  Example:
+    import os
+    import queue
+    import tempfile
+    import threading
+
+    from py_misc_utils import url_fetcher as uf
+
+    work = tempfile.mkdtemp()
+    fpath = os.path.join(work, 'a.txt')
+    with open(fpath, 'wb') as f:
+      f.write(b'alpha')
+
+    uqueue = queue.Queue()
+    rqueue = queue.Queue()
+    worker = threading.Thread(target=uf.fetcher,
+                              args=(work, {}, uqueue, rqueue),
+                              daemon=True)
+    worker.start()
+
+    uqueue.put(fpath)
+    assert rqueue.get(timeout=30) == fpath
+
+    uqueue.put('')
+    worker.join(timeout=30)
   """
   fss = dict()
   while True:
@@ -93,6 +144,25 @@ class UrlFetcher:
 
   A UrlFetcher is a context manager: entering it starts the workers,
   exiting it shuts them down.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import url_fetcher as uf
+
+    tdir = tempfile.mkdtemp()
+    fpath = os.path.join(tdir, 'a.txt')
+    with open(fpath, 'wb') as f:
+      f.write(b'alpha')
+
+    with uf.UrlFetcher() as fetcher:
+      wmap = fetcher.enqueue(fpath, None)
+      # Falsy URLs are skipped - None was not enqueued.
+      assert set(wmap) == {fpath}
+
+      data = fetcher.wait(fpath)
+      assert data == b'alpha'
   """
 
   def __init__(self, path=None, num_workers=None, fs_kwargs=None):
@@ -172,6 +242,21 @@ class UrlFetcher:
     Returns:
       A dict mapping each enqueued URL to its work-result hash - as
       expected by the work-results API.
+
+    Example:
+      import os
+      import tempfile
+
+      from py_misc_utils import url_fetcher as uf
+
+      fpath = os.path.join(tempfile.mkdtemp(), 'a.txt')
+      with open(fpath, 'wb') as f:
+        f.write(b'alpha')
+
+      with uf.UrlFetcher() as fetcher:
+        wmap = fetcher.enqueue(fpath, None)
+        # Falsy URLs are skipped - only fpath got enqueued.
+        assert set(wmap) == {fpath}
     """
     wmap = dict()
     for url in urls:
@@ -192,12 +277,35 @@ class UrlFetcher:
       url: The URL to wait for - it must have been enqueued.
 
     Returns:
-      The work result of the fetch: the fetched content, or an error
-      object if the fetch failed.
+      The fetched content.
 
     Raises:
+      Exception: The error which made the fetch fail - if it failed.
       AssertionError: If the URL has already been waited for - i.e. it is
         not pending anymore - and its work result is not found.
+
+    Example:
+      import os
+      import tempfile
+
+      from py_misc_utils import url_fetcher as uf
+
+      tdir = tempfile.mkdtemp()
+      fpath = os.path.join(tdir, 'a.txt')
+      with open(fpath, 'wb') as f:
+        f.write(b'alpha')
+
+      with uf.UrlFetcher() as fetcher:
+        fetcher.enqueue(fpath)
+        assert fetcher.wait(fpath) == b'alpha'
+
+        # Waiting for a failed fetch raises the original error.
+        missing = os.path.join(tdir, 'missing.txt')
+        fetcher.enqueue(missing)
+        try:
+          fetcher.wait(missing)
+        except FileNotFoundError:
+          pass
     """
     wpath = wres.work_path(self._path, url)
     if not os.path.isfile(wpath):
@@ -223,12 +331,31 @@ class UrlFetcher:
       timeout: An optional maximum number of seconds to block.
 
     Yields:
-      (url, data) tuples - one per completed fetch - where data holds
-      either the fetched content or an error object if the fetch failed.
+      (url, data) tuples - one per completed fetch - where data holds the
+      fetched content, or a WorkException carrying the error if the fetch
+      failed.
 
-    Raises:
-      AssertionError: If block is False and no completed fetch is
-        available.
+    Example:
+      import os
+      import tempfile
+
+      from py_misc_utils import work_results as wres
+
+      from py_misc_utils import url_fetcher as uf
+
+      tdir = tempfile.mkdtemp()
+      fpath = os.path.join(tdir, 'a.txt')
+      with open(fpath, 'wb') as f:
+        f.write(b'alpha')
+
+      with uf.UrlFetcher() as fetcher:
+        fetcher.enqueue(fpath)
+
+        for url, data in fetcher.iter_results():
+          if isinstance(data, wres.WorkException):
+            print(f'Fetch of "{url}" failed: {data}')
+          else:
+            assert data == b'alpha'
     """
     count = 0
     while self._pending:

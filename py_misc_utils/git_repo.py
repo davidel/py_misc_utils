@@ -21,6 +21,33 @@ class GitRepo:
 
   Attributes:
     path: The filesystem path to the git repository.
+
+  Example:
+    import os
+    import subprocess
+    import tempfile
+
+    from py_misc_utils import git_repo as gr
+
+    # Build a local source repo (stand-in for the remote).
+    src = os.path.join(tempfile.mkdtemp(), 'src')
+    os.makedirs(src)
+    subprocess.run(['git', 'init', '-q', '-b', 'main'], cwd=src, check=True)
+    subprocess.run(['git', 'config', 'user.email', 't@t'], cwd=src, check=True)
+    subprocess.run(['git', 'config', 'user.name', 'T'], cwd=src, check=True)
+    readme = os.path.join(src, 'README.md')
+    with open(readme, 'w') as f:
+      f.write('hello' + chr(10))
+    subprocess.run(['git', 'add', 'README.md'], cwd=src, check=True)
+    subprocess.run(['git', 'commit', '-q', '-m', 'init'], cwd=src, check=True)
+
+    grepo = gr.GitRepo(os.path.join(os.path.dirname(src), 'dst'))
+    grepo.clone(src)
+    assert grepo.repo() == src
+    assert grepo.current_commit() == subprocess.run(
+        ['git', 'rev-parse', 'HEAD'], cwd=src, check=True,
+        capture_output=True, text=True).stdout.strip()
+    assert grepo.is_shallow() is False
   """
 
   def __init__(self, path):
@@ -104,8 +131,10 @@ class GitRepo:
 
     Args:
       repo: The repository URL to clone.
-      force: If True, remove existing directory and re-clone. Defaults to False.
-      shallow: If True, perform a shallow clone (depth 1). Defaults to False.
+      force: If True, remove existing directory and re-clone. Defaults to
+        False.
+      shallow: If True, perform a shallow clone (depth 1). Defaults to
+        False.
     """
     do_clone = True
     if os.path.isdir(self.path):

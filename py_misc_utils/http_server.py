@@ -1,4 +1,9 @@
-"""Simple HTTP server with authorization support for testing."""
+"""Simple HTTP server with authorization support for testing.
+
+Serves files from the current (or given) folder over HTTP, requiring
+authorization - bearer or basic - for write operations (PUT/DELETE),
+while reads are served without authorization.
+"""
 
 import argparse
 import base64
@@ -17,6 +22,13 @@ def _sanitize_path(path):
 
   Returns:
     The path if safe, None otherwise.
+
+  Example:
+    from py_misc_utils import http_server as hs
+
+    assert hs._sanitize_path('/a/b.txt') == '/a/b.txt'
+    assert hs._sanitize_path('/../etc/passwd') is None
+    assert hs._sanitize_path('/dir/') is None
   """
   if '..' not in path and not path.endswith('/'):
     return path
@@ -25,8 +37,9 @@ def _sanitize_path(path):
 def _read_stream(headers, stream, chunked_headers, chunk_size=None):
   """Read data from an HTTP request stream based on headers.
 
-  Supports Content-Length and chunked Transfer-Encoding. Yields chunks of
-  data read from the stream.
+  Supports Content-Length delimited and chunked Transfer-Encoding streams,
+  and yields chunks of data read from the stream - chunked extension
+  headers are collected into chunked_headers.
 
   Args:
     headers: The HTTP request headers.
@@ -74,6 +87,9 @@ def _read_stream(headers, stream, chunked_headers, chunk_size=None):
 
 class HandlerException(Exception):
   """Exception raised for HTTP handler errors with status code and message.
+
+  Handlers raise it - typically out of _check_authorization() - and the
+  do_PUT()/do_DELETE() methods convert it into an HTTP error response.
 
   Attributes:
     code: The HTTP status code.
@@ -157,7 +173,8 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
   def do_OPTIONS(self):
     """Handle OPTIONS requests with CORS headers.
 
-    Responds with 200 OK and lists allowed methods.
+    Responds with 200 OK and lists allowed methods - no authorization
+    check is performed, letting clients probe the server capabilities.
     """
     self.send_response(200, 'OK')
     self.send_header('Allow', 'GET,POST,PUT,OPTIONS,HEAD,DELETE')
@@ -168,6 +185,38 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Handle DELETE requests with authorization check.
 
     Deletes the file at the requested path if authorized.
+
+    Example:
+      import argparse
+      import base64
+      import functools
+      import http.server
+      import tempfile
+      import threading
+
+      import requests
+
+      from py_misc_utils import http_server as hs
+
+      # Serve a scratch folder, with authorization required for writes.
+      handler = hs.ClassWrapper(hs.HTTPRequestHandler,
+                                _args=argparse.Namespace(auth='s3cret'))
+      td = tempfile.mkdtemp()
+      server = http.server.ThreadingHTTPServer(
+          ('127.0.0.1', 0), functools.partial(handler, directory=td))
+      threading.Thread(target=server.serve_forever, daemon=True).start()
+      url = 'http://127.0.0.1:{}'.format(server.server_address[1])
+
+      # Writes need the authorization header - others are rejected.
+      token = base64.b64encode(b's3cret').decode()
+      resp = requests.put(url + '/hello.txt', data=b'hi there',
+                          headers={'Authorization': 'Bearer ' + token})
+      assert resp.status_code == 201
+
+      # Reads are served without authorization.
+      assert requests.get(url + '/hello.txt').content == b'hi there'
+      server.shutdown()
+      server.server_close()
     """
     path = _sanitize_path(self.translate_path(self.path))
     if path is None:
@@ -194,6 +243,8 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Handle PUT requests with authorization check.
 
     Creates or overwrites the file at the requested path if authorized.
+
+    See do_DELETE() for a full client/server example.
     """
     path = _sanitize_path(self.translate_path(self.path))
     if path is None:
@@ -225,9 +276,27 @@ class ClassWrapper:
 
   When called, creates a new instance with the wrapped class and updates its
   __dict__ with the stored kwargs before calling __init__. Also intercepts
-  __setattr__ to store attribute assignments in _kwargs.
+  __setattr__ to store attribute assignments in _kwargs - so that later
+  attribute assignments on the wrapper are seen by instances created
+  afterwards.
 
   PRIVATE_ATTRIBUTES: Set of attribute names that are not stored in _kwargs.
+
+  Example:
+    from py_misc_utils import http_server as hs
+
+
+    class Greeting:
+      def __init__(self, name):
+        self.name = name
+
+    wrapped = hs.ClassWrapper(Greeting)
+    obj = wrapped('Ada')
+    assert obj.name == 'Ada'
+    # Attributes assigned on the wrapper are injected into later instances.
+    wrapped.timeout = 30
+    obj2 = wrapped('Grace')
+    assert obj2.timeout == 30 and obj2.name == 'Grace'
   """
 
   PRIVATE_ATTRIBUTES = {'_cls', '_kwargs'}  # noqa: RUF012 -- read-only class constant

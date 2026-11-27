@@ -29,14 +29,54 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
 
   Args:
     url: The URL to fetch.
-    context: Optional async context manager providing an httpx.AsyncClient.
-      Defaults to None.
-    path: Optional base path for work results. Defaults to None.
-    http_args: Optional keyword arguments for the httpx GET request.
-      Defaults to None.
+    context: Optional AsyncContext providing an httpx.AsyncClient through
+      its get() method. Defaults to None.
+    path: Optional base path for work results. Defaults to None - which
+      fails, as a work results folder is required.
+    http_args: Optional keyword arguments for the httpx GET request
+      (default: no extra arguments).
 
   Returns:
     The work result file path where the content was saved.
+
+  Example:
+    import asyncio
+    import http.server
+    import os
+    import tempfile
+    import threading
+
+    import httpx
+
+    from py_misc_utils import http_async_fetcher as haf
+    from py_misc_utils import work_results as wres
+
+
+    class NotFoundHandler(http.server.BaseHTTPRequestHandler):
+      def do_GET(self):
+        self.send_response(404)
+        self.send_header('Content-Length', '0')
+        self.end_headers()
+
+      def log_message(self, *args):
+        pass
+
+
+    class ClientCtx:
+      async def get(self, name, ctor):
+        return httpx.AsyncClient()
+
+    srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), NotFoundHandler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    url = 'http://127.0.0.1:{}/nope'.format(srv.server_address[1])
+
+    wpath = asyncio.run(
+        haf.http_fetch_url(url, context=ClientCtx(), path=tempfile.mkdtemp(),
+                           http_args={}))
+    err = wres.load_work(wpath=wpath)
+    assert err.is_instance(httpx.HTTPStatusError)
+    srv.shutdown()
+    srv.server_close()
   """
   wpath = wres.work_path(path, url)
   try:
@@ -59,17 +99,56 @@ class HttpAsyncFetcher:
   Provides a context manager that enqueues URLs for async fetching, tracks
   pending requests, and yields results as they complete. Uses AsyncManager
   for concurrent execution and fin_wrap for automatic cleanup.
+
+  Example:
+    import functools
+    import http.server
+    import os
+    import threading
+
+    from py_misc_utils import http_async_fetcher as haf
+
+
+    def serve():
+      class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+          body = os.path.basename(self.path).encode() + b'-body'
+          self.send_response(200)
+          self.send_header('Content-Length', str(len(body)))
+          self.end_headers()
+          self.wfile.write(body)
+
+        def log_message(self, *args):
+          pass
+
+      srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), H)
+      threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+      return srv
+
+
+    srv = serve()
+    try:
+      port = srv.server_address[1]
+      with haf.HttpAsyncFetcher(num_workers=2) as fetcher:
+        fetcher.enqueue(f'http://127.0.0.1:{port}/one.bin')
+        results = dict(fetcher.iter_results())
+        assert results == {f'http://127.0.0.1:{port}/one.bin': b'one.bin-body'}
+    finally:
+      srv.shutdown()
+      srv.server_close()
   """
 
   def __init__(self, path=None, num_workers=None, http_args=None, mpctx=None):
     """Initialize the HttpAsyncFetcher.
 
     Args:
-      num_workers: Number of concurrent workers. Defaults to None.
-      path: Base path for storing work results. If None, a temp dir is used.
-        Defaults to None.
-      http_args: Default keyword arguments for httpx requests. Defaults to None.
-      mpctx: Multiprocessing context for async execution. Defaults to None.
+      num_workers: Number of concurrent workers (default: CPU count).
+      path: Base path for storing work results. If None, a fast filesystem
+        temp dir is used, which is removed upon shutdown.
+      http_args: Default keyword arguments for httpx requests.
+      mpctx: Multiprocessing context for async execution
+        (default: multiprocessing).
     """
     self._ctor_path = path
     self._path = None
@@ -129,10 +208,11 @@ class HttpAsyncFetcher:
     """Enqueue URLs for asynchronous fetching.
 
     Args:
-      *urls: Variable number of URL strings to fetch.
+      *urls: Variable number of URL strings to fetch - empty (falsy) URLs
+        are skipped.
 
     Returns:
-      A dict mapping each URL to its work result hash.
+      A dict mapping each enqueued URL to its work result hash.
     """
     wmap = dict()
     for url in urls:
@@ -157,7 +237,9 @@ class HttpAsyncFetcher:
       The fetched work result data.
 
     Raises:
-      AssertionError: If the URL is not in the pending set.
+      Exception: The error which made the fetch fail - if it failed.
+      AssertionError: If the URL is not in the pending set (i.e. already
+        waited for or never enqueued).
     """
     wpath = wres.work_path(self._path, url)
     if not os.path.isfile(wpath):
@@ -185,7 +267,9 @@ class HttpAsyncFetcher:
       timeout: Timeout in seconds for blocking fetch. Defaults to None.
 
     Yields:
-      Tuples of (url, data) for each completed fetch.
+      Tuples of (url, data) for each completed fetch - where data holds
+      the fetched content, or the error object if the fetch failed.
+
     """
     count = 0
     while self._pending:
@@ -210,6 +294,9 @@ class HttpAsyncFetcher:
 
   def __enter__(self):
     """Enter the context manager by starting the fetcher.
+
+    Starts the AsyncManager workers, creating the work results folder - a
+    fast filesystem temp dir - if no path was specified.
 
     Returns:
       self.
