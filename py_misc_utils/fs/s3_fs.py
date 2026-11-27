@@ -193,10 +193,11 @@ def _read_object(client, bucket, path, rdrange=None):
   Raises:
     RuntimeError: When the response does not include the object body.
   """
+  kwargs = dict(Bucket=bucket, Key=path)
   if rdrange is not None:
-    rdrange = f'bytes={rdrange[0]}-{rdrange[1] - 1}'
+    kwargs['Range'] = f'bytes={rdrange[0]}-{rdrange[1] - 1}'
 
-  response = client.get_object(Bucket=bucket, Key=path, Range=rdrange)
+  response = client.get_object(**kwargs)
   stream = response.pop('Body', None)
   if stream is None:
     alog.xraise(RuntimeError, f'Error reading {bucket}:{path} object: {response}')

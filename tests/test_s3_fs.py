@@ -82,12 +82,7 @@ def test_s3_remove(fs, s3_env):
 
 
 def test_s3_copy_via_rename(fs, s3_env):
-  """rename() performs a server-side copy (copy_object) then deletes src.
-
-  Public copyfile() is unusable (FsBase.copyfile() -> get_file() passes
-  Range=None which botocore rejects - documented library bug), so the
-  server-side copy machinery is exercised through the public rename().
-  """
+  """rename() performs a server-side copy (copy_object) then deletes src."""
   s3_env.put_object(Bucket='test-bucket', Key='src.txt', Body=b'copy s3')
   fs.rename('s3://test-bucket/src.txt', 's3://test-bucket/dst.txt')
   # Verify via moto client directly.
@@ -123,18 +118,11 @@ def test_s3_makedirs_and_dir_semantics(s3_env, fs):
   assert fs.exists('s3://test-bucket/some/prefix')
 
 
-def test_s3_get_file_broken_no_range(s3_env, fs):
-  """get_file() fails on whole-object reads (documented library bug).
-
-  S3Fs.get_file -> _read_object passes Range=None to client.get_object,
-  which botocore param validation rejects (Range must be a string when
-  present). Whole-object reads are therefore broken - only ranged reads
-  (rdrange=(start, end)) work. Reported as a library finding.
-  """
+def test_s3_get_file(s3_env, fs):
+  """get_file() reads whole objects and yields the object content."""
   s3_env.put_object(Bucket='test-bucket', Key='gp.bin', Body=b'0123456789')
 
-  with pytest.raises(botocore.exceptions.ParamValidationError):
-    list(fs.get_file('s3://test-bucket/gp.bin'))
+  assert b''.join(fs.get_file('s3://test-bucket/gp.bin')) == b'0123456789'
 
 
 def test_s3_put_file(s3_env, fs):
@@ -195,18 +183,12 @@ def test_s3_stat_maps_mtime(s3_env, fs):
   assert de.st_size == 2
 
 
-def test_s3_append_preserves_existing_content(s3_env, fs):
-  """Append-mode open() pins the download-path behavior (report-only).
-
-  The write path is reachable publicly (append mode), but the internal
-  download path is broken downstream by the known Range=None get_file
-  defect: S3Fs.open() crashes with ParamValidationError when the object
-  exists and truncation is not requested. This test pins the failure so
-  the module state is observable; the assertion will be flipped once
-  the Range=None fix (P2, awaiting ACK) lands.
-  """
+def test_s3_append_preserves_content(s3_env, fs):
+  """Append-mode open() preserves the existing object content."""
   s3_env.put_object(Bucket='test-bucket', Key='app.bin', Body=b'base')
 
-  with pytest.raises(botocore.exceptions.ParamValidationError), \
-      fs.open('s3://test-bucket/app.bin', mode='ab') as f:
+  with fs.open('s3://test-bucket/app.bin', mode='ab') as f:
     f.write(b'-more')
+
+  assert s3_env.get_object(Bucket='test-bucket',
+                           Key='app.bin')['Body'].read() == b'base-more'
