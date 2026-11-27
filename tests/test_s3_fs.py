@@ -115,7 +115,7 @@ def test_s3_makedirs_and_dir_semantics(s3_env, fs):
   fs.makedirs('s3://test-bucket/some/prefix')
 
   # A prefix only exists once an object under it does (moto-aware stat).
-  assert fs.exists('s3://test-bucket/some/prefix')
+  assert not fs.exists('s3://test-bucket/some/prefix')
 
   s3_env.put_object(Bucket='test-bucket', Key='some/prefix/file.bin', Body=b'x')
 
@@ -168,15 +168,17 @@ def test_s3_as_local(s3_env, fs, cache_iface, temp_path):
   cache_iface.as_local.assert_called_once()
 
 
-def test_s3_stat_missing_object_returns_none(s3_env, fs):
-  """stat() on a missing object returns None (documented library bug).
+def test_s3_stat_missing_object_raises(s3_env, fs):
+  """stat() on a missing object raises FileNotFoundError.
 
-  S3Fs.stat passes the FileNotFoundError CLASS as the checked value
-  (tas.check_is_not_none(FileNotFoundError, ...)) instead of the stat
-  result, so the documented FileNotFoundError is never raised and None
-  leaks out of stat() instead.
+  S3Fs.stat used to pass the FileNotFoundError CLASS as the checked
+  value (tas.check_is_not_none(FileNotFoundError, ...)) instead of the
+  stat result, so the documented FileNotFoundError was never raised and
+  None leaked out of stat() - which also made FsBase.exists() answer
+  True for missing paths.
   """
-  assert fs.stat('s3://test-bucket/never-there.txt') is None
+  with pytest.raises(FileNotFoundError):
+    fs.stat('s3://test-bucket/never-there.txt')
 
 
 def test_s3_stat_maps_mtime(s3_env, fs):

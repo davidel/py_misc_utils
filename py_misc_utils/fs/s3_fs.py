@@ -628,12 +628,16 @@ class S3Fs(fsb.FsBase):
       url: s3:// URL to stat.
 
     Returns:
-      The DirEntry of the path, or None when the path does not exist.
+      The DirEntry of the path.
+
+    Raises:
+      FileNotFoundError: If the path does not exist.
     """
     client, purl = self._parse_url(url)
 
     dentry = _stat(client, purl.hostname, purl.path)
-    tas.check_is_not_none(FileNotFoundError,
+    tas.check_is_not_none(dentry,
+                          exception=FileNotFoundError,
                           msg=f'Not found: {purl.hostname}:{purl.path}')
 
     return dentry
