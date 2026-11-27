@@ -4,6 +4,23 @@ This module defines DirEntry, a namedtuple for directory listing entries, and
 FsBase, an abstract base class that all filesystem implementations must
 subclass. FsBase provides common path/mode utilities and declares the abstract
 interface for filesystem operations.
+
+Example:
+  import os
+  import tempfile
+
+  from py_misc_utils import gfs
+
+  root = tempfile.mkdtemp()
+  path = os.path.join(root, 'f.txt')
+
+  with open(path, 'w') as fd:
+    fd.write('hello')
+
+  fs = gfs.get_proto_fs('file')
+  entry = fs.stat(path)
+
+  print(entry.name, entry.st_size)
 """
 
 import abc
@@ -21,8 +38,8 @@ DirEntry = collections.namedtuple(
 # - st_size: File size in bytes.
 # - st_ctime: Creation timestamp.
 # - st_mtime: Modification timestamp.
-# - path: Full path string.
-# - etag: Entity tag for cache validation (optional).
+# - path: Full path string (default: None).
+# - etag: Entity tag for cache validation (default: None).
 
 
 class FsBase(abc.ABC):
@@ -31,7 +48,7 @@ class FsBase(abc.ABC):
   Provides common mode-parsing class methods and default implementations for
   some operations, while declaring abstract methods that subclasses must
   implement: stat, open, remove, rename, mkdir, makedirs, rmdir, rmtree,
-  list, put_file, get_file, as_local, link, symlink.
+  list, put_file, get_file, as_local, link and symlink.
   """
 
   def __init__(self, cache_iface=None, **kwargs):
@@ -297,8 +314,8 @@ class FsBase(abc.ABC):
     Args:
       url: The URL string of the directory to list.
 
-    Returns:
-      An iterable of DirEntry namedtuples.
+    Yields:
+      A DirEntry namedtuple for every entry of the directory.
     """
     ...
 

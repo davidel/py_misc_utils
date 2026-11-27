@@ -3,6 +3,22 @@
 This module provides FileFs, the default FileSystem backend which operates
 on plain local paths. Since files are already local, as_local() returns the
 path unchanged and blocks can be read directly from the file.
+
+Example:
+  import os
+  import tempfile
+
+  from py_misc_utils.fs import file_fs
+
+  root = tempfile.mkdtemp()
+  path = os.path.join(root, 'f.txt')
+
+  with open(path, 'w') as fd:
+    fd.write('hello')
+
+  fs = file_fs.FileFs()
+
+  print(fs.stat(path).st_size)
 """
 
 import os
@@ -134,7 +150,8 @@ class FileFs(fsb.FsBase):
     Args:
       url: The path of the file to open.
       mode: Open mode string.
-      **kwargs: Extra keyword arguments forwarded to the builtin open().
+      **kwargs: Extra open() keyword arguments; accepted for interface
+        compatibility but not forwarded to the builtin open().
 
     Returns:
       The opened file object.

@@ -6,6 +6,22 @@ backend registered for the scheme of the path or URL (file, ftp, http,
 gs, s3), backed by the fs/ subpackage. It also provides TempFile for
 atomic writes, RegexMatcher to filter enumerations, and registration
 helpers to extend the supported schemes with additional backends.
+
+Example:
+  import os
+  import tempfile
+
+  from py_misc_utils import gfs
+
+  root = tempfile.mkdtemp()
+
+  # gfs dispatches over the backend registered for the URL scheme.
+  with gfs.open(os.path.join(root, 'a.txt'), mode='w') as fd:
+    fd.write('local file')
+
+  gfs.copy(os.path.join(root, 'a.txt'), os.path.join(root, 'b.txt'))
+
+  print(gfs.exists(os.path.join(root, 'b.txt')))
 """
 
 import collections
@@ -27,6 +43,25 @@ from . import run_once as ro
 
 class TempFile:
   """Temporary file which is removed unless replaced into a final path.
+
+  The temporary path is always a local one: non-local nsdir/nspath
+  arguments are ignored. After open() the descriptor attributes are
+  mirrored onto the TempFile itself, while close() removes the file
+  and replace() atomically moves it to its final destination path.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import gfs
+
+    final = os.path.join(tempfile.gettempdir(), 'report.pdf')
+
+    with gfs.TempFile(nspath=final, mode='w+b') as fd:
+      fd.write(b'payload')
+      fd.replace(final)
+
+    print(os.path.isfile(final))
 
   Attributes:
     fd: The file descriptor object of the file, mirrored after open().
@@ -119,9 +154,23 @@ _STD_FILES = {
 def std_open(path, **kwargs):
   """Open a standard stream by name or a plain local file.
 
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import gfs
+
+    root = tempfile.mkdtemp()
+
+    with gfs.std_open(os.path.join(root, 'a.txt'), mode='w') as fd:
+      fd.write('plain local file')
+
+    with gfs.std_open('STDOUT') as fd:
+      fd.write('stdout')
+
   Args:
-    path: Path of the file to open, or one of 'STDIN', 'STDOUT' and
-      'STDERR' to open the corresponding standard stream.
+    path: Path of the file to open, or one of 'STDIN', 'STDOUT' or
+      'STDERR' to access the corresponding standard stream.
     **kwargs: Open keyword arguments, ignored for the standard streams.
 
   Returns:
@@ -404,6 +453,22 @@ def resolve_paths(*paths):
 def copy(src_path, dest_path, src_fs=None, dest_fs=None):
   """Copy a file across filesystems.
 
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import gfs
+
+    root = tempfile.mkdtemp()
+    src = os.path.join(root, 'src.txt')
+
+    with open(src, 'w') as fd:
+      fd.write('data')
+
+    gfs.copy(src, os.path.join(root, 'dst.txt'))
+
+    print(gfs.exists(os.path.join(root, 'dst.txt')))
+
   Args:
     src_path: Source path or URL.
     dest_path: Destination path or URL.
@@ -421,6 +486,22 @@ def replace(src_path, dest_path, src_fs=None, dest_fs=None):
   The rename is done in place when source and destination are on the
   same filesystem, otherwise it is implemented as a copy followed by a
   source removal.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import gfs
+
+    root = tempfile.mkdtemp()
+    src = os.path.join(root, 'src.txt')
+
+    with open(src, 'w') as fd:
+      fd.write('data')
+
+    gfs.replace(src, os.path.join(root, 'moved.txt'))
+
+    print(gfs.exists(src), gfs.exists(os.path.join(root, 'moved.txt')))
 
   Args:
     src_path: Source path or URL.
@@ -535,20 +616,31 @@ def symlink(src_path, dest_path):
 
 
 class RegexMatcher:
-  """File name matcher enumerating the entries matching a regex."""
+  """File name matcher enumerating the entries matching a regex.
+
+  Example:
+    from py_misc_utils import gfs
+
+    matcher = gfs.RegexMatcher(r'.*\\.txt$')
+  """
 
   def __init__(self, rex):
-    """Compile the regular expression.
+    """Compile the regular expression used to filter the file names.
+
+    Matching is anchored at the start of the name, as done by
+    re.match().
 
     Args:
-      rex: Regular expression the file names must match; a None match
-        indicates no filtering.
+      rex: Regular expression the file names must match.
     """
     self._rex = re.compile(rex)
     self.match = None
 
   def __call__(self, value):
     """Match a file name, recording the match object.
+
+    The last match object is kept in the match attribute, so that the
+    matched text is available to the caller after the call.
 
     Args:
       value: File name to match against the regular expression.
@@ -563,6 +655,21 @@ class RegexMatcher:
 
 def enumerate_files(path, matcher=None, return_stats=False):
   """Enumerate the file names of a directory.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import gfs
+
+    root = tempfile.mkdtemp()
+
+    gfs.makedirs(os.path.join(root, 'sub'))
+    for name in ('a.txt', 'b.log'):
+      with open(os.path.join(root, name), 'w') as fd:
+        fd.write(name)
+
+    names = list(gfs.enumerate_files(root, matcher=gfs.RegexMatcher(r'.*\\.txt$')))
 
   Args:
     path: Path or URL of the directory to enumerate.
@@ -585,13 +692,18 @@ def enumerate_files(path, matcher=None, return_stats=False):
 
 
 def normpath(path):
-  """Normalize a path or URL into its backend-specific path.
+  """Return the backend-specific path of a path or URL.
+
+  This is the path as seen by the FileSystem backend of the URL
+  scheme: the URL itself for local paths, the full URL for remote
+  ones (each backend parses it again to extract the server
+  credentials and the remote path).
 
   Args:
     path: Path or URL to normalize.
 
   Returns:
-    The normalized path as seen by its FileSystem backend.
+    The normalized backend-specific path.
   """
   _, fpath = resolve_fs(path)
 
@@ -695,6 +807,23 @@ def register_modules():
 
   The py_misc_utils.fs backends are registered once, plus any module
   found in the colon-separated GFS_PATH environment variable.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import gfs
+
+    # Point GFS_PATH at a directory holding custom *_fs.py backends.
+    plugin_dir = tempfile.mkdtemp()
+    os.environ['GFS_PATH'] = plugin_dir
+
+    gfs.register_modules()
+
+    # The built-in backends are available after the registration.
+    fs = gfs.get_proto_fs('file')
+
+    print(fs.ID)
   """
   import py_misc_utils.fs as pyfs
 

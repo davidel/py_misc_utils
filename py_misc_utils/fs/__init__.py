@@ -1,6 +1,6 @@
 """FileSystem backends for remote and local storage schemes.
 
-This package groups the FileSystem implementations registered in the
+This package groups the FileSystem implementations selected through the
 FILE_SYSTEMS tuple of every submodule, so that the generic open/copy/list
 helpers can select a backend by URL scheme:
 - file: local files (fs.file_fs.FileFs)
@@ -8,4 +8,8 @@ helpers can select a backend by URL scheme:
 - http/https: web servers exposing directory listings (fs.http_fs.HttpFs)
 - gs: Google Cloud Storage (fs.gcs_fs.GcsFs)
 - s3: Amazon S3 (fs.s3_fs.S3Fs)
+
+The modules are registered lazily by gfs.register_modules(), which imports
+every *_fs module of this package and of the colon-separated GFS_PATH
+environment variable.
 """

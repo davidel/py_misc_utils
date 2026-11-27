@@ -4,6 +4,48 @@ This module provides FtpFs, a FileSystem backend accessing remote files over
 FTP. Connections (FTPHost objects) are pooled through the object cache and
 file contents are read through the block-cache / writeback machinery since
 FTP does not support random access reads.
+
+Example:
+  import os
+  import tempfile
+  import threading
+
+  from pyftpdlib.authorizers import DummyAuthorizer
+  from pyftpdlib.handlers import FTPHandler
+  from pyftpdlib.servers import FTPServer
+
+  from py_misc_utils import cached_file as chf
+  from py_misc_utils.fs import ftp_fs
+
+  root = tempfile.mkdtemp()
+
+  # Start a local FTP server so the example is runnable as-is.
+  authorizer = DummyAuthorizer()
+  authorizer.add_user('user', 'pass', root, perm='elradfmwMT')
+  handler = FTPHandler
+  handler.authorizer = authorizer
+  server = FTPServer(('127.0.0.1', 0), handler)
+
+  stop = threading.Event()
+
+  def serve():
+    while not stop.wait(0.01):
+      server.serve_forever(timeout=0.01, blocking=False, handle_exit=False)
+
+  threading.Thread(target=serve, daemon=True).start()
+
+  host, port = server.address
+  fs = ftp_fs.FtpFs(cache_iface=chf.CacheInterface(os.path.join(root, 'cache')))
+
+  url = f'ftp://user:pass@{host}:{port}'
+  with fs.open(url + '/hello.txt', mode='wb') as fd:
+    fd.write(b'ftp write')
+
+  with fs.open(url + '/hello.txt', mode='rb') as fd:
+    print(fd.read())
+
+  stop.set()
+  server.close_all()
 """
 
 import ftplib
@@ -187,6 +229,11 @@ class FtpFs(fsb.FsBase):
 
   def _parse_url(self, url):
     """Parse an ftp:// URL and return its pooled connection.
+
+    The server credentials (host, port, user and password) are taken
+    from the URL itself: the user defaults to the anonymous user when
+    no user is given, while the port defaults to the standard FTP
+    port.
 
     Args:
       url: ftp:// URL to parse.
