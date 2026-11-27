@@ -147,10 +147,26 @@ def readall(fd):
   """Reads the whole content of a file.
 
   Args:
-    fd: The file to read: either a path, or a file descriptor.
+    fd: The file to read: either a path, or a file descriptor - as
+      returned by os.open(), not a buffered file object.
 
   Returns:
     The whole file content, as bytes.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import fs_utils as fsu
+
+    path = os.path.join(tempfile.mkdtemp(), 'data.bin')
+    with open(path, 'wb') as fd:
+      fd.write(b'content')
+
+    fd = os.open(path, os.O_RDONLY)
+    data = fsu.readall(fd)
+    os.close(fd)
+    print(data)
   """
   if isinstance(fd, str):
     with osfd.OsFd(fd, os.O_RDONLY) as ifd:
@@ -172,6 +188,20 @@ def read_content(path, binary=True):
 
   Returns:
     The whole file content, as bytes if binary=True, else as str.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import fs_utils as fsu
+
+    root = tempfile.mkdtemp()
+    path = os.path.join(root, 'notes.txt')
+    with open(path, 'w') as fd:
+      fd.write('hello')
+
+    print(fsu.read_content(path, binary=False))  # hello
+    print(fsu.read_content(path))  # b'hello'
   """
   if binary:
     with open(path, 'rb') as f:
@@ -228,6 +258,12 @@ def path_split(path):
   Returns:
     The list of path components - the first one possibly being the root
     (drive/volume) component.
+
+  Example:
+    from py_misc_utils import fs_utils as fsu
+
+    print(fsu.path_split('/a/b/c.txt'))  # ['/', 'a', 'b', 'c.txt']
+    print(fsu.path_split('a/b/c.txt'))  # ['a', 'b', 'c.txt']
   """
   path_parts = []
   while True:
@@ -258,6 +294,12 @@ def drop_ext(path, exts):
   Returns:
     The path without the matched extension, or the original path if the
     extension is not matched.
+
+  Example:
+    from py_misc_utils import fs_utils as fsu
+
+    print(fsu.drop_ext('archive.tar.gz', ['.tar', '.gz']))  # archive.tar
+    print(fsu.drop_ext('file.txt', '.md'))  # file.txt
   """
   xpath, ext = os.path.splitext(path)
 
@@ -295,6 +337,15 @@ def subst_path(path, ref_path):
     The path with the substituted placeholders - where $B is the
     reference file name, $D its directory, $R the whole reference path,
     $N the file name without extension and $X the extension.
+
+  Example:
+    from py_misc_utils import fs_utils as fsu
+
+    ref = '/data/in/file.tar.gz'
+    print(fsu.subst_path('$B.bak', ref))  # file.tar.gz.bak
+    print(fsu.subst_path('$D/out.bin', ref))  # /data/in/out.bin
+    print(fsu.subst_path('$N.txt', ref))  # file.tar.txt
+    print(fsu.subst_path('prefix$X', ref))  # prefix.gz
   """
   spath = os.path.abspath(ref_path)
   dpath = os.path.dirname(spath)

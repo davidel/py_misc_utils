@@ -22,6 +22,17 @@ class StreamedFile:
   The stream is consumed by a background daemon thread into a temp file.
   Reads block until the requested data is available or the stream completes
   or the file is closed.
+
+  Example:
+    from py_misc_utils import streamed_file as sf
+
+    # A streaming response, such as requests.get(url, stream=True).iter_content.
+    resp = iter([b'chunk1', b'chunk2'])
+
+    with sf.StreamedFile(resp) as f:
+      print(f.read(6))  # b'chunk1'
+      print(f.seek(0, 2), f.tell())  # 12
+      print(f.read(6))  # b'' at EOF - seek first to re-read
   """
 
   def __init__(self, resp):

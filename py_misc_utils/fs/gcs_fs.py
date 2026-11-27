@@ -113,6 +113,23 @@ class GcsFs(fsb.FsBase):
   GcsFs instances are pooled per bucket through the object cache. Paths are
   relative to the bucket root, so the leading slash of the URL path is
   stripped before dispatching the operations to the underlying GcsFs.
+
+  The credentials are resolved by the google-cloud-storage machinery -
+  from the GOOGLE_APPLICATION_CREDENTIALS environment variable or the
+  environment default - and can be pointed at an emulator with the
+  STORAGE_EMULATOR_HOST environment variable.
+
+  See py_misc_utils.fs for the shared backend contract.
+
+  Example:
+    from py_misc_utils import cached_file as chf
+    from py_misc_utils.fs import gcs_fs as gf
+
+    iface = chf.CacheInterface('/tmp/gfs-cache')
+    fs = gf.GcsFs(cache_dir='/tmp/gfs-cache', cache_iface=iface)
+
+    with fs.open('gs://my-bucket/data/file.bin', mode='rb') as f:
+      header = f.read(512)
   """
 
   ID = 'gcs'

@@ -18,6 +18,16 @@ class IterFile:
   Presents an iterable of data blocks as a single seekable byte stream.
   Maintains an internal index of block offsets for efficient random access
   and buffering.
+
+  Example:
+    from py_misc_utils import iter_file as itf
+
+    blocks = iter([b'hello ', b'world'])
+
+    with itf.IterFile(blocks) as f:
+      print(f.read(8))  # b'hello wo'
+      f.seek(2)
+      print(f.read(3))  # b'llo'
   """
 
   def __init__(self, data_gen):

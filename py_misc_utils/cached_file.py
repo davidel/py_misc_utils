@@ -157,7 +157,15 @@ class CachedBlockFile:
       raise
 
   def _fblock_path(self, offset):
-    """Returns the block file path of a block offset."""
+    """Returns the block file path of a block offset.
+
+    Args:
+      offset: The block offset within the file, or WHOLE_OFFSET for
+        whole-file caching.
+
+    Returns:
+      The block file path.
+    """
     return self.fblock_path(self._path, self.meta.cid, offset)
 
   def _fetch_block(self, offset):
@@ -327,7 +335,18 @@ class CachedBlockFile:
 
   @classmethod
   def fblock_path(cls, path, cid, offset):
-    """Returns the block file path of a content id and offset."""
+    """Returns the block file path of a content id and offset.
+
+    Args:
+      path: The cache folder path.
+      cid: The content id of the cached file.
+      offset: The block offset within the file, or WHOLE_OFFSET for
+        whole-file caching.
+
+    Returns:
+      The block file path - blocks/block-<cid>-<offset>, with the
+      offset part dropped for whole-file caching.
+    """
     block_id = f'block-{cid}-{offset}' if offset >= 0 else f'block-{cid}'
 
     return os.path.join(cls.blocks_dir(path), block_id)
@@ -352,7 +371,16 @@ class CachedBlockFile:
 
   @classmethod
   def flink_path(cls, path, cid, url):
-    """Returns the link file path of a cached content."""
+    """Returns the link file path of a cached content.
+
+    Args:
+      path: The cache folder path.
+      cid: The content id of the cached file.
+      url: The URL of the cached file, whose base name names the link.
+
+    Returns:
+      The link file path - links/<cid>/<base name of the URL>.
+    """
     lpath = os.path.join(cls.links_dir(path), cid)
 
     return os.path.join(lpath, os.path.basename(url))
@@ -642,7 +670,14 @@ class CachedFile:
     return self
 
   def __exit__(self, *exc):
-    """Exits the file context, closing the file."""
+    """Exits the file context, closing the file.
+
+    Args:
+      *exc: Exception information if an exception occurred.
+
+    Returns:
+      False, so that exceptions are not suppressed.
+    """
 
     self.close()
 
@@ -656,6 +691,38 @@ class CacheInterface:
   interface: reading the file size, the blocks of data - or the whole
   file content for readers not supporting block-based reads - and the
   bookkeeping of the per-reader resources.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import cached_file as chf
+
+    # A reader serving an in-memory content through the interface
+    # contract - like the readers of the remote filesystem backends.
+    class MemReader:
+
+      def __init__(self, data):
+        self.data = data
+
+      def tag(self):
+        return 'mem'
+
+      def support_blocks(self):
+        return True
+
+      def read_block(self, bpath, offset, size):
+        content = (self.data if offset == chf.CachedBlockFile.WHOLE_OFFSET
+                   else self.data[offset:offset + size])
+        with open(bpath, 'wb') as fd:
+          fd.write(content)
+        return len(content)
+
+    iface = chf.CacheInterface(tempfile.mkdtemp())
+    url = 'mem://host/data.bin'
+
+    with iface.open(url, chf.Meta(url=url, tag='mem'), MemReader(b'hello')) as cf:
+      print(cf.read())
   """
 
   def __init__(self, cache_dir):
@@ -837,7 +904,9 @@ def get_cache_dir(path):
   """Returns the cache folder of a base path, triggering its cleanup.
 
   The cache folder is cleaned up if the last cleanup is older than the
-  cleanup period - tracked via a marker file.
+  cleanup period - tracked via a marker file. The folder is not created
+  when missing: it is created lazily by the cache machinery, so the
+  returned path may not exist.
 
   Args:
     path: The base path holding the cache folder.

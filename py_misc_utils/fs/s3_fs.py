@@ -44,9 +44,11 @@ def _get_credentials(user=None):
   """Resolve the S3 credentials.
 
   Args:
-    user: Name of a user entry in the ~/.aws.conf configuration file; when
-      missing the credentials are taken from the AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN environment variables.
+    user: Name of a user entry of the 'users' section in the ~/.aws.conf
+      configuration file. When missing, the credentials are taken from
+      the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN
+      environment variables - returning empty credentials when they are
+      not set (the boto3 machinery resolves them in that case).
 
   Returns:
     The resolved _Credentials tuple.
@@ -473,6 +475,25 @@ class S3Fs(fsb.FsBase):
   while reads and writes go through the block-cache and writeback-file
   machinery. Since S3 objects are flat, listings fold paths below the
   query prefix into pseudo-directory entries.
+
+  The credentials are resolved from the user name of the URL - when
+  present - looked up as a user entry of the ~/.aws.conf configuration
+  file (see _get_credentials); URLs without a user fall back to the
+  AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN
+  environment variables.
+
+  See py_misc_utils.fs for the shared backend contract.
+
+  Example:
+    from py_misc_utils import cached_file as chf
+    from py_misc_utils.fs import s3_fs as sf
+
+    iface = chf.CacheInterface('/tmp/gfs-cache')
+    # s3://prod@my-bucket resolves the 'prod' user of ~/.aws.conf.
+    fs = sf.S3Fs(cache_dir='/tmp/gfs-cache', cache_iface=iface)
+
+    with fs.open('s3://my-bucket/data/file.bin', mode='rb') as f:
+      header = f.read(512)
   """
 
   ID = 's3'
@@ -607,10 +628,7 @@ class S3Fs(fsb.FsBase):
       url: s3:// URL to stat.
 
     Returns:
-      The DirEntry of the path.
-
-    Raises:
-      FileNotFoundError: When the path does not exist.
+      The DirEntry of the path, or None when the path does not exist.
     """
     client, purl = self._parse_url(url)
 

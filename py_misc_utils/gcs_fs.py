@@ -3,6 +3,27 @@
 This module provides the GcsFs class, a filesystem-like interface to the
 objects of a Google Cloud Storage bucket: listing, streaming and partial
 reads, uploads, copies and removals are exposed over plain paths.
+
+The credentials are resolved by the google-cloud-storage machinery - from
+the GOOGLE_APPLICATION_CREDENTIALS environment variable or the
+environment default - and can be pointed at an emulator with the
+STORAGE_EMULATOR_HOST environment variable.
+
+Example:
+  from py_misc_utils import gcs_fs
+
+  fs = gcs_fs.GcsFs('my-bucket')
+
+  # Upload and stream back.
+  fs.upload('data/file.bin', [b'chunk1', b'chunk2'])
+  data = b''.join(fs.download('data/file.bin'))
+
+  # Partial read without downloading the whole object.
+  head = fs.pread('data/file.bin', 0, 512)
+
+  # Flat listing with directory collapsing.
+  for dentry in fs.listdir('data'):
+    print(dentry.name, dentry.st_size)
 """
 
 import os
@@ -24,6 +45,9 @@ class GcsFs:
   The class provides listing, streaming read/write, partial reads and
   object management operations over the objects of a bucket, exposing
   them as directory entries and file paths.
+
+  See py_misc_utils.fs.gcs_fs for the gs:// URL backend built on top of
+  this class, and py_misc_utils.fs for the shared backend contract.
   """
 
   def __init__(self, bucket):

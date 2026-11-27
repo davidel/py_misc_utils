@@ -129,6 +129,53 @@ class HttpFs(fsb.FsBase):
   with the constructor keyword arguments such as headers or authentication.
   Writes are staged into a temporary file and uploaded on close through a
   PUT request, so writeback semantics apply.
+
+  See py_misc_utils.fs for the shared backend contract.
+
+  Example:
+    import http.server
+    import threading
+
+    from py_misc_utils import cached_file as chf
+    from py_misc_utils.fs import http_fs as hf
+
+    # A local HTTP server, so that the example is runnable as-is.
+    class H(http.server.BaseHTTPRequestHandler):
+      def log_message(self, *args):
+        pass
+
+      def do_HEAD(self):
+        body = self.server.routes.get(self.path)
+        if body is None:
+          return self.send_error(404)
+        self.send_response(200)
+        self.send_header('ETag', '"t1"')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+
+      def do_GET(self):
+        body = self.server.routes.get(self.path)
+        if body is None:
+          return self.send_error(404)
+        self.send_response(200)
+        self.send_header('ETag', '"t1"')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    H.server_class = type('S', (http.server.ThreadingHTTPServer,), {'routes': {}})
+    server = H.server_class(('127.0.0.1', 0), H)
+    server.routes['/data/file.bin'] = b'0123456789' * 100
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f'http://127.0.0.1:{server.server_address[1]}'
+
+    iface = chf.CacheInterface('/tmp/gfs-cache')
+    fs = hf.HttpFs(cache_dir='/tmp/gfs-cache', cache_iface=iface)
+
+    with fs.open(url + '/data/file.bin', mode='rb') as f:
+      print(f.read(16))
+    server.shutdown()
+    server.server_close()
   """
 
   mimetypes.init()
@@ -213,6 +260,10 @@ class HttpFs(fsb.FsBase):
     modes stage the data into a temporary file uploaded with a PUT
     request when the stream is closed.
 
+    Since HTTP has no append operation, append modes download the
+    existing content - if any - into the staging file and upload the
+    whole result on close: concurrent writers are not merged.
+
     Args:
       url: URL to open.
       mode: Open mode string.
@@ -278,6 +329,9 @@ class HttpFs(fsb.FsBase):
 
   def list(self, url):
     """Enumerate the entries linked from an HTML directory page.
+
+    The URL must be an HTML page holding the anchor links of its
+    children - plain file URLs or pages without links enumerate nothing.
 
     Args:
       url: URL of the directory page to enumerate.
