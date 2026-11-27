@@ -158,3 +158,85 @@ def test_weighed_knn_predict_proba():
 
   probs = clf.predict_proba(X)
   assert probs.shape == (4, 2)
+
+
+def test_weighed_knn_predict_proba_with_sample_weight():
+  """WeighedKNNClassifier.predict_proba() applies sample weights to the neighbor votes."""
+  X = np.array([[0.0], [1.0], [2.0], [3.0]])
+  y = np.array([0, 1, 1, 2])
+  sw = np.array([1.0, 0.01, 0.01, 1.0])
+
+  clf = sku.WeighedKNNClassifier(n_neighbors=3)
+  clf.fit(X, y, sample_weight=sw)
+
+  # Single-row prediction: the two low-weight class-1 samples hardly vote,
+  # so the class-0 neighbor dominates (crashed before the fix).
+  probs = clf.predict_proba(np.array([[1.5]]))
+  assert probs.shape == (1, 3)
+  assert probs[0, 0] > 0.98
+
+  # The neighbor votes must be routed through the neighbor labels:
+  # compare with a brute-force aggregation of sample_weight * distance
+  # weights over the neighbor indices.
+  Xq = np.array([[1.5], [2.4]])
+  probs = clf.predict_proba(Xq)
+  assert probs.shape == (2, 3)
+  assert np.allclose(probs.sum(axis=1), 1.0)
+
+  neigh_dist, neigh_ind = clf._neigh.kneighbors(Xq)
+  dist_w = sku._get_weights(neigh_dist, clf._neigh.weights)
+  classes = clf._neigh.classes_
+  y_train = clf._neigh._y.reshape(-1)
+  for r in range(len(Xq)):
+    votes = np.zeros(classes.size)
+    for i, idx in enumerate(neigh_ind[r]):
+      votes[classes == y_train[idx]] += sw[idx] * dist_w[r, i]
+    votes /= votes.sum()
+    assert np.allclose(probs[r], votes)
+
+  # The probability argmax matches predict().
+  assert np.array_equal(probs.argmax(axis=1), clf.predict(Xq))
+
+
+def test_weighed_knn_predict_proba_matches_sklearn_with_ones_weight():
+  """WeighedKNNClassifier.predict_proba() with all-ones weights matches sklearn."""
+  X = np.array([[0.0], [1.0], [2.0], [3.0]])
+  y = np.array([0, 1, 0, 1])
+  Xq = np.array([[0.2], [1.5], [2.9], [3.0]])
+
+  for n_neighbors in (1, 2, 3, 4):
+    for weights in ("uniform", "distance"):
+      ref = sklearn.neighbors.KNeighborsClassifier(n_neighbors=n_neighbors,
+                                                   weights=weights)
+      ref.fit(X, y)
+
+      clf = sku.WeighedKNNClassifier(n_neighbors=n_neighbors, weights=weights)
+      clf.fit(X, y, sample_weight=np.ones(len(X)))
+
+      assert np.allclose(clf.predict_proba(Xq), ref.predict_proba(Xq))
+
+
+def test_weighed_knn_multioutput_sample_weight():
+  """WeighedKNNClassifier handles multi-output targets with sample_weight."""
+  X = np.array([[0.0], [1.0], [2.0], [3.0]])
+  y = np.array([[0, 1], [1, 1], [1, 0], [2, 0]])
+  Xq = np.array([[1.5], [2.4]])
+
+  ones_clf = sku.WeighedKNNClassifier(n_neighbors=3)
+  ones_clf.fit(X, y, sample_weight=np.ones(len(X)))
+  ref = sklearn.neighbors.KNeighborsClassifier(n_neighbors=3)
+  ref.fit(X, y)
+  ref_probs = ref.predict_proba(Xq)
+
+  probs = ones_clf.predict_proba(Xq)
+  assert len(probs) == 2
+  for k, probs_k in enumerate(probs):
+    assert np.allclose(probs_k, ref_probs[k])
+
+  clf = sku.WeighedKNNClassifier(n_neighbors=3)
+  clf.fit(X, y, sample_weight=np.array([1.0, 0.01, 0.01, 1.0]))
+  # No IndexError on the second output (crashed before the fix).
+  preds = clf.predict(Xq)
+  assert preds.shape == (2, 2)
+  proba = clf.predict_proba(Xq)
+  assert [p.shape for p in proba] == [(2, 3), (2, 2)]

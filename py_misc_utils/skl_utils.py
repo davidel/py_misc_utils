@@ -495,7 +495,8 @@ class WeighedKNNClassifier:
     cweights = _get_weights(neigh_dist, self._neigh.weights)
     sample_weight = self._sample_weight
     if sample_weight.ndim < y.ndim:
-      sample_weight = sample_weight.reshape(-1, 1)
+      sample_weight = np.broadcast_to(sample_weight[:, np.newaxis],
+                                      (sample_weight.shape[0], y.shape[1]))
 
     return pyu.make_object(neigh_dist=neigh_dist,
                            neigh_ind=neigh_ind,
@@ -556,9 +557,9 @@ class WeighedKNNClassifier:
       pred_labels = pp.y[:, k][pp.neigh_ind]
       proba_k = np.zeros((len(X), k_classes.size))
 
-      ksweight = pp.sample_weight[:, k]
+      ksweight = pp.sample_weight[pp.neigh_ind, k]
       for i, idx in enumerate(pred_labels.T):
-        proba_k[all_rows, idx] += ksweight * pp.cweights[:, i]
+        proba_k[all_rows, idx] += ksweight[:, i] * pp.cweights[:, i]
 
       normalizer = proba_k.sum(axis=1)[:, np.newaxis]
       normalizer[normalizer == 0.0] = 1.0
