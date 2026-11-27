@@ -85,7 +85,7 @@ class GitRepo:
       if isinstance(arg, (list, tuple)):
         rcmd.extend(arg)
       else:
-        rcmd.appen(arg)
+        rcmd.append(arg)
 
     subprocess.run(rcmd, capture_output=True, check=True)
 

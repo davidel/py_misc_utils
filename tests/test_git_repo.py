@@ -54,3 +54,10 @@ def test_git_repo_checkout(repo, git_available):
     pytest.skip('git binary not available')
   grepo = gr.GitRepo(repo)
   grepo.checkout('HEAD')  # Should not raise.
+
+
+def test_git_repo_run_scalar_args(repo, git_available):
+  if not git_available:
+    pytest.skip('git binary not available')
+  grepo = gr.GitRepo(repo)
+  grepo._cmd('status', '--porcelain')
