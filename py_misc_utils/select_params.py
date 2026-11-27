@@ -528,7 +528,7 @@ class Selector:
       path: Filesystem path to read the pickle file from.
 
     Returns:
-        A Selector instance restored from the pickle file.
+      A Selector instance restored from the pickle file.
     """
     with gfs.open(path, mode='rb') as sfd:
       return pickle.load(sfd)
