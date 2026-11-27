@@ -3,11 +3,36 @@
 Uses the ephemeral HTTP server fixture so no real network access is required.
 """
 
+import asyncio
 import multiprocessing
 import os
 
+import pytest
+
 from py_misc_utils import http_async_fetcher as haf
 from py_misc_utils import work_results as wres
+
+
+def test_http_fetch_url_direct(http_server, http_routes, temp_path):
+  """http_fetch_url() fetches directly with an explicit context."""
+
+  class ClientCtx:
+
+    async def get(self, name, ctor):
+      return ctor()
+
+  http_routes.add_route('/direct', body=b'direct fetch')
+  wpath = asyncio.run(
+      haf.http_fetch_url(http_server.url + '/direct',
+                         context=ClientCtx(),
+                         path=str(temp_path)))
+  assert wres.load_work(wpath=wpath) == b'direct fetch'
+
+
+def test_http_fetch_url_requires_context():
+  """http_fetch_url() fails fast when the context is omitted."""
+  with pytest.raises(TypeError):
+    asyncio.run(haf.http_fetch_url('http://127.0.0.1:1/nope'))
 
 
 def test_http_fetch_url_single(http_server, http_routes, temp_path):

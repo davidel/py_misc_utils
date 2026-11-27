@@ -20,17 +20,18 @@ from . import utils as ut
 from . import work_results as wres
 
 
-async def http_fetch_url(url, context=None, path=None, http_args=None):
+async def http_fetch_url(url, context, path=None, http_args=None):
   """Asynchronously fetch a URL and save its content to a work result file.
 
-  Uses an httpx AsyncClient from the provided context (or creates a default one)
-  to GET the URL, writes the response content to a work result path, and handles
+  Uses an httpx AsyncClient obtained from the provided context to GET the
+  URL, writes the response content to a work result path, and handles
   errors by writing them to the work result system.
 
   Args:
     url: The URL to fetch.
-    context: Optional AsyncContext providing an httpx.AsyncClient through
-      its get() method. Defaults to None.
+    context: AsyncContext providing an httpx.AsyncClient through its
+      get() method. Mandatory - the HttpAsyncFetcher class supplies it
+      automatically, using the context owned by each worker process.
     path: Optional base path for work results. Defaults to None - which
       fails, as a work results folder is required.
     http_args: Optional keyword arguments for the httpx GET request
@@ -82,7 +83,7 @@ async def http_fetch_url(url, context=None, path=None, http_args=None):
   try:
     client = await context.get('httpx.AsyncClient', httpx.AsyncClient)
 
-    resp = await client.get(url, **http_args)
+    resp = await client.get(url, **(http_args or dict()))
     resp.raise_for_status()
 
     with wres.write_result(wpath) as fd:
