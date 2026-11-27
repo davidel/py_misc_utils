@@ -189,6 +189,20 @@ def split(data, split_rx, quote_ctx=None, unescape=False):
 
   Raises:
     RuntimeError: If quotes are unmatched at the end of the data.
+
+  Example:
+    from py_misc_utils import split as sp
+
+    print(sp.split('a, "b, c", d', ','))  # ('a', ' "b, c"', ' d')
+
+    # An escaped separator is honored only with unescape=True:
+    esc_sep = ',' + chr(92) + ','
+    print(sp.split('x' + esc_sep + 'y', ',', unescape=True))  # ('x,y',)
+    print(sp.split('x' + esc_sep + 'y', ','))  # ('x\\,y',)
+
+    # A custom quote context, e.g. only parentheses are special:
+    ctx = sp.make_context({'(': ')'})
+    print(sp.split('a, (b, c)', ',', quote_ctx=ctx))  # ('a', ' (b, c)')
   """
   qctx = quote_ctx or _QUOTE_CTX
 
@@ -256,6 +270,13 @@ def unquote(data, quote_map=None):
   Returns:
     The string with surrounding quotes removed, or the original string if no
     matching quote pair is found.
+
+  Example:
+    from py_misc_utils import split as sp
+
+    print(sp.unquote('"quoted"'))  # quoted
+    print(sp.unquote('[lst]'))  # lst
+    print(sp.unquote('plain'))  # plain
   """
   if len(data) >= 2:
     quote_map = quote_map or _QUOTE_MAP

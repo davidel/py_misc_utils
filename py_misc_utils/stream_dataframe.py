@@ -21,6 +21,22 @@ WriteField = collections.namedtuple('WriteField', 'dtype')
 
 class StreamDataWriter:
   """Write named, typed columns to a tensor stream file.
+
+  Example:
+    import os
+    import tempfile
+
+    import numpy as np
+
+    from py_misc_utils import stream_dataframe as sdf
+
+    spath = os.path.join(tempfile.mkdtemp(), 'records.ts')
+    w = sdf.StreamDataWriter('id=i, value=f', spath)
+
+    for i in range(3):
+      w.write(id=np.array([i]), value=np.array([10.0 * i]))
+
+    w.flush()
   """
 
   def __init__(self, fields, path):
@@ -89,6 +105,30 @@ class StreamDataWriter:
 
 class StreamDataReader:
   """Read named, typed columns from a tensor stream file.
+
+  Example:
+    import os
+    import tempfile
+
+    import numpy as np
+
+    from py_misc_utils import stream_dataframe as sdf
+
+    spath = os.path.join(tempfile.mkdtemp(), 'records.ts')
+    w = sdf.StreamDataWriter('id=i, value=f', spath)
+    w.write(id=np.array([0]), value=np.array([0.0]))
+    w.write(id=np.array([1]), value=np.array([10.0]))
+    w.flush()
+
+    r = sdf.StreamDataReader(spath)
+
+    print(len(r))  # 2
+    print(r.fields())  # ('id', 'value')
+
+    sl = r.get_slice(0, 2)
+
+    print(sl['id'].tolist())  # [0, 1]
+    print(sl['value'].tolist())  # [0.0, 10.0]
   """
 
   def __init__(self, path):
@@ -295,6 +335,30 @@ class StreamSortedScan:
     Yields:
       Tuples of (count, data) where count is the number of records in the
       batch and data is a dict of field name to numpy array.
+
+    Example:
+      import os
+      import tempfile
+
+      import numpy as np
+
+      from py_misc_utils import stream_dataframe as sdf
+
+      spath = os.path.join(tempfile.mkdtemp(), 'records.ts')
+      w = sdf.StreamDataWriter('id=i, value=f', spath)
+      for i in [3, 1, 2, 5, 4, 0]:
+        w.write(id=np.array([i]), value=np.array([float(i)]))
+      w.flush()
+
+      r = sdf.StreamDataReader(spath)
+      scan = sdf.StreamSortedScan(r, field='id', slice_size=2)
+
+      for count, data in scan.scan():
+        print(count, data['id'].tolist(), data['value'].tolist())
+
+      # 2 [0, 1] [0.0, 1.0]
+      # 2 [2, 3] [2.0, 3.0]
+      # 2 [4, 5] [4.0, 5.0]
     """
     # An ampty array can contain fields which are Python lists, so _as_numpy() is
     # used when returning data to the caller.

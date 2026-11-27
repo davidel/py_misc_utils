@@ -58,6 +58,16 @@ def create():
 
   Returns:
     The path of the newly created directory.
+
+  Example:
+    import os
+
+    from py_misc_utils import tempdir as tmpd
+
+    sub = tmpd.create()
+
+    print(sub.startswith(tmpd.get_temp_root()))  # True
+    print(os.path.isdir(sub))  # True
   """
   return _root_dir().create()
 
@@ -65,8 +75,20 @@ def create():
 def get_temp_root():
   """Return the process root temporary directory path.
 
+  The root is created on first use and removed at process exit.
+
   Returns:
     The root temporary directory path.
+
+  Example:
+    import os
+
+    from py_misc_utils import tempdir as tmpd
+
+    root = tmpd.get_temp_root()
+
+    print(os.path.isdir(root))  # True
+    print(tmpd.get_temp_root() == root)  # True
   """
   return _root_dir().root()
 
@@ -123,12 +145,25 @@ _NAMELEN = int(os.getenv('FASTFS_NAMELEN', '12'))
 def fastfs_dir(name=None, namelen=_NAMELEN):
   """Create (or retrieve) a subdirectory in the fast filesystem area.
 
+  The parent directory is located by checking the FASTFS_DIR environment
+  variable first, then known tmpfs/ramfs locations, the default temp dir
+  and finally the current working directory.
+
   Args:
     name: Optional directory name; defaults to a random name of namelen chars.
     namelen: Length of the random name when name is not provided.
 
   Returns:
     The path of the created directory.
+
+  Example:
+    import os
+
+    from py_misc_utils import tempdir as tmpd
+
+    work = tmpd.fastfs_dir(name='myjob')
+
+    print(os.path.isdir(work))  # True
   """
   name = name or rngu.rand_string(namelen)
 

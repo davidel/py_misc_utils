@@ -160,6 +160,21 @@ def template_replace(st, vals=None, lookup_fn=None, delim=None, misses_ok=None):
 
   Returns:
     The substituted string.
+
+  Example:
+    from py_misc_utils import template_replace as tr
+
+    print(tr.template_replace('user=$user', vals={'user': 'ada'}))  # user=ada
+    print(tr.template_replace('${user}', vals={'user': 'ada'}))  # ada
+
+    # A per-key default is used when the key is missing:
+    print(tr.template_replace('${mode:fine}', vals={}))  # fine
+
+    # A custom delimiter:
+    print(tr.template_replace('a=@a@', delim='@', vals={'a': 1}))  # a=1@
+
+    # Unresolved placeholders raise KeyError unless misses_ok is set:
+    print(tr.template_replace('$a$b', vals={'a': 1}, misses_ok=True))  # 1$b
   """
   delim = delim or '$'
   misses_ok = False if misses_ok is None else misses_ok

@@ -32,6 +32,30 @@ class WritebackFile:
   function -- typically uploading or saving the data -- either
   explicitly via close(), on context exit, or when the wrapper is
   garbage collected.
+
+  Example:
+    import io
+
+    from py_misc_utils import writeback_file as wbf
+
+    src = io.StringIO()
+    saved = []
+
+    with wbf.WritebackFile(src, lambda stream: saved.append(stream.getvalue())) as wf:
+      wf.write('hello')
+
+    print(saved)  # ['hello']
+    print(src.closed)  # True
+
+    # detach() closes the stream without running the writeback:
+    src2 = io.StringIO()
+    dropped = []
+
+    wf2 = wbf.WritebackFile(src2, lambda stream: dropped.append(stream.getvalue()))
+    wf2.detach()
+
+    print(dropped)  # []
+    print(src2.closed)  # True
   """
 
   def __init__(self, stream, writeback_fn):

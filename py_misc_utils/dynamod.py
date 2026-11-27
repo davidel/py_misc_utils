@@ -140,6 +140,17 @@ def create_module(name, code, overwrite=None):
 
   Raises:
     RuntimeError: If the module already exists and overwrite is not True.
+
+  Example:
+    from py_misc_utils import dynamod as dm
+
+    mod = dm.create_module('mytool.tools', 'ANSWER = 42')
+
+    print(mod.ANSWER)  # 42
+
+    # Later runs can import it back by name:
+    print(dm.get_module('mytool.tools').ANSWER)  # 42
+    print(dm.module_name('mytool.tools'))  # _dynamod.mytool.tools
   """
   path = gns.get(_MOD_FOLDER)
   mpath = os.path.join(path, *name.split('.')) + '.py'

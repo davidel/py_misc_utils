@@ -23,8 +23,21 @@ class DataCache:
   A DataCache loads - at creation time - the cached data object held in
   the gfs cache folder, if one exists and is not older than the maximum
   age. Within the context the data can be replaced via store(): at exit,
-  if the data has been changed, the updated copy is pickled back to the
-  cache folder.
+  if the data has been changed, the updated copy is pickled back, so
+  that the next run finds it and skips the computation.
+
+  Example:
+    from py_misc_utils import data_cache as dc
+
+    with dc.DataCache('daily-stats') as cache:
+      data = cache.data()
+
+      if data is None:
+        # Missing or too old: recompute and store the new value.
+        data = {'visits': 42}
+        cache.store(data)
+
+      print(data)  # {'visits': 42}
   """
 
   def __init__(self, data_id, max_age=_MAX_AGE):
@@ -65,8 +78,17 @@ class DataCache:
   def store(self, data):
     """Stores a new data object, to be pickled at context exit.
 
+    The data is written back only if it differs - by identity - from the
+    object loaded at creation time.
+
     Args:
       data: The data object to store.
+
+    Example:
+      from py_misc_utils import data_cache as dc
+
+      with dc.DataCache('user-prefs') as cache:
+        cache.store({'theme': 'dark'})
     """
     self._data = data
 

@@ -24,6 +24,20 @@ class ResourceManager:
 
   Manages named resources by class, creating them on demand and
   automatically cleaning up when no longer referenced.
+
+  Example:
+    import threading
+
+    from py_misc_utils import resource_manager as rm
+
+    m = rm.ResourceManager()
+    lk = m.get('LOCKS', threading.Lock, 'job1')
+
+    print(lk.acquire())  # True
+    lk.release()
+
+    m.delete('LOCKS', 'job1')
+    print(m.get('LOCKS', threading.Lock, 'job1') is lk)  # False
   """
 
   def __init__(self):
@@ -43,6 +57,16 @@ class ResourceManager:
 
     Returns:
       The resource instance (existing or newly created).
+
+    Example:
+      import threading
+
+      from py_misc_utils import resource_manager as rm
+
+      m = rm.ResourceManager()
+      lk = m.get('LOCKS', threading.Lock, 'job1')
+
+      print(type(lk).__name__)  # lock
     """
     alog.debug(f'Get resource {cls}.{name}')
     with self._lock:
@@ -63,6 +87,17 @@ class ResourceManager:
     Args:
       cls: Resource class/category name.
       name: Resource name to remove.
+
+    Example:
+      import threading
+
+      from py_misc_utils import resource_manager as rm
+
+      m = rm.ResourceManager()
+      lk = m.get('LOCKS', threading.Lock, 'job2')
+
+      m.delete('LOCKS', 'job2')
+      print(m.get('LOCKS', threading.Lock, 'job2') is lk)  # False
     """
     alog.debug(f'Remove resource {cls}.{name}')
     with self._lock:
@@ -78,6 +113,16 @@ def get_resource_manager():
 
   Returns:
     The global ResourceManager instance.
+
+  Example:
+    import threading
+
+    from py_misc_utils import resource_manager as rm
+
+    resmgr = rm.get_resource_manager()
+    lk = resmgr.get('LOCKS', threading.Lock, 'shared')
+
+    print(type(lk).__name__)  # lock
   """
   return _RESMGR
 
@@ -224,6 +269,11 @@ def stop_manager(name):
 
   Returns:
     True if daemon was stopped, False otherwise.
+
+  Example:
+    from py_misc_utils import resource_manager as rm
+
+    rm.stop_manager('my-resmgr')
   """
   daemon = dp.Daemon(name)
 

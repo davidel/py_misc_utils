@@ -134,6 +134,22 @@ class Selector:
   Uses a combination of random seeding, delta-based local search around the best
   points, and additional random exploration to efficiently search a high-dimensional
   parameter space. Scores are evaluated in parallel using multiprocessing.
+
+  Example:
+    from py_misc_utils import select_params as sp
+
+    def score_fn(a, b):
+      return -(a - 2) ** 2 - (b - 20) ** 2
+
+    sel = sp.Selector({'a': [1, 2, 3], 'b': [10, 20, 30]},
+                      seeds=[{'a': 1, 'b': 10}])
+    sel(score_fn, top_n=2, explore_pct=1.0, max_blanks_pct=1.0,
+        scores_x_run=2, n_jobs=1)
+
+    print(sel.best_param)  # {'a': 2, 'b': 20}
+    print(sel.best_score)  # 0
+
+  Attributes:
     cpid: Counter for assigning point IDs.
     current_scores: List of scores from the current batch.
     processed_scores: Count of scores processed so far.
@@ -533,6 +549,11 @@ def format_score(s):
 
   Returns:
     A string like '[SPSCORE=0.123456]' using the configured format.
+
+  Example:
+    from py_misc_utils import select_params as sp
+
+    print(sp.format_score(1.23456))  # [SPSCORE=1.23456]
   """
   return f'[{_SCORE_TAG}={s:{_SCORE_FMT}}]'
 
@@ -548,6 +569,12 @@ def match_score(data):
 
   Returns:
     A list of float score values found in the data.
+
+  Example:
+    from py_misc_utils import select_params as sp
+
+    out = 'epoch 3 done [SPSCORE=1.5]'
+    print(sp.match_score(out))  # [1.5]
   """
   matches = re.findall(f'\\[{_SCORE_TAG}=' + r'([^]]+)\]', data)
 
@@ -569,6 +596,17 @@ def run_score_process(cmdline):
 
   Raises:
     subprocess.CalledProcessError: If the command exits with non-zero status.
+
+  Example:
+    import sys
+
+    from py_misc_utils import select_params as sp
+
+    cmdline = [sys.executable, '-c', "print('[SPSCORE=3.25]')"]
+    scores, output = sp.run_score_process(cmdline)
+
+    print(scores)  # [3.25]
+    print('[SPSCORE=3.25]' in output)  # True
   """
   try:
     output = subprocess.check_output(cmdline, stderr=subprocess.STDOUT)

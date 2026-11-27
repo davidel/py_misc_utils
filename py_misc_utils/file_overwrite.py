@@ -12,8 +12,30 @@ class FileOverwrite:
   """Context manager for atomic file overwrite via temp file + rename.
 
   Writes to a temporary file in the destination directory, then replaces the
-  destination file on exit. If an exception occurs, the temp file is cleaned
-  up and the original file is left untouched.
+  destination file on exit. If an exception occurs, the destination is left
+  untouched and the temporary file is discarded.
+
+  Example:
+    import os
+    import tempfile
+
+    from py_misc_utils import file_overwrite as fow
+
+    dest = os.path.join(tempfile.gettempdir(), 'settings.json')
+
+    with fow.FileOverwrite(dest) as fd:
+      fd.write('{"a": 1}')
+
+    # On exception the destination is left untouched:
+    try:
+      with fow.FileOverwrite(dest) as fd:
+        fd.write('partial')
+        raise RuntimeError('boom')
+    except RuntimeError:
+      pass
+
+    with open(dest) as fd:
+      print(fd.read())  # {"a": 1}
   """
 
   def __init__(self, dest, mode='w', **kwargs):
