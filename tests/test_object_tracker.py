@@ -14,6 +14,7 @@ of _get_tracking_references (which lacks a visited set) explodes on the
 referrer cycles of a real interpreter heap (report-only hazard).
 """
 
+import collections.abc
 import logging
 
 import pytest
@@ -112,6 +113,40 @@ def test_track_objects_tracker_exception_logged(fake_gc, caplog):
   assert any('tracker boom' in rec.message for rec in caplog.records)
 
 
+class _NonIterableMapping(collections.abc.Mapping):
+  """Mimics urllib3.RecentlyUsedContainer: iteration raises."""
+
+  def __getitem__(self, key):
+    raise KeyError(key)
+
+  def __len__(self):
+    return 0
+
+  def __iter__(self):
+    raise NotImplementedError('Iteration over this class is unlikely to be threadsafe.')
+
+
+def test_track_objects_non_iterable_mapping_isolated(fake_gc, caplog):
+  """A mapping whose items() raises is skipped, not fatal to the scan."""
+  poison = _NonIterableMapping()
+  good = dict(tag='good')
+  fake_gc([poison, good])
+
+  class Tracker:
+
+    def track(self, obj):
+      return (0, 'found the good') if obj is good else None
+
+  logging.disable(logging.CRITICAL)
+  try:
+    with caplog.at_level(logging.WARNING):
+      report = ot.track_objects(Tracker())
+  finally:
+    logging.disable(logging.NOTSET)
+
+  assert 'found the good' in report
+
+
 def test_track_objects_max_references(fake_gc):
   """max_references caps the number of refby lines per object."""
   leaf = dict(tag='leaf')
@@ -128,4 +163,3 @@ def test_track_objects_max_references(fake_gc):
   refby_lines = [l for l in report.splitlines() if l.strip().startswith('refby')]
 
   assert len(refby_lines) == 2
-

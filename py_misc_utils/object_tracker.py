@@ -36,6 +36,25 @@ from . import core_utils as cu
 from . import inspect_utils as iu
 
 
+def _enumerate_dict_like(obj):
+  """Enumerates the (name, value) members of a dict-like object.
+
+  Args:
+    obj: A mapping, or an object __dict__.
+
+  Returns:
+    A tuple of (name, value) pairs - empty, if the enumeration fails
+    (some mappings, like the urllib3 connection pools container, raise
+    on iteration).
+  """
+  try:
+    return tuple(obj.items())
+  except Exception as ex:  # noqa: BLE001 -- enumeration isolation: non-enumerable mappings yield no members, the scan goes on
+    alog.warning(f'Exception while enumerating a dict-like object: {ex}')
+
+    return tuple()
+
+
 def _get_referred(obj):
   """Return the named references held by obj.
 
@@ -45,18 +64,16 @@ def _get_referred(obj):
   Returns:
     A tuple of (name, referent) pairs describing what obj references.
   """
-  referred = []
   if cu.isdict(obj):
-    for name, value in obj.items():
-      referred.append((name, value))
-  elif isinstance(obj, (list, tuple)):
-    for i, value in enumerate(obj):
-      referred.append((f'[{i}]', value))
-  elif hasattr(obj, '__dict__'):
-    for name, value in vars(obj).items():
-      referred.append((name, value))
+    return _enumerate_dict_like(obj)
 
-  return tuple(referred)
+  if isinstance(obj, (list, tuple)):
+    return tuple((f'[{i}]', value) for i, value in enumerate(obj))
+
+  if hasattr(obj, '__dict__'):
+    return _enumerate_dict_like(vars(obj))
+
+  return tuple()
 
 
 def _get_tracking_references(obj, tracked_by, max_references=None):
