@@ -398,10 +398,10 @@ def enum_chunks(stream, chunk_size=16 * 1024**2):
 
 
 def du(path, follow_symlinks=None, visited=None):
-  """Computes the disk usage of a directory tree.
+  """Computes the disk usage of a file or a directory tree.
 
   Args:
-    path: The directory tree root path.
+    path: The file or directory tree root path.
     follow_symlinks: Whether symlinks are followed - in which case
       linked files/directories are accounted for as well. By default
       symlinks are not followed.
@@ -410,25 +410,32 @@ def du(path, follow_symlinks=None, visited=None):
       shared paths twice.
 
   Returns:
-    The total size - in bytes - of the files held by the directory tree.
+    The total size - in bytes - of the file, or of the files held by the
+    directory tree.
+
+  Raises:
+    FileNotFoundError: If the path does not exist.
   """
   visited = set() if visited is None else visited
   follow_symlinks = follow_symlinks not in (None, False)
   size, dirs = 0, []
   if path not in visited:
     visited.add(path)
-    with os.scandir(path) as sdit:
-      for de in sdit:
-        if de.is_file(follow_symlinks=follow_symlinks):
-          sres = de.stat()
-          size += sres.st_size
-        elif de.is_dir(follow_symlinks=follow_symlinks):
-          dirs.append(de.name)
+    if os.path.isdir(path) and (follow_symlinks or not os.path.islink(path)):
+      with os.scandir(path) as sdit:
+        for de in sdit:
+          if de.is_file(follow_symlinks=follow_symlinks):
+            sres = de.stat()
+            size += sres.st_size
+          elif de.is_dir(follow_symlinks=follow_symlinks):
+            dirs.append(de.name)
 
-    for dname in dirs:
-      size += du(os.path.join(path, dname),
-                 follow_symlinks=follow_symlinks,
-                 visited=visited)
+      for dname in dirs:
+        size += du(os.path.join(path, dname),
+                   follow_symlinks=follow_symlinks,
+                   visited=visited)
+    elif follow_symlinks or not os.path.islink(path):
+      size += os.path.getsize(path)
 
   return size
 

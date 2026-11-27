@@ -235,6 +235,42 @@ def test_du_symlinks_and_visited(tmp_path):
   assert s2 == 0
 
 
+def test_du_file_path(tmp_path):
+  """du accepts file paths - Unix du semantics - and raises on missing."""
+  fpath = os.path.join(tmp_path, 'f.bin')
+  with open(fpath, 'wb') as f:
+    f.write(b'x' * 42)
+
+  assert fsu.du(fpath) == 42
+  assert fsu.du(fpath, follow_symlinks=True) == 42
+
+  with pytest.raises(FileNotFoundError):
+    fsu.du(os.path.join(tmp_path, 'nope'))
+
+
+def test_du_symlink_root(tmp_path):
+  """Un-followed symlink roots are skipped, matching inner-entry handling."""
+  fpath = os.path.join(tmp_path, 'target.bin')
+  with open(fpath, 'wb') as f:
+    f.write(b'y' * 40)
+
+  lfile = os.path.join(tmp_path, 'lfile')
+  os.symlink(fpath, lfile)
+
+  assert fsu.du(lfile) == 0
+  assert fsu.du(lfile, follow_symlinks=True) == 40
+
+  tdir = os.path.join(tmp_path, 'tdir')
+  os.makedirs(tdir)
+  with open(os.path.join(tdir, 'g.bin'), 'wb') as f:
+    f.write(b'z' * 7)
+  ldir = os.path.join(tmp_path, 'ldir')
+  os.symlink(tdir, ldir)
+
+  assert fsu.du(ldir) == 0
+  assert fsu.du(ldir, follow_symlinks=True) == 7
+
+
 def test_find_path(tmp_path):
   """find_path returns the first folder holding the name."""
   os.makedirs(os.path.join(tmp_path, 'one'))
