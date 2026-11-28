@@ -1,0 +1,22 @@
+{#- Template for admonitions in docstrings.
+
+Renders docstring admonitions. This is a copy of the stock
+`_base/docstring/admonition.html.jinja` with one addition: admonitions of
+kind `example` (the Google style "Example:" sections) have their contents
+wrapped in a fenced code block before Markdown conversion. Without this,
+the example code renders as a Markdown paragraph, which collapses newlines
+into spaces.
+-#}
+
+{% block logs scoped %}
+  {{ log.debug("Rendering admonition") }}
+{% endblock logs %}
+
+<details class="{{ section.value.kind }}" open>
+  <summary>{{ section.title|convert_markdown(heading_level, html_id, strip_paragraph=True, autoref_hook=autoref_hook) }}</summary>
+  {%- if section.value.kind == "example" %}
+  {{ ("```python\n" ~ section.value.contents ~ "\n```")|convert_markdown(heading_level, html_id, autoref_hook=autoref_hook) }}
+  {%- else %}
+  {{ section.value.contents|convert_markdown(heading_level, html_id, autoref_hook=autoref_hook) }}
+  {%- endif %}
+</details>

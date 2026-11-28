@@ -38,6 +38,8 @@ plugins:
   - literate-nav:
       nav_file: SUMMARY.md
   - mkdocstrings:
+      # Per-handler template overrides live under <dir>/python/<theme>/...
+      custom_templates: docs/_templates
       handlers:
         python:
           options:
