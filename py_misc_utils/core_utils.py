@@ -8,7 +8,7 @@ no dependencies on other py_misc_utils modules.
 Classes:
   RevDb: Tracks version numbers for named resources.
 
-Functions:
+Main APIs:
   ident, noop, object_context, args, is_builtin_function, isdict,
   refcount, denone, vfind, seqfirst, iter_next, enum_values,
   idx_expand, is_sequence, expand, range_split, partition, is_iterator,

@@ -356,9 +356,9 @@ class StreamSortedScan:
       for count, data in scan.scan():
         print(count, data['id'].tolist(), data['value'].tolist())
 
-      # 2 [0, 1] [0.0, 1.0]
-      # 2 [2, 3] [2.0, 3.0]
-      # 2 [4, 5] [4.0, 5.0]
+      # 2 `[0, 1]` `[0.0, 1.0]`
+      # 2 `[2, 3]` `[2.0, 3.0]`
+      # 2 `[4, 5]` `[4.0, 5.0]`
     """
     # An ampty array can contain fields which are Python lists, so _as_numpy() is
     # used when returning data to the caller.

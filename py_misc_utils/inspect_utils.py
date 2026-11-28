@@ -4,7 +4,7 @@ This module provides helper functions for runtime introspection, including
 qualified name resolution, caller frame inspection, argument extraction from
 locals, class slot enumeration, and MRO traversal.
 
-Functions:
+Main APIs:
   classof, moduleof, cname, func_name, qual_name, qual_mro,
   is_subclass, get_caller_function, current_module, fetch_args,
   fetch_call, get_fn_kwargs, get_defaulted_params, parent_locals,

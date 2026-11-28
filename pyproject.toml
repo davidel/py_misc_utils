@@ -50,11 +50,19 @@ torch = ["torch"]
 all = [
   "python_misc_utils[fs,test,torch]",
 ]
+docs = [
+  "mkdocs",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+]
 
 [project.urls]
 Homepage = "https://github.com/davidel/py_misc_utils"
 Issues = "https://github.com/davidel/py_misc_utils/issues"
 Repository = "https://github.com/davidel/py_misc_utils.git"
+Documentation = "https://davidel.github.io/py_misc_utils/"
 
 [build-system]
 requires = ["setuptools >= 42.0.0"]

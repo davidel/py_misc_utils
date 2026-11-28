@@ -1,0 +1,61 @@
+site_name: py_misc_utils
+site_description: A collection of Python utility APIs
+site_url: https://davidel.github.io/py_misc_utils/
+repo_url: https://github.com/davidel/py_misc_utils
+repo_name: davidel/py_misc_utils
+edit_uri: edit/main/docs/
+
+watch:
+  - py_misc_utils
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.sections
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            heading_level: 1
+            show_source: true
+            members_order: source
+            filters:
+              - "!^_"
+            # The codebase is intentionally untyped (types are documented
+            # in prose inside docstrings); silence per-parameter type warnings.
+            docstring_options:
+              warn_missing_types: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+

@@ -9,7 +9,7 @@ Classes:
   _Skipper: Tracks quote positions during forward scanning.
   SplitContext: Named tuple holding quote mapping and regex patterns.
 
-Functions:
+Main APIs:
   _chars_regex, _specials_regex, _split_forward, make_context, _to_bytes,
   split, unquote
 """

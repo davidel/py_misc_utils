@@ -122,7 +122,7 @@ def install_module(modname, module):
     module: The module object to install.
 
   Raises:
-      AssertionError: If a module with the same name already exists at a
+    AssertionError: If a module with the same name already exists at a
         different file path.
   """
   xmodule = sys.modules.get(modname)
