@@ -1,6 +1,6 @@
 [project]
 name = "python_misc_utils"
-version = "0.30"
+version = "0.31"
 description = "A collection of Python utility APIs"
 readme = "README.md"
 requires-python = ">=3.12"
