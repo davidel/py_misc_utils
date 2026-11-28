@@ -161,6 +161,13 @@ def _crypt_xor(data, seed):
       hashlib.sha512(seed + counter.to_bytes(4, 'big')).digest()
       for counter in range(nblocks))
 
+  # int.from_bytes()/to_bytes() have no 64-bit limit: the whole buffer is
+  # converted into a single arbitrary-precision integer, and 'big' only fixes
+  # which end of the buffer is the most significant. Since XOR cannot carry
+  # between bit positions, the big-int XOR below is exactly equivalent to a
+  # positional byte-wise XOR of the whole buffer. to_bytes() re-serializes the
+  # result at the exact input width (zero-padding leading zero bytes), so the
+  # output length always matches len(data).
   iv = int.from_bytes(data, 'big') ^ int.from_bytes(stream[:len(data)], 'big')
 
   return iv.to_bytes(len(data), 'big')
